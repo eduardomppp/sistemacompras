@@ -1,0 +1,8 @@
+suporte%@Suporte2025%menu_master.html%BrasilCard
+master%@Bcard1993%menu_master.html%BrasilCard
+solicitar%@Bcard1993%menu_solicitante.html%BrasilCard
+cadastro%@Bcard1993%menu_cadastro.html%BrasilCard
+comprador%@Bcard1993%menu_comprador.html%BrasilCard
+supervisor%@Bcard1993%menu_supervisor.html%BrasilCard
+financeiro%@Bcard1993%menu_financeiro.html%BrasilCard
+estoquista%@Pr@do1993%menu_estoquista.html%BOLT
