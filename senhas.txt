@@ -1,8 +1,17 @@
-suporte%@Suporte2025%menu_master.html%BrasilCard
-master%@Bcard1993%menu_master.html%BrasilCard
-solicitar%@Bcard1993%menu_solicitante.html%BrasilCard
-cadastro%@Bcard1993%menu_cadastro.html%BrasilCard
-comprador%@Bcard1993%menu_comprador.html%BrasilCard
-supervisor%@Bcard1993%menu_supervisor.html%BrasilCard
-financeiro%@Bcard1993%menu_financeiro.html%BrasilCard
-estoquista%@Pr@do1993%menu_estoquista.html%BOLT
+suporte%@Suporte2025%menu_master.html%BrasilCard 
+master%@Bcard1993%menu_master.html%BrasilCard 
+solicitar%@Bcard1993%menu_solicitante.html%BrasilCard 
+cadastro%@Bcard1993%menu_cadastro.html%BrasilCard 
+comprador%@Bcard1993%menu_comprador.html%BrasilCard 
+supervisor%@Bcard1993%menu_supervisor.html%BrasilCard 
+financeiro%@Bcard1993%menu_financeiro.html%BrasilCard 
+ruan_ferreira%Grupocobuccio157!%menu_comprador.html%Grupo Adriano Cobuccio 
+fernando_silva%Grupocobuccio145!%menu_comprador.html%Grupo Adriano Cobuccio 
+gabriel_silva%Grupocobuccio140!%menu_comprador.html%Grupo Adriano Cobuccio 
+marco_pereira%Grupocobuccio106!%menu_comprador.html%Grupo Adriano Cobuccio 
+rafael_domingues%Grupocobuccio181!%menu_comprador.html%Fazendas 
+paulo_justino%Grupocobuccio156!%menu_comprador.html%Fazendas 
+fabio_silva%Fazendascobuccio817!%menu_supervisor.html%Fazendas 
+guilherme_gomes%Grupocobuccio011!%menu_solicitante.html%Grupo Adriano Cobuccio 
+joao_nardin%Grupocobuccio024!%menu_solicitante.html%FIDC 
+andreia_silva%Grupocobuccio289!%menu_financeiro.html%Grupo Adriano Cobuccio 
