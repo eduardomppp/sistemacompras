@@ -177,6 +177,18 @@ class Estoque(db.Model):
     preenchimento = db.relationship('SolicitacoesPreenchidas', backref='estoque')
     material = db.relationship('Materiais', backref='estoque')
 
+# Modelo para Auditoria
+class Auditoria(db.Model):
+    __tablename__ = 'Auditoria'
+    id = db.Column(db.Integer, primary_key=True)
+    solicitacao_id = db.Column(db.Integer, db.ForeignKey('SolicitacoesCompra.id'), nullable=False)
+    data_validacao = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    colaborador_1 = db.Column(db.Text, nullable=False)
+    colaborador_2 = db.Column(db.Text, nullable=True)
+    status = db.Column(db.Text, nullable=False)  # 'Conforme' ou 'Não Conforme'
+    observacao = db.Column(db.Text, nullable=True)
+    solicitacao = db.relationship('SolicitacoesCompra', backref='auditorias')
+
 # Modelo para Requisições
 class Requisicoes(db.Model):
     __tablename__ = 'Requisicoes'
@@ -3423,6 +3435,264 @@ def auditoria_solicitacoes():
             nomes_ativos=[],
             filtros={}
         )
+    
+# 2° Tela Auditoria
+@routes_bp.route('/tela_auditoria', methods=['GET', 'POST'])
+def tela_auditoria():
+    if 'usuario' not in session:
+        return redirect(url_for('routes_bp.login'))
+    
+    try:
+        # Processar formulário de auditoria se for POST
+        if request.method == 'POST':
+            solicitacao_id = request.form.get('solicitacao_id')
+            colaborador_1 = request.form.get('colaborador_1', '').strip()
+            colaborador_2 = request.form.get('colaborador_2', '').strip()
+            status = request.form.get('status', '').strip()
+            observacao = request.form.get('observacao', '').strip()
+            
+            # Validações
+            if not all([solicitacao_id, colaborador_1, status]):
+                flash('Campos obrigatórios não preenchidos', 'error')
+                return redirect(url_for('routes_bp.tela_auditoria'))
+            
+            if status not in ['Conforme', 'Não Conforme']:
+                flash('Status inválido', 'error')
+                return redirect(url_for('routes_bp.tela_auditoria'))
+            
+            # Criar registro de auditoria
+            auditoria = Auditoria(
+                solicitacao_id=solicitacao_id,
+                colaborador_1=colaborador_1,
+                colaborador_2=colaborador_2 if colaborador_2 else None,
+                status=status,
+                observacao=observacao if observacao else None
+            )
+            db.session.add(auditoria)
+            db.session.commit()
+            flash('Auditoria registrada com sucesso!', 'success')
+            return redirect(url_for('routes_bp.tela_auditoria'))
+
+        # Obter parâmetros de filtro (código existente)
+        empresa = request.args.get('empresa')
+        usuario = request.args.get('usuario')
+        ativo = request.args.get('ativo')
+        nome_ativo = request.args.get('nome_ativo')
+        data_inicio = request.args.get('data_inicio')
+        data_fim = request.args.get('data_fim')
+        status = request.args.get('status')
+
+        # Query base (código existente)
+        query = db.session.query(SolicitacoesCompra)
+        
+        # Aplicar filtros (código existente)
+        if empresa:
+            query = query.filter(SolicitacoesCompra.empresa == empresa)
+        if usuario:
+            query = query.filter(SolicitacoesCompra.usuario == usuario)
+        if ativo:
+            query = query.filter(SolicitacoesCompra.ativo == ativo)
+        if nome_ativo and ativo == 'Sim':
+            query = query.filter(SolicitacoesCompra.nome_ativo.ilike(f'%{nome_ativo}%'))
+        if data_inicio:
+            query = query.filter(SolicitacoesCompra.data_solicitacao >= data_inicio)
+        if data_fim:
+            data_fim_ajustada = datetime.strptime(data_fim, '%Y-%m-%d') + timedelta(days=1)
+            query = query.filter(SolicitacoesCompra.data_solicitacao <= data_fim_ajustada)
+
+        # Executar query (código existente)
+        solicitacoes = query.order_by(SolicitacoesCompra.data_solicitacao.desc()).all()
+
+        # Obter fornecedores (código existente)
+        fornecedor_ids = set()
+        for solicitacao in solicitacoes:
+            preenchimento = db.session.query(SolicitacoesPreenchidas).filter_by(
+                solicitacao_id=solicitacao.id
+            ).first()
+            if preenchimento and preenchimento.fornecedor_id:
+                fornecedor_ids.add(preenchimento.fornecedor_id)
+
+        fornecedores = {}
+        if fornecedor_ids:
+            conn = get_db_connection(DB_PATH_FORNECEDORES)
+            if conn:
+                try:
+                    cursor = conn.cursor()
+                    cursor.execute(
+                        f'SELECT id, nome_fantasia, cnpj FROM fornecedores WHERE id IN ({",".join("?"*len(fornecedor_ids))})',
+                        list(fornecedor_ids)
+                    )
+                    for row in cursor.fetchall():
+                        fornecedores[row[0]] = {
+                            'nome_fantasia': row[1],
+                            'cnpj': format_cnpj(row[2]) if row[2] else 'N/A'
+                        }
+                finally:
+                    conn.close()
+
+        # Preparar dados para o template (atualizado com auditoria)
+        auditoria_data = []
+        for solicitacao in solicitacoes:
+            material = db.session.get(Materiais, solicitacao.cod_material)
+            preenchimento = db.session.query(SolicitacoesPreenchidas).filter_by(
+                solicitacao_id=solicitacao.id
+            ).first()
+            pedido = None
+            if preenchimento:
+                pedido = db.session.query(PedidosCompra).join(
+                    pedido_preenchimento_associacao,
+                    PedidosCompra.id == pedido_preenchimento_associacao.c.pedido_id
+                ).filter(
+                    pedido_preenchimento_associacao.c.preenchimento_id == preenchimento.id
+                ).first()
+            estoque = None
+            if preenchimento:
+                estoque = db.session.query(Estoque).filter_by(
+                    preenchimento_id=preenchimento.id
+                ).first()
+            requisicoes = []
+            if preenchimento:
+                requisicoes = db.session.query(Requisicoes).filter_by(
+                    preenchimento_id=preenchimento.id
+                ).all()
+            
+            # Aplicar filtro de status
+            if status:
+                if status == 'Aberta' and preenchimento:
+                    continue
+                elif status != 'Aberta' and (not preenchimento or preenchimento.status != status):
+                    continue
+            
+            # Adicionar informações do fornecedor
+            fornecedor_info = {}
+            if preenchimento and preenchimento.fornecedor_id:
+                fornecedor_info = fornecedores.get(preenchimento.fornecedor_id, {
+                    'nome_fantasia': 'Fornecedor não encontrado',
+                    'cnpj': 'N/A'
+                })
+
+            # Obter dados de auditoria para esta solicitação
+            auditorias = db.session.query(Auditoria).filter_by(
+                solicitacao_id=solicitacao.id
+            ).order_by(Auditoria.data_validacao.desc()).all()
+
+            auditoria_data.append({
+                'solicitacao': solicitacao,
+                'material': material,
+                'preenchimento': preenchimento,
+                'pedido': pedido,
+                'estoque': estoque,
+                'requisicoes': requisicoes,
+                'fornecedor': fornecedor_info,
+                'auditorias': auditorias  # Adiciona os dados de auditoria
+            })
+
+        # Obter valores para filtros (código existente)
+        empresas = db.session.query(
+            SolicitacoesCompra.empresa
+        ).distinct().order_by(
+            SolicitacoesCompra.empresa
+        ).all()
+
+        usuarios = db.session.query(
+            SolicitacoesCompra.usuario
+        ).distinct().order_by(
+            SolicitacoesCompra.usuario
+        ).all()
+
+        nomes_ativos = db.session.query(
+            SolicitacoesCompra.nome_ativo
+        ).filter(
+            SolicitacoesCompra.ativo == 'Sim',
+            SolicitacoesCompra.nome_ativo.isnot(None)
+        ).distinct().order_by(
+            SolicitacoesCompra.nome_ativo
+        ).all()
+
+        # Obter lista de usuários para seleção de auditores
+        senhas = ler_senhas()
+        usuarios_disponiveis = sorted(senhas.keys())
+
+        return render_template(
+            'tela_auditoria.html',
+            auditoria=auditoria_data,
+            empresas=[e[0] for e in empresas if e[0]],
+            usuarios=[u[0] for u in usuarios if u[0]],
+            nomes_ativos=[n[0] for n in nomes_ativos if n[0]],
+            usuarios_disponiveis=usuarios_disponiveis,
+            filtros={
+                'empresa': empresa,
+                'usuario': usuario,
+                'ativo': ativo,
+                'nome_ativo': nome_ativo,
+                'data_inicio': data_inicio,
+                'data_fim': data_fim,
+                'status': status
+            }
+        )
+
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Erro ao carregar auditoria: {str(e)}', 'error')
+        app.logger.error(f'Erro em tela_auditoria: {str(e)}', exc_info=True)
+        return render_template(
+            'tela_auditoria.html',
+            auditoria=[],
+            empresas=[],
+            usuarios=[],
+            nomes_ativos=[],
+            usuarios_disponiveis=[],
+            filtros={}
+        )
+    
+def create_auditoria_table():
+    try:
+        conn = sqlite3.connect(DATABASE)
+        cursor = conn.cursor()
+        create_table_query = """
+        CREATE TABLE IF NOT EXISTS Auditoria (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            solicitacao_id INTEGER NOT NULL,
+            data_validacao DATETIME NOT NULL,
+            colaborador_1 TEXT NOT NULL,
+            colaborador_2 TEXT,
+            status TEXT NOT NULL,
+            observacao TEXT,
+            FOREIGN KEY (solicitacao_id) REFERENCES SolicitacoesCompra(id)
+        )
+        """
+        cursor.execute(create_table_query)
+        conn.commit()
+        print("Tabela 'Auditoria' criada com sucesso.")
+        cursor.close()
+        conn.close()
+    except sqlite3.Error as e:
+        print(f"Erro ao criar a tabela Auditoria: {str(e)}")
+        return False
+    return True
+
+@routes_bp.route('/excluir_auditoria/<int:id>', methods=['POST'])
+def excluir_auditoria(id):
+    if 'usuario' not in session:
+        flash('Você precisa estar logado para realizar esta ação.', 'error')
+        return redirect(url_for('routes_bp.login'))
+    
+    try:
+        auditoria = Auditoria.query.get_or_404(id)
+        solicitacao_id = auditoria.solicitacao_id
+        
+        db.session.delete(auditoria)
+        db.session.commit()
+        
+        flash('Registro de auditoria excluído com sucesso.', 'success')
+        return redirect(url_for('routes_bp.tela_auditoria'))
+    
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Erro ao excluir auditoria: {str(e)}', 'error')
+        return redirect(url_for('routes_bp.tela_auditoria'))
+
+
 #Dasboard ----------------------------------------------
 @routes_bp.route('/dashboard', methods=['GET'])
 def dashboard():
@@ -3588,6 +3858,8 @@ def dashboard_data():
     except Exception as e:
         app.logger.error(f'Erro no dashboard: {str(e)}')
         return jsonify({'error': str(e)}), 500
+
+
 #-------------------------------------------------
 # Updated financeiro route
 @routes_bp.route('/financeiro', methods=['GET'])
@@ -3790,6 +4062,7 @@ app.register_blueprint(routes_bp)
 # Inicialização do banco de dados e execução do app
 if __name__ == '__main__':
     create_database()
+    create_auditoria_table()  # Adicione esta linha
     create_fornecedores_db()
     create_solicitacoes_preenchidas_table()
     with app.app_context():
