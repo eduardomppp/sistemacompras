@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Acesso Seguro - Gestão de Compras</title>
+    <link rel="icon" href="https://eduprado.com.br/wp-content/uploads/2024/02/LOGO-PRADO-SEM-FUNDO-4.png" type="image/x-icon">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #0066cc;
+            --primary-dark: #004c99;
+            --secondary-color: #00aaff;
+            --error-color: #ff4757;
+            --success-color: #2ed573;
+            --text-dark: #2f3542;
+            --text-light: #f1f2f6;
+            --bg-gradient: linear-gradient(135deg, #022855, #02316a);
+            --card-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+            --transition-fast: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-slow: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: var(--bg-gradient);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            color: var(--text-dark);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Efeito de partículas (opcional) */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.3;
+        }
+
+        /* Card principal */
+        .login-card {
+            background: rgba(255, 255, 255, 0.651);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2.5rem;
+            box-shadow: var(--card-shadow);
+            width: 100%;
+            max-width: 440px;
+            text-align: center;
+            transition: var(--transition-slow);
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .login-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 6px;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+        }
+
+        /* Cabeçalho */
+        .auth-header {
+            margin-bottom: 2.5rem;
+            position: relative;
+        }
+
+        .logo {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 1rem;
+            background: url('https://eduprado.com.br/wp-content/uploads/2024/02/LOGO-PRADO-SEM-FUNDO-4.png') center/contain no-repeat;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+        }
+
+        .app-name {
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 0.5rem;
+            letter-spacing: 0.5px;
+        }
+
+        .auth-title {
+            font-size: 1.25rem;
+            color: var(--text-dark);
+            font-weight: 500;
+            opacity: 0.8;
+        }
+
+        /* Formulário */
+        .auth-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        /* Campos de input */
+        .input-group {
+            position: relative;
+            width: 100%;
+            text-align: left;
+        }
+
+        .input-label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-dark);
+            opacity: 0.9;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 15px 15px 15px 48px;
+            border-radius: 10px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            font-size: 1rem;
+            transition: var(--transition-fast);
+            background: rgba(245, 245, 245, 0.7);
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.15);
+            background: white;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--primary-color);
+            font-size: 1.1rem;
+            transition: var(--transition-fast);
+        }
+
+        .input-field:focus + .input-icon {
+            color: var(--secondary-color);
+        }
+
+        /* Visualização de senha */
+        .toggle-password {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #aaa;
+            cursor: pointer;
+            transition: var(--transition-fast);
+        }
+
+        .toggle-password:hover {
+            color: var(--primary-color);
+        }
+
+        /* Botão */
+        .auth-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            font-weight: 600;
+            transition: var(--transition-fast);
+            margin-top: 10px;
+            letter-spacing: 0.5px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .auth-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: var(--transition-slow);
+        }
+
+        .auth-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 102, 204, 0.3);
+        }
+
+        .auth-btn:hover::before {
+            left: 100%;
+        }
+
+        .auth-btn:active {
+            transform: translateY(0);
+        }
+
+        /* Mensagens */
+        .error-message {
+            color: var(--error-color);
+            font-size: 0.85rem;
+            margin-top: 8px;
+            font-weight: 500;
+            text-align: left;
+            padding-left: 5px;
+            animation: shake 0.4s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .success-message {
+            color: var(--success-color);
+            font-size: 0.85rem;
+            margin-top: 8px;
+            font-weight: 500;
+            text-align: left;
+            padding-left: 5px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-5px); }
+            40%, 80% { transform: translateX(5px); }
+        }
+
+        /* Rodapé */
+        .auth-footer {
+            margin-top: 2.5rem;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.8rem;
+            width: 100%;
+        }
+
+        .auth-footer p {
+            margin-bottom: 0.5rem;
+        }
+
+        .footer-link {
+            color: rgba(255, 255, 255, 0.9);
+            text-decoration: none;
+            transition: var(--transition-fast);
+            font-weight: 500;
+        }
+
+        .footer-link:hover {
+            color: white;
+            text-decoration: underline;
+        }
+
+        /* Loader */
+        .loader {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Responsividade */
+        @media (max-width: 576px) {
+            .login-card {
+                padding: 2rem 1.5rem;
+                border-radius: 16px;
+            }
+            
+            .app-name {
+                font-size: 1.5rem;
+            }
+            
+            .auth-title {
+                font-size: 1.1rem;
+            }
+            
+            .input-field {
+                padding: 13px 13px 13px 42px;
+                font-size: 0.95rem;
+            }
+            
+            .auth-btn {
+                padding: 13px;
+                font-size: 1rem;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .login-card {
+                padding: 1.8rem 1.2rem;
+            }
+            
+            .logo {
+                width: 70px;
+                height: 70px;
+            }
+        }
+
+        /* Dark Mode */
+        @media (prefers-color-scheme: dark) {
+            .login-card {
+                background: rgb(9, 27, 94);
+                color: var(--text-light);
+                border-color: rgba(19, 90, 255, 0.903);
+            }
+            
+            .input-field {
+                background: rgba(255, 255, 255, 0.788);
+                border-color: rgba(0, 0, 0, 0.353);
+                color: var(--text-light);
+            }
+            
+            .input-field:focus {
+                background: rgba(70, 70, 70, 0.7);
+            }
+            
+            .input-label, .auth-title {
+                color: var(--text-light);
+            }
+        }
+
+        /* Animações */
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .login-card {
+            animation: fadeInUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+        }
+
+        .auth-header {
+            animation: fadeInUp 0.6s 0.1s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+        }
+
+        .input-group {
+            opacity: 0;
+            animation: fadeInUp 0.5s 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+        }
+
+        .input-group:nth-child(2) {
+            animation-delay: 0.4s;
+        }
+
+        .auth-btn {
+            opacity: 0;
+            animation: fadeInUp 0.5s 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+        }
+
+        .auth-footer {
+            opacity: 0;
+            animation: fadeInUp 0.5s 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+        }
+    </style>
+</head>
+<body>
+    <!-- Efeito de partículas (opcional) -->
+    <canvas id="particles" class="particles"></canvas>
+
+    <div class="login-card">
+        <div class="auth-header">
+            <div class="logo" aria-hidden="true"></div>
+            <h1 class="app-name">Sistema de Compras</h1>
+            <p class="auth-title">Acesso Seguro</p>
+        </div>
+        
+        <form class="auth-form" method="POST" action="/login" id="loginForm">
+            <div class="input-group">
+                <label for="usuario" class="input-label">Usuário</label>
+                <input type="text" id="usuario" name="usuario" class="input-field" placeholder="Digite seu usuário" required autocomplete="username">
+                <i class="fas fa-user input-icon"></i>
+                <div id="userError" class="error-message" style="display: none;">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span></span>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label for="senha" class="input-label">Senha</label>
+                <input type="password" id="senha" name="senha" class="input-field" placeholder="Digite sua senha" required autocomplete="current-password">
+                <i class="fas fa-lock input-icon"></i>
+                <i class="fas fa-eye toggle-password" id="togglePassword"></i>
+                <div id="passError" class="error-message" style="display: none;">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span></span>
+                </div>
+            </div>
+
+            {% if erro %}
+                <div class="error-message">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span>{{ erro }}</span>
+                </div>
+            {% endif %}
+
+            <button type="submit" class="auth-btn" id="submitBtn">
+                Entrar
+                <div class="loader" id="loader"></div>
+            </button>
+        </form>
+
+        <div class="auth-footer">
+            <p>Copyright © 2025 - Prado Tech Technology</p>
+            <p>Versão: <span class="version">1.1.2.0</span></p>
+            <p><a href="#" class="footer-link">Política de Privacidade</a> | <a href="#" class="footer-link">Termos de Uso</a></p>
+        </div>
+    </div>
+
+    <script>
+        // Efeito de partículas (opcional)
+        function initParticles() {
+            const canvas = document.getElementById('particles');
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            
+            const particles = [];
+            const particleCount = window.innerWidth < 768 ? 30 : 60;
+            
+            for (let i = 0; i < particleCount; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    size: Math.random() * 3 + 1,
+                    speedX: Math.random() * 0.5 - 0.25,
+                    speedY: Math.random() * 0.5 - 0.25,
+                    color: `rgba(255, 255, 255, ${Math.random() * 0.5 + 0.1})`
+                });
+            }
+            
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                for (let i = 0; i < particles.length; i++) {
+                    const p = particles[i];
+                    
+                    ctx.fillStyle = p.color;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    p.x += p.speedX;
+                    p.y += p.speedY;
+                    
+                    if (p.x < 0 || p.x > canvas.width) p.speedX *= -1;
+                    if (p.y < 0 || p.y > canvas.height) p.speedY *= -1;
+                }
+                
+                requestAnimationFrame(animate);
+            }
+            
+            animate();
+            
+            window.addEventListener('resize', () => {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            });
+        }
+
+        // Toggle password visibility
+        document.getElementById('togglePassword').addEventListener('click', function() {
+            const passwordField = document.getElementById('senha');
+            const icon = this;
+            
+            if (passwordField.type === 'password') {
+                passwordField.type = 'text';
+                icon.classList.replace('fa-eye', 'fa-eye-slash');
+            } else {
+                passwordField.type = 'password';
+                icon.classList.replace('fa-eye-slash', 'fa-eye');
+            }
+        });
+
+        // Validação em tempo real
+        document.getElementById('usuario').addEventListener('input', function() {
+            const userError = document.getElementById('userError');
+            if (this.value.length < 3) {
+                userError.style.display = 'flex';
+                userError.querySelector('span').textContent = 'Usuário deve ter pelo menos 3 caracteres';
+            } else {
+                userError.style.display = 'none';
+            }
+        });
+
+        document.getElementById('senha').addEventListener('input', function() {
+            const passError = document.getElementById('passError');
+            if (this.value.length < 6) {
+                passError.style.display = 'flex';
+                passError.querySelector('span').textContent = 'Senha deve ter pelo menos 6 caracteres';
+            } else {
+                passError.style.display = 'none';
+            }
+        });
+
+        // Form submission
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            const submitBtn = document.getElementById('submitBtn');
+            const loader = document.getElementById('loader');
+            
+            // Mostrar loader
+            submitBtn.disabled = true;
+            loader.style.display = 'block';
+            submitBtn.innerHTML = 'Autenticando <div class="loader" id="loader"></div>';
+            
+        
+        });
+
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', function() {
+            initParticles();
+            setupSecurity();
+            
+            // Foco automático no campo de usuário
+            document.getElementById('usuario').focus();
+            
+            // Atualizar versão dinamicamente (exemplo)
+            const versionElement = document.querySelector('.version');
+            if (versionElement) {
+                const version = versionElement.textContent;
+                versionElement.textContent = version + ' (build ' + new Date().getFullYear() + ')';
+            }
+        });
+    </script>
+</body>
+</html>

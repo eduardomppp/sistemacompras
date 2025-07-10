@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logs de Acesso</title>
+    <style>
+        /* Reset básico */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .logs-container {
+            background-color: #ffffff;
+            border-radius: 10px;
+            padding: 40px;
+            box-shadow: 0 10px 20px rgb(0, 47, 100);
+            width: 90%;
+            max-width: 1000px;
+            max-height: 80vh;
+            overflow-y: auto;
+            border-left: 5px solid #022855; /* Azul escuro */
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #022855; /* Azul escuro */
+            font-size: 26px;
+            font-weight: 600;
+        }
+
+        .log-item {
+            padding: 15px;
+            border-bottom: 1px solid #f1f1f1;
+            transition: background-color 0.3s ease;
+            font-size: 16px;
+            color: #555;
+            line-height: 1.5;
+        }
+
+        .log-item:hover {
+            background-color: #ecf0f1; /* Cor mais suave no hover */
+        }
+
+        .log-item:last-child {
+            border-bottom: none;
+        }
+
+        p {
+            text-align: center;
+            color: #888;
+            font-size: 18px;
+        }
+
+        .filters {
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .filters input, .filters button {
+            padding: 10px 15px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .filters button {
+            background-color: #022855; /* Azul escuro */
+            color: white;
+            cursor: pointer;
+            border: none;
+            transition: background-color 0.3s;
+        }
+
+        .filters button:hover {
+            background-color: #016dda; /* Azul mais escuro para hover */
+        }
+
+        .filters input:focus, .filters button:focus {
+            outline: none;
+            border-color: #016dda;
+        }
+
+        /* Estilo responsivo */
+        @media (max-width: 768px) {
+            .logs-container {
+                width: 95%;
+                padding: 20px;
+            }
+
+            h2 {
+                font-size: 22px;
+            }
+
+            .log-item {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="logs-container">
+        <h2>Logs de Acesso</h2>
+
+        <!-- Filtros para usuário e data -->
+        <div class="filters">
+            <input type="text" id="userFilter" placeholder="Filtrar por usuário" />
+            <input type="date" id="dateFilter" />
+            <button onclick="applyFilters()">Filtrar</button>
+            <button onclick="downloadCSV()">Baixar CSV</button>
+        </div>
+
+        <div id="logsContainer">
+            {% if logs %}
+                <div>
+                    {% for log in logs %}
+                        <div class="log-item">
+                            {{ log }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p>Nenhum log encontrado.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        // Função para aplicar os filtros
+        function applyFilters() {
+            const userFilter = document.getElementById('userFilter').value.toLowerCase();
+            const dateFilter = document.getElementById('dateFilter').value;
+            
+            // Filtrar os logs com base no usuário e data
+            const logs = document.querySelectorAll('.log-item');
+            logs.forEach(log => {
+                const user = log.textContent.toLowerCase(); // Supondo que o usuário esteja no log
+                const date = log.textContent; // Supondo que a data esteja no log
+
+                // Verifique se o log contém os filtros
+                if ((user.includes(userFilter) || userFilter === '') && (date.includes(dateFilter) || dateFilter === '')) {
+                    log.style.display = 'block';
+                } else {
+                    log.style.display = 'none';
+                }
+            });
+        }
+
+        // Função para baixar os dados como CSV
+        function downloadCSV() {
+            const logs = document.querySelectorAll('.log-item');
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "Usuario,Data,Descrição\n"; // Cabeçalho CSV, ajustado conforme sua necessidade
+
+            logs.forEach(log => {
+                // Aqui você deve separar os dados do log, por exemplo:
+                const user = log.textContent.split(' ')[0];  // Supondo que o usuário esteja no início do log
+                const date = log.textContent.split(' ')[1];  // Supondo que a data venha após o usuário
+                const description = log.textContent.split(' ').slice(2).join(' '); // O restante é a descrição do log
+                csvContent += `${user},${date},${description}\n`;
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement('a');
+            link.setAttribute('href', encodedUri);
+            link.setAttribute('download', 'logs.csv');
+            document.body.appendChild(link);
+            link.click();
+        }
+
+// Função para bloquear teclas de atalho
+function bloquearTeclas(event) {
+  const bloqueadas = [
+    123,  // F12
+    67,   // C (Ctrl + C ou Ctrl + Shift + C)
+  ];
+
+  // Impede teclas específicas ou combinações perigosas
+  if (
+    bloqueadas.includes(event.keyCode) || // Verifica tecla F12 ou C
+    (event.ctrlKey && (event.keyCode === 67)) || // Verifica Ctrl + C
+    (event.ctrlKey && event.shiftKey && (event.keyCode === 67)) // Verifica Ctrl + Shift + C
+  ) {
+    event.preventDefault();  // Impede a ação padrão (copiar, abrir dev tools)
+    mostrarMensagem();       // Mostra a mensagem de bloqueio
+  }
+}
+
+// Função para mostrar uma mensagem de bloqueio personalizada
+function mostrarMensagem() {
+  const alertMessage = document.createElement('div');
+  alertMessage.id = 'alert-message';
+  alertMessage.innerHTML = `
+    <div style="position: fixed; top: 0; left: 0; width: 100%; background: red; color: white; 
+    text-align: center; z-index: 9999; padding: 10px; font-size: 18px;">
+      ⚠️ Ação Proibida Detectada!
+    </div>
+  `;
+  
+  // Garante que o DOM contenha apenas uma mensagem ao mesmo tempo
+  if (!document.getElementById('alert-message')) {
+    document.body.appendChild(alertMessage);
+    setTimeout(() => {
+      document.body.removeChild(alertMessage);
+    }, 5000); // Mensagem visível por 5 segundos
+  }
+}
+
+// Bloquear menu de contexto (botão direito do mouse)
+window.oncontextmenu = function (event) {
+  event.preventDefault();
+  mostrarMensagem();
+};
+
+// Medidas suaves contra DevTools (não fechar automaticamente)
+(function () {
+  let devToolsOpen = false;
+  const threshold = 160;
+
+  setInterval(() => {
+    const width = window.outerWidth - window.innerWidth;
+    const height = window.outerHeight - window.innerHeight;
+
+    // Verifica mudanças significativas na largura/altura da janela
+    if (width > threshold || height > threshold) {
+      if (!devToolsOpen) {
+        devToolsOpen = true;
+        console.log("⚠️ Ferramentas de Desenvolvedor Detectadas!");
+        // Opcional: apenas logar ou alertar o usuário sem fechar a página
+        //alert("⚠️ Ferramentas de Desenvolvedor Detectadas!");
+      }
+    }
+  }, 500); // Intervalo de verificação
+})();
+
+// Bloquear print
+function bloquearPrint() {
+  const overlay = document.createElement('div');
+  overlay.style.position = 'absolute';
+  overlay.style.top = 0;
+  overlay.style.left = 0;
+  overlay.style.width = '100%';
+  overlay.style.height = '100%';
+  overlay.style.backgroundColor = 'rgba(255, 255, 255, 0.8)';
+  overlay.style.zIndex = 9999;
+  overlay.style.pointerEvents = 'none'; // permite interagir com o conteúdo por baixo
+
+  document.body.appendChild(overlay);
+
+  // Remover após um tempo, por exemplo, 5 segundos
+  setTimeout(() => {
+    document.body.removeChild(overlay);
+  }, 5000);
+}
+
+// Adiciona o ouvinte de evento para detectar pressionamento de teclas
+document.addEventListener('keydown', bloquearTeclas);
+
+
+    </script>
+
+</body>
+</html>

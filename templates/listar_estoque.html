@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estoque de Materiais</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <style>
+        :root {
+            --primary-color: #00458a;
+            --secondary-color: #003477;
+            --background-color: #f7f9fc;
+            --menu-bg: #000000;
+            --menu-hover-bg: rgba(0, 62, 233, 0.87);
+            --button-bg: #ff4d4d;
+            --button-hover-bg: #ff1a1a;
+            --text-color: #ffffff;
+            --hover-effect: all 0.3s ease;
+            --active-color: #28a745;
+            --pcp-color: #ffc107;
+            --filter-bg: #e9ecef;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--background-color);
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .filters-container {
+            background-color: var(--filter-bg);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            min-width: 200px;
+        }
+
+        .filter-group label {
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: var(--primary-color);
+        }
+
+        .filter-group input, 
+        .filter-group select {
+            padding: 8px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .filter-buttons {
+            display: flex;
+            gap: 10px;
+            margin-left: auto;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: var(--hover-effect);
+        }
+
+        .filter-btn:hover {
+            background-color: var(--secondary-color);
+        }
+
+        .filter-btn.reset {
+            background-color: #6c757d;
+        }
+
+        .filter-btn.reset:hover {
+            background-color: #5a6268;
+        }
+
+        .table-container {
+            background-color: #ffffff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 800px;
+        }
+
+        th, td {
+            border: 1px solid #e0e0e0;
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: var(--primary-color);
+            color: var(--text-color);
+            font-weight: 500;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        tr.hidden {
+            display: none;
+        }
+
+        .error {
+            color: var(--button-bg);
+            font-weight: 500;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .success {
+            color: #28a745;
+            font-weight: 500;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        a.pcp-link, a.requisitar-link {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 500;
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        .status-tag {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 500;
+            color: white;
+        }
+
+        .status-active {
+            background-color: var(--active-color);
+        }
+
+        .status-pcp {
+            background-color: var(--pcp-color);
+            color: #212529;
+        }
+
+        .status-none {
+            background-color: #6c757d;
+        }
+
+        a.pcp-link:hover, a.requisitar-link:hover {
+            color: var(--secondary-color);
+            text-decoration: underline;
+        }
+
+        .requisitar-btn {
+            display: inline-block;
+            background-color: var(--primary-color);
+            color: var(--text-color);
+            padding: 8px 12px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: var(--hover-effect);
+        }
+
+        .requisitar-btn:hover {
+            background-color: var(--secondary-color);
+        }
+
+        .requisitar-btn.disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .back-link:hover {
+            color: var(--secondary-color);
+        }
+
+        .quick-links {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .quick-link {
+            padding: 8px 16px;
+            background-color: var(--primary-color);
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: var(--hover-effect);
+        }
+
+        .quick-link:hover {
+            background-color: var(--secondary-color);
+        }
+
+        .results-info {
+            margin-bottom: 15px;
+            font-style: italic;
+            color: #6c757d;
+            text-align: right;
+        }
+
+        @media (max-width: 768px) {
+            .filters-container {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .filter-buttons {
+                margin-left: 0;
+                justify-content: flex-end;
+            }
+            
+            table {
+                font-size: 0.9rem;
+            }
+
+            th, td {
+                padding: 8px;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            .quick-links {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Estoque de Materiais</h1>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <p class="{{ category }}">{{ message }}</p>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="quick-links">
+        <a href="{{ url_for('routes_bp.listar_pcp') }}" class="quick-link">Ver PCM</a>
+        <a href="{{ url_for('routes_bp.listar_ativos') }}" class="quick-link">Ver PCP</a>
+    </div>
+    
+    <div class="filters-container">
+        <div class="filter-group">
+            <label for="codigo-filter">Código:</label>
+            <input type="text" id="codigo-filter" placeholder="Filtrar por código">
+        </div>
+        
+        <div class="filter-group">
+            <label for="descricao-filter">Descrição:</label>
+            <input type="text" id="descricao-filter" placeholder="Filtrar por descrição">
+        </div>
+        
+        <div class="filter-group">
+            <label for="empresa-filter">Empresa:</label>
+            <select id="empresa-filter">
+                <option value="">Todas</option>
+                {% set empresas = [] %}
+                {% for item in estoques %}
+                    {% if item.material.Empresa and item.material.Empresa not in empresas %}
+                        {% set _ = empresas.append(item.material.Empresa) %}
+                        <option value="{{ item.material.Empresa }}">{{ item.material.Empresa }}</option>
+                    {% endif %}
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="filter-group">
+            <label for="status-filter">Status:</label>
+            <select id="status-filter">
+                <option value="">Todos</option>
+                <option value="PCP">PCP</option>
+                <option value="PCM">PCM</option>
+                <option value="Inativo">Inativo</option>
+            </select>
+        </div>
+        
+        <div class="filter-group">
+            <label for="estoque-filter">Estoque:</label>
+            <select id="estoque-filter">
+                <option value="">Todos</option>
+                <option value="disponivel">Disponível</option>
+                <option value="indisponivel">Indisponível</option>
+            </select>
+        </div>
+        
+        <div class="filter-buttons">
+            <button class="filter-btn" id="apply-filters">
+                <i class="fas fa-filter"></i> Aplicar
+            </button>
+            <button class="filter-btn reset" id="reset-filters">
+                <i class="fas fa-redo"></i> Limpar
+            </button>
+        </div>
+    </div>
+    
+    <div class="results-info" id="results-info">
+        Mostrando todos os {{ estoques|length }} itens
+    </div>
+    
+    <div class="table-container">
+        <table id="estoque-table">
+            <thead>
+                <tr>
+                    <th>Cód. Material</th>
+                    <th>Descrição</th>
+                    <th>Empresa</th>
+                    <th>Aplicação</th>
+                    <th>Quantidade em Estoque</th>
+                    <th>Fornecedor</th>
+                    <th>Número NF</th>
+                    <th>Status</th>
+                    <th>Ação</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in estoques %}
+                    <tr data-codigo="{{ item.material.CodMaterial }}" 
+                        data-descricao="{{ item.material.DescricaoMaterial|lower }}"
+                        data-empresa="{{ item.material.Empresa }}"
+                        data-status="{% if item.material.Ativo %}PCP{% elif item.material.FatorConsumo and item.material.FatorConsumo > 0 %}PCM{% else %}Inativo{% endif %}"
+                        data-estoque="{% if item.material.QuantidadeEstoque > 0 %}disponivel{% else %}indisponivel{% endif %}">
+                        <td>{{ item.material.CodMaterial }}</td>
+                        <td>{{ item.material.DescricaoMaterial }}</td>
+                        <td>{{ item.material.Empresa }}</td>
+                        <td>{{ item.material.Aplicacao }}</td>
+                        <td>{{ item.material.QuantidadeEstoque }}</td>
+                        <td>{{ item.material.Fornecedor or 'N/A' }}</td>
+                        <td>{{ item.material.NumeroNF or 'N/A' }}</td>
+                        <td>
+                            <a href="{{ url_for('routes_bp.pcp_material', cod=item.material.CodMaterial) }}" class="pcp-link">
+                                {% if item.material.Ativo %}
+                                    <span class="status-tag status-active">PCP</span>
+                                {% elif item.material.FatorConsumo and item.material.FatorConsumo > 0 %}
+                                    <span class="status-tag status-pcp">PCM</span>
+                                {% else %}
+                                    <span class="status-tag status-none">Inativo</span>
+                                {% endif %}
+                            </a>
+                        </td>
+                        <td>
+                            {% if item.material.QuantidadeEstoque > 0 %}
+                                <a href="{% if item.preenchimento_id %}
+                                            {{ url_for('routes_bp.requisitar_material', preenchimento_id=item.preenchimento_id) }}
+                                         {% else %}
+                                            {{ url_for('routes_bp.requisitar_manual', cod_material=item.material.CodMaterial) }}
+                                         {% endif %}" 
+                                   class="requisitar-btn">
+                                    Requisitar
+                                </a>
+                            {% else %}
+                                <span class="requisitar-btn disabled">Indisponível</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="9">Nenhum material cadastrado.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <a href="{{ url_for('routes_bp.menu_master') }}" class="back-link">Voltar ao Menu</a>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const codigoFilter = document.getElementById('codigo-filter');
+            const descricaoFilter = document.getElementById('descricao-filter');
+            const empresaFilter = document.getElementById('empresa-filter');
+            const statusFilter = document.getElementById('status-filter');
+            const estoqueFilter = document.getElementById('estoque-filter');
+            const applyFiltersBtn = document.getElementById('apply-filters');
+            const resetFiltersBtn = document.getElementById('reset-filters');
+            const resultsInfo = document.getElementById('results-info');
+            const tableRows = document.querySelectorAll('#estoque-table tbody tr');
+            
+            // Armazena todas as linhas originais para reset
+            const originalRows = Array.from(tableRows);
+            
+            function applyFilters() {
+                const codigoValue = codigoFilter.value.trim().toLowerCase();
+                const descricaoValue = descricaoFilter.value.trim().toLowerCase();
+                const empresaValue = empresaFilter.value;
+                const statusValue = statusFilter.value;
+                const estoqueValue = estoqueFilter.value;
+                
+                let visibleCount = 0;
+                
+                tableRows.forEach(row => {
+                    const codigo = row.getAttribute('data-codigo').toLowerCase();
+                    const descricao = row.getAttribute('data-descricao');
+                    const empresa = row.getAttribute('data-empresa');
+                    const status = row.getAttribute('data-status');
+                    const estoque = row.getAttribute('data-estoque');
+                    
+                    const codigoMatch = codigoValue === '' || codigo.includes(codigoValue);
+                    const descricaoMatch = descricaoValue === '' || descricao.includes(descricaoValue);
+                    const empresaMatch = empresaValue === '' || empresa === empresaValue;
+                    const statusMatch = statusValue === '' || status === statusValue;
+                    const estoqueMatch = estoqueValue === '' || estoque === estoqueValue;
+                    
+                    if (codigoMatch && descricaoMatch && empresaMatch && statusMatch && estoqueMatch) {
+                        row.classList.remove('hidden');
+                        visibleCount++;
+                    } else {
+                        row.classList.add('hidden');
+                    }
+                });
+                
+                // Atualiza contador de resultados
+                updateResultsInfo(visibleCount);
+            }
+            
+            function updateResultsInfo(count) {
+                const total = originalRows.length;
+                if (count === total) {
+                    resultsInfo.textContent = `Mostrando todos os ${total} itens`;
+                } else {
+                    resultsInfo.textContent = `Mostrando ${count} de ${total} itens`;
+                }
+            }
+            
+            function resetFilters() {
+                codigoFilter.value = '';
+                descricaoFilter.value = '';
+                empresaFilter.value = '';
+                statusFilter.value = '';
+                estoqueFilter.value = '';
+                
+                tableRows.forEach(row => {
+                    row.classList.remove('hidden');
+                });
+                
+                updateResultsInfo(originalRows.length);
+            }
+            
+            // Event listeners
+            applyFiltersBtn.addEventListener('click', applyFilters);
+            resetFiltersBtn.addEventListener('click', resetFilters);
+            
+            // Aplicar filtro ao pressionar Enter nos campos de texto
+            [codigoFilter, descricaoFilter].forEach(input => {
+                input.addEventListener('keyup', function(e) {
+                    if (e.key === 'Enter') {
+                        applyFilters();
+                    }
+                });
+            });
+            
+            // Aplicar filtro automaticamente ao mudar selects
+            [empresaFilter, statusFilter, estoqueFilter].forEach(select => {
+                select.addEventListener('change', applyFilters);
+            });
+            
+            // Inicializa o contador
+            updateResultsInfo(originalRows.length);
+        });
+    </script>
+</body>
+</html>

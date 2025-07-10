@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de Fornecedores</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #ffffff;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+        .search-container {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .search-input {
+            padding: 10px;
+            width: 300px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin: 0 10px;
+            font-size: 14px;
+        }
+        .table-container {
+            max-width: 100%;
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+            white-space: nowrap;
+        }
+        th {
+            background-color: #022855;
+            color: white;
+            text-transform: uppercase;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        tr:hover {
+            background-color: #cce7ff;
+        }
+        .export-button {
+            display: block;
+            margin: 20px auto;
+            padding: 10px 20px;
+            background-color: #022855;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-align: center;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        .export-button:hover {
+            background-color: #022855;
+        }
+        .delete-btn {
+            background-color: #ff4d4d;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .delete-btn:hover {
+            background-color: #cc0000;
+        }
+    </style>
+</head>
+<body>
+    <div class="search-container">
+        <input type="text" id="searchNameCNPJ" class="search-input" placeholder="Pesquisar por Nome ou CNPJ" onkeyup="filterTable()">
+        <input type="text" id="searchMaterial" class="search-input" placeholder="Pesquisar por Materiais" onkeyup="filterTable()">
+    </div>
+    <button class="export-button" onclick="exportCSV()">Exportar para CSV</button>
+    <div class="table-container">
+        <table id="fornecedores-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nome Fantasia</th>
+                    <th>CNPJ</th>
+                    <th>Telefone</th>
+                    <th>Email</th>
+                    <th>Endereço</th>
+                    <th>Bairro</th>
+                    <th>Cidade</th>
+                    <th>Estado</th>
+                    <th>Contato</th>
+                    <th>Materiais</th>
+                    <th>Ação</th>
+                </tr>
+            </thead>
+           <tbody>
+    {% for fornecedor in fornecedores %}
+    <tr data-id="{{ fornecedor.id }}">
+        <td>{{ fornecedor.id }}</td>
+        <td class="nome-fantasia">{{ fornecedor.nome_fantasia }}</td>
+        <td class="cnpj">{{ fornecedor.cnpj_formatado }}</td>
+        <td>{{ fornecedor.telefone }}</td>
+        <td>{{ fornecedor.email }}</td>
+        <td>{{ fornecedor.endereco | default('N/A', true) }}</td>
+        <td>{{ fornecedor.bairro | default('N/A', true) }}</td>
+        <td>{{ fornecedor.cidade | default('N/A', true) }}</td>
+        <td>{{ fornecedor.estado | default('N/A', true) }}</td>
+        <td>{{ fornecedor.contato | default('N/A', true) }}</td>
+        <td class="materiais">{{ fornecedor.materiais | default('N/A', true) }}</td>
+        <td><button class="delete-btn" onclick="deleteRow(this)">Excluir</button></td>
+    </tr>
+    {% endfor %}
+</tbody>
+        </table>
+    </div>
+    <script>
+        function exportCSV() {
+            const table = document.getElementById('fornecedores-table');
+            let csv = [];
+            for (let row of table.rows) {
+                let cols = [];
+                for (let cell of row.cells) {
+                    cols.push(cell.innerText);
+                }
+                csv.push(cols.join(','));
+            }
+            const csvContent = "data:text/csv;charset=utf-8," + csv.join('\n');
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement('a');
+            link.setAttribute('href', encodedUri);
+            link.setAttribute('download', 'fornecedores.csv');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function filterTable() {
+            const nameCNPJFilter = document.getElementById('searchNameCNPJ').value.toLowerCase();
+            const materialFilter = document.getElementById('searchMaterial').value.toLowerCase();
+            const table = document.getElementById('fornecedores-table');
+            const rows = table.getElementsByTagName('tr');
+            for (let i = 1; i < rows.length; i++) {
+                const cells = rows[i].getElementsByTagName('td');
+                let matchNameCNPJ = false;
+                let matchMaterial = false;
+                if (cells.length > 0) {
+                    const name = cells[1].innerText.toLowerCase();
+                    const cnpj = cells[2].innerText.toLowerCase();
+                    const material = cells[10].innerText.toLowerCase();
+                    if (name.includes(nameCNPJFilter) || cnpj.includes(nameCNPJFilter)) {
+                        matchNameCNPJ = true;
+                    }
+                    if (material.includes(materialFilter)) {
+                        matchMaterial = true;
+                    }
+                }
+                rows[i].style.display = (matchNameCNPJ && matchMaterial) ? '' : 'none';
+            }
+        }
+
+        function deleteRow(button) {
+    if (!confirm('Tem certeza que deseja excluir este fornecedor?')) {
+        return;
+    }
+    
+    const row = button.parentNode.parentNode;
+    const supplierId = row.getAttribute('data-id');
+    fetch('/delete_supplier', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ id: supplierId })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            row.parentNode.removeChild(row);
+            alert('Fornecedor excluído com sucesso!');
+        } else {
+            alert('Erro ao excluir o fornecedor: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        alert('Erro ao excluir o fornecedor.');
+    });
+}
+    </script>
+</body>
+</html>

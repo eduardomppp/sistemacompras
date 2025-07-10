@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle Ativos</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <style>
+        :root {
+            --primary-color: #00458a;
+            --secondary-color: #016dda;
+            --background-color: #f7f9fc;
+            --text-color: #333;
+            --text-light: #666;
+            --border-color: #e0e0e0;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+            --info-color: #17a2b8;
+            --hover-effect: all 0.3s ease;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--background-color);
+            margin: 0;
+            padding: 20px;
+            color: var(--text-color);
+        }
+
+        h1 {
+            color: var(--primary-color);
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .quick-links {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .quick-link {
+            padding: 10px 16px;
+            background-color: var(--primary-color);
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: var(--hover-effect);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.95rem;
+        }
+
+        .quick-link:hover {
+            background-color: var(--secondary-color);
+            transform: translateY(-2px);
+        }
+
+        .filter-container {
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 10px;
+            flex: 1;
+            min-width: 250px;
+        }
+
+        .filter-container input {
+            flex: 1;
+            padding: 10px 12px;
+            font-size: 0.95rem;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            min-width: 120px;
+        }
+
+        .export-button {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 10px 20px;
+            font-size: 0.95rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: var(--hover-effect);
+        }
+
+        .export-button:hover {
+            background-color: var(--secondary-color);
+        }
+
+        .table-container {
+            background-color: #ffffff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 800px;
+        }
+
+        th, td {
+            border: 1px solid var(--border-color);
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: 500;
+            position: sticky;
+            top: 0;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        tr:hover {
+            background-color: #f0f7ff;
+        }
+
+        .message {
+            padding: 10px 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .error {
+            background-color: #f8d7da;
+            color: var(--danger-color);
+        }
+
+        .success {
+            background-color: #d4edda;
+            color: var(--success-color);
+        }
+
+        .warning {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+
+        .action-link {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 500;
+            padding: 6px 10px;
+            border-radius: 4px;
+            transition: var(--hover-effect);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .action-link:hover {
+            background-color: #f0f7ff;
+            text-decoration: none;
+        }
+
+        .status-tag {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-weight: 500;
+            font-size: 0.85rem;
+            color: white;
+            text-align: center;
+            min-width: 70px;
+        }
+
+        .status-active {
+            background-color: var(--success-color);
+        }
+
+        .status-pcm {
+            background-color: var(--warning-color);
+            color: #212529;
+        }
+
+        .status-inactive {
+            background-color: var(--danger-color);
+        }
+
+        .status-info {
+            background-color: var(--info-color);
+        }
+
+        .dias-estoque-cell {
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .dias-critical {
+            background-color: #ffdddd;
+            color: var(--danger-color);
+        }
+
+        .dias-warning {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+
+        .dias-good {
+            background-color: #d4edda;
+            color: var(--success-color);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 20px;
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 500;
+            padding: 8px 12px;
+            border-radius: 5px;
+            transition: var(--hover-effect);
+        }
+
+        .back-link:hover {
+            color: var(--secondary-color);
+            background-color: #f0f7ff;
+        }
+
+        .empty-row {
+            text-align: center;
+            color: var(--text-light);
+            font-style: italic;
+        }
+
+        @media (max-width: 768px) {
+            table {
+                font-size: 0.9rem;
+            }
+
+            th, td {
+                padding: 8px;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            .filter-container {
+                flex-direction: column;
+            }
+
+            .filter-group {
+                width: 100%;
+            }
+
+            .quick-links {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .quick-link, .export-button {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>CONTROLE DE ATIVOS</h1>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="message {{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="quick-links">
+        <a href="{{ url_for('routes_bp.listar_estoque') }}" class="quick-link">
+            <i class="fas fa-arrow-left"></i> Voltar para Estoque
+        </a>
+        <a href="{{ url_for('routes_bp.listar_pcp') }}" class="quick-link">
+            <i class="fas fa-project-diagram"></i> Ver PCP
+        </a>
+    </div>
+
+    <div class="filter-container">
+        <div class="filter-group">
+            <input type="text" id="filterCodMaterial" placeholder="Buscar por Código">
+            <input type="text" id="filterDescricao" placeholder="Buscar por Descrição">
+        </div>
+        <button class="export-button" id="exportBtn">
+            <i class="fas fa-file-excel"></i> Exportar para Excel
+        </button>
+    </div>
+
+    <div class="table-container">
+        <table id="tabela_materiais">
+            <thead>
+                <tr>
+                    <th>Código</th>
+                    <th>Descrição</th>
+                    <th>Empresa</th>
+                    <th>Aplicação</th>
+                    <th>Estoque</th>
+                    <th>Fator Consumo</th>
+                    <th>Dias Estoque</th>
+                    <th>Status</th>
+                    <th>Ação</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for material in materiais %}
+                    <tr class="material-row">
+                        <td class="cod-material">{{ material.CodMaterial }}</td>
+                        <td class="descricao-material">{{ material.DescricaoMaterial }}</td>
+                        <td>{{ material.Empresa }}</td>
+                        <td>{{ material.Aplicacao }}</td>
+                        <td>{{ material.QuantidadeEstoque }}</td>
+                        <td>{{ "%.2f"|format(material.FatorConsumo) if material.FatorConsumo else '0.00' }}</td>
+                        <td class="dias-estoque-cell dias-estoque" data-valor="{{ material.dias_estoque|round(2) }}">
+                            {{ "%.2f"|format(material.dias_estoque) if material.dias_estoque else '0.00' }}
+                        </td>
+                        <td>
+                            {% if material.Ativo %}
+                                <span class="status-tag status-active">Ativo</span>
+                            {% elif material.FatorConsumo and material.FatorConsumo > 0 %}
+                                <span class="status-tag status-pcm">PCM</span>
+                            {% else %}
+                                <span class="status-tag status-inactive">Inativo</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{{ url_for('routes_bp.pcp_material', cod=material.CodMaterial) }}" class="action-link" title="Editar">
+                                <i class="fas fa-edit"></i> <span class="action-text">Editar</span>
+                            </a>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="9" class="empty-row">Nenhum ativo cadastrado.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <a href="{{ url_for('routes_bp.menu_master') }}" class="back-link">
+        <i class="fas fa-home"></i> Voltar ao Menu
+    </a>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+    <script>
+        // Função para exportar a tabela para Excel
+        document.getElementById("exportBtn").addEventListener("click", function() {
+            var wb = XLSX.utils.table_to_book(document.getElementById("tabela_materiais"), {sheet: "Ativos"});
+            XLSX.writeFile(wb, "controle_ativos.xlsx");
+        });
+
+        // Função para aplicar cores nas células de "Dias de Estoque"
+        function aplicarCoresDiasEstoque() {
+            const celulas = document.querySelectorAll('.dias-estoque');
+            
+            celulas.forEach(celula => {
+                const dias = parseFloat(celula.dataset.valor) || 0;
+                
+                // Remove todas as classes de cor
+                celula.classList.remove('dias-critical', 'dias-warning', 'dias-good');
+                
+                // Aplica a classe apropriada
+                if (dias <= 10) {
+                    celula.classList.add('dias-critical');
+                } else if (dias <= 20) {
+                    celula.classList.add('dias-warning');
+                } else {
+                    celula.classList.add('dias-good');
+                }
+            });
+        }
+
+        // Função para filtrar a tabela
+        function filtrarTabela() {
+            const filtroCod = document.getElementById('filterCodMaterial').value.toLowerCase();
+            const filtroDesc = document.getElementById('filterDescricao').value.toLowerCase();
+            const linhas = document.querySelectorAll('.material-row');
+
+            linhas.forEach(linha => {
+                const cod = linha.querySelector('.cod-material').textContent.toLowerCase();
+                const desc = linha.querySelector('.descricao-material').textContent.toLowerCase();
+                
+                if (cod.includes(filtroCod) && desc.includes(filtroDesc)) {
+                    linha.style.display = '';
+                } else {
+                    linha.style.display = 'none';
+                }
+            });
+        }
+
+        // Função para ordenar a tabela por dias de estoque
+        function ordenarPorDiasEstoque() {
+            const tabela = document.getElementById('tabela_materiais');
+            const tbody = tabela.querySelector('tbody');
+            const linhas = Array.from(tbody.querySelectorAll('tr:not(.empty-row)'));
+
+            linhas.sort((a, b) => {
+                const diasA = parseFloat(a.querySelector('.dias-estoque').dataset.valor) || 0;
+                const diasB = parseFloat(b.querySelector('.dias-estoque').dataset.valor) || 0;
+                return diasA - diasB;
+            });
+
+            // Reinsere as linhas ordenadas
+            linhas.forEach(linha => tbody.appendChild(linha));
+        }
+
+        // Event listeners
+        document.getElementById('filterCodMaterial').addEventListener('input', filtrarTabela);
+        document.getElementById('filterDescricao').addEventListener('input', filtrarTabela);
+
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', () => {
+            ordenarPorDiasEstoque();
+            aplicarCoresDiasEstoque();
+            
+            // Esconder texto de ações em telas pequenas
+            const actionTexts = document.querySelectorAll('.action-text');
+            function handleResize() {
+                actionTexts.forEach(text => {
+                    text.style.display = window.innerWidth < 768 ? 'none' : 'inline';
+                });
+            }
+            window.addEventListener('resize', handleResize);
+            handleResize();
+        });
+    </script>
+</body>
+</html>

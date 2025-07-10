@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Gestão de Materiais</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            200: '#b9dffe',
+                            300: '#7cc7fd',
+                            400: '#36aefa',
+                            500: '#0c94eb',
+                            600: '#0075c9',
+                            700: '#015da4',
+                            800: '#064e87',
+                            900: '#0b4270',
+                            950: '#022855',
+                        }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-in-out',
+                        'fade-in-up': 'fadeInUp 0.5s ease-out'
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' }
+                        },
+                        fadeInUp: {
+                            '0%': { opacity: '0', transform: 'translateY(20px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <!-- Font Awesome para ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+
+        .chart-container {
+            position: relative;
+            max-width: 100%;
+            height: 300px;
+        }
+
+        .card-hover {
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .progress-bar {
+            transition: width 1s ease-in-out;
+        }
+
+        .data-table tr {
+            transition: background-color 0.2s ease;
+        }
+
+        .data-table tr:hover {
+            background-color: #f8fafc;
+        }
+
+        .status-badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 9999px;
+        }
+
+        .critical-item {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Barra de Navegação Superior -->
+    <nav class="bg-primary-950 text-white p-4 shadow-md">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-4">
+                <i class="fas fa-warehouse text-2xl"></i>
+                <h1 class="text-xl font-bold">Gestão de Materiais</h1>
+            </div>
+            <div class="flex items-center space-x-6">
+                <div class="hidden md:flex items-center space-x-4">
+                    <a href="#" class="text-white hover:text-primary-200 transition-colors">
+                        <i class="fas fa-tachometer-alt mr-2"></i> Dashboard
+                    </a>
+                    <a href="{{ url_for('routes_bp.listar_materiais') }}" class="text-white hover:text-primary-200 transition-colors">
+                        <i class="fas fa-boxes mr-2"></i> Materiais
+                    </a>
+                    <a href="{{ url_for('routes_bp.listar_requisicoes') }}" class="text-white hover:text-primary-200 transition-colors">
+                        <i class="fas fa-clipboard-list mr-2"></i> Requisições
+                    </a>
+                    <a href="{{ url_for('routes_bp.auditoria_solicitacoes') }}" class="text-white hover:text-primary-200 transition-colors">
+                        <i class="fas fa-chart-line mr-2"></i> Relatórios
+                    </a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button class="text-white relative">
+                        <i class="fas fa-bell text-xl"></i>
+                        <span class="absolute -top-1 -right-1 bg-red-500 text-xs rounded-full h-5 w-5 flex items-center justify-center animate-pulse">3</span>
+                    </button>
+                    <div class="flex items-center space-x-2">
+                        <div class="h-8 w-8 rounded-full bg-primary-500 flex items-center justify-center">
+                            {{ session['usuario'][0] | upper }}
+                        </div>
+                        <span>{{ session['usuario'] }}</span>
+                        <a href="{{ url_for('routes_bp.logout') }}" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded text-sm flex items-center">
+                            <i class="fas fa-sign-out-alt mr-1"></i> Sair
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Conteúdo Principal -->
+    <div class="container mx-auto p-6">
+        <!-- Cabeçalho e Filtros -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+            <div>
+                <h2 class="text-2xl font-bold text-gray-800">Visão Geral</h2>
+                <p class="text-gray-600">Dados atualizados em tempo real</p>
+            </div>
+            <div class="flex flex-wrap gap-2">
+                <select class="bg-white border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500">
+                    <option>Período: Últimos 30 dias</option>
+                    <option>Últimos 7 dias</option>
+                    <option>Últimos 90 dias</option>
+                </select>
+                <select class="bg-white border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500">
+                    <option>Filtrar por: Todos</option>
+                    <option>Ativos</option>
+                    <option>Inativos</option>
+                </select>
+                <button class="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg flex items-center">
+                    <i class="fas fa-filter mr-2"></i> Aplicar
+                </button>
+            </div>
+        </div>
+
+        <!-- Cartões de Resumo -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+            <div class="bg-white rounded-xl p-6 card-hover animate-fade-in-up" style="animation-delay: 0.1s">
+                <div class="flex items-center">
+                    <div class="bg-blue-100 p-3 rounded-lg mr-4">
+                        <i class="fas fa-boxes text-2xl text-blue-600"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-600">Total de Materiais</h3>
+                        <p class="text-3xl font-bold text-gray-800" id="total-materiais">{{ total_materiais }}</p>
+                    </div>
+                </div>
+                <div class="mt-4 flex items-center text-sm text-green-600">
+                    <i class="fas fa-arrow-up mr-1"></i>
+                    <span>5% desde o último mês</span>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl p-6 card-hover animate-fade-in-up" style="animation-delay: 0.2s">
+                <div class="flex items-center">
+                    <div class="bg-red-100 p-3 rounded-lg mr-4">
+                        <i class="fas fa-exclamation-triangle text-2xl text-red-600"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-600">Estoque Crítico</h3>
+                        <p class="text-3xl font-bold text-gray-800" id="estoque-critico">{{ estoque_critico }}</p>
+                    </div>
+                </div>
+                <div class="mt-4 flex items-center text-sm text-red-600">
+                    <i class="fas fa-arrow-up mr-1"></i>
+                    <span>2 desde ontem</span>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl p-6 card-hover animate-fade-in-up" style="animation-delay: 0.3s">
+                <div class="flex items-center">
+                    <div class="bg-yellow-100 p-3 rounded-lg mr-4">
+                        <i class="fas fa-clipboard-list text-2xl text-yellow-600"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-600">Requisições Abertas</h3>
+                        <p class="text-3xl font-bold text-gray-800" id="requisicoes-abertas">{{ requisicoes_abertas }}</p>
+                    </div>
+                </div>
+                <div class="mt-4 flex items-center text-sm text-blue-600">
+                    <i class="fas fa-clock mr-1"></i>
+                    <span>3 novas hoje</span>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl p-6 card-hover animate-fade-in-up" style="animation-delay: 0.4s">
+                <div class="flex items-center">
+                    <div class="bg-green-100 p-3 rounded-lg mr-4">
+                        <i class="fas fa-warehouse text-2xl text-green-600"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-600">Total em Estoque</h3>
+                        <p class="text-3xl font-bold text-gray-800" id="total-estoque">{{ total_estoque }}</p>
+                    </div>
+                </div>
+                <div class="mt-4 flex items-center text-sm text-green-600">
+                    <i class="fas fa-arrow-up mr-1"></i>
+                    <span>12% desde o último mês</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gráficos -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            <!-- Gráfico de Estoque -->
+            <div class="bg-white rounded-xl p-6 shadow-md lg:col-span-2">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold">Estoque por Material (Top 10)</h3>
+                    <div class="flex space-x-2">
+                        <button class="bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded-lg text-sm transition-colors">Semanal</button>
+                        <button class="bg-primary-100 text-primary-700 px-3 py-1 rounded-lg text-sm transition-colors">Mensal</button>
+                        <button class="bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded-lg text-sm transition-colors">Anual</button>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="estoqueChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- Status das Requisições -->
+            <div class="bg-white rounded-xl p-6 shadow-md">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold">Status das Requisições</h3>
+                    <button class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-ellipsis-v"></i>
+                    </button>
+                </div>
+                <div class="chart-container">
+                    <canvas id="requisicoesChart"></canvas>
+                </div>
+                <div class="mt-4 grid grid-cols-2 gap-4">
+                    <div class="bg-green-50 p-3 rounded-lg">
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm font-medium">Concluídas</span>
+                            <span class="text-lg font-bold">{{ requisicoes_grafico.data[0] if requisicoes_grafico.data[0] is defined else 0 }}</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2 mt-2">
+                            {% set total_requisicoes = requisicoes_grafico.data[0] + requisicoes_grafico.data[1] if requisicoes_grafico.data[0] is defined and requisicoes_grafico.data[1] is defined and (requisicoes_grafico.data[0] + requisicoes_grafico.data[1]) > 0 else 1 %}
+                            <div class="bg-green-500 h-2 rounded-full progress-bar" 
+                                 style="width: {{ (requisicoes_grafico.data[0] / total_requisicoes * 100) if requisicoes_grafico.data[0] is defined else 0 }}%"></div>
+                        </div>
+                    </div>
+                    <div class="bg-red-50 p-3 rounded-lg">
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm font-medium">Pendentes</span>
+                            <span class="text-lg font-bold">{{ requisicoes_grafico.data[1] if requisicoes_grafico.data[1] is defined else 0 }}</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2 mt-2">
+                            {% set total_requisicoes = requisicoes_grafico.data[0] + requisicoes_grafico.data[1] if requisicoes_grafico.data[0] is defined and requisicoes_grafico.data[1] is defined and (requisicoes_grafico.data[0] + requisicoes_grafico.data[1]) > 0 else 1 %}
+                            <div class="bg-red-500 h-2 rounded-full progress-bar" 
+                                 style="width: {{ (requisicoes_grafico.data[1] / total_requisicoes * 100) if requisicoes_grafico.data[1] is defined else 0 }}%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabela e Gráfico de Consumo -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            <!-- Tabela de Últimas Requisições -->
+            <div class="bg-white rounded-xl shadow-md lg:col-span-2 overflow-hidden">
+                <div class="p-6 pb-0 flex justify-between items-center">
+                    <h3 class="text-lg font-semibold">Últimas Requisições</h3>
+                    <a href="{{ url_for('routes_bp.listar_requisicoes') }}" class="text-primary-600 hover:text-primary-800 text-sm flex items-center">
+                        Ver todas <i class="fas fa-arrow-right ml-1"></i>
+                    </a>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200 data-table">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Código</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Material</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantidade</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Solicitante</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for requisicao in ultimas_requisicoes %}
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#{{ requisicao.Requisicoes.ticket }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ requisicao.Materiais.DescricaoMaterial }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ requisicao.Requisicoes.quantidade }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ requisicao.Requisicoes.usuario }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="status-badge {{ 'bg-green-100 text-green-800' if requisicao.SolicitacoesPreenchidas.status == 'Entregue' else 'bg-yellow-100 text-yellow-800' }}">
+                                        {{ requisicao.SolicitacoesPreenchidas.status or 'Processando' }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ requisicao.Requisicoes.data_requisicao.strftime('%d/%m/%Y %H:%M') }}</td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="6" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                                    Nenhuma requisição encontrada.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Consumo Mensal -->
+            <div class="bg-white rounded-xl shadow-md p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold">Consumo Mensal</h3>
+                    <button class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-ellipsis-v"></i>
+                    </button>
+                </div>
+                <div class="chart-container">
+                    <canvas id="consumoChart"></canvas>
+                </div>
+                <div class="mt-4 grid grid-cols-2 gap-4">
+                    <div class="bg-blue-50 p-3 rounded-lg">
+                        <div class="flex items-center">
+                            <i class="fas fa-arrow-up text-blue-500 mr-2"></i>
+                            <span class="text-sm">Maior consumo</span>
+                        </div>
+                        <p class="text-lg font-bold mt-1">Julho</p>
+                        <p class="text-sm text-gray-600">320 unidades</p>
+                    </div>
+                    <div class="bg-purple-50 p-3 rounded-lg">
+                        <div class="flex items-center">
+                            <i class="fas fa-arrow-down text-purple-500 mr-2"></i>
+                            <span class="text-sm">Menor consumo</span>
+                        </div>
+                        <p class="text-lg font-bold mt-1">Fevereiro</p>
+                        <p class="text-sm text-gray-600">120 unidades</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Materiais em Estoque Crítico -->
+        <div class="bg-white rounded-xl shadow-md p-6 mb-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold">Materiais em Estoque Crítico</h3>
+                <a href="{{ url_for('routes_bp.listar_pcp') }}" class="text-primary-600 hover:text-primary-800 text-sm flex items-center">
+                    Ver todos <i class="fas fa-arrow-right ml-1"></i>
+                </a>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {% for material in materiais_criticos %}
+                <div class="border border-red-200 rounded-lg p-4 hover:bg-red-50 transition-colors critical-item">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h4 class="font-medium text-gray-900">{{ material.DescricaoMaterial }}</h4>
+                            <p class="text-sm text-gray-600">Cód: {{ material.CodMaterial }}</p>
+                        </div>
+                        <span class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full">Crítico</span>
+                    </div>
+                    <div class="mt-3">
+                        <div class="flex justify-between text-sm mb-1">
+                            <span>Estoque Atual</span>
+                            <span class="font-medium">{{ material.QuantidadeEstoque }}</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            {% set estoque_minimo = (material.FatorConsumo * 5) if material.FatorConsumo > 0 else 1 %}
+                            <div class="bg-red-600 h-2 rounded-full progress-bar" 
+                                 style="width: {{ (material.QuantidadeEstoque / estoque_minimo * 100) if material.QuantidadeEstoque is defined else 0 }}%"></div>
+                        </div>
+                        <div class="flex justify-between text-xs text-gray-500 mt-1">
+                            <span>Mín: {{ "%.2f"|format(material.FatorConsumo * 5) if material.FatorConsumo > 0 else 0 }}</span>
+                            <span>Máx: {{ "%.2f"|format(material.FatorConsumo * 30) if material.FatorConsumo > 0 else 0 }}</span>
+                        </div>
+                    </div>
+                    <a href="{{ url_for('routes_bp.solicitar_compra', cod=material.CodMaterial) }}" class="mt-3 w-full bg-red-600 hover:bg-red-700 text-white py-1 rounded-lg text-sm transition-colors flex items-center justify-center">
+                        <i class="fas fa-plus-circle mr-1"></i> Solicitar Reposição
+                    </a>
+                </div>
+                {% else %}
+                <div class="col-span-4 text-center py-8">
+                    <i class="fas fa-check-circle text-green-500 text-4xl mb-2"></i>
+                    <p class="text-gray-600">Nenhum material em estoque crítico no momento.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Script para Gráficos -->
+    <script>
+        // Gráfico de Estoque por Material
+        const estoqueCtx = document.getElementById('estoqueChart');
+        if (estoqueCtx) {
+            new Chart(estoqueCtx, {
+                type: 'bar',
+                data: {
+                    labels: {{ estoque_grafico.labels | tojson | safe }},
+                    datasets: [{
+                        label: 'Quantidade em Estoque',
+                        data: {{ estoque_grafico.data | tojson | safe }},
+                        backgroundColor: 'rgba(37, 99, 235, 0.7)',
+                        borderColor: 'rgba(37, 99, 235, 1)',
+                        borderWidth: 1,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: '#022855',
+                            titleFont: { size: 14, weight: 'bold' },
+                            bodyFont: { size: 12 },
+                            padding: 12,
+                            displayColors: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                drawBorder: false,
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            },
+                            ticks: {
+                                stepSize: 5
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Gráfico de Status das Requisições
+        const requisicoesCtx = document.getElementById('requisicoesChart');
+        if (requisicoesCtx) {
+            new Chart(requisicoesCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Concluídas', 'Pendentes'],
+                    datasets: [{
+                        data: [
+                            {{ requisicoes_grafico.data[0] if requisicoes_grafico.data[0] is defined else 0 }},
+                            {{ requisicoes_grafico.data[1] if requisicoes_grafico.data[1] is defined else 0 }}
+                        ],
+                        backgroundColor: ['rgba(34, 197, 94, 0.7)', 'rgba(239, 68, 68, 0.7)'],
+                        borderColor: ['rgba(34, 197, 94, 1)', 'rgba(239, 68, 68, 1)'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '70%',
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: '#022855',
+                            titleFont: { size: 14, weight: 'bold' },
+                            bodyFont: { size: 12 },
+                            padding: 12
+                        }
+                    }
+                }
+            });
+        }
+
+        // Gráfico de Consumo Mensal
+        const consumoCtx = document.getElementById('consumoChart');
+        if (consumoCtx) {
+            new Chart(consumoCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'],
+                    datasets: [{
+                        label: 'Consumo Mensal',
+                        data: [120, 190, 170, 210, 200, 230, 250, 240, 260, 280, 300, 320],
+                        fill: true,
+                        backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                        borderColor: 'rgba(37, 99, 235, 1)',
+                        borderWidth: 2,
+                        tension: 0.3,
+                        pointBackgroundColor: 'rgba(37, 99, 235, 1)',
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                drawBorder: false,
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Função para carregar dados do dashboard
+        async function loadDashboardData() {
+            try {
+                const response = await fetch('/dashboard/data');
+                if (!response.ok) {
+                    throw new Error('Erro ao carregar dados');
+                }
+                const data = await response.json();
+                
+                // Atualizar os cartões de resumo
+                document.querySelector('#total-materiais').textContent = data.totais.materiais;
+                document.querySelector('#estoque-critico').textContent = data.totais.estoque_critico;
+                document.querySelector('#total-estoque').textContent = data.totais.total_estoque;
+                document.querySelector('#requisicoes-abertas').textContent = data.totais.requisicoes_abertas;
+                
+                // Aqui você pode adicionar código para atualizar os gráficos
+                // Nota: Você precisará destruir os gráficos existentes e criar novos
+                // com os dados atualizados
+                
+            } catch (error) {
+                console.error('Erro ao atualizar dashboard:', error);
+            }
+        }
+
+        // Atualizar dados a cada 30 segundos
+        setInterval(loadDashboardData, 30000);
+
+        // Carregar dados inicialmente quando a página carregar
+        document.addEventListener('DOMContentLoaded', loadDashboardData);
+    </script>
+</body>
+
+</html>

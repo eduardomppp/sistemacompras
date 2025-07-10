@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>Pedido de Compra {{ pedido.numero_pedido }}</title>
+    <style>
+        /* Reset e configurações básicas */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 10px;
+            line-height: 1.4;
+            color: #333;
+            padding: 10px;
+        }
+        
+        /* Cabeçalho */
+        .header {
+            text-align: center;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #022855;
+            padding-bottom: 8px;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 16px;
+            color: #022855;
+            text-transform: uppercase;
+        }
+        .header p {
+            margin: 3px 0;
+            font-size: 11px;
+        }
+        
+        /* Informações do pedido */
+        .info-pedido {
+            width: 100%;
+            margin-bottom: 15px;
+            border-collapse: collapse;
+            font-size: 9px;
+        }
+        .info-pedido td {
+            padding: 5px;
+            border: 1px solid #ddd;
+            vertical-align: top;
+        }
+        .info-pedido .label {
+            font-weight: bold;
+            background-color: #f5f5f5;
+            width: 15%;
+            white-space: nowrap;
+        }
+        
+        /* Seção de fornecedores */
+        .fornecedor-header {
+            background-color: #f0f0f0;
+            padding: 6px;
+            margin: 15px 0 8px 0;
+            font-weight: bold;
+            border-left: 4px solid #022855;
+            font-size: 10px;
+            page-break-inside: avoid;
+        }
+        
+        /* Tabela de itens */
+        .tabela-itens {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+            font-size: 9px;
+            page-break-inside: avoid;
+        }
+        .tabela-itens th {
+            background-color: #022855;
+            color: white;
+            text-align: left;
+            padding: 5px;
+            font-weight: bold;
+        }
+        .tabela-itens td {
+            padding: 5px;
+            border: 1px solid #ddd;
+        }
+        .tabela-itens tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        
+        /* Totais */
+        .total {
+            font-weight: bold;
+            text-align: right;
+            margin-top: 10px;
+            font-size: 11px;
+            page-break-inside: avoid;
+        }
+        
+        /* Classes auxiliares */
+        .text-right {
+            text-align: right;
+        }
+        .text-center {
+            text-align: center;
+        }
+        .nowrap {
+            white-space: nowrap;
+        }
+        
+        /* Rodapé */
+        .footer {
+            margin-top: 20px;
+            padding-top: 5px;
+            border-top: 1px solid #333;
+            text-align: center;
+            font-size: 8px;
+            page-break-inside: avoid;
+        }
+        
+        /* Controle de quebra de página */
+        .page-break {
+            page-break-after: always;
+        }
+        .keep-together {
+            page-break-inside: avoid;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>PEDIDO DE COMPRA Nº {{ pedido.numero_pedido }}</h1>
+        <p>Data de Emissão: {{ pedido.data_criacao.strftime('%d/%m/%Y às %H:%M') }}</p>
+    </div>
+
+    <table class="info-pedido">
+        <tr>
+            <td class="label">Solicitante:</td>
+            <td>{{ usuario }}</td>
+            <td class="label">Forma de Pagamento:</td>
+            <td>{{ pedido.forma_pagamento }}</td>
+        </tr>
+        <tr>
+            <td class="label">Status:</td>
+            <td>{{ pedido.status }}</td>
+            <td class="label">Total de Itens:</td>
+            <td>{{ total_itens }}</td>
+        </tr>
+        {% if pedido.observacoes %}
+        <tr>
+            <td class="label">Observações:</td>
+            <td colspan="3">{{ pedido.observacoes }}</td>
+        </tr>
+        {% endif %}
+    </table>
+
+    {% for fornecedor_id, dados in materiais_por_fornecedor.items() %}
+        <div class="fornecedor-header keep-together">
+            <strong>Fornecedor:</strong> {{ dados.info.nome }} | 
+            <strong>CNPJ:</strong> {{ dados.info.cnpj }}<br>
+            <strong>Contato:</strong> {{ dados.info.telefone }} | {{ dados.info.email }}<br>
+            <strong>Endereço:</strong> {{ dados.info.endereco }}
+        </div>
+
+        <table class="tabela-itens keep-together">
+            <thead>
+                <tr>
+                    <th width="5%">Item</th>
+                    <th width="20%">Material</th>
+                    <th width="15%">Marca</th>
+                    <th width="20%">Especificação</th>
+                    <th width="10%" class="text-center">Quantidade</th>
+                    <th width="10%" class="text-right">Unitário</th>
+                    <th width="10%" class="text-right">Total</th>
+                    <th width="10%">Entrega</th>
+                    <th width="10%">Prioridade</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in dados.itens %}
+                <tr>
+                    <td class="text-center">{{ loop.index }}</td>
+                    <td>{{ item.material|truncate(30) }}</td>
+                    <td>{{ item.marca|default('N/A', true)|truncate(15) }}</td>
+                    <td>{{ item.especificacao|default('N/A', true)|truncate(30) }}</td>
+                    <td class="text-center nowrap">{{ item.quantidade }} {{ item.unidade|default('un', true) }}</td>
+                    <td class="text-right nowrap">R$ {{ "%0.2f"|format(item.valor_unitario|default(0)) }}</td>
+                    <td class="text-right nowrap">R$ {{ "%0.2f"|format(item.valor_total|default(0)) }}</td>
+                    <td>{{ item.prazo_entrega|default('N/A', true) }}</td>
+                    <td class="text-center">{{ item.prioridade|default('N/A', true) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endfor %}
+
+    <div class="total keep-together">
+        <p>Valor Total dos Itens: R$ {{ "%0.2f"|format(pedido.valor_liquido|default(0)) }}</p>
+        {% if pedido.valor_frete %}
+        <p>Frete: R$ {{ "%0.2f"|format(pedido.valor_frete) }}</p>
+        {% endif %}
+        <p>VALOR TOTAL DO PEDIDO: R$ {{ "%0.2f"|format(pedido.valor_total|default(0)) }}</p>
+    </div>
+
+    <div class="footer">
+        <p>Pedido gerado pelo Sistema de Compras em {{ pedido.data_criacao.strftime('%d/%m/%Y às %H:%M') }}</p>
+        <p>Página 1 de 1</p>
+    </div>
+</body>
+</html>

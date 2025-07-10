@@ -1,0 +1,296 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciamento de Senhas</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f4f7fc;
+            color: #333;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        h1 {
+            color: #022855;
+            margin-bottom: 20px;
+            font-size: 2em;
+        }
+
+        h2 {
+            color: #022855;
+            font-size: 1.6em;
+            margin-bottom: 20px;
+        }
+
+        form {
+            background-color: #ffffff;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+            max-width: 600px;
+            width: 100%;
+            text-align: left;
+        }
+
+        label {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 8px;
+            color: #022855;
+        }
+
+        input,
+        select,
+        button {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 12px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            font-size: 1em;
+            color: #333;
+            transition: all 0.3s ease;
+        }
+
+        input:focus,
+        select:focus {
+            border-color: #457b9d;
+            outline: none;
+        }
+
+        button {
+            background-color: #022855;
+            color: #fff;
+            font-size: 1.1em;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #457b9d;
+            transform: scale(1.05);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 40px;
+            max-width: 900px;
+            margin-bottom: 20px;
+        }
+
+        table th,
+        table td {
+            padding: 15px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+
+        table th {
+            background-color: #022855;
+            color: #ffffff;
+            font-size: 1.1em;
+        }
+
+        table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        table tr:hover {
+            background-color: #e6f0fa;
+        }
+
+        .action-button {
+            background-color: #e63946;
+            color: #fff;
+            padding: 8px 12px;
+            border: none;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+        }
+
+        .action-button:hover {
+            background-color: #d90429;
+            transform: scale(1.05);
+        }
+
+        .flash-message {
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .flash-success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .flash-error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            form {
+                padding: 15px;
+                width: 100%;
+            }
+
+            table {
+                font-size: 0.9em;
+            }
+
+            h1 {
+                font-size: 1.8em;
+            }
+
+            h2 {
+                font-size: 1.4em;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Gerenciamento de Senhas</h1>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <div class="flash-message flash-{{ category }}">{{ message }}</div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <h2>Adicionar Nova Senha</h2>
+    <form method="POST" action="{{ url_for('routes_bp.adicionar_senha') }}">
+        <label for="usuario">Usuário:</label>
+        <input type="text" id="usuario" name="usuario" required pattern="[a-zA-Z0-9._-]+"
+            title="Use letras, números, pontos, hífens ou sublinhados.">
+
+        <label for="senha">Senha:</label>
+        <input type="password" id="senha" name="senha" required minlength="6"
+            pattern="(?=.*[A-Z])(?=.*[0-9])(?=.*[\W_]).*"
+            title="A senha deve conter pelo menos 6 caracteres, uma letra maiúscula, um número e um caractere especial."
+            placeholder="Mínimo 6 caracteres">
+
+        <label for="pagina">Nível de Acesso:</label>
+        <select id="pagina" name="pagina" required onchange="togglePaginaPersonalizada()">
+            <option value="menu_master.html">Master</option>
+            <option value="menu_supervisor.html">Supervisor</option>
+            <option value="menu_comprador.html">Comprador</option>
+            <option value="menu_cadastro.html">Cadastrador</option>
+            <option value="menu_solicitante.html">Solicitante</option>
+            <option value="menu_financeiro.html">Financeiro</option>
+            <option value="menu_estoquista.html">Estoquista</option>
+            <option value="menu_auditoria.html">Auditor</option>
+          
+            
+            <option value="outro">Outro</option>
+        </select>
+
+        <label for="pagina_personalizada" id="pagina_personalizada_label" style="display:none;">Digite a página:</label>
+        <input type="text" id="pagina_personalizada" name="pagina_personalizada" style="display:none;"
+            pattern=".*\.html" title="A página deve terminar com '.html'." placeholder="Exemplo: menu_analista.html">
+
+        <label for="empresa">Empresa:</label>
+        <select id="empresa" name="empresa" required>
+            <option value="">Selecione uma empresa</option>
+            <option value="BOLT">BOLT</option>
+            <option value="FIDC">FIDC</option>
+            <option value="Ágil">Ágil</option>
+            <option value="Brasil Card">Brasil Card</option>
+            <option value="Posto Petro">Posto Petro</option>
+            <option value="Grupo Adriano Cobuccio">Grupo Adriano Cobuccio</option>
+            <option value="Cobuccio Seguros">Cobuccio Seguros</option>
+            <option value="Fazendas">Fazendas</option>
+            <option value="Cobuccio tecnologia">Cobuccio tecnologia</option>
+            <option value="Engenharia">Engenharia</option>
+           
+          
+        </select>
+
+
+        <button type="submit">Adicionar</button>
+    </form>
+
+    <h2>Lista de Senhas</h2>
+    {% if senhas %}
+    <table>
+        <thead>
+            <tr>
+                <th>Usuário</th>
+                <th>Senha</th>
+                <th>Página</th>
+                <th>Empresa</th>
+                <th>Ação</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for usuario, dados in senhas.items() %}
+            <tr>
+                <td>{{ usuario }}</td>
+                <td>{{ dados.senha }}</td>
+                <td>{{ dados.pagina }}</td>
+                <td>{{ dados.empresa }}</td>
+                <td>
+                    <form method="POST" action="{{ url_for('routes_bp.excluir_senha', usuario=usuario) }}">
+                        <button class="action-button" type="submit"
+                            onclick="return confirm('Tem certeza que deseja excluir a senha para {{ usuario }}?')">Excluir</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>Nenhum usuário cadastrado.</p>
+    {% endif %}
+
+    <script>
+        function togglePaginaPersonalizada() {
+            const paginaSelecionada = document.getElementById('pagina').value;
+            const paginaPersonalizadaInput = document.getElementById('pagina_personalizada');
+            const paginaPersonalizadaLabel = document.getElementById('pagina_personalizada_label');
+
+            if (paginaSelecionada === 'outro') {
+                paginaPersonalizadaInput.style.display = 'block';
+                paginaPersonalizadaLabel.style.display = 'block';
+            } else {
+                paginaPersonalizadaInput.style.display = 'none';
+                paginaPersonalizadaLabel.style.display = 'none';
+                paginaPersonalizadaInput.value = '';
+            }
+        }
+
+        // Inicializa o estado do campo página personalizada
+        togglePaginaPersonalizada();
+    </script>
+</body>
+
+</html>

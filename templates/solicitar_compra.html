@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solicitar Compra</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #022855;
+            --secondary-color: #f8f9fa;
+            --accent-color: #ff6b35;
+        }
+
+        body {
+            padding: 15px;
+            background-color: var(--secondary-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .container {
+            max-width: 100%;
+            padding: 0;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .card-header {
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: 600;
+            padding: 12px 15px;
+        }
+
+        .card {
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            padding: 10px;
+            font-weight: 600;
+        }
+
+        .btn-primary:hover {
+            background-color: #011b3f;
+            border-color: #011b3f;
+        }
+
+        .btn-secondary {
+            margin-bottom: 20px;
+        }
+
+        .priority-urgent {
+            color: var(--accent-color);
+            font-weight: bold;
+        }
+
+        #nome_ativo_container {
+            display: none;
+        }
+
+        .required-field::after {
+            content: " *";
+            color: var(--accent-color);
+        }
+
+        .material-item:hover {
+            background-color: #f8f9fa;
+            cursor: pointer;
+        }
+
+        .select2-container .select2-selection--single {
+            height: 38px;
+            border: 1px solid #ced4da;
+            border-radius: 0.375rem;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 36px;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 36px;
+        }
+
+        @media (max-width: 576px) {
+            .card-body {
+                padding: 15px;
+            }
+
+            .form-control,
+            .form-select {
+                font-size: 14px;
+                padding: 8px 12px;
+            }
+
+            .btn {
+                font-size: 15px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h1 class="mb-0" style="color: var(--primary-color);">Solicitar Compra</h1>
+            <a href="{{ url_for('routes_bp.buscar_material') }}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Voltar
+            </a>
+        </div>
+
+        <form method="POST" action="{{ url_for('routes_bp.abrir_solicitacao') }}" enctype="multipart/form-data">
+            <input type="hidden" name="cod_material" value="{{ material.CodMaterial }}">
+
+            <!-- Seção 1: Informações Básicas -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <i class="bi bi-card-text"></i> Informações Básicas
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="descricao" class="form-label">Descrição do Material</label>
+                        <input type="text" class="form-control" id="descricao" value="{{ material.DescricaoMaterial }}"
+                            disabled>
+                        <small class="text-muted">Material selecionado</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="especificacao" class="form-label required-field">Especificação</label>
+                        <textarea class="form-control" id="especificacao" name="especificacao" rows="3"
+                            required></textarea>
+                        <small class="text-muted">Descreva detalhadamente o material</small>
+                    </div>
+
+                    <div class="row g-2">
+                        <div class="col-md-6 mb-3">
+                            <label for="quantidade" class="form-label required-field">Quantidade</label>
+                            <input type="number" class="form-control" id="quantidade" name="quantidade" min="1"
+                                required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="unidade_medida" class="form-label required-field">Unidade</label>
+                            <select class="form-select" id="unidade_medida" name="unidade_medida" required>
+                                <option value="" disabled selected>Selecione...</option>
+                                <option value="Peça">Peça</option>
+                                <option value="Unidade">Unidade</option>
+                                <option value="Metro">Metro</option>
+                                <option value="Metro quadrado">Metro quadrado</option>
+                                <option value="Metro cúbico">Metro cúbico</option>
+                                <option value="Litro">Litro</option>
+                                <option value="Quilograma">Quilograma</option>
+                                <option value="Grama">Grama</option>
+                                <option value="Caixa">Caixa</option>
+                                <option value="Pacote">Pacote</option>
+                                <option value="Par">Par</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="aplicacao" class="form-label">Aplicação</label>
+                        <textarea class="form-control" id="aplicacao" name="aplicacao" rows="2"
+                            placeholder="Opcional"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Seção 2: Detalhes do Material -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <i class="bi bi-tags"></i> Detalhes do Material
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="marca" class="form-label">Marca</label>
+                        <input type="text" class="form-control" id="marca" name="marca">
+                        <small class="text-muted">Opcional</small>
+                    </div>
+
+                    <div class="row g-2">
+                        <div class="col-md-6 mb-3">
+                            <label for="ativo" class="form-label required-field">Material é ativo?</label>
+                            <select class="form-select" id="ativo" name="ativo" required>
+                                <option value="" disabled selected>Selecione...</option>
+                                <option value="Sim">Sim</option>
+                                <option value="Não">Não</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3" id="nome_ativo_container">
+                            <label for="nome_ativo" class="form-label required-field">Nome do Ativo</label>
+                            <select class="form-select select2-nome-ativo" id="nome_ativo" name="nome_ativo" required>
+                                <option value="" disabled selected>Selecione um ativo...</option>
+                                {% for nome in ler_nomes_registros() %}
+                                <option value="{{ nome }}">{{ nome }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Seção 3: Prioridade e Empresa -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <i class="bi bi-exclamation-triangle"></i> Prioridade e Empresa
+                </div>
+                <div class="card-body">
+                    <div class="row g-2">
+                        <div class="col-md-6 mb-3">
+                            <label for="prioridade" class="form-label required-field">Prioridade</label>
+                            <select class="form-select" id="prioridade" name="prioridade" required>
+                                <option value="Programado" selected>Programado</option>
+                                <option value="Urgente">Urgente</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="empresa" class="form-label required-field">Empresa</label>
+                            <input type="text" class="form-control" id="empresa" name="empresa" required readonly
+                                value="{{ empresa_usuario }}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Seção 4: Anexos -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="bi bi-paperclip"></i> Anexos
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="foto" class="form-label">Foto do Material</label>
+                        <input class="form-control" type="file" id="foto" name="foto" accept=".jpg,.jpeg,.png,.pdf">
+                        <small class="text-muted">Formatos: JPG, PNG, PDF (até 5MB)</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-grid gap-2 mb-4">
+                <button type="submit" class="btn btn-primary py-2">
+                    <i class="bi bi-send"></i> Enviar Solicitação
+                </button>
+            </div>
+        </form>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show"
+            role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css">
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Select2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/i18n/pt-BR.js"></script>
+
+    <script>
+        // Mostrar/ocultar campo nome_ativo
+        document.getElementById('ativo').addEventListener('change', function () {
+            const nomeAtivoContainer = document.getElementById('nome_ativo_container');
+            if (this.value === 'Sim') {
+                nomeAtivoContainer.style.display = 'block';
+                $('#nome_ativo').prop('required', true);
+            } else {
+                nomeAtivoContainer.style.display = 'none';
+                $('#nome_ativo').prop('required', false);
+                $('#nome_ativo').val('').trigger('change');
+            }
+        });
+
+        // Inicializar Select2 para o campo Nome do Ativo
+        $(document).ready(function() {
+            $('.select2-nome-ativo').select2({
+                placeholder: "Digite para buscar...",
+                minimumInputLength: 3,
+                language: {
+                    noResults: function() {
+                        return "Nenhum resultado encontrado";
+                    },
+                    searching: function() {
+                        return "Buscando...";
+                    },
+                    inputTooShort: function() {
+                        return "Digite pelo menos 3 caracteres";
+                    }
+                },
+                width: '100%'
+            });
+        });
+    </script>
+</body>
+
+</html>

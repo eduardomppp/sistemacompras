@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Listar Solicitações Abertas</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #022855;
+            --secondary-color: #f8f9fa;
+            --accent-color: #022855;
+            --hover-color: #3c94ff;
+            --text-color: #343a40;
+            --light-gray: #f1f1f1;
+            --border-color: #e0e0e0;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: var(--secondary-color);
+            color: var(--text-color);
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            text-align: center;
+            color: var(--primary-color);
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--light-gray);
+            font-weight: 600;
+        }
+        
+        .table-responsive {
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.05);
+        }
+        
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+            vertical-align: middle;
+        }
+        
+        th {
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: 500;
+            position: sticky;
+            top: 0;
+        }
+        
+        tr:hover {
+            background-color: rgba(0, 0, 0, 0.02);
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            text-decoration: none;
+            color: white;
+            border-radius: 4px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .btn-preencher {
+            background-color: var(--accent-color);
+        }
+        
+        .btn-preencher:hover {
+            background-color: var(--hover-color);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .alert {
+            padding: 12px 20px;
+            margin-bottom: 25px;
+            border-radius: 6px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .alert-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid #f5c6cb;
+        }
+        
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border-left: 4px solid #c3e6cb;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+        
+        .empty-state i {
+            font-size: 50px;
+            margin-bottom: 20px;
+            color: #dee2e6;
+        }
+        
+        .search-filter-container {
+            background-color: #f8fafc;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        
+        .filter-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .filter-group {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .filter-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+            color: #555;
+        }
+        
+        .filter-group select,
+        .filter-group input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .date-range-picker {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .filter-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .btn-filter {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .btn-clear {
+            background-color: #6c757d;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+        }
+        
+        @media (max-width: 768px) {
+            .filter-row {
+                flex-direction: column;
+            }
+            
+            .filter-group {
+                min-width: 100%;
+            }
+            
+            .date-range-picker {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            th, td {
+                padding: 10px 8px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>
+            <i class="fas fa-clipboard-list"></i> Solicitações de Compra Abertas
+        </h1>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        <i class="fas fa-{% if category == 'error' %}exclamation-circle{% else %}check-circle{% endif %}"></i>
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="search-filter-container">
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label for="empresaFilter">Empresa</label>
+                    <select id="empresaFilter" class="form-select">
+                        <option value="">Todas empresas</option>
+                        {% for empresa in empresas %}
+                            <option value="{{ empresa }}">{{ empresa }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="usuarioFilter">Usuário</label>
+                    <select id="usuarioFilter" class="form-select">
+                        <option value="">Todos usuários</option>
+                        {% for usuario in usuarios %}
+                            <option value="{{ usuario }}">{{ usuario }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label>Data de Solicitação</label>
+                    <div class="date-range-picker">
+                        <input type="date" id="dataInicio" class="form-control">
+                        <span>até</span>
+                        <input type="date" id="dataFim" class="form-control">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="filter-actions">
+                <button class="btn-clear" id="clearFilters">
+                    <i class="fas fa-times"></i> Limpar Filtros
+                </button>
+                <button class="btn-filter" id="applyFilters">
+                    <i class="fas fa-filter"></i> Aplicar Filtros
+                </button>
+            </div>
+        </div>
+
+        {% if solicitacoes %}
+            <div class="table-responsive">
+                <table id="solicitacoesTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Material</th>
+                            <th>Especificação</th>
+                            <th>Quantidade</th>
+                            <th>Empresa</th>
+                            <th>Data Solicitação</th>
+                            <th>Usuário</th>
+                            <th>Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for solicitacao in solicitacoes %}
+                            <tr>
+                                <td>{{ solicitacao.id }}</td>
+                                <td>{{ solicitacao.material.DescricaoMaterial }}</td>
+                                <td>{{ solicitacao.especificacao or '-' }}</td>
+                                <td>{{ solicitacao.quantidade }}</td>
+                                <td>{{ solicitacao.empresa }}</td>
+                                <td data-order="{{ solicitacao.data_solicitacao.strftime('%Y-%m-%d') }}">
+                                    {{ solicitacao.data_solicitacao.strftime('%d/%m/%Y %H:%M') }}
+                                </td>
+                                <td>{{ solicitacao.usuario }}</td>
+                                <td>
+                                    <a href="{{ url_for('routes_bp.preencher_solicitacao', id=solicitacao.id) }}" class="btn btn-preencher">
+                                        <i class="fas fa-edit"></i> Preencher
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <i class="far fa-folder-open"></i>
+                <h3>Nenhuma solicitação aberta encontrada</h3>
+                <p>Não há solicitações de compra abertas no momento.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Configurar data inicial para 30 dias atrás
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+            document.getElementById('dataInicio').valueAsDate = thirtyDaysAgo;
+            
+            // Configurar data final para hoje
+            document.getElementById('dataFim').valueAsDate = new Date();
+            
+            // Aplicar filtros ao carregar a página
+            applyFilters();
+            
+            // Event listeners
+            document.getElementById('applyFilters').addEventListener('click', applyFilters);
+            document.getElementById('clearFilters').addEventListener('click', clearFilters);
+        });
+        
+        function applyFilters() {
+            const empresaFilter = document.getElementById('empresaFilter').value;
+            const usuarioFilter = document.getElementById('usuarioFilter').value;
+            const dataInicio = document.getElementById('dataInicio').value;
+            const dataFim = document.getElementById('dataFim').value;
+            
+            const rows = document.querySelectorAll('#solicitacoesTable tbody tr');
+            let visibleCount = 0;
+            
+            rows.forEach(row => {
+                const empresa = row.cells[4].textContent.trim();
+                const usuario = row.cells[6].textContent.trim();
+                const dataSolicitacao = row.cells[5].getAttribute('data-order');
+                
+                // Verificar filtros
+                const empresaMatch = !empresaFilter || empresa === empresaFilter;
+                const usuarioMatch = !usuarioFilter || usuario === usuarioFilter;
+                const dataMatch = 
+                    (!dataInicio || dataSolicitacao >= dataInicio) && 
+                    (!dataFim || dataSolicitacao <= dataFim);
+                
+                // Mostrar ou esconder a linha baseado nos filtros
+                if (empresaMatch && usuarioMatch && dataMatch) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+            
+            // Mostrar mensagem se nenhum resultado for encontrado
+            const emptyState = document.querySelector('.empty-state');
+            if (visibleCount === 0 && rows.length > 0) {
+                if (!emptyState) {
+                    const table = document.querySelector('#solicitacoesTable');
+                    const newEmptyState = document.createElement('div');
+                    newEmptyState.className = 'empty-state';
+                    newEmptyState.innerHTML = `
+                        <i class="far fa-folder-open"></i>
+                        <h3>Nenhum resultado encontrado</h3>
+                        <p>Nenhuma solicitação corresponde aos filtros aplicados.</p>
+                    `;
+                    table.parentNode.insertBefore(newEmptyState, table.nextSibling);
+                }
+            } else if (emptyState && visibleCount > 0) {
+                emptyState.remove();
+            }
+        }
+        
+        function clearFilters() {
+            document.getElementById('empresaFilter').value = '';
+            document.getElementById('usuarioFilter').value = '';
+            
+            // Resetar datas para o padrão (últimos 30 dias)
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+            document.getElementById('dataInicio').valueAsDate = thirtyDaysAgo;
+            document.getElementById('dataFim').valueAsDate = new Date();
+            
+            applyFilters();
+        }
+    </script>
+</body>
+</html>
