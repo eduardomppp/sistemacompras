@@ -3,278 +3,460 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kanban</title>
+    <title>Kanban | Gerenciador de Tarefas</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-      /* Estilos gerais */
-body, html {
-    font-family: 'Roboto', sans-serif;
-    background-color: #f5f7fa;
-    margin: 0;
-    padding: 0;
-    color: #333;
-}
+        :root {
+            --todo-color: #FF6B6B;
+            --in-progress-color: #4ECDC4;
+            --done-color: #77DD77;
+            --primary-color: #3A86FF;
+            --dark-color: #2B2D42;
+            --light-color: #F8F9FA;
+            --gray-color: #ADB5BD;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
 
-/* Container do Kanban */
-.kanban-container {
-    display: flex;
-    justify-content: flex-start; /* Alinha as colunas à esquerda */
-    gap: 30px; /* Espaçamento entre as colunas */
-    padding: 30px;
-    flex-wrap: wrap; /* Permite que as colunas quebrem para a linha seguinte */
-    max-width: 1200px;
-    margin: 0 auto;
-    box-sizing: border-box; /* Certifica-se de que o padding e a borda não afetam o cálculo da largura */
-}
+        /* Estilos gerais */
+        body, html {
+            font-family: 'Poppins', sans-serif;
+            background-color: #F5F7FF;
+            margin: 0;
+            padding: 0;
+            color: var(--dark-color);
+            line-height: 1.6;
+        }
 
-/* Coluna do Kanban */
-.kanban-column {
-    width: 30%; /* As colunas ocupam 30% do espaço disponível */
-    box-sizing: border-box; /* Inclui o padding e borda dentro da largura definida */
-    background-color: #ffffff;
-    border-radius: 12px;
-    padding: 20px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-    min-height: 400px;
-    transition: box-shadow 0.3s ease, transform 0.3s ease, background-color 0.3s ease;
-    overflow-y: auto;
-}
+        /* Container principal */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
 
-/* Hover nas colunas */
-.kanban-column:hover {
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
-    transform: translateY(-10px);
-}
+        /* Cabeçalho */
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
 
-/* Títulos das Colunas */
-.kanban-column h2 {
-    text-align: center;
-    padding: 12px;
-    color: #fff;
-    border-radius: 8px;
-    margin-bottom: 20px;
-    font-size: 1.3em;
-    font-weight: 600;
-    letter-spacing: 1px;
-    text-transform: uppercase; /* Deixa os títulos mais fortes */
-}
+        .header h1 {
+            color: var(--primary-color);
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
 
-/* Cores das Colunas */
-.todo-column h2 {
-    background-color: #ff7043; /* Laranja suave */
-}
+        .header p {
+            color: var(--gray-color);
+            font-size: 1.1rem;
+        }
 
-.in-progress-column h2 {
-    background-color: #016dda; /* Amarelo suave */
-}
+        /* Formulário para adicionar tarefa */
+        .add-task-container {
+            background-color: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: var(--shadow);
+        }
 
-.done-column h2 {
-    background-color: #388e3c; /* Verde mais escuro */
-}
+        .add-task {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
 
-/* Lista de Tarefas */
-.task-list {
-    list-style-type: none;
-    padding: 0;
-    margin-top: 10px;
-}
+        .add-task h3 {
+            margin: 0;
+            font-size: 1.1rem;
+            color: var(--dark-color);
+            font-weight: 500;
+        }
 
-.task-list li {
-    background-color: #e3f2fd;
-    margin: 10px 0;
-    padding: 15px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: 500;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    transition: background-color 0.3s, transform 0.3s, box-shadow 0.3s, margin-top 0.2s ease;
-}
+        .add-task input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: var(--transition);
+        }
 
-/* Animação ao passar o mouse nas tarefas */
-.task-list li:hover {
-    background-color: #bbdefb;
-    transform: translateY(-5px);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    margin-top: 15px; /* Adiciona um leve movimento */
-}
+        .add-task input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(58, 134, 255, 0.2);
+        }
 
-/* Botão de deletar */
-.delete-btn {
-    background: none;
-    border: none;
-    color: #ff7043;
-    font-size: 1.5em;
-    cursor: pointer;
-    transition: color 0.3s ease;
-    opacity: 0.7;
-}
+        .add-task select {
+            padding: 12px 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            background-color: white;
+            cursor: pointer;
+            transition: var(--transition);
+        }
 
-.delete-btn:hover {
-    color: #d32f2f;
-    opacity: 1; /* Aumenta a opacidade no hover */
-}
+        .add-task select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
 
-/* Formulário para Adicionar Tarefas */
-.add-task {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 30px;
-    gap: 15px;
-}
+        .add-task button {
+            padding: 12px 25px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
 
-.add-task input, .add-task select {
-    flex: 1;
-    padding: 12px;
-    border: 1px solid #aaa;
-    border-radius: 4px;
-    font-size: 1em;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-    transition: border-color 0.3s, box-shadow 0.3s;
-}
+        .add-task button:hover {
+            background-color: #2a75e6;
+            transform: translateY(-2px);
+        }
 
-/* Efeito de foco nos campos */
-.add-task input:focus, .add-task select:focus {
-    outline: none;
-    border-color: #0288d1;
-    box-shadow: 0 0 10px rgba(2, 136, 209, 0.3);
-}
+        /* Container do Kanban */
+        .kanban-container {
+            display: flex;
+            gap: 25px;
+            padding: 10px;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
 
-.add-task button {
-    padding: 12px 18px;
-    background-color: #016dda;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background-color 0.3s ease, transform 0.3s ease;
-    font-size: 1em;
-}
+        /* Coluna do Kanban */
+        .kanban-column {
+            flex: 1;
+            min-width: 300px;
+            background-color: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+        }
 
-.add-task button:hover {
-    background-color: #0277bd;
-    transform: scale(1.05); /* Efeito de zoom no botão */
-}
+        .kanban-column:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
 
-/* Responsividade */
-@media (max-width: 1024px) {
-    .kanban-column {
-        width: 45%; /* Colunas ocupam 45% da largura */
-    }
-}
+        /* Títulos das Colunas */
+        .kanban-column h2 {
+            text-align: center;
+            padding: 12px;
+            color: white;
+            border-radius: 8px;
+            margin: -20px -20px 20px -20px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            position: relative;
+            overflow: hidden;
+        }
 
-@media (max-width: 768px) {
-    .kanban-column {
-        width: 100%; /* Colunas ocupam 100% da largura em telas pequenas */
-        margin-bottom: 30px;
-    }
+        .kanban-column h2::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(to right, rgba(255,255,255,0.1), rgba(255,255,255,0.3));
+            z-index: 1;
+        }
 
-    .add-task {
-        flex-direction: column;
-        gap: 15px;
-    }
+        .todo-column h2 {
+            background-color: var(--todo-color);
+        }
 
-    .add-task button {
-        width: 100%; /* Botão ocupa 100% da largura */
-    }
-}
+        .in-progress-column h2 {
+            background-color: var(--in-progress-color);
+        }
 
-@media (max-width: 480px) {
-    .kanban-column {
-        width: 100%;
-        margin-bottom: 20px;
-        padding: 15px;
-    }
+        .done-column h2 {
+            background-color: var(--done-color);
+        }
 
-    .add-task input, .add-task select, .add-task button {
-        font-size: 0.9em;
-    }
+        /* Contador de tarefas */
+        .task-count {
+            display: inline-block;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            line-height: 25px;
+            text-align: center;
+            margin-left: 8px;
+            font-size: 0.8rem;
+        }
 
-    .add-task {
-        gap: 10px;
-    }
-}
+        /* Lista de Tarefas */
+        .task-list {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+            min-height: 100px;
+        }
 
-/* Flash message (caso exista) */
-.flashes {
-    position: absolute;
-    top: 10px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 80%;
-    z-index: 10;
-}
+        .task-list li {
+            background-color: white;
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: var(--transition);
+            border-left: 4px solid;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
 
-.alert {
-    padding: 10px;
-    border-radius: 5px;
-    margin-bottom: 10px;
-    font-size: 1.1em;
-}
+        .task-list li.todo {
+            border-left-color: var(--todo-color);
+        }
 
-.alert-success {
-    background-color: #4caf50;
-    color: white;
-}
+        .task-list li.in-progress {
+            border-left-color: var(--in-progress-color);
+        }
 
-.alert-error {
-    background-color: #f44336;
-    color: white;
-}
+        .task-list li.done {
+            border-left-color: var(--done-color);
+        }
 
+        .task-list li:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .task-text {
+            flex: 1;
+            margin-right: 10px;
+        }
+
+        /* Botão de deletar */
+        .delete-btn {
+            background: none;
+            border: none;
+            color: var(--gray-color);
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: var(--transition);
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+
+        .delete-btn:hover {
+            color: var(--todo-color);
+            background-color: rgba(255, 107, 107, 0.1);
+        }
+
+        /* Drag and drop */
+        .kanban-column.drop-zone {
+            background-color: rgba(58, 134, 255, 0.05);
+            border: 2px dashed var(--primary-color);
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            color: var(--gray-color);
+            padding: 20px 0;
+            font-size: 0.9rem;
+        }
+
+        /* Flash messages */
+        .flashes {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 500px;
+            z-index: 1000;
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .alert i {
+            margin-right: 10px;
+        }
+
+        .alert-close {
+            background: none;
+            border: none;
+            color: inherit;
+            cursor: pointer;
+            font-size: 1.2rem;
+            opacity: 0.7;
+            transition: var(--transition);
+        }
+
+        .alert-close:hover {
+            opacity: 1;
+        }
+
+        .alert-success {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .alert-error {
+            background-color: #F44336;
+            color: white;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+
+        /* Responsividade */
+        @media (max-width: 1024px) {
+            .kanban-column {
+                min-width: 280px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .add-task {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .add-task input,
+            .add-task select,
+            .add-task button {
+                width: 100%;
+            }
+
+            .kanban-column {
+                min-width: 100%;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .add-task-container {
+                padding: 15px;
+            }
+        }
+
+        /* Animação para novas tarefas */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .task-list li {
+            animation: fadeIn 0.3s ease-out;
+        }
     </style>
-    
 </head>
 <body>
+    <div class="container">
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flashes">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">
+                            <i class="fas fa-{% if category == 'success' %}check-circle{% else %}exclamation-circle{% endif %}"></i>
+                            <span>{{ message }}</span>
+                            <button class="alert-close" onclick="this.parentElement.remove()">&times;</button>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
 
-    <!-- Flash Messages -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            <div class="flashes">
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category }}">
-                        {{ message }}
-                    </div>
-                {% endfor %}
+        <!-- Cabeçalho -->
+        <div class="header">
+            <h1>Kanban Board</h1>
+            <p>Organize suas tarefas de forma simples e eficiente</p>
+        </div>
+
+        <!-- Formulário para adicionar tarefa -->
+        <div class="add-task-container">
+            <div class="add-task">
+                <h3>Nova Tarefa:</h3>
+                <input type="text" id="task_name" placeholder="Digite a descrição da tarefa..." required>
+                <select id="status">
+                    <option value="A Fazer">A Fazer</option>
+                    <option value="Em Progresso">Em Progresso</option>
+                    <option value="Concluído">Concluído</option>
+                </select>
+                <button onclick="addTask()">
+                    <i class="fas fa-plus"></i> Adicionar
+                </button>
             </div>
-        {% endif %}
-    {% endwith %}
-
-    <!-- Formulário para adicionar tarefa -->
-    <div class="add-task">
-        <h3>Descrição (Tarefa):</h3>
-        <input type="text" id="task_name" placeholder="Nome da Tarefa" required>
-        <select id="status">
-            <option value="A Fazer">A Fazer</option>
-        </select>
-        <button onclick="addTask()">Adicionar Tarefa</button>
-    </div>
-
-    <!-- Container do Kanban -->
-    <div class="kanban-container">
-        <!-- A Fazer -->
-        <div class="kanban-column todo-column" id="todo-column" ondrop="drop(event)" ondragover="allowDrop(event)">
-            <h2>A Fazer</h2>
-            <ul id="todo-list" class="task-list" data-status="A Fazer">
-                <!-- As tarefas 'A Fazer' serão listadas aqui -->
-            </ul>
         </div>
 
-        <!-- Em Progresso -->
-        <div class="kanban-column in-progress-column" id="in-progress-column" ondrop="drop(event)" ondragover="allowDrop(event)">
-            <h2>Em Progresso</h2>
-            <ul id="in-progress-list" class="task-list" data-status="Em Progresso">
-                <!-- As tarefas 'Em Progresso' serão listadas aqui -->
-            </ul>
-        </div>
+        <!-- Container do Kanban -->
+        <div class="kanban-container">
+            <!-- A Fazer -->
+            <div class="kanban-column todo-column" id="todo-column" ondrop="drop(event)" ondragover="allowDrop(event)">
+                <h2>A Fazer <span class="task-count" id="todo-count">0</span></h2>
+                <ul id="todo-list" class="task-list" data-status="A Fazer">
+                    <li class="empty-state">Nenhuma tarefa pendente</li>
+                </ul>
+            </div>
 
-        <!-- Concluído -->
-        <div class="kanban-column done-column" id="done-column" ondrop="drop(event)" ondragover="allowDrop(event)">
-            <h2>Concluído</h2>
-            <ul id="done-list" class="task-list" data-status="Concluído">
-                <!-- As tarefas 'Concluído' serão listadas aqui -->
-            </ul>
+            <!-- Em Progresso -->
+            <div class="kanban-column in-progress-column" id="in-progress-column" ondrop="drop(event)" ondragover="allowDrop(event)">
+                <h2>Em Progresso <span class="task-count" id="in-progress-count">0</span></h2>
+                <ul id="in-progress-list" class="task-list" data-status="Em Progresso">
+                    <li class="empty-state">Nenhuma tarefa em progresso</li>
+                </ul>
+            </div>
+
+            <!-- Concluído -->
+            <div class="kanban-column done-column" id="done-column" ondrop="drop(event)" ondragover="allowDrop(event)">
+                <h2>Concluído <span class="task-count" id="done-count">0</span></h2>
+                <ul id="done-list" class="task-list" data-status="Concluído">
+                    <li class="empty-state">Nenhuma tarefa concluída</li>
+                </ul>
+            </div>
         </div>
     </div>
 
@@ -288,48 +470,90 @@ body, html {
                     let tasks = data.tasks;
                     
                     // Limpa as listas de tarefas antes de repopular
-                    document.getElementById('todo-list').innerHTML = '';
-                    document.getElementById('in-progress-list').innerHTML = '';
-                    document.getElementById('done-list').innerHTML = '';
+                    const todoList = document.getElementById('todo-list');
+                    const inProgressList = document.getElementById('in-progress-list');
+                    const doneList = document.getElementById('done-list');
+                    
+                    todoList.innerHTML = '';
+                    inProgressList.innerHTML = '';
+                    doneList.innerHTML = '';
+
+                    let todoCount = 0;
+                    let inProgressCount = 0;
+                    let doneCount = 0;
+
+                    if (tasks.length === 0) {
+                        todoList.innerHTML = '<li class="empty-state">Nenhuma tarefa pendente</li>';
+                        inProgressList.innerHTML = '<li class="empty-state">Nenhuma tarefa em progresso</li>';
+                        doneList.innerHTML = '<li class="empty-state">Nenhuma tarefa concluída</li>';
+                        return;
+                    }
 
                     tasks.forEach(task => {
                         let taskItem = document.createElement('li');
-                        taskItem.textContent = `- ${task.task_name}`;
+                        taskItem.className = task.status === 'A Fazer' ? 'todo' : 
+                                             task.status === 'Em Progresso' ? 'in-progress' : 'done';
                         
-                        // Botão de exclusão (X)
+                        let taskText = document.createElement('span');
+                        taskText.className = 'task-text';
+                        taskText.textContent = task.task_name;
+                        
+                        // Botão de exclusão
                         let deleteButton = document.createElement('button');
-                        deleteButton.innerHTML = 'x';  // Usando o "X" como ícone
+                        deleteButton.innerHTML = '<i class="fas fa-times"></i>';
                         deleteButton.classList.add('delete-btn');
-                        deleteButton.onclick = function() {
+                        deleteButton.onclick = function(e) {
+                            e.stopPropagation();
                             deleteTask(task.id);
                         };
 
-                        // Adiciona os botões
+                        // Adiciona os elementos
+                        taskItem.appendChild(taskText);
                         taskItem.appendChild(deleteButton);
 
                         // Definir a tarefa como arrastável
                         taskItem.setAttribute('draggable', 'true');
-                        taskItem.setAttribute('id', `task-${task.id}`); // Atribui o id correto da tarefa
+                        taskItem.setAttribute('id', `task-${task.id}`);
                         taskItem.setAttribute('ondragstart', 'drag(event)');
-                        taskItem.dataset.id = task.id;  // Guarda o id para referência no drop
+                        taskItem.dataset.id = task.id;
 
-                        // Adiciona a tarefa na lista correta
+                        // Adiciona a tarefa na lista correta e conta
                         if (task.status === 'A Fazer') {
-                            document.getElementById('todo-list').appendChild(taskItem);
+                            todoList.appendChild(taskItem);
+                            todoCount++;
                         } else if (task.status === 'Em Progresso') {
-                            document.getElementById('in-progress-list').appendChild(taskItem);
+                            inProgressList.appendChild(taskItem);
+                            inProgressCount++;
                         } else if (task.status === 'Concluído') {
-                            document.getElementById('done-list').appendChild(taskItem);
+                            doneList.appendChild(taskItem);
+                            doneCount++;
                         }
                     });
+
+                    // Atualiza os contadores
+                    document.getElementById('todo-count').textContent = todoCount;
+                    document.getElementById('in-progress-count').textContent = inProgressCount;
+                    document.getElementById('done-count').textContent = doneCount;
+
+                    // Adiciona empty state se necessário
+                    if (todoCount === 0) todoList.innerHTML = '<li class="empty-state">Nenhuma tarefa pendente</li>';
+                    if (inProgressCount === 0) inProgressList.innerHTML = '<li class="empty-state">Nenhuma tarefa em progresso</li>';
+                    if (doneCount === 0) doneList.innerHTML = '<li class="empty-state">Nenhuma tarefa concluída</li>';
                 })
                 .catch(error => console.error('Error:', error));
         }
 
         // Função para adicionar uma nova tarefa via API
         function addTask() {
-            const task_name = document.getElementById('task_name').value;
-            const status = document.getElementById('status').value || 'A Fazer'; // Garante que o valor seja "A Fazer" por padrão
+            const taskInput = document.getElementById('task_name');
+            const task_name = taskInput.value.trim();
+            const status = document.getElementById('status').value || 'A Fazer';
+
+            if (!task_name) {
+                showFlashMessage('Por favor, digite uma descrição para a tarefa', 'error');
+                taskInput.focus();
+                return;
+            }
 
             fetch('/tasks', {
                 method: 'POST',
@@ -343,51 +567,90 @@ body, html {
             })
             .then(response => response.json())
             .then(data => {
-                // Atualiza as tarefas após adicionar
+                taskInput.value = '';
+                taskInput.focus();
                 loadTasks();
+                showFlashMessage('Tarefa adicionada com sucesso!', 'success');
             })
-            .catch(error => console.error('Error:', error));
+            .catch(error => {
+                console.error('Error:', error);
+                showFlashMessage('Erro ao adicionar tarefa', 'error');
+            });
+        }
+
+        // Função para mostrar mensagem flash
+        function showFlashMessage(message, type) {
+            const flashesContainer = document.querySelector('.flashes') || document.createElement('div');
+            flashesContainer.className = 'flashes';
+            
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            
+            const icon = type === 'success' ? 'check-circle' : 'exclamation-circle';
+            alert.innerHTML = `
+                <i class="fas fa-${icon}"></i>
+                <span>${message}</span>
+                <button class="alert-close" onclick="this.parentElement.remove()">&times;</button>
+            `;
+            
+            flashesContainer.appendChild(alert);
+            document.body.appendChild(flashesContainer);
+            
+            setTimeout(() => {
+                alert.remove();
+                if (flashesContainer.children.length === 0) {
+                    flashesContainer.remove();
+                }
+            }, 5000);
         }
 
         // Função para excluir uma tarefa via API
         function deleteTask(id) {
+            if (!confirm('Tem certeza que deseja excluir esta tarefa?')) return;
+            
             fetch(`/tasks/${id}`, {
                 method: 'DELETE',
             })
             .then(response => response.json())
             .then(data => {
-                loadTasks(); // Atualiza a lista após exclusão
+                loadTasks();
+                showFlashMessage('Tarefa excluída com sucesso', 'success');
             })
-            .catch(error => console.error('Error:', error));
+            .catch(error => {
+                console.error('Error:', error);
+                showFlashMessage('Erro ao excluir tarefa', 'error');
+            });
         }
 
-        // Função para permitir o arraste das tarefas
+        // Funções para drag and drop
         function allowDrop(event) {
             event.preventDefault();
+            event.currentTarget.classList.add('drop-zone');
         }
 
-        // Função chamada quando começa o arraste
         function drag(event) {
             event.dataTransfer.setData('text', event.target.id);
         }
 
-        // Função para fazer o drop da tarefa na nova coluna
         function drop(event) {
             event.preventDefault();
+            const column = event.currentTarget;
+            column.classList.remove('drop-zone');
+            
             const data = event.dataTransfer.getData("text");
             const droppedTask = document.getElementById(data);
             
-            // Verifique o novo status com base na coluna onde a tarefa foi solta
+            if (!droppedTask) return;
+            
             let newStatus;
-            if (event.target.id === 'todo-column') {
+            if (column.id === 'todo-column') {
                 newStatus = 'A Fazer';
-            } else if (event.target.id === 'in-progress-column') {
+            } else if (column.id === 'in-progress-column') {
                 newStatus = 'Em Progresso';
-            } else if (event.target.id === 'done-column') {
+            } else if (column.id === 'done-column') {
                 newStatus = 'Concluído';
             }
 
-            // Atualiza o status da tarefa ao ser movida para a nova coluna
             fetch(`/tasks/${droppedTask.dataset.id}`, {
                 method: 'PUT',
                 headers: {
@@ -397,104 +660,66 @@ body, html {
             })
             .then(response => response.json())
             .then(data => {
-                loadTasks();  // Atualiza a lista após mudança de status
+                loadTasks();
             })
             .catch(error => console.error('Error:', error));
         }
 
+        // Remove a classe drop-zone quando o item sai da coluna
+        document.querySelectorAll('.kanban-column').forEach(column => {
+            column.addEventListener('dragleave', function(e) {
+                this.classList.remove('drop-zone');
+            });
+        });
+
         // Chama loadTasks para carregar as tarefas ao carregar a página
         window.onload = loadTasks;
 
-// Função para bloquear teclas de atalho
-function bloquearTeclas(event) {
-  const bloqueadas = [
-    123,  // F12
-   
-  ];
+        // Foca no campo de input ao carregar a página
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('task_name').focus();
+        });
 
-  // Impede teclas específicas ou combinações perigosas
-  if (
-    bloqueadas.includes(event.keyCode) || // Verifica tecla F12 ou C
-    (event.ctrlKey && (event.keyCode === 67)) || // Verifica Ctrl + C
-    (event.ctrlKey && event.shiftKey && (event.keyCode === 67)) // Verifica Ctrl + Shift + C
-  ) {
-    event.preventDefault();  // Impede a ação padrão (copiar, abrir dev tools)
-    mostrarMensagem();       // Mostra a mensagem de bloqueio
-  }
-}
+        // Função para bloquear teclas de atalho (mantida da versão original)
+        function bloquearTeclas(event) {
+            const bloqueadas = [
+                123,  // F12
+            ];
 
-// Função para mostrar uma mensagem de bloqueio personalizada
-function mostrarMensagem() {
-  const alertMessage = document.createElement('div');
-  alertMessage.id = 'alert-message';
-  alertMessage.innerHTML = `
-    <div style="position: fixed; top: 0; left: 0; width: 100%; background: red; color: white; 
-    text-align: center; z-index: 9999; padding: 10px; font-size: 18px;">
-      ⚠️ Ação Proibida Detectada!
-    </div>
-  `;
-  
-  // Garante que o DOM contenha apenas uma mensagem ao mesmo tempo
-  if (!document.getElementById('alert-message')) {
-    document.body.appendChild(alertMessage);
-    setTimeout(() => {
-      document.body.removeChild(alertMessage);
-    }, 5000); // Mensagem visível por 5 segundos
-  }
-}
+            if (
+                bloqueadas.includes(event.keyCode) ||
+                (event.ctrlKey && (event.keyCode === 67)) ||
+                (event.ctrlKey && event.shiftKey && (event.keyCode === 67))
+            ) {
+                event.preventDefault();
+                mostrarMensagem();
+            }
+        }
 
-// Bloquear menu de contexto (botão direito do mouse)
-window.oncontextmenu = function (event) {
-  event.preventDefault();
-  mostrarMensagem();
-};
+        function mostrarMensagem() {
+            const alertMessage = document.createElement('div');
+            alertMessage.id = 'alert-message';
+            alertMessage.innerHTML = `
+                <div style="position: fixed; top: 0; left: 0; width: 100%; background: red; color: white; 
+                text-align: center; z-index: 9999; padding: 10px; font-size: 18px;">
+                    ⚠️ Ação Proibida Detectada!
+                </div>
+            `;
+            
+            if (!document.getElementById('alert-message')) {
+                document.body.appendChild(alertMessage);
+                setTimeout(() => {
+                    document.body.removeChild(alertMessage);
+                }, 5000);
+            }
+        }
 
-// Medidas suaves contra DevTools (não fechar automaticamente)
-(function () {
-  let devToolsOpen = false;
-  const threshold = 160;
+        window.oncontextmenu = function (event) {
+            event.preventDefault();
+            mostrarMensagem();
+        };
 
-  setInterval(() => {
-    const width = window.outerWidth - window.innerWidth;
-    const height = window.outerHeight - window.innerHeight;
-
-    // Verifica mudanças significativas na largura/altura da janela
-    if (width > threshold || height > threshold) {
-      if (!devToolsOpen) {
-        devToolsOpen = true;
-        console.log("⚠️ Ferramentas de Desenvolvedor Detectadas!");
-        // Opcional: apenas logar ou alertar o usuário sem fechar a página
-        //alert("⚠️ Ferramentas de Desenvolvedor Detectadas!");
-      }
-    }
-  }, 500); // Intervalo de verificação
-})();
-
-// Bloquear print
-function bloquearPrint() {
-  const overlay = document.createElement('div');
-  overlay.style.position = 'absolute';
-  overlay.style.top = 0;
-  overlay.style.left = 0;
-  overlay.style.width = '100%';
-  overlay.style.height = '100%';
-  overlay.style.backgroundColor = 'rgba(255, 255, 255, 0.8)';
-  overlay.style.zIndex = 9999;
-  overlay.style.pointerEvents = 'none'; // permite interagir com o conteúdo por baixo
-
-  document.body.appendChild(overlay);
-
-  // Remover após um tempo, por exemplo, 5 segundos
-  setTimeout(() => {
-    document.body.removeChild(overlay);
-  }, 5000);
-}
-
-// Adiciona o ouvinte de evento para detectar pressionamento de teclas
-document.addEventListener('keydown', bloquearTeclas);
-
-
+        document.addEventListener('keydown', bloquearTeclas);
     </script>
-
 </body>
 </html>
