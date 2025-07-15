@@ -98,7 +98,7 @@
             font-size: 0.95em;
         }
 
-        input {
+        input, select {
             width: 100%;
             padding: 10px 12px;
             border: 1px solid var(--medium-gray);
@@ -107,7 +107,7 @@
             transition: all 0.2s ease;
         }
 
-        input:focus {
+        input:focus, select:focus {
             border-color: var(--secondary-color);
             outline: none;
             box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
@@ -242,6 +242,63 @@
             margin-bottom: 15px;
         }
 
+        /* Estilos para os filtros */
+        .filter-section {
+            background-color: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .filter-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+
+        .filter-group {
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .filter-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .filter-btn {
+            width: auto;
+            padding: 8px 15px;
+        }
+
+        .filter-count {
+            font-size: 0.9em;
+            color: var(--dark-gray);
+            margin-right: auto;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .filter-count i {
+            color: var(--primary-color);
+        }
+
+        .no-results {
+            display: none;
+            padding: 20px;
+            text-align: center;
+            color: var(--dark-gray);
+            font-style: italic;
+            background-color: white;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
         @media (max-width: 600px) {
             .container {
                 padding: 15px;
@@ -267,6 +324,18 @@
             .btn {
                 padding: 8px 15px;
                 font-size: 0.9em;
+            }
+
+            .filter-group {
+                min-width: 100%;
+            }
+
+            .filter-actions {
+                flex-direction: column;
+            }
+
+            .filter-btn {
+                width: 100%;
             }
         }
     </style>
@@ -327,6 +396,59 @@
             
             <h2><i class="fas fa-list"></i> Materiais Cadastrados</h2>
             
+            <!-- Seção de Filtros -->
+            <div class="filter-section">
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label for="filterDescricao">Descrição</label>
+                        <input type="text" id="filterDescricao" placeholder="Filtrar por descrição">
+                    </div>
+                    <div class="filter-group">
+                        <label for="filterEmpresa">Empresa</label>
+                        <select id="filterEmpresa">
+                            <option value="">Todas</option>
+                            {% set empresas = [] %}
+                            {% for material in materiais %}
+                                {% if material.Empresa not in empresas %}
+                                    {% set _ = empresas.append(material.Empresa) %}
+                                    <option value="{{ material.Empresa }}">{{ material.Empresa }}</option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="filterAplicacao">Aplicação</label>
+                        <select id="filterAplicacao">
+                            <option value="">Todas</option>
+                            {% set aplicacoes = [] %}
+                            {% for material in materiais %}
+                                {% if material.Aplicacao not in aplicacoes %}
+                                    {% set _ = aplicacoes.append(material.Aplicacao) %}
+                                    <option value="{{ material.Aplicacao }}">{{ material.Aplicacao }}</option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="filter-actions">
+                    <div class="filter-count">
+                        <i class="fas fa-filter"></i>
+                        <span id="filteredCount">Mostrando todos os materiais</span>
+                    </div>
+                    <button id="resetFilters" class="btn btn-secondary filter-btn">
+                        <i class="fas fa-undo"></i> Limpar
+                    </button>
+                    <button id="applyFilters" class="btn btn-primary filter-btn">
+                        <i class="fas fa-filter"></i> Filtrar
+                    </button>
+                </div>
+            </div>
+            
+            <div class="no-results" id="noResultsMessage">
+                <i class="fas fa-search"></i>
+                <p>Nenhum material encontrado com os filtros aplicados.</p>
+            </div>
+            
             {% if materiais %}
                 <div class="table-responsive">
                     <table id="materiaisTable">
@@ -339,9 +461,13 @@
                                 <th class="actions">Ação</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="materiaisTableBody">
                             {% for material in materiais %}
-                            <tr>
+                            <tr class="material-row" 
+                                data-codigo="{{ material.CodMaterial }}"
+                                data-descricao="{{ material.DescricaoMaterial }}"
+                                data-empresa="{{ material.Empresa }}"
+                                data-aplicacao="{{ material.Aplicacao }}">
                                 <td>{{ material.CodMaterial }}</td>
                                 <td>{{ material.DescricaoMaterial }}</td>
                                 <td>{{ material.Empresa }}</td>
@@ -420,6 +546,75 @@
                 // Gera o arquivo Excel
                 XLSX.writeFile(wb, 'materiais_cadastrados.xlsx');
             });
+
+            // Função para aplicar filtros
+            function aplicarFiltros() {
+                const descricaoFilter = document.getElementById('filterDescricao').value.toLowerCase();
+                const empresaFilter = document.getElementById('filterEmpresa').value;
+                const aplicacaoFilter = document.getElementById('filterAplicacao').value;
+                
+                const rows = document.querySelectorAll('.material-row');
+                let visibleCount = 0;
+                
+                rows.forEach(row => {
+                    const descricao = row.dataset.descricao.toLowerCase();
+                    const empresa = row.dataset.empresa;
+                    const aplicacao = row.dataset.aplicacao;
+                    
+                    const descricaoMatch = descricao.includes(descricaoFilter) || descricaoFilter === '';
+                    const empresaMatch = empresa === empresaFilter || empresaFilter === '';
+                    const aplicacaoMatch = aplicacao === aplicacaoFilter || aplicacaoFilter === '';
+                    
+                    if (descricaoMatch && empresaMatch && aplicacaoMatch) {
+                        row.style.display = '';
+                        visibleCount++;
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+                
+                // Atualizar contador
+                const totalCount = rows.length;
+                const filterCount = document.getElementById('filteredCount');
+                
+                if (descricaoFilter || empresaFilter || aplicacaoFilter) {
+                    filterCount.textContent = `Mostrando ${visibleCount} de ${totalCount} materiais`;
+                    
+                    // Mostrar mensagem se nenhum resultado for encontrado
+                    if (visibleCount === 0) {
+                        document.getElementById('noResultsMessage').style.display = 'block';
+                    } else {
+                        document.getElementById('noResultsMessage').style.display = 'none';
+                    }
+                } else {
+                    filterCount.textContent = 'Mostrando todos os materiais';
+                    document.getElementById('noResultsMessage').style.display = 'none';
+                }
+            }
+            
+            // Event listeners para os filtros
+            document.getElementById('applyFilters').addEventListener('click', aplicarFiltros);
+            
+            document.getElementById('resetFilters').addEventListener('click', function() {
+                document.getElementById('filterDescricao').value = '';
+                document.getElementById('filterEmpresa').value = '';
+                document.getElementById('filterAplicacao').value = '';
+                aplicarFiltros();
+            });
+            
+            // Aplicar filtros ao digitar (com debounce para performance)
+            let filterTimeout;
+            document.getElementById('filterDescricao').addEventListener('input', function() {
+                clearTimeout(filterTimeout);
+                filterTimeout = setTimeout(aplicarFiltros, 300);
+            });
+            
+            // Aplicar filtros quando selecionar opções nos dropdowns
+            document.getElementById('filterEmpresa').addEventListener('change', aplicarFiltros);
+            document.getElementById('filterAplicacao').addEventListener('change', aplicarFiltros);
+            
+            // Aplicar filtros inicialmente para garantir estado consistente
+            aplicarFiltros();
         });
     </script>
 </body>
