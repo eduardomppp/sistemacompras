@@ -16,6 +16,7 @@ import calendar
 from collections import Counter
 import random
 import shutil
+from sqlalchemy import or_
 
 # Carregar variáveis de ambiente
 load_dotenv()
@@ -506,6 +507,18 @@ def create_fornecedores_db():
     except sqlite3.Error as e:
         app.logger.error(f"Erro ao criar tabela fornecedores: {str(e)}")
         return False
+
+class HistoricoEstoque(db.Model):
+    __tablename__ = 'HistoricoEstoque'
+    id = db.Column(db.Integer, primary_key=True)
+    cod_material = db.Column(db.Integer, db.ForeignKey('Materiais.CodMaterial'))
+    usuario = db.Column(db.Text, nullable=False)
+    quantidade_anterior = db.Column(db.Integer, nullable=False)
+    quantidade_nova = db.Column(db.Integer, nullable=False)
+    data_alteracao = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    motivo = db.Column(db.Text, nullable=True)
+    
+    material = db.relationship('Materiais', backref='historico_estoque')
 
 def get_db_connection(db_path):
     try:
@@ -2714,6 +2727,7 @@ def listar_requisicoes():
     except Exception as e:
         flash(f'Erro ao carregar requisições: {str(e)}', 'error')
         return render_template('listar_requisicoes.html', requisicoes=[])
+    
 def atualizar_estrutura_requisicoes():
     try:
         conn = sqlite3.connect(DATABASE)
@@ -4054,24 +4068,116 @@ def delete_supplier():
                 
     except Exception as e:
         return jsonify({'status': 'error', 'message': f'Erro inesperado: {str(e)}'}), 500
+    
+#Inserir estoque manual caso necessario   
+@routes_bp.route('/definir-quantidade/<int:cod>', methods=['POST'])
+def definir_quantidade(cod):
+    if 'usuario' not in session:
+        flash('Acesso não autorizado', 'error')
+        return redirect(url_for('routes_bp.login'))
+    
+    try:
+        quantidade = request.form.get('quantidade', 0)
+        motivo = request.form.get('motivo', 'Ajuste manual')  # Novo campo
+        
+        # Validações
+        try:
+            quantidade = int(quantidade)
+        except ValueError:
+            flash('Valor inválido para quantidade. Use apenas números inteiros.', 'error')
+            return redirect(url_for('routes_bp.listar_materiais'))
+        
+        if quantidade < 0:
+            flash('Quantidade não pode ser negativa', 'error')
+            return redirect(url_for('routes_bp.listar_materiais'))
+        
+        material = Materiais.query.get_or_404(cod)
+        
+        # Registrar no histórico antes de alterar
+        historico = HistoricoEstoque(
+            cod_material=material.CodMaterial,
+            usuario=session['usuario'],
+            quantidade_anterior=material.QuantidadeEstoque,
+            quantidade_nova=quantidade,
+            motivo=motivo
+        )
+        db.session.add(historico)
+        
+        # Atualizar estoque
+        material.QuantidadeEstoque = quantidade
+        db.session.commit()
+        
+        flash(f'Estoque de {material.DescricaoMaterial} atualizado de {historico.quantidade_anterior} para {quantidade} unidades', 'success')
+    
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Erro ao atualizar quantidade: {str(e)}', 'error')
+    
+    return redirect(url_for('routes_bp.listar_materiais'))
+
+@routes_bp.route('/relatorio-estoque')
+def relatorio_estoque():
+    if 'usuario' not in session:
+        flash('Acesso não autorizado', 'error')
+        return redirect(url_for('routes_bp.login'))
+
+    # Obter parâmetros de filtro
+    page = request.args.get('page', 1, type=int)
+    per_page = 20  # Itens por página
+    data_inicio = request.args.get('data_inicio')
+    data_fim = request.args.get('data_fim')
+    usuario = request.args.get('usuario')
+    material = request.args.get('material')
+
+    # Construir query base
+    query = HistoricoEstoque.query.join(Materiais)
+
+    # Aplicar filtros
+    if data_inicio:
+        query = query.filter(HistoricoEstoque.data_alteracao >= data_inicio)
+    if data_fim:
+        data_fim_ajustada = datetime.strptime(data_fim, '%Y-%m-%d') + timedelta(days=1)
+        query = query.filter(HistoricoEstoque.data_alteracao <= data_fim_ajustada)
+    if usuario:
+        query = query.filter(HistoricoEstoque.usuario.ilike(f'%{usuario}%'))
+    if material:
+        query = query.filter(or_(
+            Materiais.DescricaoMaterial.ilike(f'%{material}%'),
+            Materiais.CodMaterial.ilike(f'%{material}%')
+        ))
+
+    # Paginação
+    historico_paginado = query.order_by(HistoricoEstoque.data_alteracao.desc()).paginate(
+        page=page, 
+        per_page=per_page, 
+        error_out=False
+    )
+
+    return render_template('relatorio_estoque.html', historico=historico_paginado)
 
   # Registro do Blueprint (apenas uma vez)
 app.register_blueprint(routes_bp)  
 
 
 # Inicialização do banco de dados e execução do app
+# Inicialização do banco de dados e execução do app
 if __name__ == '__main__':
     create_database()
-    create_auditoria_table()  # Adicione esta linha
+    create_auditoria_table()
     create_fornecedores_db()
     create_solicitacoes_preenchidas_table()
+    
     with app.app_context():
+        # Cria todas as tabelas definidas nos modelos
+        db.create_all()
+        
+        # Executa migrações manuais se necessário
         if not atualizar_estrutura_requisicoes():
             print("Falha na migração. Verifique os logs acima.")
             exit(1)
-    with app.app_context():
-        db.create_all()
+        
         migrate_solicitacoes_compra()
+    
     logging.basicConfig(
         filename='app_errors.log',
         level=logging.INFO,
