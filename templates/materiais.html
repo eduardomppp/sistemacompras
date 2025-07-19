@@ -299,6 +299,28 @@
             margin-top: 10px;
         }
 
+        /* Estilos para o campo de quantidade */
+        .quantity-input {
+            width: 80px;
+            padding: 8px;
+            border: 1px solid var(--medium-gray);
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .quantity-form {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .quantity-btn {
+            padding: 8px 12px;
+            min-width: auto;
+            width: auto;
+        }
+
         @media (max-width: 600px) {
             .container {
                 padding: 15px;
@@ -336,6 +358,16 @@
 
             .filter-btn {
                 width: 100%;
+            }
+
+            /* Ajustes para mobile no campo de quantidade */
+            .quantity-input {
+                width: 60px;
+                padding: 6px;
+            }
+
+            .quantity-btn {
+                padding: 6px 8px;
             }
         }
     </style>
@@ -458,6 +490,7 @@
                                 <th>Descrição</th>
                                 <th>Empresa</th>
                                 <th>Aplicação</th>
+                                <th>Corrigir Estoque</th>
                                 <th class="actions">Ação</th>
                             </tr>
                         </thead>
@@ -467,11 +500,21 @@
                                 data-codigo="{{ material.CodMaterial }}"
                                 data-descricao="{{ material.DescricaoMaterial }}"
                                 data-empresa="{{ material.Empresa }}"
-                                data-aplicacao="{{ material.Aplicacao }}">
+                                data-aplicacao="{{ material.Aplicacao }}"
+                                data-quantidade="{{ material.QuantidadeNecessaria or 0 }}">
                                 <td>{{ material.CodMaterial }}</td>
                                 <td>{{ material.DescricaoMaterial }}</td>
                                 <td>{{ material.Empresa }}</td>
                                 <td>{{ material.Aplicacao }}</td>
+                                <td>
+                                    <form method="POST" action="{{ url_for('routes_bp.definir_quantidade', cod=material.CodMaterial) }}" class="quantity-form">
+                                        <input type="number" name="quantidade" class="quantity-input" 
+                                               value="{{ material.QuantidadeNecessaria or 0 }}" min="0" step="1">
+                                        <button type="submit" class="btn btn-primary quantity-btn">
+                                            <i class="fas fa-save"></i>
+                                        </button>
+                                    </form>
+                                </td>
                                 <td class="actions">
                                     <form method="POST" action="{{ url_for('routes_bp.excluir_material', cod=material.CodMaterial) }}" 
                                           onsubmit="return confirm('Tem certeza que deseja excluir o material {{ material.DescricaoMaterial }}?')">
@@ -552,6 +595,7 @@
                 const descricaoFilter = document.getElementById('filterDescricao').value.toLowerCase();
                 const empresaFilter = document.getElementById('filterEmpresa').value;
                 const aplicacaoFilter = document.getElementById('filterAplicacao').value;
+                const quantidadeFilter = document.getElementById('filterQuantidade').value;
                 
                 const rows = document.querySelectorAll('.material-row');
                 let visibleCount = 0;
@@ -560,12 +604,16 @@
                     const descricao = row.dataset.descricao.toLowerCase();
                     const empresa = row.dataset.empresa;
                     const aplicacao = row.dataset.aplicacao;
+                    const quantidade = row.dataset.quantidade;
                     
                     const descricaoMatch = descricao.includes(descricaoFilter) || descricaoFilter === '';
                     const empresaMatch = empresa === empresaFilter || empresaFilter === '';
                     const aplicacaoMatch = aplicacao === aplicacaoFilter || aplicacaoFilter === '';
+                    const quantidadeMatch = quantidadeFilter === '' || 
+                                          (quantidadeFilter === 'com' && quantidade > 0) ||
+                                          (quantidadeFilter === 'sem' && quantidade == 0);
                     
-                    if (descricaoMatch && empresaMatch && aplicacaoMatch) {
+                    if (descricaoMatch && empresaMatch && aplicacaoMatch && quantidadeMatch) {
                         row.style.display = '';
                         visibleCount++;
                     } else {
@@ -577,7 +625,7 @@
                 const totalCount = rows.length;
                 const filterCount = document.getElementById('filteredCount');
                 
-                if (descricaoFilter || empresaFilter || aplicacaoFilter) {
+                if (descricaoFilter || empresaFilter || aplicacaoFilter || quantidadeFilter) {
                     filterCount.textContent = `Mostrando ${visibleCount} de ${totalCount} materiais`;
                     
                     // Mostrar mensagem se nenhum resultado for encontrado
@@ -599,6 +647,7 @@
                 document.getElementById('filterDescricao').value = '';
                 document.getElementById('filterEmpresa').value = '';
                 document.getElementById('filterAplicacao').value = '';
+                document.getElementById('filterQuantidade').value = '';
                 aplicarFiltros();
             });
             
@@ -612,6 +661,7 @@
             // Aplicar filtros quando selecionar opções nos dropdowns
             document.getElementById('filterEmpresa').addEventListener('change', aplicarFiltros);
             document.getElementById('filterAplicacao').addEventListener('change', aplicarFiltros);
+            document.getElementById('filterQuantidade').addEventListener('change', aplicarFiltros);
             
             // Aplicar filtros inicialmente para garantir estado consistente
             aplicarFiltros();
