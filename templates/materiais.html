@@ -595,7 +595,6 @@
                 const descricaoFilter = document.getElementById('filterDescricao').value.toLowerCase();
                 const empresaFilter = document.getElementById('filterEmpresa').value;
                 const aplicacaoFilter = document.getElementById('filterAplicacao').value;
-                const quantidadeFilter = document.getElementById('filterQuantidade').value;
                 
                 const rows = document.querySelectorAll('.material-row');
                 let visibleCount = 0;
@@ -604,16 +603,12 @@
                     const descricao = row.dataset.descricao.toLowerCase();
                     const empresa = row.dataset.empresa;
                     const aplicacao = row.dataset.aplicacao;
-                    const quantidade = row.dataset.quantidade;
                     
                     const descricaoMatch = descricao.includes(descricaoFilter) || descricaoFilter === '';
                     const empresaMatch = empresa === empresaFilter || empresaFilter === '';
                     const aplicacaoMatch = aplicacao === aplicacaoFilter || aplicacaoFilter === '';
-                    const quantidadeMatch = quantidadeFilter === '' || 
-                                          (quantidadeFilter === 'com' && quantidade > 0) ||
-                                          (quantidadeFilter === 'sem' && quantidade == 0);
                     
-                    if (descricaoMatch && empresaMatch && aplicacaoMatch && quantidadeMatch) {
+                    if (descricaoMatch && empresaMatch && aplicacaoMatch) {
                         row.style.display = '';
                         visibleCount++;
                     } else {
@@ -625,7 +620,7 @@
                 const totalCount = rows.length;
                 const filterCount = document.getElementById('filteredCount');
                 
-                if (descricaoFilter || empresaFilter || aplicacaoFilter || quantidadeFilter) {
+                if (descricaoFilter || empresaFilter || aplicacaoFilter) {
                     filterCount.textContent = `Mostrando ${visibleCount} de ${totalCount} materiais`;
                     
                     // Mostrar mensagem se nenhum resultado for encontrado
@@ -647,7 +642,6 @@
                 document.getElementById('filterDescricao').value = '';
                 document.getElementById('filterEmpresa').value = '';
                 document.getElementById('filterAplicacao').value = '';
-                document.getElementById('filterQuantidade').value = '';
                 aplicarFiltros();
             });
             
@@ -661,7 +655,6 @@
             // Aplicar filtros quando selecionar opções nos dropdowns
             document.getElementById('filterEmpresa').addEventListener('change', aplicarFiltros);
             document.getElementById('filterAplicacao').addEventListener('change', aplicarFiltros);
-            document.getElementById('filterQuantidade').addEventListener('change', aplicarFiltros);
             
             // Aplicar filtros inicialmente para garantir estado consistente
             aplicarFiltros();
