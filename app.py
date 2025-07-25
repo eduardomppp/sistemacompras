@@ -2650,6 +2650,31 @@ def listar_estoque():
     except Exception as e:
         flash(f'Erro ao carregar estoque: {str(e)}', 'error')
         return render_template('listar_estoque.html', estoques=[])
+    
+#Auditoria tela de listar estoque
+@routes_bp.route('/listar_estoque_auditor', methods=['GET'])
+def listar_estoque_auditor():
+    if 'usuario' not in session:
+        return redirect(url_for('routes_bp.login'))
+    
+    try:
+        # Busca todos os materiais com estoque positivo
+        materiais = Materiais.query.filter(Materiais.QuantidadeEstoque > 0).all()
+        
+        estoques = []
+        for material in materiais:
+            # Tenta encontrar um registro de estoque
+            estoque = Estoque.query.filter_by(cod_material=material.CodMaterial).first()
+            
+            estoques.append({
+                'material': material,
+                'preenchimento_id': estoque.preenchimento_id if estoque else None
+            })
+            
+        return render_template('listar_estoque_auditor.html', estoques=estoques)
+    except Exception as e:
+        flash(f'Erro ao carregar estoque: {str(e)}', 'error')
+        return render_template('listar_estoque_auditor.html', estoques=[])
 
 @routes_bp.route('/requisitar_manual/<int:cod_material>', methods=['GET', 'POST'])
 def requisitar_manual(cod_material):
