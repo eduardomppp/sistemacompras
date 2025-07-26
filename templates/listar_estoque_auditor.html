@@ -365,8 +365,7 @@
                     <th>Empresa</th>
                     <th>Aplicação</th>
                     <th>Quantidade em Estoque</th>
-                    <th>Fornecedor</th>
-                    <th>Número NF</th>
+                    
                 </tr>
             </thead>
             <tbody>
@@ -381,8 +380,7 @@
                         <td>{{ item.material.Empresa }}</td>
                         <td>{{ item.material.Aplicacao }}</td>
                         <td>{{ item.material.QuantidadeEstoque }}</td>
-                        <td>{{ item.material.Fornecedor or 'N/A' }}</td>
-                        <td>{{ item.material.NumeroNF or 'N/A' }}</td>
+                        
                     </tr>
                 {% else %}
                     <tr>
