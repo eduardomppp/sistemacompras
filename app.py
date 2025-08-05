@@ -87,7 +87,7 @@ logging.basicConfig(
 )
 
 # Definir o caminho do arquivo de senhas
-SENHAS_FILE = os.path.join(os.path.dirname(__file__), "senhas.txt")
+SENHAS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "senhas.txt")
 
 def log_error(message):
     logging.error(message)
