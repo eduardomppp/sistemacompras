@@ -549,21 +549,45 @@ def format_cnpj(cnpj):
 def ler_senhas():
     senhas = {}
     try:
-        if not os.path.exists(SENHAS_FILE):
-            with open(SENHAS_FILE, "w", encoding='utf-8') as f:
+        # Verifica o caminho absoluto
+        caminho_absoluto = os.path.abspath(SENHAS_FILE)
+        print(f"Tentando ler arquivo de senhas em: {caminho_absoluto}")  # Log para debug
+        
+        # Verifica se o arquivo existe
+        if not os.path.exists(caminho_absoluto):
+            print("Arquivo de senhas não encontrado, criando arquivo vazio")
+            with open(caminho_absoluto, "w", encoding='utf-8') as f:
                 f.write("")
         
-        with open(SENHAS_FILE, "r", encoding='utf-8') as f:
-            for line in f:
-                partes = line.strip().split("%")
-                if len(partes) == 4:
-                    usuario, senha, pagina, empresa = partes
-                    senhas[usuario] = {"senha": senha, "pagina": pagina, "empresa": empresa}
-                elif len(partes) == 3:
-                    usuario, senha, pagina = partes
-                    senhas[usuario] = {"senha": senha, "pagina": pagina, "empresa": ""}
+        # Tenta ler com diferentes encodings
+        encodings = ['utf-8', 'latin-1', 'utf-16']
+        
+        for encoding in encodings:
+            try:
+                with open(caminho_absoluto, "r", encoding=encoding) as f:
+                    for line in f:
+                        line = line.strip()
+                        if line and not line.startswith("#"):  # Ignora linhas vazias e comentários
+                            partes = line.split("%")
+                            if len(partes) >= 3:  # Mínimo: usuário, senha, página
+                                usuario = partes[0]
+                                senha = partes[1]
+                                pagina = partes[2]
+                                empresa = partes[3] if len(partes) >= 4 else ""
+                                senhas[usuario] = {
+                                    "senha": senha,
+                                    "pagina": pagina,
+                                    "empresa": empresa
+                                }
+                break  # Se leitura foi bem sucedida, sai do loop
+            except UnicodeDecodeError:
+                continue
+        
+        print(f"Total de usuários carregados: {len(senhas)}")  # Log para debug
     except Exception as e:
-        logging.error(f"Erro ao ler senhas.txt: {str(e)}")
+        print(f"Erro crítico ao ler senhas.txt: {str(e)}")  # Log mais detalhado
+        logging.error(f"Erro ao ler senhas.txt: {str(e)}", exc_info=True)
+    
     return senhas
 
 
