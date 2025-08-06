@@ -28,7 +28,7 @@ app.secret_key = os.getenv('FLASK_SECRET_KEY')
 
 # Configurações de segurança da sessão
 app.config.update(
-    SESSION_COOKIE_SECURE=True,     # Só envia cookies via HTTPS - Desativado para teste (originalmente True)
+    SESSION_COOKIE_SECURE=False,     # Só envia cookies via HTTPS - Desativado para teste (originalmente True)
     SESSION_COOKIE_HTTPONLY=True,   # Impede acesso via JavaScript
     SESSION_COOKIE_SAMESITE='Lax',  # Proteção contra CSRF
     PERMANENT_SESSION_LIFETIME=timedelta(minutes=30),  # Tempo de expiração
