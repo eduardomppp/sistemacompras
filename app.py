@@ -549,43 +549,41 @@ def format_cnpj(cnpj):
 def ler_senhas():
     senhas = {}
     try:
-        # Verifica o caminho absoluto
         caminho_absoluto = os.path.abspath(SENHAS_FILE)
-        print(f"Tentando ler arquivo de senhas em: {caminho_absoluto}")  # Log para debug
+        print(f"Tentando ler arquivo de senhas em: {caminho_absoluto}")
         
-        # Verifica se o arquivo existe
         if not os.path.exists(caminho_absoluto):
             print("Arquivo de senhas não encontrado, criando arquivo vazio")
             with open(caminho_absoluto, "w", encoding='utf-8') as f:
                 f.write("")
         
-        # Tenta ler com diferentes encodings
-        encodings = ['utf-8', 'latin-1', 'utf-16']
+        # Tentar ler com encoding UTF-8 e fallback para latin-1
+        try:
+            with open(caminho_absoluto, "r", encoding='utf-8') as f:
+                content = f.read()
+        except UnicodeDecodeError:
+            with open(caminho_absoluto, "r", encoding='latin-1') as f:
+                content = f.read()
         
-        for encoding in encodings:
-            try:
-                with open(caminho_absoluto, "r", encoding=encoding) as f:
-                    for line in f:
-                        line = line.strip()
-                        if line and not line.startswith("#"):  # Ignora linhas vazias e comentários
-                            partes = line.split("%")
-                            if len(partes) >= 3:  # Mínimo: usuário, senha, página
-                                usuario = partes[0]
-                                senha = partes[1]
-                                pagina = partes[2]
-                                empresa = partes[3] if len(partes) >= 4 else ""
-                                senhas[usuario] = {
-                                    "senha": senha,
-                                    "pagina": pagina,
-                                    "empresa": empresa
-                                }
-                break  # Se leitura foi bem sucedida, sai do loop
-            except UnicodeDecodeError:
-                continue
+        # Processar conteúdo
+        for line in content.splitlines():
+            line = line.strip()
+            if line and not line.startswith("#"):
+                partes = line.split("%")
+                if len(partes) >= 3:
+                    usuario = partes[0]
+                    senha = partes[1]
+                    pagina = partes[2]
+                    empresa = partes[3] if len(partes) >= 4 else ""
+                    senhas[usuario] = {
+                        "senha": senha,
+                        "pagina": pagina,
+                        "empresa": empresa
+                    }
         
-        print(f"Total de usuários carregados: {len(senhas)}")  # Log para debug
+        print(f"Total de usuários carregados: {len(senhas)}")
     except Exception as e:
-        print(f"Erro crítico ao ler senhas.txt: {str(e)}")  # Log mais detalhado
+        print(f"Erro crítico ao ler senhas.txt: {str(e)}")
         logging.error(f"Erro ao ler senhas.txt: {str(e)}", exc_info=True)
     
     return senhas
@@ -701,26 +699,29 @@ def login():
         usuario_completo = request.form.get('usuario', '').strip()
         senha = request.form.get('senha', '').strip()
         
-        senhas = app.jinja_env.globals['ler_senhas']()
+        print(f"Tentativa de login: usuário={usuario_completo}")  # Log para debug
+        
+        senhas = ler_senhas()
+        print(f"Usuários carregados: {list(senhas.keys())}")  # Log dos usuários
         
         # Verifica se o usuário completo existe no arquivo de senhas
         if usuario_completo in senhas and senha == senhas[usuario_completo]["senha"]:
-            # Extrai o nome de usuário real (parte antes do primeiro %)
             usuario_real = usuario_completo.split('%')[0]
             
             session['usuario'] = usuario_real
             session['ultima_atividade'] = str(datetime.now())
-            app.jinja_env.globals['registrar_log'](usuario_real, 'login', request.remote_addr)
-            app.logger.info(f'Usuário {usuario_real} autenticado com sucesso.')
+            print(f"Usuário autenticado: {usuario_real}")  # Log de sucesso
             
-            # Obtém a página de destino dos dados do usuário
+            # Obtém a página de destino
             pagina_destino = senhas[usuario_completo]["pagina"]
-            
-            # Remove .html se necessário e redireciona
             pagina_destino = pagina_destino.replace('.html', '')
+            
+            print(f"Redirecionando para: {pagina_destino}")  # Log do redirecionamento
             return redirect(url_for(f'routes_bp.{pagina_destino}'))
         else:
+            print("Falha na autenticação")  # Log de falha
             flash('Usuário ou senha incorretos.', 'error')
+    
     return render_template('login.html')
 
 @routes_bp.route('/logout', methods=['GET'])
