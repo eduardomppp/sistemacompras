@@ -28,11 +28,10 @@ app.secret_key = os.getenv('FLASK_SECRET_KEY')
 
 # Configurações de segurança da sessão
 app.config.update(
-    SESSION_COOKIE_SECURE=False,     # Só envia cookies via HTTPS - Desativado para teste (originalmente True)
+    SESSION_COOKIE_SECURE=True,     # Só envia cookies via HTTPS - Desativado para teste (originalmente True)
     SESSION_COOKIE_HTTPONLY=True,   # Impede acesso via JavaScript
     SESSION_COOKIE_SAMESITE='Lax',  # Proteção contra CSRF
     PERMANENT_SESSION_LIFETIME=timedelta(minutes=30),  # Tempo de expiração
-    SESSION_COOKIE_NAME='__Secure-sessionid',  # Prefixo especial para cookies seguros
     SESSION_REFRESH_EACH_REQUEST=True,        # Renova o tempo de vida a cada requisição
     TEMPLATES_AUTO_RELOAD=True                # Recarrega templates em desenvolvimento
 
@@ -670,20 +669,26 @@ def verificar_tempo_inatividade():
     if request.endpoint in ['routes_bp.login', 'static']:
         return
     
-    if 'usuario' in session:
-        agora = datetime.now()
-        ultima_atividade = session.get('ultima_atividade')
-        
-        if ultima_atividade:
-            ultima_atividade = datetime.strptime(ultima_atividade, '%Y-%m-%d %H:%M:%S.%f')
-            if agora - ultima_atividade > timedelta(minutes=30):
-                usuario = session.get('usuario')
-                app.jinja_env.globals['registrar_log'](usuario, 'logout (inatividade)', request.remote_addr)
-                session.clear()
-                flash('Você foi desconectado por inatividade.', 'warning')
-                return redirect(url_for('routes_bp.login'))
-        
-        session['ultima_atividade'] = str(agora)
+    print(f"Verificando sessão para endpoint: {request.endpoint}")
+    print(f"Sessão atual: {dict(session)}")
+    print(f"Cookies recebidos: {request.cookies}")
+    if 'usuario' not in session:
+        print(f"Usuário não autenticado tentando acessar {request.endpoint}")
+        return redirect(url_for('routes_bp.login'))
+    
+    agora = datetime.now()
+    ultima_atividade = session.get('ultima_atividade')
+    
+    if ultima_atividade:
+        ultima_atividade = datetime.strptime(ultima_atividade, '%Y-%m-%d %H:%M:%S.%f')
+        if agora - ultima_atividade > timedelta(minutes=30):
+            usuario = session.get('usuario')
+            registrar_log(usuario, 'logout (inatividade)', request.remote_addr)
+            session.clear()
+            flash('Você foi desconectado por inatividade.', 'warning')
+            return redirect(url_for('routes_bp.login'))
+    
+    session['ultima_atividade'] = str(agora)
 
 @routes_bp.route('/', methods=['GET'])
 def home():
@@ -696,32 +701,29 @@ def uploads(filename):
 @routes_bp.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
+        print(f"Dados recebidos - Usuário: {request.form.get('usuario')}")
         usuario_completo = request.form.get('usuario', '').strip()
         senha = request.form.get('senha', '').strip()
         
-        print(f"Tentativa de login: usuário={usuario_completo}")  # Log para debug
-        
         senhas = ler_senhas()
-        print(f"Usuários carregados: {list(senhas.keys())}")  # Log dos usuários
+        print(f"Usuários no sistema: {list(senhas.keys())}")
         
-        # Verifica se o usuário completo existe no arquivo de senhas
         if usuario_completo in senhas and senha == senhas[usuario_completo]["senha"]:
             usuario_real = usuario_completo.split('%')[0]
-            
             session['usuario'] = usuario_real
-            session['ultima_atividade'] = str(datetime.now())
-            print(f"Usuário autenticado: {usuario_real}")  # Log de sucesso
-            
-            # Obtém a página de destino
-            pagina_destino = senhas[usuario_completo]["pagina"]
-            pagina_destino = pagina_destino.replace('.html', '')
-            
-            print(f"Redirecionando para: {pagina_destino}")  # Log do redirecionamento
-            return redirect(url_for(f'routes_bp.{pagina_destino}'))
-        else:
-            print("Falha na autenticação")  # Log de falha
-            flash('Usuário ou senha incorretos.', 'error')
+            session['_fresh'] = True
+            print(f"Sessão criada para {usuario_real}. Conteúdo: {dict(session)}")
+            print(f"Cookie de sessão antes de redirecionar: {request.cookies.get('__Secure-sessionid', 'N/A')}")
+            pagina_destino = senhas[usuario_completo]["pagina"].replace('.html', '')
+            print(f"Redirecionando para: {pagina_destino}")
+            response = redirect(url_for(f'routes_bp.{pagina_destino}'))
+            print(f"Headers da resposta: {response.headers}")
+            return response
+        
+        flash('Credenciais inválidas', 'error')
+        print("Falha na autenticação")
     
+    print(f"Cookies recebidos na requisição GET: {request.cookies}")
     return render_template('login.html')
 
 @routes_bp.route('/logout', methods=['GET'])
