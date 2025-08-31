@@ -112,12 +112,25 @@ class Materiais(db.Model):
     Fornecedor = db.Column(db.Text)
     NumeroNF = db.Column(db.Text)
     FatorConsumo = db.Column(db.Float, nullable=True, default=0.0)
-    Ativo = db.Column(db.Boolean, default=False)  # Novo campo
+    Ativo = db.Column(db.Boolean, default=False)
+
+    def to_dict(self):
+        return {
+            'CodMaterial': self.CodMaterial,
+            'DescricaoMaterial': self.DescricaoMaterial,
+            'Empresa': self.Empresa,
+            'Aplicacao': self.Aplicacao,
+            'QuantidadeEstoque': self.QuantidadeEstoque,
+            'Fornecedor': self.Fornecedor,
+            'NumeroNF': self.NumeroNF,
+            'FatorConsumo': self.FatorConsumo,
+            'Ativo': self.Ativo
+        }
 
 # Modelo para Solicitações de Compra
 class SolicitacoesCompra(db.Model):
     __tablename__ = 'SolicitacoesCompra'
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    id = db.Column(db.Integer, primary_key=True)
     cod_material = db.Column(db.Integer, db.ForeignKey('Materiais.CodMaterial'), nullable=False)
     especificacao = db.Column(db.Text, nullable=False)
     quantidade = db.Column(db.Integer, nullable=False)
@@ -130,13 +143,33 @@ class SolicitacoesCompra(db.Model):
     marca = db.Column(db.Text, nullable=True)
     ativo = db.Column(db.String(3), nullable=False)
     nome_ativo = db.Column(db.Text, nullable=True)
-    prioridade = db.Column(db.String(20), nullable=False, default='Programado')  # Novo campo
+    prioridade = db.Column(db.String(20), nullable=False, default='Programado')
+    status_aprovacao = db.Column(db.String(20), nullable=True, default=None)
     material = db.relationship('Materiais', backref='solicitacoes')
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'cod_material': self.cod_material,
+            'especificacao': self.especificacao,
+            'quantidade': self.quantidade,
+            'unidade_medida': self.unidade_medida,
+            'aplicacao': self.aplicacao,
+            'empresa': self.empresa,
+            'data_solicitacao': self.data_solicitacao.isoformat() if self.data_solicitacao else None,
+            'usuario': self.usuario,
+            'foto_path': self.foto_path,
+            'marca': self.marca,
+            'ativo': self.ativo,
+            'nome_ativo': self.nome_ativo,
+            'prioridade': self.prioridade,
+            'status_aprovacao': self.status_aprovacao
+        }
 
 # Modelo para Solicitações Preenchidas
 class SolicitacoesPreenchidas(db.Model):
     __tablename__ = 'SolicitacoesPreenchidas'
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    id = db.Column(db.Integer, primary_key=True)
     solicitacao_id = db.Column(db.Integer, db.ForeignKey('SolicitacoesCompra.id'), nullable=False)
     fornecedor_id = db.Column(db.Integer, nullable=False)
     valor_unitario = db.Column(db.Float, nullable=False)
@@ -148,7 +181,33 @@ class SolicitacoesPreenchidas(db.Model):
     usuario = db.Column(db.Text, nullable=False)
     status = db.Column(db.Text, nullable=True, default='Aguardando Aprovação')
     pdf_path = db.Column(db.Text, nullable=True)
-    solicitacao = db.relationship('SolicitacoesCompra', backref='preenchimentos')
+    # REMOVER ESTA LINHA: aprovacao_pdf_path = db.Column(db.Text, nullable=True)
+    
+    solicitacao = db.relationship('SolicitacoesCompra', backref='preenchimentos_fornecidos')
+    
+    historico_descontos = db.relationship(
+        "HistoricoDescontos", 
+        backref="solicitacao_preenchida",
+        lazy="dynamic",
+        cascade="all, delete-orphan"
+    )
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'solicitacao_id': self.solicitacao_id,
+            'fornecedor_id': self.fornecedor_id,
+            'valor_unitario': self.valor_unitario,
+            'valor_total': self.valor_total,
+            'valor_frete': self.valor_frete,
+            'prazo_entrega': self.prazo_entrega,
+            'condicao_pagamento': self.condicao_pagamento,
+            'data_preenchimento': self.data_preenchimento.isoformat() if self.data_preenchimento else None,
+            'usuario': self.usuario,
+            'status': self.status,
+            'pdf_path': self.pdf_path,
+            'historico_descontos': [h.to_dict() for h in self.historico_descontos]
+        }
     
     # Propriedades derivadas da solicitação original
     @property
@@ -223,6 +282,41 @@ pedido_preenchimento_associacao = db.Table('pedido_preenchimento_associacao',
     db.Column('pedido_id', db.Integer, db.ForeignKey('PedidosCompra.id'), primary_key=True),
     db.Column('preenchimento_id', db.Integer, db.ForeignKey('SolicitacoesPreenchidas.id'), primary_key=True)
 )
+
+# Modelo para Histórico de Descontos
+class HistoricoDescontos(db.Model):
+    __tablename__ = 'HistoricoDescontos'
+    id = db.Column(db.Integer, primary_key=True)
+    preenchimento_id = db.Column(db.Integer, db.ForeignKey('SolicitacoesPreenchidas.id'), nullable=False)
+    valor_unitario_anterior = db.Column(db.Float, nullable=False)
+    valor_unitario_novo = db.Column(db.Float, nullable=False)
+    valor_frete_anterior = db.Column(db.Float, nullable=True)
+    valor_frete_novo = db.Column(db.Float, nullable=True)
+    data_alteracao = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    usuario = db.Column(db.Text, nullable=False)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'preenchimento_id': self.preenchimento_id,
+            'valor_unitario_anterior': self.valor_unitario_anterior,
+            'valor_unitario_novo': self.valor_unitario_novo,
+            'valor_frete_anterior': self.valor_frete_anterior,
+            'valor_frete_novo': self.valor_frete_novo,
+            'data_alteracao': self.data_alteracao.isoformat() if self.data_alteracao else None,
+            'usuario': self.usuario
+        }
+
+def check_historico_descontos_schema():
+    try:
+        conn = sqlite3.connect(DATABASE)
+        cursor = conn.cursor()
+        cursor.execute("PRAGMA table_info(HistoricoDescontos)")
+        columns = [col[1] for col in cursor.fetchall()]
+        print("Colunas em HistoricoDescontos:", columns)
+        conn.close()
+    except sqlite3.Error as e:
+        print(f"Erro ao verificar esquema: {str(e)}")
 
 def add_comprovante_pagamento_column():
     try:
@@ -885,6 +979,13 @@ def menu_master():
         return redirect(url_for('routes_bp.login'))
     return render_template('menu_master.html')
 
+#Menu Master
+@routes_bp.route('/menu_aprovacao', methods=['GET'])
+def menu_aprovacao():
+    if 'usuario' not in session:
+        return redirect(url_for('routes_bp.login'))
+    return render_template('menu_aprovacao.html')
+
 #Menu Estoquista
 @routes_bp.route('/menu_estoquista', methods=['GET'])
 def menu_estoquista():
@@ -1334,6 +1435,51 @@ def listar_solicitacoes():
         logging.error(f"Error in listar_solicitacoes: {str(e)}")
         flash(f'Erro ao carregar solicitações: {str(e)}', 'error')
         return redirect(url_for('routes_bp.buscar_material'))
+
+@routes_bp.route('/aprovar_solicitacao', methods=['GET'])
+def aprovar_solicitacao():
+    if 'usuario' not in session:
+        return redirect(url_for('routes_bp.login'))
+    
+    try:
+        # Consulta para obter apenas solicitações sem nenhum preenchimento
+        solicitacoes = db.session.query(SolicitacoesCompra).outerjoin(
+            SolicitacoesPreenchidas,
+            SolicitacoesCompra.id == SolicitacoesPreenchidas.solicitacao_id
+        ).filter(
+            SolicitacoesPreenchidas.id.is_(None)
+        ).all()
+        
+        # Função para ler usuários e empresas do arquivo senhas.txt
+        def get_usuarios_empresas():
+            usuarios = set()
+            empresas = set()
+            try:
+                with open('senhas.txt', 'r', encoding='utf-8') as f:
+                    for line in f:
+                        partes = line.strip().split('%')
+                        if len(partes) >= 4:  # Verifica se tem pelo menos 4 partes
+                            usuario = partes[0]
+                            empresa = partes[3]
+                            usuarios.add(usuario)
+                            empresas.add(empresa)
+            except Exception as e:
+                logging.error(f"Erro ao ler senhas.txt: {str(e)}")
+            return sorted(usuarios), sorted(empresas)
+        
+        # Obter listas únicas de empresas e usuários do arquivo
+        usuarios, empresas = get_usuarios_empresas()
+        
+        if not solicitacoes:
+            flash('Nenhuma solicitação aberta encontrada.', 'info')
+        return render_template('aprovar_solicitacao.html', 
+                            solicitacoes=solicitacoes,
+                            empresas=empresas,
+                            usuarios=usuarios)
+    except Exception as e:
+        logging.error(f"Error in aprovar_solicitacao: {str(e)}")
+        flash(f'Erro ao carregar solicitações: {str(e)}', 'error')
+        return redirect(url_for('routes_bp.buscar_material'))
     
 def migrate_solicitacoes_compra():
     try:
@@ -1559,28 +1705,13 @@ def listar_solicitacoes_preenchidas():
         return redirect(url_for('routes_bp.login'))
     
     try:
-        # Obter parâmetros de filtro da URL
         empresa = request.args.get('empresa')
         usuario = request.args.get('usuario')
         data_inicio = request.args.get('data_inicio')
         data_fim = request.args.get('data_fim')
-
-        # Construir a query base, excluindo status 'Entregue'
-        query = db.session.query(
-            SolicitacoesPreenchidas,
-            SolicitacoesCompra,
-            Materiais
-        ).join(
-            SolicitacoesCompra,
-            SolicitacoesPreenchidas.solicitacao_id == SolicitacoesCompra.id
-        ).join(
-            Materiais,
-            SolicitacoesCompra.cod_material == Materiais.CodMaterial
-        ).filter(
-            SolicitacoesPreenchidas.status != 'Entregue'  # Exclui preenchimentos entregues
-        )
-
-        # Aplicar filtros
+        
+        query = SolicitacoesPreenchidas.query.join(SolicitacoesCompra)
+        
         if empresa:
             query = query.filter(SolicitacoesCompra.empresa == empresa)
         if usuario:
@@ -1588,77 +1719,39 @@ def listar_solicitacoes_preenchidas():
         if data_inicio:
             query = query.filter(SolicitacoesPreenchidas.data_preenchimento >= data_inicio)
         if data_fim:
-            # Adiciona 1 dia para incluir todo o dia final
             data_fim_ajustada = datetime.strptime(data_fim, '%Y-%m-%d') + timedelta(days=1)
             query = query.filter(SolicitacoesPreenchidas.data_preenchimento <= data_fim_ajustada)
-
-        # Ordenar por material e por data de preenchimento (mais recente primeiro)
-        query = query.order_by(
-            Materiais.DescricaoMaterial,
-            SolicitacoesPreenchidas.data_preenchimento.desc()
-        )
-
-        preenchimentos = query.all()
-
-        # Obter valores únicos para os filtros
-        empresas = db.session.query(
-            SolicitacoesCompra.empresa
-        ).distinct().order_by(
-            SolicitacoesCompra.empresa
-        ).all()
-
-        usuarios = db.session.query(
-            SolicitacoesPreenchidas.usuario
-        ).distinct().order_by(
-            SolicitacoesPreenchidas.usuario
-        ).all()
-
-        # Obter todos os IDs de fornecedores únicos
-        fornecedor_ids = {p[0].fornecedor_id for p in preenchimentos}
         
-        # Buscar todos os fornecedores de uma vez
-        fornecedores = {}
-        if fornecedor_ids:
-            conn = get_db_connection(DB_PATH_FORNECEDORES)
-            if conn:
-                try:
-                    cursor = conn.cursor()
-                    # Usar IN para buscar todos os fornecedores de uma vez
-                    placeholders = ','.join('?' * len(fornecedor_ids))
-                    cursor.execute(
-                        f'SELECT id, nome_fantasia FROM fornecedores WHERE id IN ({placeholders})', 
-                        list(fornecedor_ids)
-                    )
-                    fornecedores = {row[0]: row[1] for row in cursor.fetchall()}
-                finally:
-                    conn.close()
-
-        # Organizar os preenchimentos por material
+        preenchimentos = query.order_by(SolicitacoesPreenchidas.data_preenchimento.desc()).all()
+        
         preenchimentos_por_material = {}
-        solicitacoes_aprovadas = {}
-        
-        for preenchimento, solicitacao, material in preenchimentos:
-            material_nome = material.DescricaoMaterial
-            solicitacao_id = solicitacao.id
-            
+        for p in preenchimentos:
+            material_nome = p.solicitacao.material.DescricaoMaterial if p.solicitacao.material else 'N/A'
             if material_nome not in preenchimentos_por_material:
                 preenchimentos_por_material[material_nome] = []
-            
-            # Adicionar informações adicionais ao objeto de preenchimento
-            preenchimento.fornecedor_nome = fornecedores.get(preenchimento.fornecedor_id, "N/A")
-            preenchimento.data_criacao = preenchimento.data_preenchimento  # Padronizando o nome
-            preenchimento.solicitacao = solicitacao  # Adiciona a solicitação ao preenchimento
-            preenchimentos_por_material[material_nome].append(preenchimento)
-            
-            if preenchimento.status == 'Aprovado':
-                solicitacoes_aprovadas[solicitacao_id] = True
-
+            preenchimentos_por_material[material_nome].append({
+                'id': p.id,
+                'fornecedor_nome': get_fornecedor_nome(p.fornecedor_id),
+                'solicitacao': p.solicitacao,
+                'valor_unitario': p.valor_unitario,
+                'valor_frete': p.valor_frete,
+                'valor_total': p.valor_total,
+                'prazo_entrega': p.prazo_entrega,
+                'condicao_pagamento': p.condicao_pagamento,
+                'status': p.status,
+                'usuario': p.usuario,
+                'pdf_path': p.pdf_path,
+                'historico_descontos': [h.to_dict() for h in p.historico_descontos]
+            })
+        
+        empresas = db.session.query(SolicitacoesCompra.empresa).distinct().order_by(SolicitacoesCompra.empresa).all()
+        usuarios = db.session.query(SolicitacoesPreenchidas.usuario).distinct().order_by(SolicitacoesPreenchidas.usuario).all()
+        
         return render_template(
             'listar_solicitacoes_preenchidas.html',
             preenchimentos_por_material=preenchimentos_por_material,
-            solicitacoes_aprovadas=solicitacoes_aprovadas,
-            empresas=[e[0] for e in empresas if e[0]],  # Remove valores None
-            usuarios=[u[0] for u in usuarios if u[0]],  # Remove valores None
+            empresas=[e[0] for e in empresas if e[0]],
+            usuarios=[u[0] for u in usuarios if u[0]],
             filtros={
                 'empresa': empresa,
                 'usuario': usuario,
@@ -1666,17 +1759,30 @@ def listar_solicitacoes_preenchidas():
                 'data_fim': data_fim
             }
         )
+    
     except Exception as e:
         flash(f'Erro ao carregar solicitações preenchidas: {str(e)}', 'error')
+        app.logger.error(f'Erro em listar_solicitacoes_preenchidas: {str(e)}', exc_info=True)
         return render_template(
-            'listar_solicitacoes_preenchidas.html', 
-            preenchimentos_por_material={}, 
-            solicitacoes_aprovadas={},
+            'listar_solicitacoes_preenchidas.html',
+            preenchimentos_por_material={},
             empresas=[],
             usuarios=[],
             filtros={}
         )
-    
+
+def get_fornecedor_nome(fornecedor_id):
+    conn = get_db_connection(DB_PATH_FORNECEDORES)
+    if conn:
+        try:
+            cursor = conn.cursor()
+            cursor.execute('SELECT nome_fantasia FROM fornecedores WHERE id = ?', (fornecedor_id,))
+            result = cursor.fetchone()
+            return result['nome_fantasia'] if result else 'Fornecedor não encontrado'
+        finally:
+            conn.close()
+    return 'Fornecedor não encontrado'
+
 @routes_bp.route('/download_pdf/<int:preenchimento_id>', methods=['GET'])
 def download_pdf(preenchimento_id):
     if 'usuario' not in session:
@@ -1696,63 +1802,36 @@ def download_pdf(preenchimento_id):
 @routes_bp.route('/atualizar_status_preenchimento/<int:id>', methods=['POST'])
 def atualizar_status_preenchimento(id):
     if 'usuario' not in session:
-        flash('Usuário não autenticado.', 'error')
-        return redirect(url_for('routes_bp.login'))
-    
+        return jsonify({'success': False, 'message': 'Usuário não autenticado'}), 401
+
     try:
         preenchimento = SolicitacoesPreenchidas.query.get_or_404(id)
-        status = request.form.get('status', '').strip()
-        fornecedor = request.form.get('fornecedor', '').strip()
-        numero_nf = request.form.get('numero_nf', '').strip()
+        novo_status = request.form.get('status')
 
-        valid_statuses = ['Aguardando Pagamento', 'Aprovado', 'Reprovado', 'Entregue']
-        if not status or status not in valid_statuses:
-            flash(f'Status inválido: {status}', 'error')
-            return redirect(url_for('routes_bp.listar_solicitacoes_preenchidas'))
+        print(f"DEBUG >> Atualizando status para: {novo_status}")
 
-        if status == 'Entregue':
-            if not fornecedor or not numero_nf:
-                flash('Fornecedor e número da NF são obrigatórios para o status Entregue', 'error')
-                return redirect(url_for('routes_bp.listar_solicitacoes_preenchidas'))
+        # Atualizar status
+        if novo_status:
+            preenchimento.status = novo_status
 
-            material = Materiais.query.filter_by(CodMaterial=preenchimento.solicitacao.cod_material).first()
-            if not material:
-                flash(f'Material não encontrado para código {preenchimento.solicitacao.cod_material}', 'error')
-                return redirect(url_for('routes_bp.listar_solicitacoes_preenchidas'))
-
-            material.QuantidadeEstoque += preenchimento.solicitacao.quantidade
-            material.Fornecedor = fornecedor
-            material.NumeroNF = numero_nf
-
-            estoque_existente = Estoque.query.filter_by(preenchimento_id=preenchimento.id).first()
-            if not estoque_existente:
-                estoque = Estoque(
-                    preenchimento_id=preenchimento.id,
-                    cod_material=preenchimento.solicitacao.cod_material,
-                    quantidade=preenchimento.solicitacao.quantidade,
-                    fornecedor=fornecedor,
-                    numero_nf=numero_nf,
-                    usuario=session.get('usuario')
-                )
-                db.session.add(estoque)
-            else:
-                estoque_existente.fornecedor = fornecedor
-                estoque_existente.numero_nf = numero_nf
-                estoque_existente.quantidade = preenchimento.solicitacao.quantidade
-
-        preenchimento.status = status
         db.session.commit()
         
-        flash(f'Status atualizado para {status}', 'success')
-        if status == 'Entregue':
-            return redirect(url_for('routes_bp.listar_estoque'))
-        return redirect(url_for('routes_bp.listar_solicitacoes_preenchidas'))
-    
+        # Log para debug
+        print(f"DEBUG >> Status atualizado: {preenchimento.status}")
+        
+        return jsonify({
+            'success': True, 
+            'message': 'Status atualizado com sucesso!'
+        })
+
     except Exception as e:
         db.session.rollback()
-        flash(f'Erro interno ao atualizar status: {str(e)}', 'error')
-        return redirect(url_for('routes_bp.listar_solicitacoes_preenchidas'))
-
+        print(f"ERRO >> {str(e)}")
+        return jsonify({
+            'success': False, 
+            'message': f'Erro ao atualizar status: {str(e)}'
+        }), 500
+    
 @routes_bp.route('/gerar_pedido_compra', methods=['GET', 'POST'])
 def gerar_pedido_compra():
     if 'usuario' not in session:
@@ -4207,17 +4286,215 @@ def relatorio_estoque():
 
     return render_template('relatorio_estoque.html', historico=historico_paginado)
 
+@routes_bp.route('/api/solicitacoes/<int:solicitacao_id>/status', methods=['POST'])
+def atualizar_status_solicitacao(solicitacao_id):
+    if 'usuario' not in session:
+        app.logger.error("Unauthorized access attempt to update status")
+        return jsonify({'success': False, 'error': 'Usuário não autenticado'}), 401
+    
+    try:
+        data = request.get_json()
+        app.logger.debug(f"Received data: {data}")
+        status = data.get('status')
+        
+        if not status:
+            app.logger.error("No status provided in request")
+            return jsonify({'success': False, 'error': 'Nenhum status fornecido'}), 400
+        
+        if status not in ['Aprovado', 'Reprovado']:
+            app.logger.error(f"Invalid status received: {status}")
+            return jsonify({'success': False, 'error': f'Status inválido: {status}'}), 400
+        
+        solicitacao = SolicitacoesCompra.query.get_or_404(solicitacao_id)
+        app.logger.debug(f"Updating status for solicitacao {solicitacao_id} to {status}")
+        solicitacao.status_aprovacao = status
+        db.session.commit()
+        app.logger.info(f"Status updated successfully for solicitacao {solicitacao_id}: {status}")
+        
+        return jsonify({
+            'success': True, 
+            'message': f'Solicitação {status.lower()} com sucesso!'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Error updating status for solicitacao {solicitacao_id}: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': f'Erro ao atualizar status: {str(e)}'}), 500
+    
+def migrate_solicitacoes_compra_status():
+    try:
+        conn = sqlite3.connect(DATABASE)
+        cursor = conn.cursor()
+        
+        # Verificar se a coluna status_aprovacao já existe
+        cursor.execute("PRAGMA table_info(SolicitacoesCompra)")
+        columns = [col[1] for col in cursor.fetchall()]
+        
+        if 'status_aprovacao' not in columns:
+            cursor.execute("ALTER TABLE SolicitacoesCompra ADD COLUMN status_aprovacao TEXT")
+            conn.commit()
+            logging.info("Coluna status_aprovacao adicionada à tabela SolicitacoesCompra")
+        
+        conn.close()
+    except sqlite3.Error as e:
+        logging.error(f"Erro na migração: {str(e)}")
+
+@routes_bp.route('/atualizar_valores_cotacao', methods=['POST'])
+def atualizar_valores_cotacao():
+    if 'usuario' not in session:
+        return jsonify({'success': False, 'message': 'Usuário não autenticado'}), 401
+    
+    try:
+        data = request.get_json()
+        preenchimento_id = data.get('preenchimento_id')
+        valor_unitario = data.get('valor_unitario')
+        valor_frete = data.get('valor_frete', 0)
+        valor_unitario_original = data.get('valor_unitario_original')
+        
+        if not all([preenchimento_id, valor_unitario, valor_unitario_original]):
+            return jsonify({'success': False, 'message': 'Dados incompletos'}), 400
+        
+        # Buscar o preenchimento
+        preenchimento = SolicitacoesPreenchidas.query.get_or_404(preenchimento_id)
+        
+        # Salvar valores anteriores para o histórico
+        valor_unitario_anterior = preenchimento.valor_unitario
+        valor_frete_anterior = preenchimento.valor_frete
+        
+        # Calcular novo valor total
+        quantidade = preenchimento.solicitacao.quantidade
+        novo_valor_total = (valor_unitario * quantidade) + valor_frete
+        
+        # Atualizar os valores
+        preenchimento.valor_unitario = valor_unitario
+        preenchimento.valor_frete = valor_frete if valor_frete > 0 else None
+        preenchimento.valor_total = novo_valor_total
+        
+        # Registrar no histórico
+        historico = HistoricoDescontos(
+            preenchimento_id=preenchimento_id,
+            valor_unitario_anterior=valor_unitario_anterior,
+            valor_unitario_novo=valor_unitario,
+            valor_frete_anterior=valor_frete_anterior,
+            valor_frete_novo=valor_frete if valor_frete > 0 else None,
+            usuario=session['usuario']
+        )
+        db.session.add(historico)
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True, 
+            'message': 'Valores atualizados com sucesso!'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Erro ao atualizar valores: {str(e)}'}), 500
+    
+def create_historico_descontos_table():
+    try:
+        conn = sqlite3.connect(DATABASE)
+        cursor = conn.cursor()
+        create_table_query = """
+        CREATE TABLE IF NOT EXISTS HistoricoDescontos (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            preenchimento_id INTEGER NOT NULL,
+            valor_unitario_anterior REAL NOT NULL,
+            valor_unitario_novo REAL NOT NULL,
+            valor_frete_anterior REAL,
+            valor_frete_novo REAL,
+            data_alteracao DATETIME NOT NULL,
+            usuario TEXT NOT NULL,
+            FOREIGN KEY (preenchimento_id) REFERENCES SolicitacoesPreenchidas(id)
+        )
+        """
+        cursor.execute(create_table_query)
+        conn.commit()
+        print("Tabela 'HistoricoDescontos' criada com sucesso.")
+        cursor.close()
+        conn.close()
+        return True
+    except sqlite3.Error as e:
+        print(f"Erro ao criar a tabela HistoricoDescontos: {str(e)}")
+        return False
+
+@routes_bp.route('/historico_descontos', methods=['GET'])
+def listar_historico_descontos():
+    if 'usuario' not in session:
+        return redirect(url_for('routes_bp.login'))
+    
+    try:
+        # Obter parâmetros de filtro
+        data_inicio = request.args.get('data_inicio')
+        data_fim = request.args.get('data_fim')
+        usuario = request.args.get('usuario')
+        preenchimento_id = request.args.get('preenchimento_id')
+        
+        # Query base
+        query = db.session.query(HistoricoDescontos).join(
+            SolicitacoesPreenchidas
+        ).join(
+            SolicitacoesCompra
+        ).join(
+            Materiais
+        )
+        
+        # Aplicar filtros
+        if data_inicio:
+            query = query.filter(HistoricoDescontos.data_alteracao >= data_inicio)
+        if data_fim:
+            data_fim_ajustada = datetime.strptime(data_fim, '%Y-%m-%d') + timedelta(days=1)
+            query = query.filter(HistoricoDescontos.data_alteracao <= data_fim_ajustada)
+        if usuario:
+            query = query.filter(HistoricoDescontos.usuario.ilike(f'%{usuario}%'))
+        if preenchimento_id:
+            query = query.filter(HistoricoDescontos.preenchimento_id == preenchimento_id)
+        
+        # Executar query
+        historicos = query.order_by(HistoricoDescontos.data_alteracao.desc()).all()
+        
+        # Obter lista de usuários para filtro
+        usuarios = db.session.query(
+            HistoricoDescontos.usuario
+        ).distinct().order_by(
+            HistoricoDescontos.usuario
+        ).all()
+        
+        return render_template(
+            'historico_descontos.html',
+            historicos=historicos,
+            usuarios=[u[0] for u in usuarios if u[0]],
+            filtros={
+                'data_inicio': data_inicio,
+                'data_fim': data_fim,
+                'usuario': usuario,
+                'preenchimento_id': preenchimento_id
+            }
+        )
+    
+    except Exception as e:
+        flash(f'Erro ao carregar histórico de descontos: {str(e)}', 'error')
+        app.logger.error(f'Erro em listar_historico_descontos: {str(e)}', exc_info=True)
+        return render_template(
+            'historico_descontos.html',
+            historicos=[],
+            usuarios=[],
+            filtros={}
+        )
+
   # Registro do Blueprint (apenas uma vez)
 app.register_blueprint(routes_bp)  
 
 
-# Inicialização do banco de dados e execução do app
 # Inicialização do banco de dados e execução do app
 if __name__ == '__main__':
     create_database()
     create_auditoria_table()
     create_fornecedores_db()
     create_solicitacoes_preenchidas_table()
+    create_historico_descontos_table()
+   
     
     with app.app_context():
         # Cria todas as tabelas definidas nos modelos
