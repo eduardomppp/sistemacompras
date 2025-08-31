@@ -4482,6 +4482,30 @@ def listar_historico_descontos():
             usuarios=[],
             filtros={}
         )
+def migrate_solicitacoes_compra_status_aprovacao():
+    """Adiciona a coluna status_aprovacao na tabela SolicitacoesCompra se não existir"""
+    try:
+        conn = sqlite3.connect(DATABASE)
+        cursor = conn.cursor()
+        
+        # Verificar se a coluna status_aprovacao já existe
+        cursor.execute("PRAGMA table_info(SolicitacoesCompra)")
+        columns = [col[1] for col in cursor.fetchall()]
+        
+        if 'status_aprovacao' not in columns:
+            cursor.execute("ALTER TABLE SolicitacoesCompra ADD COLUMN status_aprovacao TEXT")
+            conn.commit()
+            logging.info("Coluna status_aprovacao adicionada à tabela SolicitacoesCompra")
+            print("✓ Coluna status_aprovacao adicionada com sucesso!")
+        else:
+            print("✓ Coluna status_aprovacao já existe na tabela")
+        
+        conn.close()
+        return True
+    except sqlite3.Error as e:
+        logging.error(f"Erro na migração status_aprovacao: {str(e)}")
+        print(f"✗ Erro na migração: {str(e)}")
+        return False
 
   # Registro do Blueprint (apenas uma vez)
 app.register_blueprint(routes_bp)  
@@ -4494,8 +4518,10 @@ if __name__ == '__main__':
     create_fornecedores_db()
     create_solicitacoes_preenchidas_table()
     create_historico_descontos_table()
-   
     
+    # Adicione esta linha para criar a coluna status_aprovacao
+    migrate_solicitacoes_compra_status_aprovacao()
+   
     with app.app_context():
         # Cria todas as tabelas definidas nos modelos
         db.create_all()
@@ -4515,4 +4541,3 @@ if __name__ == '__main__':
         encoding='utf-8'
     )
     app.run(debug=True, host='0.0.0.0', port=5000)
-    
