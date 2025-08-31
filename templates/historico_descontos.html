@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Histórico de Alterações de Valores</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #022855;
+            --secondary-color: #6c757d;
+            --success-color: #1cbb8c;
+            --danger-color: #fc5b69;
+            --light-bg: #f8f9fa;
+            --dark-bg: #343a40;
+        }
+        
+        body {
+            background-color: #f5f6f8;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .page-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, #2c5aa8 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            transition: transform 0.2s;
+        }
+        
+        .card:hover {
+            transform: translateY(-2px);
+        }
+        
+        .card-header {
+            border-radius: 10px 10px 0 0 !important;
+            font-weight: 600;
+            background: linear-gradient(135deg, var(--primary-color) 0%, #2c5aa8 100%);
+        }
+        
+        .filtros-container {
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        
+        .table-responsive {
+            max-height: 70vh;
+            overflow-y: auto;
+            border-radius: 0 0 10px 10px;
+        }
+        
+        .table thead th {
+            position: sticky;
+            top: 0;
+            background-color: var(--primary-color);
+            color: white;
+            z-index: 100;
+            padding: 12px 15px;
+        }
+        
+        .table-hover tbody tr:hover {
+            background-color: rgba(59, 125, 221, 0.05);
+        }
+        
+        .valor-diferenca {
+            font-weight: bold;
+        }
+        
+        .valor-diminuido {
+            color: var(--success-color);
+        }
+        
+        .valor-aumentado {
+            color: var(--danger-color);
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        
+        .btn-primary:hover {
+            background-color: #022855;
+            border-color: #022855;
+        }
+        
+        .btn-excel {
+            background-color: #1d6f42;
+            border-color: #1d6f42;
+            color: white;
+        }
+        
+        .btn-excel:hover {
+            background-color: #165933;
+            border-color: #165933;
+            color: white;
+        }
+        
+        .badge-light {
+            background-color: var(--light-bg);
+            color: var(--secondary-color);
+        }
+        
+        .sticky-header {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        
+        .empty-state {
+            padding: 3rem;
+            text-align: center;
+            color: var(--secondary-color);
+        }
+        
+        .empty-state i {
+            font-size: 5rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+        
+        @media (max-width: 768px) {
+            .table-responsive {
+                max-height: 60vh;
+            }
+            
+            .page-header {
+                padding: 1rem;
+            }
+            
+            .display-6 {
+                font-size: 1.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid py-4">
+        <div class="page-header">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="display-6"><i class="bi bi-clock-history me-3"></i>Histórico de Alterações de Valores</h1>
+                    <p class="lead mb-0">Registro de todas as alterações nos valores das cotações</p>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <a href="{{ url_for('routes_bp.listar_solicitacoes_preenchidas') }}" class="btn btn-light">
+                        <i class="bi bi-arrow-left"></i> Voltar para Cotações
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="filtros-container">
+            <form method="GET" class="row g-3">
+                <div class="col-md-3">
+                    <label for="data_inicio" class="form-label">Data Início</label>
+                    <input type="date" class="form-control" id="data_inicio" name="data_inicio" value="{{ filtros.data_inicio }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="data_fim" class="form-label">Data Fim</label>
+                    <input type="date" class="form-control" id="data_fim" name="data_fim" value="{{ filtros.data_fim }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="usuario" class="form-label">Usuário</label>
+                    <select class="form-select" id="usuario" name="usuario">
+                        <option value="">Todos os usuários</option>
+                        {% for usuario_option in usuarios %}
+                            <option value="{{ usuario_option }}" {% if filtros.usuario == usuario_option %}selected{% endif %}>
+                                {{ usuario_option }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="preenchimento_id" class="form-label">ID da Cotação</label>
+                    <input type="number" class="form-control" id="preenchimento_id" name="preenchimento_id" 
+                           value="{{ filtros.preenchimento_id }}" placeholder="Digite o ID">
+                </div>
+                <div class="col-12 d-flex justify-content-between align-items-center">
+                    <div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-funnel"></i> Filtrar
+                        </button>
+                        <a href="{{ url_for('routes_bp.listar_historico_descontos') }}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Limpar
+                        </a>
+                    </div>
+                    {% if historicos %}
+                    <button type="button" id="btnExportarExcel" class="btn btn-excel">
+                        <i class="bi bi-file-earmark-excel"></i> Exportar para Excel
+                    </button>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+
+        <!-- Tabela de Histórico -->
+        <div class="card">
+            <div class="card-header text-white d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-list-check me-2"></i> Registro de Alterações</span>
+                <span class="badge bg-light text-dark">{{ historicos|length }} registros</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover mb-0" id="tabelaHistorico">
+                        <thead>
+                            <tr>
+                                <th>Data/Hora</th>
+                                <th>Usuário</th>
+                                <th>ID Cotação</th>
+                                <th>Material</th>
+                                <th>Valor Unit. Anterior</th>
+                                <th>Valor Unit. Novo</th>
+                                <th>Diferença Unit.</th>
+                                <th>Frete Anterior</th>
+                                <th>Frete Novo</th>
+                                <th>Diferença Frete</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if historicos %}
+                                {% for historico in historicos %}
+                                    <tr>
+                                        <td>{{ historico.data_alteracao.strftime('%d/%m/%Y %H:%M') }}</td>
+                                        <td>
+                                            <span class="badge badge-light">
+                                                <i class="bi bi-person-circle me-1"></i>{{ historico.usuario }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <a href="{{ url_for('routes_bp.listar_solicitacoes_preenchidas') }}?preenchimento_id={{ historico.preenchimento_id }}" 
+                                               class="btn btn-sm btn-outline-info" title="Ver cotação">
+                                                <i class="bi bi-link-45deg"></i> #{{ historico.preenchimento_id }}
+                                            </a>
+                                        </td>
+                                        <td>
+                                            {% if historico.solicitacao_preenchida and historico.solicitacao_preenchida.solicitacao and historico.solicitacao_preenchida.solicitacao.material %}
+                                                {{ historico.solicitacao_preenchida.solicitacao.material.DescricaoMaterial }}
+                                            {% else %}
+                                                <span class="text-muted">N/A</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>R$ {{ "%.2f"|format(historico.valor_unitario_anterior) }}</td>
+                                        <td>R$ {{ "%.2f"|format(historico.valor_unitario_novo) }}</td>
+                                        <td class="valor-diferenca {% if historico.valor_unitario_novo < historico.valor_unitario_anterior %}valor-diminuido{% else %}valor-aumentado{% endif %}">
+                                            R$ {{ "%.2f"|format(historico.valor_unitario_novo - historico.valor_unitario_anterior) }}
+                                        </td>
+                                        <td>
+                                            {% if historico.valor_frete_anterior is not none %}
+                                                R$ {{ "%.2f"|format(historico.valor_frete_anterior) }}
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if historico.valor_frete_novo is not none %}
+                                                R$ {{ "%.2f"|format(historico.valor_frete_novo) }}
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="valor-diferenca">
+                                            {% if historico.valor_frete_anterior is not none and historico.valor_frete_novo is not none %}
+                                                {% set diff_frete = historico.valor_frete_novo - historico.valor_frete_anterior %}
+                                                <span class="{% if diff_frete < 0 %}valor-diminuido{% else %}valor-aumentado{% endif %}">
+                                                    R$ {{ "%.2f"|format(diff_frete) }}
+                                                </span>
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="10">
+                                        <div class="empty-state">
+                                            <i class="bi bi-inbox"></i>
+                                            <h4>Nenhum registro encontrado</h4>
+                                            <p class="text-muted">Não foram encontrados registros com os filtros aplicados</p>
+                                            {% if filtros.data_inicio or filtros.data_fim or filtros.usuario or filtros.preenchimento_id %}
+                                                <a href="{{ url_for('routes_bp.listar_historico_descontos') }}" class="btn btn-primary mt-2">
+                                                    <i class="bi bi-x-circle"></i> Limpar filtros
+                                                </a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Biblioteca para exportação Excel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script>
+        // Script para melhorar a usabilidade
+        document.addEventListener('DOMContentLoaded', function() {
+            // Preencher data fim com data atual se não estiver preenchida
+            if (!document.getElementById('data_fim').value) {
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('data_fim').value = today;
+            }
+            
+            // Preencher data início com 30 dias atrás se não estiver preenchida
+            if (!document.getElementById('data_inicio').value) {
+                const thirtyDaysAgo = new Date();
+                thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+                document.getElementById('data_inicio').value = thirtyDaysAgo.toISOString().split('T')[0];
+            }
+            
+            // Função para exportar para Excel
+            document.getElementById('btnExportarExcel').addEventListener('click', function() {
+                // Selecionar a tabela
+                const table = document.getElementById('tabelaHistorico');
+                
+                // Criar uma cópia da tabela para manipulação
+                const clonedTable = table.cloneNode(true);
+                
+                // Remover botões e ícones da tabela clonada
+                const buttons = clonedTable.querySelectorAll('a, button');
+                buttons.forEach(function(button) {
+                    button.parentNode.replaceChild(document.createTextNode(button.textContent), button);
+                });
+                
+                // Converter tabela para worksheet
+                const ws = XLSX.utils.table_to_sheet(clonedTable);
+                
+                // Criar workbook e adicionar o worksheet
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Histórico de Alterações");
+                
+                // Gerar nome do arquivo com data atual
+                const date = new Date();
+                const dateStr = date.toISOString().split('T')[0];
+                const fileName = `historico_alteracoes_${dateStr}.xlsx`;
+                
+                // Salvar o arquivo
+                XLSX.writeFile(wb, fileName);
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,12 +1,14 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Solicitações Preenchidas | Sistema de Compras</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
-<style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
         :root {
             --primary-color: #022855;
             --primary-light: #2c4d8a;
@@ -19,13 +21,13 @@
             --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
             --border-radius: 8px;
         }
-        
+
         body {
             background-color: var(--light-bg);
             font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
             padding: 20px 0;
         }
-        
+
         .main-container {
             max-width: 1400px;
             margin: 0 auto;
@@ -35,13 +37,13 @@
             box-shadow: var(--card-shadow);
             border: 1px solid rgba(0, 0, 0, 0.05);
         }
-        
+
         .header {
             border-bottom: 2px solid var(--primary-color);
             padding-bottom: 15px;
             margin-bottom: 25px;
         }
-        
+
         .header h1 {
             color: white !important;
             background-color: var(--primary-color);
@@ -50,16 +52,18 @@
             display: inline-block;
             margin: 0;
         }
-        
-        h2, h3, h4 {
+
+        h2,
+        h3,
+        h4 {
             color: var(--primary-color);
             font-weight: 600;
         }
-        
+
         .material-header .material-title {
             color: white !important;
         }
-        
+
         .btn-primary {
             background-color: var(--primary-color);
             border-color: var(--primary-color);
@@ -67,31 +71,31 @@
             font-weight: 500;
             transition: all 0.2s;
         }
-        
+
         .btn-primary:hover {
             background-color: var(--primary-light);
             border-color: var(--primary-light);
             transform: translateY(-1px);
             box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
         }
-        
+
         .btn-secondary {
             background-color: var(--secondary-color);
             border-color: var(--secondary-color);
             padding: 8px 20px;
             font-weight: 500;
         }
-        
+
         .btn-outline-primary {
             color: var(--primary-color);
             border-color: var(--primary-color);
         }
-        
+
         .btn-outline-primary:hover {
             background-color: var(--primary-color);
             color: white;
         }
-        
+
         .material-card {
             background-color: white;
             border-radius: var(--border-radius);
@@ -102,12 +106,12 @@
             overflow: hidden;
             transition: transform 0.2s, box-shadow 0.2s;
         }
-        
+
         .material-card:hover {
             transform: translateY(-3px);
             box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
         }
-        
+
         .material-header {
             background-color: var(--primary-color);
             color: white;
@@ -116,13 +120,13 @@
             justify-content: space-between;
             align-items: center;
         }
-        
+
         .material-title {
             margin: 0;
             font-size: 1.25rem;
             font-weight: 600;
         }
-        
+
         .material-details {
             font-size: 0.9rem;
             color: #f8f9fa;
@@ -131,13 +135,13 @@
             gap: 15px;
             margin-top: 8px;
         }
-        
+
         .material-detail-item {
             display: flex;
             align-items: center;
             gap: 5px;
         }
-        
+
         .priority-badge {
             font-size: 0.8rem;
             padding: 4px 10px;
@@ -147,23 +151,23 @@
             align-items: center;
             gap: 5px;
         }
-        
+
         .priority-urgent {
             background-color: #fff8e1;
             color: #e65100;
             border: 1px solid #ffd54f;
         }
-        
+
         .priority-normal {
             background-color: #e8f5e9;
             color: #2e7d32;
             border: 1px solid #a5d6a7;
         }
-        
+
         .table {
             margin-bottom: 0;
         }
-        
+
         .table th {
             background-color: #f1f5f9;
             color: var(--primary-color);
@@ -171,17 +175,17 @@
             padding: 12px 15px;
             border-bottom: 2px solid #dee2e6;
         }
-        
+
         .table td {
             padding: 12px 15px;
             vertical-align: middle;
             border-top: 1px solid #f1f1f1;
         }
-        
+
         .table tr:hover td {
             background-color: #f8fafc;
         }
-        
+
         .badge-status {
             font-size: 0.85em;
             padding: 5px 10px;
@@ -191,7 +195,7 @@
             display: inline-block;
             text-align: center;
         }
-        
+
         .status-select {
             padding: 6px 10px;
             border-radius: var(--border-radius);
@@ -200,36 +204,36 @@
             min-width: 120px;
             transition: all 0.2s;
         }
-        
+
         .status-select:focus {
             border-color: var(--primary-color);
             box-shadow: 0 0 0 0.25rem rgba(2, 40, 85, 0.25);
         }
-        
+
         .status-select:disabled {
             opacity: 1;
             cursor: not-allowed;
         }
-        
+
         /* Estilo para status Aprovado */
         .status-select[disabled][data-status="Aprovado"] {
             background-color: #e8f5e9;
             border-color: #c3e6cb;
             color: #28a745;
         }
-        
+
         /* Estilo para status Em Processamento */
         .status-select[disabled][data-status="Em Processamento"] {
             background-color: #fff3cd;
             border-color: #ffeeba;
             color: #856404;
         }
-        
+
         .action-buttons {
             display: flex;
             gap: 8px;
         }
-        
+
         .btn-sm-icon {
             padding: 5px 8px;
             font-size: 0.85rem;
@@ -237,36 +241,36 @@
             align-items: center;
             gap: 5px;
         }
-        
+
         .btn-sm-icon i {
             font-size: 0.9rem;
         }
-        
+
         .empty-state {
             text-align: center;
             padding: 40px 20px;
             color: var(--secondary-color);
         }
-        
+
         .empty-state i {
             font-size: 2.5rem;
             margin-bottom: 15px;
             color: #dee2e6;
         }
-        
+
         .alert-flash {
             border-radius: var(--border-radius);
         }
-        
+
         .currency-value {
             font-family: 'Courier New', monospace;
             font-weight: 500;
         }
-        
+
         .text-muted-light {
             color: #adb5bd;
         }
-        
+
         .cotacao-count-badge {
             background-color: rgba(255, 255, 255, 0.2);
             color: white;
@@ -275,7 +279,7 @@
             font-size: 0.85rem;
             font-weight: 500;
         }
-        
+
         .filter-card {
             background-color: white;
             border-radius: var(--border-radius);
@@ -284,7 +288,7 @@
             box-shadow: var(--card-shadow);
             border: 1px solid #e9ecef;
         }
-        
+
         .filter-title {
             font-size: 1rem;
             color: var(--primary-color);
@@ -294,62 +298,109 @@
             align-items: center;
             gap: 8px;
         }
-        
+
         .filter-group {
             display: flex;
             flex-wrap: wrap;
             gap: 15px;
             margin-bottom: 15px;
         }
-        
+
         .filter-item {
             flex: 1;
             min-width: 200px;
         }
-        
+
         .filter-actions {
             display: flex;
             justify-content: flex-end;
             gap: 10px;
         }
-        
+
         @media (max-width: 768px) {
             .main-container {
                 padding: 15px;
             }
-            
+
             .material-header {
                 flex-direction: column;
                 align-items: flex-start;
                 gap: 10px;
             }
-            
+
             .material-details {
                 flex-direction: column;
                 gap: 8px;
             }
-            
+
             .table-responsive {
                 border-radius: var(--border-radius);
                 border: 1px solid #dee2e6;
             }
-            
-            .table th, .table td {
+
+            .table th,
+            .table td {
                 padding: 8px 10px;
                 font-size: 0.85rem;
             }
-            
+
             .filter-group {
                 flex-direction: column;
                 gap: 10px;
             }
-            
+
             .filter-item {
                 min-width: 100%;
             }
         }
+
+        /* Histórico de descontos */
+        .historico-desconto {
+            background-color: #f8f9fa;
+            border-radius: var(--border-radius);
+            padding: 15px;
+            margin-top: 15px;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .historico-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+
+        .historico-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .historico-item:last-child {
+            border-bottom: none;
+        }
+
+        .valor-antigo {
+            text-decoration: line-through;
+            color: var(--secondary-color);
+        }
+
+        .valor-novo {
+            color: var(--success-color);
+            font-weight: 500;
+        }
+
+        .percentual-desconto {
+            background-color: var(--primary-light);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+        }
     </style>
 </head>
+
 <body>
     <div class="container main-container">
         <div class="header">
@@ -363,6 +414,9 @@
                     </a>
                     <a href="{{ url_for('routes_bp.gerar_pedido_compra') }}" class="btn btn-primary">
                         <i class="bi bi-cart-plus"></i> Novo Pedido
+                    </a>
+                    <a href="{{ url_for('routes_bp.listar_historico_descontos') }}" class="btn btn-info">
+                        <i class="bi bi-clock-history"></i> Ver Histórico de Alterações
                     </a>
                 </div>
             </div>
@@ -380,7 +434,8 @@
                         <select class="form-select" id="empresa" name="empresa">
                             <option value="">Todas</option>
                             {% for empresa in empresas %}
-                                <option value="{{ empresa }}" {% if filtros.empresa == empresa %}selected{% endif %}>{{ empresa }}</option>
+                            <option value="{{ empresa }}" {% if filtros.empresa==empresa %}selected{% endif %}>{{
+                                empresa }}</option>
                             {% endfor %}
                         </select>
                     </div>
@@ -389,26 +444,28 @@
                         <select class="form-select" id="usuario" name="usuario">
                             <option value="">Todos</option>
                             {% for usuario in usuarios %}
-                                <option value="{{ usuario }}" {% if filtros.usuario == usuario %}selected{% endif %}>{{ usuario }}</option>
+                            <option value="{{ usuario }}" {% if filtros.usuario==usuario %}selected{% endif %}>{{
+                                usuario }}</option>
                             {% endfor %}
                         </select>
                     </div>
                     <div class="filter-item">
                         <label for="data_inicio" class="form-label">Data Início</label>
-                        <input type="date" class="form-control" id="data_inicio" name="data_inicio" 
-                               value="{{ filtros.data_inicio if filtros.data_inicio else '' }}">
+                        <input type="date" class="form-control" id="data_inicio" name="data_inicio"
+                            value="{{ filtros.data_inicio if filtros.data_inicio else '' }}">
                     </div>
                     <div class="filter-item">
                         <label for="data_fim" class="form-label">Data Fim</label>
-                        <input type="date" class="form-control" id="data_fim" name="data_fim" 
-                               value="{{ filtros.data_fim if filtros.data_fim else '' }}">
+                        <input type="date" class="form-control" id="data_fim" name="data_fim"
+                            value="{{ filtros.data_fim if filtros.data_fim else '' }}">
                     </div>
                 </div>
                 <div class="filter-actions">
                     <button type="submit" class="btn btn-primary">
                         <i class="bi bi-funnel"></i> Aplicar Filtros
                     </button>
-                    <a href="{{ url_for('routes_bp.listar_solicitacoes_preenchidas') }}" class="btn btn-outline-secondary">
+                    <a href="{{ url_for('routes_bp.listar_solicitacoes_preenchidas') }}"
+                        class="btn btn-outline-secondary">
                         <i class="bi bi-x-circle"></i> Limpar
                     </a>
                 </div>
@@ -417,210 +474,322 @@
 
         <!-- Lista de Preenchimentos -->
         {% if preenchimentos_por_material %}
-            {% for material_nome, preenchimentos in preenchimentos_por_material.items() %}
-                <div class="material-card">
-                    <div class="material-header">
-                        <div>
-                            <h3 class="material-title">
-                                <i class="bi bi-box-seam"></i> {{ material_nome }}
-                            </h3>
-                            {% set primeiro = preenchimentos[0] %}
-                            <div class="material-details">
-                                <span class="material-detail-item">
-                                    <i class="bi bi-tag"></i> Marca: {{ primeiro.solicitacao.marca | default('N/A') }}
-                                </span>
-                                <span class="material-detail-item">
-                                    <i class="bi bi-lightning-charge"></i> Ativo: 
-                                    <span class="badge-status bg-{{ 'success' if primeiro.solicitacao.ativo == 'Sim' else 'secondary' }}">
-                                        {{ primeiro.solicitacao.ativo }}
-                                    </span>
-                                </span>
-                                <span class="material-detail-item">
-                                    <i class="bi bi-flag"></i> Prioridade: 
-                                    <span class="priority-badge {{ 'priority-urgent' if primeiro.solicitacao.prioridade == 'Urgente' else 'priority-normal' }}">
-                                        <i class="bi {{ 'bi-exclamation-triangle-fill' if primeiro.solicitacao.prioridade == 'Urgente' else 'bi-calendar-check-fill' }}"></i>
-                                        {{ primeiro.solicitacao.prioridade }}
-                                    </span>
-                                </span>
-                                {% if primeiro.solicitacao.ativo == 'Sim' and primeiro.solicitacao.nome_ativo %}
-                                <span class="material-detail-item">
-                                    <i class="bi bi-tags"></i> Ativo: {{ primeiro.solicitacao.nome_ativo }}
-                                </span>
-                                {% endif %}
-                            </div>
-                        </div>
-                        <span class="cotacao-count-badge">
-                            <i class="bi bi-list-check"></i> {{ preenchimentos|length }} cotações
+        {% for material_nome, preenchimentos in preenchimentos_por_material.items() %}
+        <div class="material-card">
+            <div class="material-header">
+                <div>
+                    <h3 class="material-title">
+                        <i class="bi bi-box-seam"></i> {{ material_nome }}
+                    </h3>
+                    {% set primeiro = preenchimentos[0] %}
+                    <div class="material-details">
+                        <span class="material-detail-item">
+                            <i class="bi bi-tag"></i> Marca: {{ primeiro.solicitacao.marca | default('N/A') }}
                         </span>
+                        <span class="material-detail-item">
+                            <i class="bi bi-lightning-charge"></i> Ativo:
+                            <span
+                                class="badge-status bg-{{ 'success' if primeiro.solicitacao.ativo == 'Sim' else 'secondary' }}">
+                                {{ primeiro.solicitacao.ativo }}
+                            </span>
+                        </span>
+                        <span class="material-detail-item">
+                            <i class="bi bi-flag"></i> Prioridade:
+                            <span
+                                class="priority-badge {{ 'priority-urgent' if primeiro.solicitacao.prioridade == 'Urgente' else 'priority-normal' }}">
+                                <i
+                                    class="bi {{ 'bi-exclamation-triangle-fill' if primeiro.solicitacao.prioridade == 'Urgente' else 'bi-calendar-check-fill' }}"></i>
+                                {{ primeiro.solicitacao.prioridade }}
+                            </span>
+                        </span>
+                        {% if primeiro.solicitacao.ativo == 'Sim' and primeiro.solicitacao.nome_ativo %}
+                        <span class="material-detail-item">
+                            <i class="bi bi-tags"></i> Ativo: {{ primeiro.solicitacao.nome_ativo }}
+                        </span>
+                        {% endif %}
                     </div>
-                    
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle">
-                            <thead>
-                                <tr>
-                                    <th>Fornecedor</th>
-                                    <th class="text-end">Quantidade</th>
-                                    <th class="text-end">Unitário</th>
-                                    <th class="text-end">Frete</th>
-                                    <th class="text-end">Total</th>
-                                    <th>Entrega</th>
-                                    <th>Pagamento</th>
-                                    <th>Status</th>
-                                    <th>Usuário</th>
-                                    <th>Anexo</th>
-                                    <th>Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for preenchimento in preenchimentos %}
-                                    {% if preenchimento.status != 'Entregue' %}
-                                        <tr data-preenchimento-id="{{ preenchimento.id }}">
-                                            <td>
-                                                <strong>{{ preenchimento.fornecedor_nome }}</strong>
-                                                <div class="text-muted-light small">ID: {{ preenchimento.id }}</div>
-                                            </td>
-                                            <td class="text-end">{{ preenchimento.solicitacao.quantidade }}</td>
-                                            <td class="text-end currency-value">R$ {{ "%.2f" | format(preenchimento.valor_unitario) }}</td>
-                                            <td class="text-end currency-value">
-                                                {% if preenchimento.valor_frete is not none %}
-                                                    R$ {{ "%.2f" | format(preenchimento.valor_frete) }}
-                                                {% else %}
-                                                    <span class="text-muted-light">-</span>
-                                                {% endif %}
-                                            </td>
-                                            <td class="text-end currency-value">R$ {{ "%.2f" | format(preenchimento.valor_total) }}</td>
-                                            <td>{{ preenchimento.prazo_entrega }}</td>
-                                            <td>{{ preenchimento.condicao_pagamento }}</td>
-                                            <td>
-                                                <span class="badge-status 
+                </div>
+                <span class="cotacao-count-badge">
+                    <i class="bi bi-list-check"></i> {{ preenchimentos|length }} cotações
+                </span>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Fornecedor</th>
+                            <th class="text-end">Quantidade</th>
+                            <th class="text-end">Unitário</th>
+                            <th class="text-end">Frete</th>
+                            <th class="text-end">Total</th>
+                            <th>Entrega</th>
+                            <th>Pagamento</th>
+                            <th>Status</th>
+                            <th>Usuário</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for preenchimento in preenchimentos %}
+                        {% if preenchimento.status != 'Entregue' %}
+                        <tr data-preenchimento-id="{{ preenchimento.id }}">
+                            <td>
+                                <strong>{{ preenchimento.fornecedor_nome }}</strong>
+                                <div class="text-muted-light small">ID: {{ preenchimento.id }}</div>
+                            </td>
+                            <td class="text-end">{{ preenchimento.solicitacao.quantidade }}</td>
+                            <td class="text-end currency-value">R$ {{ "%.2f" | format(preenchimento.valor_unitario) }}
+                            </td>
+                            <td class="text-end currency-value">
+                                {% if preenchimento.valor_frete is not none %}
+                                R$ {{ "%.2f" | format(preenchimento.valor_frete) }}
+                                {% else %}
+                                <span class="text-muted-light">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end currency-value">R$ {{ "%.2f" | format(preenchimento.valor_total) }}</td>
+                            <td>{{ preenchimento.prazo_entrega }}</td>
+                            <td>{{ preenchimento.condicao_pagamento }}</td>
+                            <td>
+                                <span class="badge-status 
                                                     {% if preenchimento.status == 'Aprovado' %}bg-success
                                                     {% elif preenchimento.status == 'Reprovado' %}bg-danger
                                                     {% elif preenchimento.status == 'Em Processamento' %}bg-warning
                                                     {% elif preenchimento.status == 'Entregue' %}bg-primary
                                                     {% else %}bg-secondary{% endif %}">
-                                                    {{ preenchimento.status }}
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <span class="d-inline-block text-truncate" style="max-width: 100px;">
-                                                    {{ preenchimento.usuario }}
-                                                </span>
-                                            </td>
-                                            <td>
-                                                {% if preenchimento.pdf_path %}
-                                                    <a href="{{ url_for('routes_bp.download_pdf', preenchimento_id=preenchimento.id) }}" 
-                                                       class="btn btn-sm btn-outline-primary btn-sm-icon" 
-                                                       title="Baixar PDF">
-                                                        <i class="bi bi-file-earmark-pdf"></i>
-                                                    </a>
-                                                {% else %}
-                                                    <span class="text-muted-light">-</span>
-                                                {% endif %}
-                                            </td>
-                                            <td>
-                                                <form action="{{ url_for('routes_bp.atualizar_status_preenchimento', id=preenchimento.id) }}" 
-                                                      method="POST" 
-                                                      class="d-inline">
-                                                    <select name="status" 
-                                                            class="status-select"
-                                                            onchange="this.form.submit()"
-                                                            {% if preenchimento.status in ['Aprovado', 'Em Processamento'] %}disabled data-status="{{ preenchimento.status }}"{% endif %}>
-                                                        <option value="" disabled selected>Alterar</option>
-                                                        <option value="Aprovado" {% if preenchimento.status == 'Aprovado' %}selected{% endif %}>Aprovado</option>
-                                                        <option value="Reprovado" {% if preenchimento.status == 'Reprovado' %}selected{% endif %}>Reprovado</option>
-                                                        {% if preenchimento.status in ['Aprovado', 'Em Processamento'] %}
-                                                            <option value="Entregue">Entregue</option>
-                                                        {% endif %}
-                                                    </select>
-                                                    {% if preenchimento.status in ['Aprovado', 'Em Processamento'] %}
-                                                        <input type="hidden" name="fornecedor" value="{{ preenchimento.fornecedor_nome }}">
-                                                        <input type="hidden" name="numero_nf" value="NF-{{ preenchimento.id }}">
-                                                    {% endif %}
-                                                </form>
-                                            </td>
-                                        </tr>
-                                    {% endif %}
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            {% endfor %}
-        {% else %}
-            <div class="empty-state">
-                <i class="bi bi-inboxes"></i>
-                <h3>Nenhuma solicitação preenchida</h3>
-                <p class="text-muted">Não foram encontradas solicitações preenchidas no sistema</p>
-                <a href="{{ url_for('routes_bp.listar_solicitacoes') }}" class="btn btn-primary mt-2">
-                    <i class="bi bi-plus-circle"></i> Criar nova solicitação
-                </a>
+                                    {{ preenchimento.status }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="d-inline-block text-truncate" style="max-width: 100px;">
+                                    {{ preenchimento.usuario }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="d-flex gap-1">
+                                    <form action="{{ url_for('routes_bp.atualizar_status_preenchimento', id=preenchimento.id) }}"
+                                        method="POST" class="d-inline" id="formStatus{{ preenchimento.id }}">
+
+                                        <select name="status" class="status-select"
+                                            onchange="handleStatusChange(this, {{ preenchimento.id }})" {% if preenchimento.status in
+                                            ['Aprovado', 'Em Processamento' ] %}disabled data-status="{{ preenchimento.status }}" {%
+                                            endif %}>
+                                            <option value="" disabled selected>Alterar</option>
+                                            <option value="Aprovado" {% if preenchimento.status=='Aprovado' %}selected{% endif %}>
+                                                Aprovado
+                                            </option>
+                                            <option value="Reprovado" {% if preenchimento.status=='Reprovado' %}selected{% endif %}>
+                                                Reprovado
+                                            </option>
+                                            {% if preenchimento.status in ['Aprovado', 'Em Processamento'] %}
+                                            <option value="Entregue">Entregue</option>
+                                            {% endif %}
+                                        </select>
+                                    </form>
+
+                                    <!-- Botão para editar valores -->
+                                    <button class="btn btn-sm btn-outline-warning btn-sm-icon ms-2" data-bs-toggle="modal"
+                                        data-bs-target="#editarValoresModal" data-preenchimento-id="{{ preenchimento.id }}"
+                                        data-valor-unitario="{{ preenchimento.valor_unitario }}"
+                                        data-valor-frete="{{ preenchimento.valor_frete if preenchimento.valor_frete else 0 }}"
+                                        data-quantidade="{{ preenchimento.solicitacao.quantidade }}"
+                                        data-historico="{{ preenchimento.historico_descontos|tojson|safe }}" title="Editar valores">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endif %}
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="empty-state">
+            <i class="bi bi-inboxes"></i>
+            <h3>Nenhuma solicitação preenchida</h3>
+            <p class="text-muted">Não foram encontradas solicitações preenchidas no sistema</p>
+            <a href="{{ url_for('routes_bp.listar_solicitacoes') }}" class="btn btn-primary mt-2">
+                <i class="bi bi-plus-circle"></i> Criar nova solicitação
+            </a>
+        </div>
         {% endif %}
 
         <!-- Mensagens Flash -->
         {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show mt-4 alert-flash" role="alert">
-                        <i class="bi bi-{{ 'check-circle' if category == 'success' else 'exclamation-triangle' }}"></i>
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                {% endfor %}
-            {% endif %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show mt-4 alert-flash"
+            role="alert">
+            <i class="bi bi-{{ 'check-circle' if category == 'success' else 'exclamation-triangle' }}"></i>
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+        {% endif %}
         {% endwith %}
+    </div>
+
+    <!-- Modal para editar valores -->
+    <div class="modal fade" id="editarValoresModal" tabindex="-1" aria-labelledby="editarValoresModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editarValoresModalLabel">Editar Valores da Cotação</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formEditarValores">
+                        <input type="hidden" id="preenchimentoId" name="preenchimento_id">
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="valorUnitarioOriginal" class="form-label">Valor Unitário Original</label>
+                                <input type="text" class="form-control" id="valorUnitarioOriginal" readonly>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="valorUnitarioNovo" class="form-label">Novo Valor Unitário</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">R$</span>
+                                    <input type="number" class="form-control" id="valorUnitarioNovo"
+                                        name="valor_unitario_novo" step="0.01" min="0"
+                                        placeholder="Digite o novo valor">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="percentualDesconto" class="form-label">Percentual de Desconto</label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control" id="percentualDesconto" step="0.01"
+                                        min="0" max="100" readonly>
+                                    <span class="input-group-text">%</span>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="valorFrete" class="form-label">Valor do Frete (opcional)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">R$</span>
+                                    <input type="number" class="form-control" id="valorFrete" name="valor_frete"
+                                        step="0.01" min="0" placeholder="Novo valor do frete">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="valorTotalNovo" class="form-label">Novo Valor Total</label>
+                            <div class="input-group">
+                                <span class="input-group-text">R$</span>
+                                <input type="text" class="form-control" id="valorTotalNovo" readonly>
+                            </div>
+                        </div>
+
+                        <!-- Histórico de descontos -->
+                        <div class="historico-desconto" id="historicoContainer">
+                            <h6 class="historico-title">
+                                <i class="bi bi-clock-history"></i> Histórico de Alterações
+                            </h6>
+                            <div id="historicoLista"></div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="btnSalvarValores">Salvar Alterações</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Adiciona confirmação para ações importantes e oculta a linha se Entregue
-        document.querySelectorAll('select.status-select').forEach(select => {
-            select.addEventListener('change', function(e) {
-                const form = this.form;
-                const row = this.closest('tr');
-                
-                if (this.value === 'Entregue') {
-                    if (!confirm('Tem certeza que deseja marcar esta cotação como Entregue?')) {
-                        e.preventDefault();
-                        this.value = '';
-                        return;
-                    }
-                    // Enviar o formulário via AJAX para evitar recarregamento
-                    fetch(form.action, {
-                        method: 'POST',
-                        body: new FormData(form),
-                        headers: {
-                            'Accept': 'application/json'
-                        }
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            // Ocultar a linha da tabela com transição suave
-                            row.style.transition = 'opacity 0.3s';
-                            row.style.opacity = '0';
-                            setTimeout(() => row.remove(), 300);
-                        } else {
-                            alert('Erro ao atualizar status: ' + (data.message || 'Tente novamente.'));
-                            this.value = '';
-                        }
-                    })
-                    .catch(() => {
-                        alert('Erro ao atualizar status. Tente novamente.');
-                        this.value = '';
-                    });
-                } else if (this.value === 'Reprovado' && !confirm('Tem certeza que deseja reprovar esta cotação?')) {
-                    e.preventDefault();
-                    this.value = '';
+        // Função para lidar com a mudança de status
+        function handleStatusChange(select, preenchimentoId) {
+            const form = select.form;
+            const selectedValue = select.value;
+            
+            // Para todos os status, enviar imediatamente
+            submitStatusForm(form, select, preenchimentoId);
+        }
+
+        // Função para enviar o formulário de status
+        function submitStatusForm(form, select, preenchimentoId) {
+            const formData = new FormData(form);
+
+            // Mostrar indicador de carregamento
+            select.disabled = true;
+            const originalHtml = select.innerHTML;
+            select.innerHTML = '<option value="">Processando...</option>';
+
+            fetch(form.action, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showFlashMessage(data.message, 'success');
+                    // Recarregar a página após 1 segundo
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
+                } else {
+                    alert('Erro: ' + data.message);
+                    resetSelect(select, originalHtml);
                 }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                alert('Erro ao atualizar status. Tente novamente.');
+                resetSelect(select, originalHtml);
             });
-        });
+        }
+
+        // Função para resetar o select
+        function resetSelect(select, originalHtml) {
+            select.disabled = false;
+            select.innerHTML = originalHtml;
+            select.value = '';
+        }
+
+        // Função para mostrar mensagem flash
+        function showFlashMessage(message, type) {
+            const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+            const iconClass = type === 'success' ? 'bi-check-circle' : 'bi-exclamation-triangle';
+
+            const flashMessage = `
+                <div class="alert ${alertClass} alert-dismissible fade show mt-4 alert-flash" role="alert">
+                    <i class="bi ${iconClass}"></i>
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            `;
+
+            // Adicionar a mensagem no topo do container principal
+            const mainContainer = document.querySelector('.main-container');
+            mainContainer.insertAdjacentHTML('afterbegin', flashMessage);
+
+            // Remover automaticamente após 5 segundos
+            setTimeout(() => {
+                const alert = document.querySelector('.alert-flash');
+                if (alert) {
+                    alert.remove();
+                }
+            }, 5000);
+        }
 
         // Validação das datas
-        document.querySelector('form').addEventListener('submit', function(e) {
+        document.querySelector('form').addEventListener('submit', function (e) {
             const dataInicio = document.getElementById('data_inicio').value;
             const dataFim = document.getElementById('data_fim').value;
-            
+
             if (dataInicio && dataFim && dataInicio > dataFim) {
                 alert('A data de início não pode ser maior que a data de fim');
                 e.preventDefault();
@@ -628,29 +797,202 @@
         });
 
         // Inicializar tooltips para selects desabilitados
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             // Tooltips para elementos com title
             const tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'));
             tooltipTriggerList.forEach(tooltipTriggerEl => {
                 new bootstrap.Tooltip(tooltipTriggerEl);
             });
-            
+
             // Tooltips personalizados para selects desabilitados
             const disabledSelects = document.querySelectorAll('select.status-select:disabled');
             disabledSelects.forEach(select => {
                 const status = select.dataset.status;
                 let message = "";
-                
+
                 if (status === 'Aprovado') {
                     message = "Esta cotação foi aprovada e não pode ser alterada";
                 } else if (status === 'Em Processamento') {
                     message = "Esta cotação está em processo de compra e não pode ser alterada";
                 }
-                
+
                 select.title = message;
                 new bootstrap.Tooltip(select);
             });
         });
+
+        // Script para o modal de edição de valores
+        document.addEventListener('DOMContentLoaded', function () {
+            const editarValoresModal = document.getElementById('editarValoresModal');
+            let quantidadeAtual = 0;
+            let valorUnitarioOriginal = 0;
+            let historicoDescontos = [];
+
+            editarValoresModal.addEventListener('show.bs.modal', function (event) {
+                const button = event.relatedTarget;
+                const preenchimentoId = button.getAttribute('data-preenchimento-id');
+                valorUnitarioOriginal = parseFloat(button.getAttribute('data-valor-unitario'));
+                const valorFrete = parseFloat(button.getAttribute('data-valor-frete')) || 0;
+                quantidadeAtual = parseInt(button.getAttribute('data-quantidade'));
+                historicoDescontos = JSON.parse(button.getAttribute('data-historico') || '[]');
+
+                // Preencher os campos do modal
+                document.getElementById('preenchimentoId').value = preenchimentoId;
+                document.getElementById('valorUnitarioOriginal').value = valorUnitarioOriginal.toFixed(2);
+                document.getElementById('valorUnitarioNovo').value = valorUnitarioOriginal.toFixed(2);
+                document.getElementById('valorFrete').value = valorFrete.toFixed(2);
+
+                // Calcular desconto inicial (0%)
+                document.getElementById('percentualDesconto').value = 0;
+
+                // Calcular valor total inicial
+                const valorTotalInicial = (valorUnitarioOriginal * quantidadeAtual) + valorFrete;
+                document.getElementById('valorTotalNovo').value = valorTotalInicial.toFixed(2);
+
+                // Exibir histórico de descontos
+                exibirHistoricoDescontos();
+            });
+
+            // Calcular desconto quando o valor unitário for alterado
+            document.getElementById('valorUnitarioNovo').addEventListener('input', function () {
+                calcularDescontoEAtualizarTotal(quantidadeAtual);
+            });
+
+            // Calcular novos valores quando o frete for alterado
+            document.getElementById('valorFrete').addEventListener('input', function () {
+                calcularDescontoEAtualizarTotal(quantidadeAtual);
+            });
+
+            function calcularDescontoEAtualizarTotal(quantidade) {
+                const valorUnitarioNovo = parseFloat(document.getElementById('valorUnitarioNovo').value) || 0;
+                const valorFrete = parseFloat(document.getElementById('valorFrete').value) || 0;
+
+                // Calcular percentual de desconto
+                let percentualDesconto = 0;
+                if (valorUnitarioOriginal > 0 && valorUnitarioNovo < valorUnitarioOriginal) {
+                    percentualDesconto = ((valorUnitarioOriginal - valorUnitarioNovo) / valorUnitarioOriginal) * 100;
+                }
+                document.getElementById('percentualDesconto').value = percentualDesconto.toFixed(2);
+
+                // Calcular novo valor total
+                const valorTotalNovo = (valorUnitarioNovo * quantidade) + valorFrete;
+                document.getElementById('valorTotalNovo').value = valorTotalNovo.toFixed(2);
+            }
+
+            // Função para exibir histórico de descontos
+            function exibirHistoricoDescontos() {
+                const historicoLista = document.getElementById('historicoLista');
+                const historicoContainer = document.getElementById('historicoContainer');
+
+                // Verificar se os elementos existem na página atual
+                if (!historicoLista || !historicoContainer) {
+                    console.log('Elementos de histórico não encontrados nesta página');
+                    return;
+                }
+
+                historicoLista.innerHTML = '';
+
+                // Verificar se a variável historicoDescontos está disponível
+                if (typeof historicoDescontos === 'undefined' || !historicoDescontos || historicoDescontos.length === 0) {
+                    historicoLista.innerHTML = '<div class="text-center text-muted py-3">Nenhuma alteração registrada</div>';
+                    return;
+                }
+
+                // Ordenar histórico por data (mais recente primeiro)
+                historicoDescontos.sort((a, b) => {
+                    return new Date(b.data_alteracao) - new Date(a.data_alteracao);
+                });
+
+                historicoDescontos.forEach(item => {
+                    const itemElement = document.createElement('div');
+                    itemElement.className = 'historico-item';
+
+                    const valorAnterior = parseFloat(item.valor_unitario_anterior) || 0;
+                    const valorNovo = parseFloat(item.valor_unitario_novo) || 0;
+                    const valorFreteAnterior = parseFloat(item.valor_frete_anterior) || 0;
+                    const valorFreteNovo = parseFloat(item.valor_frete_novo) || 0;
+
+                    let percentualDesconto = 0;
+                    if (valorAnterior > 0 && valorNovo < valorAnterior) {
+                        percentualDesconto = ((valorAnterior - valorNovo) / valorAnterior * 100);
+                    }
+
+                    const dataFormatada = item.data_alteracao ?
+                        new Date(item.data_alteracao).toLocaleDateString('pt-BR') + ' ' +
+                        new Date(item.data_alteracao).toLocaleTimeString('pt-BR') :
+                        'Data não disponível';
+
+                    itemElement.innerHTML = `
+                        <div class="historico-item-content">
+                            <div class="historico-valores">
+                                <div class="historico-campo">
+                                    <span class="historico-label">Unitário:</span>
+                                    <span class="valor-antigo">R$ ${valorAnterior.toFixed(2)}</span>
+                                    <span class="seta">→</span>
+                                    <span class="valor-novo">R$ ${valorNovo.toFixed(2)}</span>
+                                    ${percentualDesconto > 0 ? `<span class="percentual-desconto">${percentualDesconto.toFixed(2)}% OFF</span>` : ''}
+                                </div>
+                                ${valorFreteAnterior > 0 || valorFreteNovo > 0 ? `
+                                <div class="historico-campo">
+                                    <span class="historico-label">Frete:</span>
+                                    <span class="valor-antigo">R$ ${valorFreteAnterior.toFixed(2)}</span>
+                                    <span class="seta">→</span>
+                                    <span class="valor-novo">R$ ${valorFreteNovo.toFixed(2)}</span>
+                                </div>
+                                ` : ''}
+                            </div>
+                            <div class="historico-metadata">
+                                <small class="historico-data">${dataFormatada}</small>
+                                <small class="historico-usuario">por ${item.usuario || 'usuário'}</small>
+                            </div>
+                        </div>
+                    `;
+
+                    historicoLista.appendChild(itemElement);
+                });
+            }
+
+            // Salvar os valores alterados
+            document.getElementById('btnSalvarValores').addEventListener('click', function () {
+                const preenchimentoId = document.getElementById('preenchimentoId').value;
+                const valorUnitarioNovo = parseFloat(document.getElementById('valorUnitarioNovo').value);
+                const valorFreteNovo = parseFloat(document.getElementById('valorFrete').value) || 0;
+
+                // Validar se o novo valor é válido
+                if (isNaN(valorUnitarioNovo) || valorUnitarioNovo < 0) {
+                    alert('Por favor, insira um valor unitário válido.');
+                    return;
+                }
+
+                // Enviar os dados para o servidor
+                fetch("{{ url_for('routes_bp.atualizar_valores_cotacao') }}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        preenchimento_id: preenchimentoId,
+                        valor_unitario: valorUnitarioNovo,
+                        valor_frete: valorFreteNovo,
+                        valor_unitario_original: valorUnitarioOriginal
+                    })
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Recarregar a página para mostrar os novos valores
+                            location.reload();
+                        } else {
+                            alert('Erro ao salvar alterações: ' + data.message);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Erro:', error);
+                        alert('Erro ao salvar alterações. Tente novamente.');
+                    });
+            });
+        });
     </script>
 </body>
+
 </html>

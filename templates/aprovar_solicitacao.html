@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Listar Solicitações Aprovadas/Reprovadas</title>
+    <title>Listar Solicitações Abertas</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
@@ -286,7 +286,7 @@
 <body>
     <div class="container">
         <h1>
-            <i class="fas fa-clipboard-list"></i> Solicitações de Compra Finalizadas
+            <i class="fas fa-clipboard-list"></i> Solicitações de Compra Abertas
         </h1>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -326,6 +326,7 @@
                     <label for="statusFilter">Status</label>
                     <select id="statusFilter" class="form-select">
                         <option value="">Todos status</option>
+                        <option value="Pendente">Pendente</option>
                         <option value="Aprovado">Aprovado</option>
                         <option value="Reprovado">Reprovado</option>
                     </select>
@@ -369,7 +370,6 @@
                     </thead>
                     <tbody>
                         {% for solicitacao in solicitacoes | sort(attribute='data_solicitacao', reverse=True) %}
-                            {% if solicitacao.status_aprovacao and solicitacao.status_aprovacao != 'Pendente' %}
                             <tr data-id="{{ solicitacao.id }}">
                                 <td>{{ solicitacao.id }}</td>
                                 <td>{{ solicitacao.material.DescricaoMaterial }}</td>
@@ -392,10 +392,17 @@
                                            {% if solicitacao.status_aprovacao == 'Reprovado' %}onclick="return false;" style="pointer-events: none; opacity: 0.6;"{% endif %}>
                                             <i class="fas fa-edit"></i> Preencher
                                         </a>
+                                        {% if not solicitacao.status_aprovacao or solicitacao.status_aprovacao == 'Pendente' %}
+                                            <button class="btn btn-aprovar" onclick="atualizarStatus({{ solicitacao.id }}, 'Aprovado')">
+                                                <i class="fas fa-check"></i> Aprovar
+                                            </button>
+                                            <button class="btn btn-reprovar" onclick="atualizarStatus({{ solicitacao.id }}, 'Reprovado')">
+                                                <i class="fas fa-times"></i> Reprovar
+                                            </button>
+                                        {% endif %}
                                     </div>
                                 </td>
                             </tr>
-                            {% endif %}
                         {% endfor %}
                     </tbody>
                 </table>
@@ -403,8 +410,8 @@
         {% else %}
             <div class="empty-state">
                 <i class="far fa-folder-open"></i>
-                <h3>Nenhuma solicitação finalizada encontrada</h3>
-                <p>Não há solicitações de compra aprovadas ou reprovadas no momento.</p>
+                <h3>Nenhuma solicitação aberta encontrada</h3>
+                <p>Não há solicitações de compra abertas no momento.</p>
             </div>
         {% endif %}
     </div>
