@@ -1810,7 +1810,25 @@ def atualizar_status_preenchimento(id):
 
         print(f"DEBUG >> Atualizando status para: {novo_status}")
 
-        # Atualizar status
+        # Lógica para reverter status (status especial 'Reaberto')
+        if novo_status == 'Reaberto':
+            # Verificar se o status atual permite reverter
+            if preenchimento.status in ['Aprovado', 'Reprovado']:
+                preenchimento.status = 'Aguardando Aprovacao'  # Volta para o status inicial
+                db.session.commit()
+                print(f"DEBUG >> Status revertido para: Aguardando Aprovacao")
+                
+                return jsonify({
+                    'success': True, 
+                    'message': 'Status revertido com sucesso!'
+                })
+            else:
+                return jsonify({
+                    'success': False, 
+                    'message': 'Não é possível reverter este status'
+                }), 400
+
+        # Lógica normal de atualização de status
         if novo_status:
             preenchimento.status = novo_status
 
