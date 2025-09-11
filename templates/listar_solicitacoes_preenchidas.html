@@ -53,9 +53,7 @@
             margin: 0;
         }
 
-        h2,
-        h3,
-        h4 {
+        h2, h3, h4 {
             color: var(--primary-color);
             font-weight: 600;
         }
@@ -317,6 +315,98 @@
             gap: 10px;
         }
 
+        /* Estilos para rastreabilidade */
+        .timeline {
+            position: relative;
+            padding: 20px 0;
+            margin-top: 20px;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 15px;
+            top: 0;
+            height: 100%;
+            width: 2px;
+            background-color: #dee2e6;
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 20px;
+            padding-left: 40px;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: 8px;
+            top: 0;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background-color: var(--primary-color);
+            border: 2px solid white;
+            z-index: 1;
+        }
+
+        .timeline-content {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: var(--border-radius);
+            border-left: 3px solid var(--primary-color);
+        }
+
+        .timeline-date {
+            font-size: 0.85rem;
+            color: var(--secondary-color);
+            margin-bottom: 5px;
+        }
+
+        .timeline-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: var(--primary-color);
+        }
+
+        .timeline-desc {
+            font-size: 0.9rem;
+            color: var(--secondary-color);
+        }
+
+        /* Accordion para solicitações */
+        .accordion-button:not(.collapsed) {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .accordion-button:not(.collapsed)::after {
+            filter: brightness(0) invert(1);
+        }
+
+        .solicitacao-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+
+        .solicitacao-info {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .solicitacao-id {
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .solicitacao-status {
+            font-size: 0.85rem;
+        }
+
         @media (max-width: 768px) {
             .main-container {
                 padding: 15px;
@@ -338,8 +428,7 @@
                 border: 1px solid #dee2e6;
             }
 
-            .table th,
-            .table td {
+            .table th, .table td {
                 padding: 8px 10px;
                 font-size: 0.85rem;
             }
@@ -351,6 +440,17 @@
 
             .filter-item {
                 min-width: 100%;
+            }
+
+            .solicitacao-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            .solicitacao-info {
+                flex-direction: column;
+                gap: 5px;
             }
         }
 
@@ -472,110 +572,136 @@
             </form>
         </div>
 
-        <!-- Lista de Preenchimentos -->
+        <!-- Lista de Solicitações -->
         {% if preenchimentos_por_material %}
-        {% for material_nome, preenchimentos in preenchimentos_por_material.items() %}
-        <div class="material-card">
-            <div class="material-header">
-                <div>
-                    <h3 class="material-title">
-                        <i class="bi bi-box-seam"></i> {{ material_nome }}
-                    </h3>
-                    {% set primeiro = preenchimentos[0] %}
-                    <div class="material-details">
-                        <span class="material-detail-item">
-                            <i class="bi bi-tag"></i> Marca: {{ primeiro.solicitacao.marca | default('N/A') }}
-                        </span>
-                        <span class="material-detail-item">
-                            <i class="bi bi-lightning-charge"></i> Ativo:
-                            <span
-                                class="badge-status bg-{{ 'success' if primeiro.solicitacao.ativo == 'Sim' else 'secondary' }}">
-                                {{ primeiro.solicitacao.ativo }}
+        <div class="accordion" id="solicitacoesAccordion">
+            {% for material_nome, preenchimentos in preenchimentos_por_material.items() %}
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="heading{{ loop.index }}">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#collapse{{ loop.index }}" aria-expanded="false"
+                        aria-controls="collapse{{ loop.index }}">
+                        <div class="solicitacao-header">
+                            <div>
+                                <h4 class="mb-0">
+                                    <i class="bi bi-box-seam"></i> {{ material_nome }}
+                                </h4>
+                                <div class="solicitacao-info mt-2">
+                                    <span class="material-detail-item">
+                                        <i class="bi bi-tag"></i> Marca: {{ preenchimentos[0].solicitacao.marca | default('N/A') }}
+                                    </span>
+                                    <span class="material-detail-item">
+                                        <i class="bi bi-lightning-charge"></i> Ativo:
+                                        <span
+                                            class="badge-status bg-{{ 'success' if preenchimentos[0].solicitacao.ativo == 'Sim' else 'secondary' }}">
+                                            {{ preenchimentos[0].solicitacao.ativo }}
+                                        </span>
+                                    </span>
+                                    <span class="material-detail-item">
+                                        <i class="bi bi-flag"></i> Prioridade:
+                                        <span
+                                            class="priority-badge {{ 'priority-urgent' if preenchimentos[0].solicitacao.prioridade == 'Urgente' else 'priority-normal' }}">
+                                            <i
+                                                class="bi {{ 'bi-exclamation-triangle-fill' if preenchimentos[0].solicitacao.prioridade == 'Urgente' else 'bi-calendar-check-fill' }}"></i>
+                                            {{ preenchimentos[0].solicitacao.prioridade }}
+                                        </span>
+                                    </span>
+                                </div>
+                            </div>
+                            <span class="cotacao-count-badge">
+                                <i class="bi bi-list-check"></i> {{ preenchimentos|length }} cotações
                             </span>
-                        </span>
-                        <span class="material-detail-item">
-                            <i class="bi bi-flag"></i> Prioridade:
-                            <span
-                                class="priority-badge {{ 'priority-urgent' if primeiro.solicitacao.prioridade == 'Urgente' else 'priority-normal' }}">
-                                <i
-                                    class="bi {{ 'bi-exclamation-triangle-fill' if primeiro.solicitacao.prioridade == 'Urgente' else 'bi-calendar-check-fill' }}"></i>
-                                {{ primeiro.solicitacao.prioridade }}
-                            </span>
-                        </span>
-                        {% if primeiro.solicitacao.ativo == 'Sim' and primeiro.solicitacao.nome_ativo %}
-                        <span class="material-detail-item">
-                            <i class="bi bi-tags"></i> Ativo: {{ primeiro.solicitacao.nome_ativo }}
-                        </span>
-                        {% endif %}
-                    </div>
-                </div>
-                <span class="cotacao-count-badge">
-                    <i class="bi bi-list-check"></i> {{ preenchimentos|length }} cotações
-                </span>
-            </div>
-
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead>
-                        <tr>
-                            <th>Fornecedor</th>
-                            <th class="text-end">Quantidade</th>
-                            <th class="text-end">Unitário</th>
-                            <th class="text-end">Frete</th>
-                            <th class="text-end">Total</th>
-                            <th>Entrega</th>
-                            <th>Pagamento</th>
-                            <th>Status</th>
-                            <th>Usuário</th>
-                            <th>Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody>
+                        </div>
+                    </button>
+                </h2>
+                <div id="collapse{{ loop.index }}" class="accordion-collapse collapse"
+                    aria-labelledby="heading{{ loop.index }}" data-bs-parent="#solicitacoesAccordion">
+                    <div class="accordion-body">
                         {% for preenchimento in preenchimentos %}
                         {% if preenchimento.status != 'Entregue' %}
-                        <tr data-preenchimento-id="{{ preenchimento.id }}">
-                            <td>
-                                <strong>{{ preenchimento.fornecedor_nome }}</strong>
-                                <div class="text-muted-light small">ID: {{ preenchimento.id }}</div>
-                            </td>
-                            <td class="text-end">{{ preenchimento.solicitacao.quantidade }}</td>
-                            <td class="text-end currency-value">R$ {{ "%.2f" | format(preenchimento.valor_unitario) }}
-                            </td>
-                            <td class="text-end currency-value">
-                                {% if preenchimento.valor_frete is not none %}
-                                R$ {{ "%.2f" | format(preenchimento.valor_frete) }}
-                                {% else %}
-                                <span class="text-muted-light">-</span>
-                                {% endif %}
-                            </td>
-                            <td class="text-end currency-value">R$ {{ "%.2f" | format(preenchimento.valor_total) }}</td>
-                            <td>{{ preenchimento.prazo_entrega }}</td>
-                            <td>{{ preenchimento.condicao_pagamento }}</td>
-                            <td>
-                                <span class="badge-status 
-                                                    {% if preenchimento.status == 'Aprovado' %}bg-success
-                                                    {% elif preenchimento.status == 'Reprovado' %}bg-danger
-                                                    {% elif preenchimento.status == 'Em Processamento' %}bg-warning
-                                                    {% elif preenchimento.status == 'Entregue' %}bg-primary
-                                                    {% else %}bg-secondary{% endif %}">
-                                    {{ preenchimento.status }}
-                                </span>
-                            </td>
-                            <td>
-                                <span class="d-inline-block text-truncate" style="max-width: 100px;">
-                                    {{ preenchimento.usuario }}
-                                </span>
-                            </td>
-                            <td>
-                                <div class="d-flex gap-1">
+                        <div class="material-card mb-4">
+                            <div class="material-header">
+                                <div>
+                                    <h5 class="material-title mb-2">
+                                        <i class="bi bi-hash"></i> ID: {{ preenchimento.id }}
+                                    </h5>
+                                    <div class="material-details">
+                                        <span class="material-detail-item">
+                                            <i class="bi bi-building"></i> Fornecedor: {{ preenchimento.fornecedor_nome }}
+                                        </span>
+                                        <span class="material-detail-item">
+                                            <i class="bi bi-person"></i> Usuário: {{ preenchimento.usuario }}
+                                        </span>
+                                        <span class="material-detail-item">
+                                            <i class="bi bi-tag"></i> Status:
+                                            <span class="badge-status 
+                                                {% if preenchimento.status == 'Aprovado' %}bg-success
+                                                {% elif preenchimento.status == 'Reprovado' %}bg-danger
+                                                {% elif preenchimento.status == 'Em Processamento' %}bg-warning
+                                                {% elif preenchimento.status == 'Entregue' %}bg-primary
+                                                {% else %}bg-secondary{% endif %}">
+                                                {{ preenchimento.status }}
+                                            </span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="p-3">
+                                <!-- Informações adicionais do material -->
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <strong>Nome do Material:</strong> {{ material_nome }}
+                                    </div>
+                                    <div class="col-md-4">
+                                        <strong>Status Ativo:</strong> 
+                                        <span class="badge bg-{{ 'success' if preenchimento.solicitacao.ativo == 'Sim' else 'secondary' }}">
+                                            {{ preenchimento.solicitacao.ativo }}
+                                        </span>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <strong>Nome do Ativo:</strong> {{ preenchimento.solicitacao.nome_ativo | default('N/A') }}
+                                    </div>
+                                </div>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-md-3">
+                                        <strong>Quantidade:</strong> {{ preenchimento.solicitacao.quantidade }}
+                                    </div>
+                                    <div class="col-md-3">
+                                        <strong>Unitário:</strong> R$ {{ "%.2f" | format(preenchimento.valor_unitario) }}
+                                    </div>
+                                    <div class="col-md-3">
+                                        <strong>Frete:</strong> 
+                                        {% if preenchimento.valor_frete is not none %}
+                                        R$ {{ "%.2f" | format(preenchimento.valor_frete) }}
+                                        {% else %}
+                                        <span class="text-muted-light">-</span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-3">
+                                        <strong>Total:</strong> R$ {{ "%.2f" | format(preenchimento.valor_total) }}
+                                    </div>
+                                </div>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <strong>Entrega:</strong> {{ preenchimento.prazo_entrega }}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <strong>Pagamento:</strong> {{ preenchimento.condicao_pagamento }}
+                                    </div>
+                                </div>
+                                
+                                <div class="d-flex justify-content-end">
                                     <form action="{{ url_for('routes_bp.atualizar_status_preenchimento', id=preenchimento.id) }}"
-                                        method="POST" class="d-inline" id="formStatus{{ preenchimento.id }}">
+                                        method="POST" class="d-inline me-2" id="formStatus{{ preenchimento.id }}">
 
                                         <select name="status" class="status-select"
                                             onchange="handleStatusChange(this, {{ preenchimento.id }})" {% if preenchimento.status in
                                             ['Aprovado', 'Em Processamento' ] %}disabled data-status="{{ preenchimento.status }}" {%
                                             endif %}>
-                                            <option value="" disabled selected>Alterar</option>
+                                            <option value="" disabled selected>Alterar Status</option>
                                             <option value="Aprovado" {% if preenchimento.status=='Aprovado' %}selected{% endif %}>
                                                 Aprovado
                                             </option>
@@ -589,24 +715,61 @@
                                     </form>
 
                                     <!-- Botão para editar valores -->
-                                    <button class="btn btn-sm btn-outline-warning btn-sm-icon ms-2" data-bs-toggle="modal"
+                                    <button class="btn btn-sm btn-outline-warning btn-sm-icon" data-bs-toggle="modal"
                                         data-bs-target="#editarValoresModal" data-preenchimento-id="{{ preenchimento.id }}"
                                         data-valor-unitario="{{ preenchimento.valor_unitario }}"
                                         data-valor-frete="{{ preenchimento.valor_frete if preenchimento.valor_frete else 0 }}"
                                         data-quantidade="{{ preenchimento.solicitacao.quantidade }}"
                                         data-historico="{{ preenchimento.historico_descontos|tojson|safe }}" title="Editar valores">
-                                        <i class="bi bi-pencil-square"></i>
+                                        <i class="bi bi-pencil-square"></i> Editar Valores
                                     </button>
                                 </div>
-                            </td>
-                        </tr>
+                                
+                                <!-- Rastreabilidade -->
+                                <div class="mt-4">
+                                    <h6><i class="bi bi-geo-alt"></i> Rastreabilidade</h6>
+                                    <div class="timeline">
+                                        <div class="timeline-item">
+                                            <div class="timeline-content">
+                                                <div class="timeline-date">10/05/2023 14:30</div>
+                                                <div class="timeline-title">Solicitação Criada</div>
+                                                <div class="timeline-desc">Solicitação registrada no sistema por {{ preenchimento.usuario }}</div>
+                                            </div>
+                                        </div>
+                                        <div class="timeline-item">
+                                            <div class="timeline-content">
+                                                <div class="timeline-date">11/05/2023 09:15</div>
+                                                <div class="timeline-title">Cotação Enviada</div>
+                                                <div class="timeline-desc">Cotação enviada para o fornecedor {{ preenchimento.fornecedor_nome }}</div>
+                                            </div>
+                                        </div>
+                                        <div class="timeline-item">
+                                            <div class="timeline-content">
+                                                <div class="timeline-date">12/05/2023 16:45</div>
+                                                <div class="timeline-title">Resposta do Fornecedor</div>
+                                                <div class="timeline-desc">Fornecedor respondeu com os valores informados</div>
+                                            </div>
+                                        </div>
+                                        {% if preenchimento.status == 'Aprovado' %}
+                                        <div class="timeline-item">
+                                            <div class="timeline-content">
+                                                <div class="timeline-date">13/05/2023 10:20</div>
+                                                <div class="timeline-title">Aprovação</div>
+                                                <div class="timeline-desc">Solicitação aprovada pelo gestor</div>
+                                            </div>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                         {% endif %}
                         {% endfor %}
-                    </tbody>
-                </table>
+                    </div>
+                </div>
             </div>
+            {% endfor %}
         </div>
-        {% endfor %}
         {% else %}
         <div class="empty-state">
             <i class="bi bi-inboxes"></i>
@@ -892,7 +1055,7 @@
 
                 historicoLista.innerHTML = '';
 
-                // Verificar se a variável historicoDescontos está disponível
+                // Verificar si a variável historicoDescontos está disponível
                 if (typeof historicoDescontos === 'undefined' || !historicoDescontos || historicoDescontos.length === 0) {
                     historicoLista.innerHTML = '<div class="text-center text-muted py-3">Nenhuma alteração registrada</div>';
                     return;
@@ -958,7 +1121,7 @@
                 const valorUnitarioNovo = parseFloat(document.getElementById('valorUnitarioNovo').value);
                 const valorFreteNovo = parseFloat(document.getElementById('valorFrete').value) || 0;
 
-                // Validar se o novo valor é válido
+                // Validar si o novo valor é válido
                 if (isNaN(valorUnitarioNovo) || valorUnitarioNovo < 0) {
                     alert('Por favor, insira um valor unitário válido.');
                     return;
