@@ -53,7 +53,9 @@
             margin: 0;
         }
 
-        h2, h3, h4 {
+        h2,
+        h3,
+        h4 {
             color: var(--primary-color);
             font-weight: 600;
         }
@@ -230,6 +232,7 @@
         .action-buttons {
             display: flex;
             gap: 8px;
+            flex-wrap: wrap;
         }
 
         .btn-sm-icon {
@@ -428,7 +431,8 @@
                 border: 1px solid #dee2e6;
             }
 
-            .table th, .table td {
+            .table th,
+            .table td {
                 padding: 8px 10px;
                 font-size: 0.85rem;
             }
@@ -497,6 +501,24 @@
             padding: 2px 8px;
             border-radius: 12px;
             font-size: 0.75rem;
+        }
+
+        .btn-reverter {
+            background-color: #6c757d;
+            border-color: #6c757d;
+            color: white;
+        }
+
+        .btn-reverter:hover {
+            background-color: #5a6268;
+            border-color: #545b62;
+            color: white;
+        }
+
+        .status-pendente {
+            background-color: #e9ecef;
+            border-color: #dee2e6;
+            color: #6c757d;
         }
     </style>
 </head>
@@ -588,7 +610,8 @@
                                 </h4>
                                 <div class="solicitacao-info mt-2">
                                     <span class="material-detail-item">
-                                        <i class="bi bi-tag"></i> Marca: {{ preenchimentos[0].solicitacao.marca | default('N/A') }}
+                                        <i class="bi bi-tag"></i> Marca: {{ preenchimentos[0].solicitacao.marca |
+                                        default('N/A') }}
                                     </span>
                                     <span class="material-detail-item">
                                         <i class="bi bi-lightning-charge"></i> Ativo:
@@ -627,7 +650,8 @@
                                     </h5>
                                     <div class="material-details">
                                         <span class="material-detail-item">
-                                            <i class="bi bi-building"></i> Fornecedor: {{ preenchimento.fornecedor_nome }}
+                                            <i class="bi bi-building"></i> Fornecedor: {{ preenchimento.fornecedor_nome
+                                            }}
                                         </span>
                                         <span class="material-detail-item">
                                             <i class="bi bi-person"></i> Usuário: {{ preenchimento.usuario }}
@@ -654,25 +678,28 @@
                                         <strong>Nome do Material:</strong> {{ material_nome }}
                                     </div>
                                     <div class="col-md-4">
-                                        <strong>Status Ativo:</strong> 
-                                        <span class="badge bg-{{ 'success' if preenchimento.solicitacao.ativo == 'Sim' else 'secondary' }}">
+                                        <strong>Status Ativo:</strong>
+                                        <span
+                                            class="badge bg-{{ 'success' if preenchimento.solicitacao.ativo == 'Sim' else 'secondary' }}">
                                             {{ preenchimento.solicitacao.ativo }}
                                         </span>
                                     </div>
                                     <div class="col-md-4">
-                                        <strong>Nome do Ativo:</strong> {{ preenchimento.solicitacao.nome_ativo | default('N/A') }}
+                                        <strong>Nome do Ativo:</strong> {{ preenchimento.solicitacao.nome_ativo |
+                                        default('N/A') }}
                                     </div>
                                 </div>
-                                
+
                                 <div class="row mb-3">
                                     <div class="col-md-3">
                                         <strong>Quantidade:</strong> {{ preenchimento.solicitacao.quantidade }}
                                     </div>
                                     <div class="col-md-3">
-                                        <strong>Unitário:</strong> R$ {{ "%.2f" | format(preenchimento.valor_unitario) }}
+                                        <strong>Unitário:</strong> R$ {{ "%.2f" | format(preenchimento.valor_unitario)
+                                        }}
                                     </div>
                                     <div class="col-md-3">
-                                        <strong>Frete:</strong> 
+                                        <strong>Frete:</strong>
                                         {% if preenchimento.valor_frete is not none %}
                                         R$ {{ "%.2f" | format(preenchimento.valor_frete) }}
                                         {% else %}
@@ -683,7 +710,7 @@
                                         <strong>Total:</strong> R$ {{ "%.2f" | format(preenchimento.valor_total) }}
                                     </div>
                                 </div>
-                                
+
                                 <div class="row mb-3">
                                     <div class="col-md-6">
                                         <strong>Entrega:</strong> {{ preenchimento.prazo_entrega }}
@@ -692,20 +719,23 @@
                                         <strong>Pagamento:</strong> {{ preenchimento.condicao_pagamento }}
                                     </div>
                                 </div>
-                                
-                                <div class="d-flex justify-content-end">
-                                    <form action="{{ url_for('routes_bp.atualizar_status_preenchimento', id=preenchimento.id) }}"
+
+                                <div class="d-flex justify-content-end action-buttons">
+                                    <form
+                                        action="{{ url_for('routes_bp.atualizar_status_preenchimento', id=preenchimento.id) }}"
                                         method="POST" class="d-inline me-2" id="formStatus{{ preenchimento.id }}">
 
                                         <select name="status" class="status-select"
-                                            onchange="handleStatusChange(this, {{ preenchimento.id }})" {% if preenchimento.status in
-                                            ['Aprovado', 'Em Processamento' ] %}disabled data-status="{{ preenchimento.status }}" {%
-                                            endif %}>
+                                            onchange="handleStatusChange(this, {{ preenchimento.id }})" {% if
+                                            preenchimento.status in ['Aprovado', 'Reprovado' , 'Em Processamento' ]
+                                            %}disabled data-status="{{ preenchimento.status }}" {% endif %}>
                                             <option value="" disabled selected>Alterar Status</option>
-                                            <option value="Aprovado" {% if preenchimento.status=='Aprovado' %}selected{% endif %}>
+                                            <option value="Aprovado" {% if preenchimento.status=='Aprovado' %}selected{%
+                                                endif %}>
                                                 Aprovado
                                             </option>
-                                            <option value="Reprovado" {% if preenchimento.status=='Reprovado' %}selected{% endif %}>
+                                            <option value="Reprovado" {% if preenchimento.status=='Reprovado'
+                                                %}selected{% endif %}>
                                                 Reprovado
                                             </option>
                                             {% if preenchimento.status in ['Aprovado', 'Em Processamento'] %}
@@ -714,17 +744,28 @@
                                         </select>
                                     </form>
 
+                                    <!-- Botão para reverter status (aparece apenas para status Aprovado/Reprovado) -->
+                                    {% if preenchimento.status in ['Aprovado', 'Reprovado'] %}
+                                    <button class="btn btn-sm btn-reverter btn-sm-icon"
+                                        onclick="reverterStatus({{ preenchimento.id }})"
+                                        title="Reverter status para permitir novas alterações">
+                                        <i class="bi bi-arrow-counterclockwise"></i> Reverter Status
+                                    </button>
+                                    {% endif %}
+
                                     <!-- Botão para editar valores -->
                                     <button class="btn btn-sm btn-outline-warning btn-sm-icon" data-bs-toggle="modal"
-                                        data-bs-target="#editarValoresModal" data-preenchimento-id="{{ preenchimento.id }}"
+                                        data-bs-target="#editarValoresModal"
+                                        data-preenchimento-id="{{ preenchimento.id }}"
                                         data-valor-unitario="{{ preenchimento.valor_unitario }}"
                                         data-valor-frete="{{ preenchimento.valor_frete if preenchimento.valor_frete else 0 }}"
                                         data-quantidade="{{ preenchimento.solicitacao.quantidade }}"
-                                        data-historico="{{ preenchimento.historico_descontos|tojson|safe }}" title="Editar valores">
+                                        data-historico="{{ preenchimento.historico_descontos|tojson|safe }}"
+                                        title="Editar valores">
                                         <i class="bi bi-pencil-square"></i> Editar Valores
                                     </button>
                                 </div>
-                                
+
                                 <!-- Rastreabilidade -->
                                 <div class="mt-4">
                                     <h6><i class="bi bi-geo-alt"></i> Rastreabilidade</h6>
@@ -733,21 +774,24 @@
                                             <div class="timeline-content">
                                                 <div class="timeline-date">10/05/2023 14:30</div>
                                                 <div class="timeline-title">Solicitação Criada</div>
-                                                <div class="timeline-desc">Solicitação registrada no sistema por {{ preenchimento.usuario }}</div>
+                                                <div class="timeline-desc">Solicitação registrada no sistema por {{
+                                                    preenchimento.usuario }}</div>
                                             </div>
                                         </div>
                                         <div class="timeline-item">
                                             <div class="timeline-content">
                                                 <div class="timeline-date">11/05/2023 09:15</div>
                                                 <div class="timeline-title">Cotação Enviada</div>
-                                                <div class="timeline-desc">Cotação enviada para o fornecedor {{ preenchimento.fornecedor_nome }}</div>
+                                                <div class="timeline-desc">Cotação enviada para o fornecedor {{
+                                                    preenchimento.fornecedor_nome }}</div>
                                             </div>
                                         </div>
                                         <div class="timeline-item">
                                             <div class="timeline-content">
                                                 <div class="timeline-date">12/05/2023 16:45</div>
                                                 <div class="timeline-title">Resposta do Fornecedor</div>
-                                                <div class="timeline-desc">Fornecedor respondeu com os valores informados</div>
+                                                <div class="timeline-desc">Fornecedor respondeu com os valores
+                                                    informados</div>
                                             </div>
                                         </div>
                                         {% if preenchimento.status == 'Aprovado' %}
@@ -877,9 +921,40 @@
         function handleStatusChange(select, preenchimentoId) {
             const form = select.form;
             const selectedValue = select.value;
-            
+
             // Para todos os status, enviar imediatamente
             submitStatusForm(form, select, preenchimentoId);
+        }
+
+        // Função para reverter status
+        // Função para reverter status
+        function reverterStatus(preenchimentoId) {
+            if (confirm('Tem certeza que deseja reverter o status para permitir novas alterações?')) {
+                // Enviar status especial 'Reaberto' para reverter
+                const formData = new FormData();
+                formData.append('status', 'Reaberto');
+
+                fetch("{{ url_for('routes_bp.atualizar_status_preenchimento', id=0) }}".replace('0', preenchimentoId), {
+                    method: 'POST',
+                    body: formData
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            showFlashMessage('Status revertido com sucesso. Agora você pode alterar o status novamente.', 'success');
+                            // Recarregar a página após 1 segundo
+                            setTimeout(() => {
+                                location.reload();
+                            }, 1000);
+                        } else {
+                            alert('Erro: ' + data.message);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Erro:', error);
+                        alert('Erro ao reverter status. Tente novamente.');
+                    });
+            }
         }
 
         // Função para enviar o formulário de status
@@ -895,24 +970,24 @@
                 method: 'POST',
                 body: formData
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showFlashMessage(data.message, 'success');
-                    // Recarregar a página após 1 segundo
-                    setTimeout(() => {
-                        location.reload();
-                    }, 1000);
-                } else {
-                    alert('Erro: ' + data.message);
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showFlashMessage(data.message, 'success');
+                        // Recarregar a página após 1 segundo
+                        setTimeout(() => {
+                            location.reload();
+                        }, 1000);
+                    } else {
+                        alert('Erro: ' + data.message);
+                        resetSelect(select, originalHtml);
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                    alert('Erro ao atualizar status. Tente novamente.');
                     resetSelect(select, originalHtml);
-                }
-            })
-            .catch(error => {
-                console.error('Erro:', error);
-                alert('Erro ao atualizar status. Tente novamente.');
-                resetSelect(select, originalHtml);
-            });
+                });
         }
 
         // Função para resetar o select
@@ -974,7 +1049,9 @@
                 let message = "";
 
                 if (status === 'Aprovado') {
-                    message = "Esta cotação foi aprovada e não pode ser alterada";
+                    message = "Esta cotação foi aprovada. Use o botão 'Reverter Status' para permitir alterações.";
+                } else if (status === 'Reprovado') {
+                    message = "Esta cotação foi reprovada. Use o botão 'Reverter Status' para permitir alterações.";
                 } else if (status === 'Em Processamento') {
                     message = "Esta cotação está em processo de compra e não pode ser alterada";
                 }
@@ -1121,7 +1198,7 @@
                 const valorUnitarioNovo = parseFloat(document.getElementById('valorUnitarioNovo').value);
                 const valorFreteNovo = parseFloat(document.getElementById('valorFrete').value) || 0;
 
-                // Validar si o novo valor é válido
+                // Validar se o novo valor é válido
                 if (isNaN(valorUnitarioNovo) || valorUnitarioNovo < 0) {
                     alert('Por favor, insira um valor unitário válido.');
                     return;
