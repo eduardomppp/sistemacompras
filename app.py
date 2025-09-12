@@ -298,7 +298,6 @@ pedido_preenchimento_associacao = db.Table('pedido_preenchimento_associacao',
     db.Column('preenchimento_id', db.Integer, db.ForeignKey('SolicitacoesPreenchidas.id'), primary_key=True)
 )
 
-# Modelo para Histórico de Descontos
 class HistoricoDescontos(db.Model):
     __tablename__ = 'HistoricoDescontos'
     id = db.Column(db.Integer, primary_key=True)
@@ -313,23 +312,15 @@ class HistoricoDescontos(db.Model):
     def to_dict(self):
         return {
             'id': self.id,
-            'cod_material': self.cod_material,
-            'especificacao': self.especificacao,
-            'quantidade': self.quantidade,
-            'unidade_medida': self.unidade_medida,
-            'aplicacao': self.aplicacao,
-            'empresa': self.empresa,
-            'data_solicitacao': self.data_solicitacao.isoformat() if self.data_solicitacao else None,
-            'usuario': self.usuario,
-            'foto_path': self.foto_path,
-            'marca': self.marca,
-            'ativo': self.ativo,
-            'nome_ativo': self.nome_ativo,
-            'prioridade': self.prioridade,
-            'status_aprovacao': self.status_aprovacao,
-            'observacoes_col': self.observacoes_col  # NOVO CAMPO AQUI
+            'preenchimento_id': self.preenchimento_id,
+            'valor_unitario_anterior': self.valor_unitario_anterior,
+            'valor_unitario_novo': self.valor_unitario_novo,
+            'valor_frete_anterior': self.valor_frete_anterior,
+            'valor_frete_novo': self.valor_frete_novo,
+            'data_alteracao': self.data_alteracao.isoformat() if self.data_alteracao else None,
+            'usuario': self.usuario
         }
-
+    
 def check_historico_descontos_schema():
     try:
         conn = sqlite3.connect(DATABASE)
