@@ -2378,9 +2378,12 @@ def listar_pedidos_compra():
                 # Obter empresa do usuário do arquivo senhas.txt ou usar a da solicitação como fallback
                 empresa_usuario = usuarios_empresas.get(pedido.usuario, preenchimento.solicitacao.empresa)
                 
+                # CORREÇÃO: A marca está na solicitação, não no preenchimento
+                marca = preenchimento.solicitacao.marca if preenchimento.solicitacao.marca else 'Não informado'
+                
                 preenchimentos_info.append({
                     'id': preenchimento.id,
-                    'marca': preenchimento.marca or 'Não informado',
+                    'marca': marca,  # Usando a marca da solicitação
                     'fornecedor_nome': fornecedor_info['nome_fantasia'],
                     'fornecedor_cnpj': fornecedor_info.get('cnpj', 'N/A'),
                     'material': preenchimento.solicitacao.material.DescricaoMaterial if preenchimento.solicitacao.material else 'N/A',
@@ -2516,9 +2519,12 @@ def listar_pedidos_compra_pg():
                 })
                 empresa_usuario = usuarios_empresas.get(pedido.usuario, preenchimento.solicitacao.empresa)
                 
+                # CORREÇÃO: A marca está na solicitação, não no preenchimento
+                marca = preenchimento.solicitacao.marca if preenchimento.solicitacao.marca else 'Não informado'
+                
                 preenchimentos_info.append({
                     'id': preenchimento.id,
-                    'marca': preenchimento.marca or 'Não informado',
+                    'marca': marca,  # Usando a marca da solicitação
                     'fornecedor_nome': fornecedor_info['nome_fantasia'],
                     'fornecedor_cnpj': fornecedor_info.get('cnpj', 'N/A'),
                     'material': preenchimento.solicitacao.material.DescricaoMaterial if preenchimento.solicitacao.material else 'N/A',
@@ -4181,9 +4187,13 @@ def financeiro():
                     'nome_fantasia': 'Fornecedor não encontrado',
                     'cnpj': 'N/A'
                 })
+                
+                # CORREÇÃO: A marca está na solicitação, não no preenchimento
+                marca = preenchimento.solicitacao.marca if preenchimento.solicitacao.marca else 'Não informado'
+                
                 preenchimentos_info.append({
                     'id': preenchimento.id,
-                    'marca': preenchimento.marca or 'Não informado',
+                    'marca': marca,  # Usando a marca da solicitação
                     'fornecedor_nome': fornecedor_info['nome_fantasia'],
                     'fornecedor_cnpj': fornecedor_info['cnpj'],
                     'material': preenchimento.solicitacao.material.DescricaoMaterial if preenchimento.solicitacao.material else 'N/A',
