@@ -145,6 +145,7 @@ class SolicitacoesCompra(db.Model):
     nome_ativo = db.Column(db.Text, nullable=True)
     prioridade = db.Column(db.String(20), nullable=False, default='Programado')
     status_aprovacao = db.Column(db.String(20), nullable=True, default=None)
+    observacoes_col = db.Column(db.Text, nullable=True)  # NOVA COLUNA AQUI
     material = db.relationship('Materiais', backref='solicitacoes')
 
     def to_dict(self):
@@ -181,6 +182,7 @@ class SolicitacoesPreenchidas(db.Model):
     usuario = db.Column(db.Text, nullable=False)
     status = db.Column(db.Text, nullable=True, default='Aguardando Aprovação')
     pdf_path = db.Column(db.Text, nullable=True)
+    observacoes = db.Column(db.Text, nullable=True)  # Novo campo para observações
     # REMOVER ESTA LINHA: aprovacao_pdf_path = db.Column(db.Text, nullable=True)
     
     solicitacao = db.relationship('SolicitacoesCompra', backref='preenchimentos_fornecidos')
@@ -206,21 +208,33 @@ class SolicitacoesPreenchidas(db.Model):
             'usuario': self.usuario,
             'status': self.status,
             'pdf_path': self.pdf_path,
+            'observacoes': self.observacoes,  # Adicionado ao dict
             'historico_descontos': [h.to_dict() for h in self.historico_descontos]
         }
     
-    # Propriedades derivadas da solicitação original
-    @property
-    def marca(self):
-        return self.solicitacao.marca if self.solicitacao else None
-    
-    @property
-    def ativo(self):
-        return self.solicitacao.ativo if self.solicitacao else None
-    
-    @property
-    def nome_ativo(self):
-        return self.solicitacao.nome_ativo if self.solicitacao else None
+def migrate_observacoes_col():
+    try:
+        conn = sqlite3.connect(DATABASE)
+        cursor = conn.cursor()
+        
+        # Verificar se a coluna já existe
+        cursor.execute("PRAGMA table_info(SolicitacoesCompra)")
+        columns = [col[1] for col in cursor.fetchall()]
+        
+        if 'observacoes_col' not in columns:
+            cursor.execute("ALTER TABLE SolicitacoesCompra ADD COLUMN observacoes_col TEXT")
+            conn.commit()
+            logging.info("Coluna observacoes_col adicionada à tabela SolicitacoesCompra")
+            print("✓ Coluna observacoes_col adicionada com sucesso!")
+        else:
+            print("✓ Coluna observacoes_col já existe na tabela")
+        
+        conn.close()
+        return True
+    except sqlite3.Error as e:
+        logging.error(f"Erro na migração observacoes_col: {str(e)}")
+        print(f"✗ Erro na migração: {str(e)}")
+        return False
     
 # Modelo para Estoque
 class Estoque(db.Model):
@@ -271,10 +285,11 @@ class PedidosCompra(db.Model):
     status = db.Column(db.Text, nullable=False, default='Gerado')
     pdf_path = db.Column(db.Text, nullable=True)
     valor_total = db.Column(db.Float, nullable=False)
-    valor_frete = db.Column(db.Float, nullable=True, default=0.0)  # Novo campo
-    valor_liquido = db.Column(db.Float, nullable=False)  # Novo campo
+    valor_frete = db.Column(db.Float, nullable=True, default=0.0)
+    valor_liquido = db.Column(db.Float, nullable=False)
     forma_pagamento = db.Column(db.Text, nullable=True)
-    observacoes = db.Column(db.Text, nullable=True)  # Novo campo
+    # ADICIONE ESTA LINHA
+    observacoes = db.Column(db.Text, nullable=True)
     comprovante_pagamento = db.Column(db.Text, nullable=True)
     preenchimentos = db.relationship('SolicitacoesPreenchidas', secondary='pedido_preenchimento_associacao')
 # Tabela de associação para relacionar PedidosCompra e SolicitacoesPreenchidas
@@ -283,7 +298,6 @@ pedido_preenchimento_associacao = db.Table('pedido_preenchimento_associacao',
     db.Column('preenchimento_id', db.Integer, db.ForeignKey('SolicitacoesPreenchidas.id'), primary_key=True)
 )
 
-# Modelo para Histórico de Descontos
 class HistoricoDescontos(db.Model):
     __tablename__ = 'HistoricoDescontos'
     id = db.Column(db.Integer, primary_key=True)
@@ -306,7 +320,7 @@ class HistoricoDescontos(db.Model):
             'data_alteracao': self.data_alteracao.isoformat() if self.data_alteracao else None,
             'usuario': self.usuario
         }
-
+    
 def check_historico_descontos_schema():
     try:
         conn = sqlite3.connect(DATABASE)
@@ -1545,6 +1559,7 @@ def migrate_solicitacoes_compra():
 @routes_bp.route('/preencher_solicitacao/<int:id>', methods=['GET', 'POST'])
 def preencher_solicitacao(id):
     if 'usuario' not in session:
+        flash('Por favor, faça login para continuar.', 'error')
         return redirect(url_for('routes_bp.login'))
     
     try:
@@ -1563,42 +1578,60 @@ def preencher_solicitacao(id):
             flash('Erro ao conectar ao banco de fornecedores', 'warning')
 
         if request.method == 'POST':
+            # Verificar limite de cotações
             cotacoes_existentes = SolicitacoesPreenchidas.query.filter_by(solicitacao_id=id).count()
             if cotacoes_existentes >= 9:
                 flash('Limite de 9 cotações atingido para esta solicitação.', 'error')
                 return render_template('preencher_solicitacao.html', 
-                                    solicitacao=solicitacao, 
-                                    fornecedores=fornecedores)
+                                      solicitacao=solicitacao, 
+                                      fornecedores=fornecedores)
 
-            fornecedor_ids = request.form.getlist('fornecedor[]')
+            # Obter listas de dados do formulário
+            fornecedor_ids = request.form.getlist('fornecedor_id[]')
             valor_unitario_list = request.form.getlist('valor_unitario[]')
             valor_total_list = request.form.getlist('valor_total[]')
             valor_frete_list = request.form.getlist('valor_frete[]')
             prazo_entrega_list = request.form.getlist('prazo_entrega[]')
             condicao_pagamento_list = request.form.getlist('condicao_pagamento[]')
+            observacao_list = request.form.getlist('observacao[]')  # Adicionado: capturar observações
             pdf_files = request.files.getlist('pdf_file[]')
+
+            # Log para depuração
+            logging.info(f"Dados recebidos do formulário: {request.form}")
+            logging.info(f"Arquivos recebidos: {[f.filename for f in pdf_files if f]}")
+            logging.info(f"Observações recebidas: {observacao_list}")
+
+            # Verificar consistência das listas
+            expected_length = len(fornecedor_ids)
+            if not all(len(lst) == expected_length for lst in [
+                valor_unitario_list, valor_total_list, prazo_entrega_list, 
+                condicao_pagamento_list, observacao_list, pdf_files]):
+                flash('Erro: Número inconsistente de campos nas cotações.', 'error')
+                return render_template('preencher_solicitacao.html', 
+                                      solicitacao=solicitacao, 
+                                      fornecedores=fornecedores)
 
             if not fornecedor_ids or not valor_unitario_list:
                 flash('Nenhuma cotação fornecida.', 'error')
                 return render_template('preencher_solicitacao.html', 
-                                    solicitacao=solicitacao, 
-                                    fornecedores=fornecedores)
+                                      solicitacao=solicitacao, 
+                                      fornecedores=fornecedores)
 
             if len(fornecedor_ids) > (9 - cotacoes_existentes):
                 flash(f'Você pode adicionar no máximo {9 - cotacoes_existentes} cotações.', 'error')
                 return render_template('preencher_solicitacao.html', 
-                                    solicitacao=solicitacao, 
-                                    fornecedores=fornecedores)
+                                      solicitacao=solicitacao, 
+                                      fornecedores=fornecedores)
 
             # Função auxiliar para parse de valores monetários
             def parse_br_currency(value):
                 if not value:
                     return None
                 try:
-                    # Remove todos os pontos (separadores de milhar) e substitui vírgula por ponto
                     cleaned = value.replace('.', '').replace(',', '.')
                     return float(cleaned)
-                except (ValueError, AttributeError):
+                except (ValueError, AttributeError) as e:
+                    logging.error(f"Erro ao parsear valor monetário '{value}': {str(e)}")
                     return None
 
             for i in range(len(fornecedor_ids)):
@@ -1609,6 +1642,7 @@ def preencher_solicitacao(id):
                     valor_frete = valor_frete_list[i].strip() if i < len(valor_frete_list) else ''
                     prazo_entrega = prazo_entrega_list[i].strip()
                     condicao_pagamento = condicao_pagamento_list[i].strip()
+                    observacao = observacao_list[i].strip() if i < len(observacao_list) else None  # Adicionado: processar observação
                     pdf_file = pdf_files[i] if i < len(pdf_files) else None
 
                     if not all([fornecedor_id, valor_unitario, valor_total, prazo_entrega, condicao_pagamento]):
@@ -1642,16 +1676,17 @@ def preencher_solicitacao(id):
                         flash(f'O valor do frete deve ser positivo ou zero na cotação {i+1}.', 'error')
                         continue
 
+                    # Processar o upload do PDF
                     pdf_path = None
                     if pdf_file and pdf_file.filename:
-                        if allowed_file(pdf_file.filename, {'pdf'}):
+                        if allowed_file(pdf_file.filename):
                             filename = f"{uuid.uuid4()}_{secure_filename(pdf_file.filename)}"
                             pdf_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
                             try:
                                 pdf_file.save(pdf_path)
-                                logging.info(f"PDF saved to: {pdf_path}")
+                                logging.info(f"PDF salvo em: {pdf_path}")
                             except Exception as e:
-                                logging.error(f"Error saving PDF: {str(e)}")
+                                logging.error(f"Erro ao salvar PDF na cotação {i+1}: {str(e)}")
                                 flash(f'Erro ao salvar o PDF na cotação {i+1}.', 'error')
                                 continue
                         else:
@@ -1659,23 +1694,27 @@ def preencher_solicitacao(id):
                             flash(f'Arquivo inválido na cotação {i+1}. Apenas PDFs são permitidos. Extensão detectada: {extension}', 'error')
                             continue
 
+                    # Criar nova instância de SolicitacoesPreenchidas
                     preenchimento = SolicitacoesPreenchidas(
                         solicitacao_id=id,
-                        fornecedor_id=fornecedor_id,
+                        fornecedor_id=int(fornecedor_id),
                         valor_unitario=valor_unitario_parsed,
-                        valor_total=valor_total_parsed,
                         valor_frete=valor_frete_parsed,
+                        valor_total=valor_total_parsed,
                         prazo_entrega=prazo_entrega,
                         condicao_pagamento=condicao_pagamento,
                         usuario=session['usuario'],
-                        status='Aguardando Aprovacao',
-                        pdf_path=pdf_path
+                        data_preenchimento=datetime.utcnow(),
+                        status='Aguardando Aprovação',
+                        pdf_path=pdf_path,
+                        observacoes=observacao if observacao else None  # Adicionado: salvar observação
                     )
                     db.session.add(preenchimento)
-                
+                    logging.info(f"Cotação {i+1} adicionada: Fornecedor ID {fornecedor_id}, Observações: {observacao}")
+
                 except Exception as e:
                     logging.error(f"Erro ao processar cotação {i+1}: {str(e)}")
-                    flash(f'Erro ao processar cotação {i+1}.', 'error')
+                    flash(f'Erro ao processar cotação {i+1}: {str(e)}', 'error')
                     continue
 
             try:
@@ -1685,19 +1724,45 @@ def preencher_solicitacao(id):
             except Exception as e:
                 db.session.rollback()
                 flash(f'Erro ao salvar as cotações: {str(e)}', 'error')
-                logging.error(f"Database error: {str(e)}")
+                logging.error(f"Erro no commit do banco: {str(e)}")
+                return render_template('preencher_solicitacao.html', 
+                                      solicitacao=solicitacao, 
+                                      fornecedores=fornecedores)
         
         return render_template('preencher_solicitacao.html', 
-                            solicitacao=solicitacao, 
-                            fornecedores=fornecedores)
+                              solicitacao=solicitacao, 
+                              fornecedores=fornecedores)
     
     except Exception as e:
         db.session.rollback()
         flash(f'Erro ao processar cotações: {str(e)}', 'error')
-        logging.error(f"Error in preencher_solicitacao: {str(e)}")
+        logging.error(f"Erro geral em preencher_solicitacao: {str(e)}")
         return render_template('preencher_solicitacao.html', 
-                            solicitacao=solicitacao, 
-                            fornecedores=fornecedores)
+                              solicitacao=solicitacao, 
+                              fornecedores=fornecedores)
+def add_observacoes_column_to_solicitacoes_preenchidas():
+    try:
+        conn = sqlite3.connect(DATABASE)
+        cursor = conn.cursor()
+        
+        # Verificar se a coluna já existe
+        cursor.execute("PRAGMA table_info(SolicitacoesPreenchidas)")
+        columns = [col[1] for col in cursor.fetchall()]
+        
+        if 'observacoes' not in columns:
+            cursor.execute("ALTER TABLE SolicitacoesPreenchidas ADD COLUMN observacoes TEXT")
+            conn.commit()
+            logging.info("Coluna observacoes adicionada à tabela SolicitacoesPreenchidas")
+            print("✓ Coluna observacoes adicionada com sucesso!")
+        else:
+            print("✓ Coluna observacoes já existe na tabela")
+        
+        conn.close()
+        return True
+    except sqlite3.Error as e:
+        logging.error(f"Erro ao adicionar coluna observacoes: {str(e)}")
+        print(f"✗ Erro ao adicionar coluna: {str(e)}")
+        return False
     
 @routes_bp.route('/listar_solicitacoes_preenchidas', methods=['GET'])
 def listar_solicitacoes_preenchidas():
@@ -1741,7 +1806,8 @@ def listar_solicitacoes_preenchidas():
                 'status': p.status,
                 'usuario': p.usuario,
                 'pdf_path': p.pdf_path,
-                'historico_descontos': [h.to_dict() for h in p.historico_descontos]
+                'historico_descontos': [h.to_dict() for h in p.historico_descontos],
+                'observacoes': p.observacoes  # Adicione esta linha
             })
         
         empresas = db.session.query(SolicitacoesCompra.empresa).distinct().order_by(SolicitacoesCompra.empresa).all()
@@ -1857,10 +1923,11 @@ def gerar_pedido_compra():
     
     try:
         if request.method == 'POST':
-            # Obter dados do formulário
+            # Obter dados do formulário (já existe)
             preenchimento_ids = request.form.getlist('preenchimento_ids')
             forma_pagamento = request.form.get('forma_pagamento', '').strip()
             condicao_pagamento = request.form.get('condicao_pagamento', '').strip()
+            # ADICIONE ESTA LINHA PARA CAPTURAR AS OBSERVAÇÕES
             observacoes = request.form.get('observacoes', '').strip()
 
             # Validações básicas
@@ -1942,6 +2009,7 @@ def gerar_pedido_compra():
                     valor_frete=valor_frete_total if valor_frete_total != 0 else None,
                     valor_liquido=valor_liquido,
                     forma_pagamento=f"{forma_pagamento} - {condicao_pagamento}",
+                    # ADICIONE O CAMPO OBSERVAÇÕES
                     observacoes=observacoes,
                     data_criacao=datetime.now()
                 )
@@ -2006,7 +2074,9 @@ def gerar_pedido_compra():
                     data_criacao=datetime.now().strftime('%d/%m/%Y %H:%M:%S'),
                     usuario=session['usuario'],
                     total_itens=len(preenchimento_ids),
-                    fornecedores_count=len(materiais_por_fornecedor)
+                    fornecedores_count=len(materiais_por_fornecedor),
+                    # ADICIONE ESTA LINHA PARA PASSAR AS OBSERVAÇÕES PARA O TEMPLATE
+                    observacoes=observacoes
                 )
 
                # 4. Configurar wkhtmltopdf (Windows e Linux)
@@ -2308,9 +2378,12 @@ def listar_pedidos_compra():
                 # Obter empresa do usuário do arquivo senhas.txt ou usar a da solicitação como fallback
                 empresa_usuario = usuarios_empresas.get(pedido.usuario, preenchimento.solicitacao.empresa)
                 
+                # CORREÇÃO: A marca está na solicitação, não no preenchimento
+                marca = preenchimento.solicitacao.marca if preenchimento.solicitacao.marca else 'Não informado'
+                
                 preenchimentos_info.append({
                     'id': preenchimento.id,
-                    'marca': preenchimento.marca or 'Não informado',
+                    'marca': marca,  # Usando a marca da solicitação
                     'fornecedor_nome': fornecedor_info['nome_fantasia'],
                     'fornecedor_cnpj': fornecedor_info.get('cnpj', 'N/A'),
                     'material': preenchimento.solicitacao.material.DescricaoMaterial if preenchimento.solicitacao.material else 'N/A',
@@ -2318,7 +2391,8 @@ def listar_pedidos_compra():
                 })
             pedidos_completos.append({
                 'pedido': pedido,
-                'preenchimentos': preenchimentos_info
+                'preenchimentos': preenchimentos_info,
+                'observacoes': pedido.observacoes
             })
 
         return render_template(
@@ -2445,9 +2519,12 @@ def listar_pedidos_compra_pg():
                 })
                 empresa_usuario = usuarios_empresas.get(pedido.usuario, preenchimento.solicitacao.empresa)
                 
+                # CORREÇÃO: A marca está na solicitação, não no preenchimento
+                marca = preenchimento.solicitacao.marca if preenchimento.solicitacao.marca else 'Não informado'
+                
                 preenchimentos_info.append({
                     'id': preenchimento.id,
-                    'marca': preenchimento.marca or 'Não informado',
+                    'marca': marca,  # Usando a marca da solicitação
                     'fornecedor_nome': fornecedor_info['nome_fantasia'],
                     'fornecedor_cnpj': fornecedor_info.get('cnpj', 'N/A'),
                     'material': preenchimento.solicitacao.material.DescricaoMaterial if preenchimento.solicitacao.material else 'N/A',
@@ -3238,6 +3315,24 @@ def search_fornecedores():
     except Exception as e:
         app.logger.error(f'Erro inesperado em search_fornecedores: {str(e)}')
         return jsonify([]), 500
+    
+    
+def verificar_coluna_observacoes():
+    try:
+        conn = sqlite3.connect(DATABASE)
+        cursor = conn.cursor()
+        cursor.execute("PRAGMA table_info(PedidosCompra)")
+        columns = [col[1] for col in cursor.fetchall()]
+        
+        if 'observacoes' not in columns:
+            cursor.execute("ALTER TABLE PedidosCompra ADD COLUMN observacoes TEXT")
+            conn.commit()
+            logging.info("Coluna observacoes adicionada à tabela PedidosCompra")
+            print("✓ Coluna observacoes adicionada com sucesso!")
+        
+        conn.close()
+    except sqlite3.Error as e:
+        logging.error(f"Erro ao verificar coluna observacoes: {str(e)}")
 
 # Rota temporária para diagnóstico - pode remover depois
 @routes_bp.route('/verificar_campo_ativo')
@@ -4092,9 +4187,13 @@ def financeiro():
                     'nome_fantasia': 'Fornecedor não encontrado',
                     'cnpj': 'N/A'
                 })
+                
+                # CORREÇÃO: A marca está na solicitação, não no preenchimento
+                marca = preenchimento.solicitacao.marca if preenchimento.solicitacao.marca else 'Não informado'
+                
                 preenchimentos_info.append({
                     'id': preenchimento.id,
-                    'marca': preenchimento.marca or 'Não informado',
+                    'marca': marca,  # Usando a marca da solicitação
                     'fornecedor_nome': fornecedor_info['nome_fantasia'],
                     'fornecedor_cnpj': fornecedor_info['cnpj'],
                     'material': preenchimento.solicitacao.material.DescricaoMaterial if preenchimento.solicitacao.material else 'N/A',
@@ -4368,6 +4467,7 @@ def atualizar_valores_cotacao():
         valor_unitario = data.get('valor_unitario')
         valor_frete = data.get('valor_frete', 0)
         valor_unitario_original = data.get('valor_unitario_original')
+        observacoes = data.get('observacoes')  # Novo: Pegar observações do request
         
         if not all([preenchimento_id, valor_unitario, valor_unitario_original]):
             return jsonify({'success': False, 'message': 'Dados incompletos'}), 400
@@ -4387,8 +4487,9 @@ def atualizar_valores_cotacao():
         preenchimento.valor_unitario = valor_unitario
         preenchimento.valor_frete = valor_frete if valor_frete > 0 else None
         preenchimento.valor_total = novo_valor_total
+        preenchimento.observacoes = observacoes  # Novo: Atualizar observações
         
-        # Registrar no histórico
+        # Registrar no histórico (mantendo o existente, sem mudança aqui)
         historico = HistoricoDescontos(
             preenchimento_id=preenchimento_id,
             valor_unitario_anterior=valor_unitario_anterior,
@@ -4539,6 +4640,11 @@ if __name__ == '__main__':
     
     # Adicione esta linha para criar a coluna status_aprovacao
     migrate_solicitacoes_compra_status_aprovacao()
+    
+    # Nova migração para observacoes
+    migrate_observacoes_col()  # ADICIONE ESTA LINHA
+    migrate_solicitacoes_compra_status_aprovacao()
+    add_observacoes_column_to_solicitacoes_preenchidas()
    
     with app.app_context():
         # Cria todas as tabelas definidas nos modelos

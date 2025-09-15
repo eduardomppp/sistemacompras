@@ -720,6 +720,14 @@
                                     </div>
                                 </div>
 
+                                <!-- MANTENHA APENAS ESTA SEÇÃO DE OBSERVAÇÕES -->
+                                <div class="row mb-3">
+                                    <div class="col-md-12">
+                                        <strong>Observações:</strong> {{ preenchimento.observacoes | default('Nenhuma
+                                        observação') }}
+                                    </div>
+                                </div>
+
                                 <div class="d-flex justify-content-end action-buttons">
                                     <form
                                         action="{{ url_for('routes_bp.atualizar_status_preenchimento', id=preenchimento.id) }}"
