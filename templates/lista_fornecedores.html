@@ -81,6 +81,46 @@
         .delete-btn:hover {
             background-color: #cc0000;
         }
+        
+        /* Estilos da Paginação */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 20px;
+            gap: 10px;
+        }
+        .pagination button {
+            padding: 8px 16px;
+            border: 1px solid #022855;
+            background-color: white;
+            color: #022855;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.3s;
+        }
+        .pagination button:hover:not(:disabled) {
+            background-color: #022855;
+            color: white;
+        }
+        .pagination button:disabled {
+            background-color: #cccccc;
+            color: #666666;
+            cursor: not-allowed;
+            border-color: #cccccc;
+        }
+        .pagination-info {
+            margin: 0 15px;
+            font-size: 14px;
+        }
+        .page-size-selector {
+            margin-left: 15px;
+        }
+        .page-size-selector select {
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
     </style>
 </head>
 <body>
@@ -89,6 +129,7 @@
         <input type="text" id="searchMaterial" class="search-input" placeholder="Pesquisar por Materiais" onkeyup="filterTable()">
     </div>
     <button class="export-button" onclick="exportCSV()">Exportar para CSV</button>
+    
     <div class="table-container">
         <table id="fornecedores-table">
             <thead>
@@ -107,37 +148,144 @@
                     <th>Ação</th>
                 </tr>
             </thead>
-           <tbody>
-    {% for fornecedor in fornecedores %}
-    <tr data-id="{{ fornecedor.id }}">
-        <td>{{ fornecedor.id }}</td>
-        <td class="nome-fantasia">{{ fornecedor.nome_fantasia }}</td>
-        <td class="cnpj">{{ fornecedor.cnpj_formatado }}</td>
-        <td>{{ fornecedor.telefone }}</td>
-        <td>{{ fornecedor.email }}</td>
-        <td>{{ fornecedor.endereco | default('N/A', true) }}</td>
-        <td>{{ fornecedor.bairro | default('N/A', true) }}</td>
-        <td>{{ fornecedor.cidade | default('N/A', true) }}</td>
-        <td>{{ fornecedor.estado | default('N/A', true) }}</td>
-        <td>{{ fornecedor.contato | default('N/A', true) }}</td>
-        <td class="materiais">{{ fornecedor.materiais | default('N/A', true) }}</td>
-        <td><button class="delete-btn" onclick="deleteRow(this)">Excluir</button></td>
-    </tr>
-    {% endfor %}
-</tbody>
+            <tbody id="table-body">
+                {% for fornecedor in fornecedores %}
+                <tr data-id="{{ fornecedor.id }}">
+                    <td>{{ fornecedor.id }}</td>
+                    <td class="nome-fantasia">{{ fornecedor.nome_fantasia }}</td>
+                    <td class="cnpj">{{ fornecedor.cnpj_formatado }}</td>
+                    <td>{{ fornecedor.telefone }}</td>
+                    <td>{{ fornecedor.email }}</td>
+                    <td>{{ fornecedor.endereco | default('N/A', true) }}</td>
+                    <td>{{ fornecedor.bairro | default('N/A', true) }}</td>
+                    <td>{{ fornecedor.cidade | default('N/A', true) }}</td>
+                    <td>{{ fornecedor.estado | default('N/A', true) }}</td>
+                    <td>{{ fornecedor.contato | default('N/A', true) }}</td>
+                    <td class="materiais">{{ fornecedor.materiais | default('N/A', true) }}</td>
+                    <td><button class="delete-btn" onclick="deleteRow(this)">Excluir</button></td>
+                </tr>
+                {% endfor %}
+            </tbody>
         </table>
     </div>
+    
+    <!-- Controles de Paginação -->
+    <div class="pagination">
+        <button onclick="changePage(currentPage - 1)" id="prev-btn" disabled>Anterior</button>
+        <span class="pagination-info" id="page-info">Página 1 de 1</span>
+        <button onclick="changePage(currentPage + 1)" id="next-btn" disabled>Próxima</button>
+        
+        <div class="page-size-selector">
+            <label for="page-size">Itens por página:</label>
+            <select id="page-size" onchange="changePageSize()">
+                <option value="10">10</option>
+                <option value="25" selected>25</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+            </select>
+        </div>
+    </div>
+
     <script>
+        // Variáveis de paginação
+        let currentPage = 1;
+        let pageSize = 25;
+        let allRows = [];
+        let filteredRows = [];
+
+        // Inicialização quando a página carrega
+        document.addEventListener('DOMContentLoaded', function() {
+            // Coletar todas as linhas da tabela
+            const tableBody = document.getElementById('table-body');
+            allRows = Array.from(tableBody.getElementsByTagName('tr'));
+            filteredRows = [...allRows];
+            
+            // Inicializar a paginação
+            updatePagination();
+        });
+
+        // Função para mudar de página
+        function changePage(page) {
+            if (page < 1 || page > Math.ceil(filteredRows.length / pageSize)) return;
+            
+            currentPage = page;
+            updatePagination();
+        }
+
+        // Função para mudar o tamanho da página
+        function changePageSize() {
+            pageSize = parseInt(document.getElementById('page-size').value);
+            currentPage = 1;
+            updatePagination();
+        }
+
+        // Função para atualizar a exibição da paginação
+        function updatePagination() {
+            const tableBody = document.getElementById('table-body');
+            const totalPages = Math.ceil(filteredRows.length / pageSize);
+            
+            // Esconder todas as linhas
+            allRows.forEach(row => row.style.display = 'none');
+            
+            // Mostrar apenas as linhas da página atual
+            const startIndex = (currentPage - 1) * pageSize;
+            const endIndex = Math.min(startIndex + pageSize, filteredRows.length);
+            
+            for (let i = startIndex; i < endIndex; i++) {
+                if (filteredRows[i]) {
+                    filteredRows[i].style.display = '';
+                }
+            }
+            
+            // Atualizar controles de paginação
+            document.getElementById('page-info').textContent = `Página ${currentPage} de ${totalPages}`;
+            document.getElementById('prev-btn').disabled = currentPage === 1;
+            document.getElementById('next-btn').disabled = currentPage === totalPages || totalPages === 0;
+        }
+
+        // Função de filtro atualizada para trabalhar com paginação
+        function filterTable() {
+            const nameCNPJFilter = document.getElementById('searchNameCNPJ').value.toLowerCase();
+            const materialFilter = document.getElementById('searchMaterial').value.toLowerCase();
+            
+            filteredRows = allRows.filter(row => {
+                const cells = row.getElementsByTagName('td');
+                if (cells.length === 0) return false;
+                
+                const name = cells[1].innerText.toLowerCase();
+                const cnpj = cells[2].innerText.toLowerCase();
+                const material = cells[10].innerText.toLowerCase();
+                
+                const matchNameCNPJ = name.includes(nameCNPJFilter) || cnpj.includes(nameCNPJFilter);
+                const matchMaterial = material.includes(materialFilter);
+                
+                return matchNameCNPJ && matchMaterial;
+            });
+            
+            currentPage = 1;
+            updatePagination();
+        }
+
         function exportCSV() {
             const table = document.getElementById('fornecedores-table');
             let csv = [];
-            for (let row of table.rows) {
+            
+            // Cabeçalho
+            let header = [];
+            for (let th of table.rows[0].cells) {
+                header.push(th.innerText);
+            }
+            csv.push(header.join(','));
+            
+            // Dados (todos os fornecedores, não apenas os filtrados/visíveis)
+            for (let row of allRows) {
                 let cols = [];
                 for (let cell of row.cells) {
                     cols.push(cell.innerText);
                 }
                 csv.push(cols.join(','));
             }
+            
             const csvContent = "data:text/csv;charset=utf-8," + csv.join('\n');
             const encodedUri = encodeURI(csvContent);
             const link = document.createElement('a');
@@ -148,58 +296,46 @@
             document.body.removeChild(link);
         }
 
-        function filterTable() {
-            const nameCNPJFilter = document.getElementById('searchNameCNPJ').value.toLowerCase();
-            const materialFilter = document.getElementById('searchMaterial').value.toLowerCase();
-            const table = document.getElementById('fornecedores-table');
-            const rows = table.getElementsByTagName('tr');
-            for (let i = 1; i < rows.length; i++) {
-                const cells = rows[i].getElementsByTagName('td');
-                let matchNameCNPJ = false;
-                let matchMaterial = false;
-                if (cells.length > 0) {
-                    const name = cells[1].innerText.toLowerCase();
-                    const cnpj = cells[2].innerText.toLowerCase();
-                    const material = cells[10].innerText.toLowerCase();
-                    if (name.includes(nameCNPJFilter) || cnpj.includes(nameCNPJFilter)) {
-                        matchNameCNPJ = true;
-                    }
-                    if (material.includes(materialFilter)) {
-                        matchMaterial = true;
-                    }
-                }
-                rows[i].style.display = (matchNameCNPJ && matchMaterial) ? '' : 'none';
-            }
-        }
-
         function deleteRow(button) {
-    if (!confirm('Tem certeza que deseja excluir este fornecedor?')) {
-        return;
-    }
-    
-    const row = button.parentNode.parentNode;
-    const supplierId = row.getAttribute('data-id');
-    fetch('/delete_supplier', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ id: supplierId })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.status === 'success') {
-            row.parentNode.removeChild(row);
-            alert('Fornecedor excluído com sucesso!');
-        } else {
-            alert('Erro ao excluir o fornecedor: ' + data.message);
+            if (!confirm('Tem certeza que deseja excluir este fornecedor?')) {
+                return;
+            }
+            
+            const row = button.parentNode.parentNode;
+            const supplierId = row.getAttribute('data-id');
+            fetch('/delete_supplier', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ id: supplierId })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Remover a linha de todas as listas
+                    const rowIndex = allRows.indexOf(row);
+                    if (rowIndex > -1) {
+                        allRows.splice(rowIndex, 1);
+                    }
+                    
+                    const filteredIndex = filteredRows.indexOf(row);
+                    if (filteredIndex > -1) {
+                        filteredRows.splice(filteredIndex, 1);
+                    }
+                    
+                    row.parentNode.removeChild(row);
+                    updatePagination();
+                    alert('Fornecedor excluído com sucesso!');
+                } else {
+                    alert('Erro ao excluir o fornecedor: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                alert('Erro ao excluir o fornecedor.');
+            });
         }
-    })
-    .catch(error => {
-        console.error('Erro:', error);
-        alert('Erro ao excluir o fornecedor.');
-    });
-}
     </script>
 </body>
 </html>
