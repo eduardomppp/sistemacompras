@@ -38,6 +38,10 @@
             background-color: #007bff;
             color: #fff;
         }
+        .status-rascunho {
+            background-color: #6f42c1;
+            color: #fff;
+        }
         .card-header {
             background-color: #f8f9fa;
             font-weight: 600;
@@ -110,11 +114,82 @@
             right: 20px;
             z-index: 1055;
         }
+        .badge-secondary {
+            background-color: #6c757d;
+        }
+        .table th {
+            background-color: #f8f9fa;
+        }
+        .priority-badge {
+            font-size: 0.7rem;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-weight: 500;
+        }
+        .priority-urgente {
+            background-color: #fff8e1;
+            color: #e65100;
+            border: 1px solid #ffd54f;
+        }
+        .priority-programado {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+            border: 1px solid #a5d6a7;
+        }
+
+        /* NOVOS ESTILOS PARA PRIORIDADE */
+        .prioridade-alta {
+            background-color: #e8f5e9 !important;
+            border-left: 4px solid #28a745;
+        }
+
+        .prioridade-media {
+            background-color: #fff3cd !important;
+            border-left: 4px solid #ffc107;
+        }
+
+        .prioridade-baixa {
+            background-color: #f8f9fa !important;
+            border-left: 4px solid #6c757d;
+        }
+
+        .badge-prioridade {
+            font-size: 0.7rem;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-weight: 500;
+        }
+
+        .prioridade-3 {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .prioridade-2 {
+            background-color: #ffc107;
+            color: #000;
+        }
+
+        .prioridade-1 {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .prioridade-0 {
+            background-color: #6c757d;
+            color: white;
+        }
+
+        .table > tbody > tr:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: all 0.2s ease;
+        }
     </style>
 </head>
 <body>
     <div class="container-fluid py-4">
-        <h2 class="mb-4"><i class="fas fa-search me-2"></i>Status das Solicitações</h2>
+        <h2 class="mb-4"><i class="fas fa-search me-2"></i>Auditoria de Solicitações</h2>
 
         <!-- Toast para Feedback -->
         <div class="toast-container">
@@ -180,6 +255,16 @@
                     </select>
                 </div>
                 <div class="col-md-3">
+                    <label for="prioridade" class="form-label">Prioridade</label>
+                    <select id="prioridade" name="prioridade" class="form-select">
+                        <option value="">Todas</option>
+                        <option value="3" {% if filtros.prioridade == '3' %}selected{% endif %}>Máxima (Entregues)</option>
+                        <option value="2" {% if filtros.prioridade == '2' %}selected{% endif %}>Alta (Aprovadas + Pedido)</option>
+                        <option value="1" {% if filtros.prioridade == '1' %}selected{% endif %}>Média (Aprovadas)</option>
+                        <option value="0" {% if filtros.prioridade == '0' %}selected{% endif %}>Baixa (Outras)</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
                     <label for="data_inicio" class="form-label">Data Inicial</label>
                     <input type="date" id="data_inicio" name="data_inicio" class="form-control" value="{{ filtros.data_inicio }}">
                 </div>
@@ -202,14 +287,14 @@
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <span>Resultados da Auditoria</span>
-                <span class="badge bg-secondary">{{ auditoria|length }} registros</span>
+                <span class="badge bg-secondary">{{ total_registros }} registros</span>
             </div>
             <div class="card-body">
                 {% if not auditoria %}
                     <div class="alert alert-info">Nenhum resultado encontrado com os filtros aplicados.</div>
                 {% else %}
                     <div class="table-responsive">
-                        <table id="auditoriaTable" class="table table-hover">
+                        <table id="auditoriaTable" class="table table-hover table-striped">
                             <thead>
                                 <tr>
                                     <th>ID</th>
@@ -218,18 +303,48 @@
                                     <th>Empresa</th>
                                     <th>Ativo</th>
                                     <th>Quantidade</th>
+                                    <th>Prioridade</th>
                                     <th>Data</th>
                                     <th>Status</th>
+                                    <th>Pedido</th>
                                     <th>Ações</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for item in auditoria %}
-                                    <tr>
-                                        <td>{{ item.solicitacao.id }}</td>
+                                    <tr class="{% if item.prioridade == 3 %}prioridade-alta{% elif item.prioridade == 2 %}prioridade-media{% elif item.prioridade == 1 %}prioridade-baixa{% endif %}">
+                                        <td>
+                                            <strong>SOL#{{ item.solicitacao.id }}</strong>
+                                            {% if item.preenchimento %}
+                                                <br><small class="text-muted">COT#{{ item.preenchimento.id }}</small>
+                                            {% endif %}
+                                        </td>
                                         <td>
                                             <strong>{{ item.material.DescricaoMaterial if item.material else 'Material não encontrado' }}</strong><br>
                                             <small class="text-muted">{{ item.solicitacao.especificacao }}</small>
+                                            {% if item.solicitacao.marca %}
+                                                <br><small class="text-muted">Marca: {{ item.solicitacao.marca }}</small>
+                                            {% endif %}
+                                            <!-- Badge de Prioridade -->
+                                            <div class="mt-1">
+                                                {% if item.prioridade == 3 %}
+                                                    <span class="badge badge-prioridade prioridade-3">
+                                                        <i class="fas fa-star"></i> Prioridade Máxima
+                                                    </span>
+                                                {% elif item.prioridade == 2 %}
+                                                    <span class="badge badge-prioridade prioridade-2">
+                                                        <i class="fas fa-exclamation-circle"></i> Alta Prioridade
+                                                    </span>
+                                                {% elif item.prioridade == 1 %}
+                                                    <span class="badge badge-prioridade prioridade-1">
+                                                        <i class="fas fa-info-circle"></i> Média Prioridade
+                                                    </span>
+                                                {% else %}
+                                                    <span class="badge badge-prioridade prioridade-0">
+                                                        <i class="fas fa-clock"></i> Baixa Prioridade
+                                                    </span>
+                                                {% endif %}
+                                            </div>
                                         </td>
                                         <td>{{ item.solicitacao.usuario }}</td>
                                         <td>{{ item.solicitacao.empresa }}</td>
@@ -244,12 +359,19 @@
                                         <td>
                                             {{ item.solicitacao.quantidade }} {{ item.solicitacao.unidade_medida }}
                                         </td>
+                                        <td>
+                                            <span class="priority-badge {{ 'priority-urgente' if item.solicitacao.prioridade == 'Urgente' else 'priority-programado' }}">
+                                                {{ item.solicitacao.prioridade }}
+                                            </span>
+                                        </td>
                                         <td>{{ item.solicitacao.data_solicitacao.strftime('%d/%m/%Y') }}</td>
                                         <td>
                                             {% if not item.preenchimento %}
                                                 <span class="status-badge status-aberta">Aberta</span>
                                             {% else %}
-                                                {% if item.preenchimento.status == 'Aguardando Aprovação' %}
+                                                {% if item.preenchimento.status == 'Rascunho' %}
+                                                    <span class="status-badge status-rascunho">Rascunho</span>
+                                                {% elif item.preenchimento.status == 'Aguardando Aprovação' %}
                                                     <span class="status-badge status-preenchida">Aguardando Aprovação</span>
                                                 {% elif item.preenchimento.status == 'Aprovado' %}
                                                     <span class="status-badge status-aprovada">Aprovado</span>
@@ -259,11 +381,22 @@
                                                     <span class="status-badge status-processamento">Em Processamento</span>
                                                 {% elif item.preenchimento.status == 'Entregue' %}
                                                     <span class="status-badge status-entregue">Entregue</span>
+                                                {% else %}
+                                                    <span class="status-badge status-aberta">{{ item.preenchimento.status }}</span>
                                                 {% endif %}
                                             {% endif %}
                                         </td>
                                         <td>
-                                            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#detalhesModal{{ item.solicitacao.id }}">
+                                            {% if item.pedido %}
+                                                <span class="badge bg-success">
+                                                    <i class="fas fa-check"></i> {{ item.pedido.numero_pedido }}
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">Sem pedido</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#detalhesModal{{ item.solicitacao.id }}_{{ item.preenchimento.id if item.preenchimento else '0' }}">
                                                 <i class="fas fa-eye"></i> Detalhes
                                             </button>
                                         </td>
@@ -278,11 +411,16 @@
 
         <!-- Modais de Detalhes -->
         {% for item in auditoria %}
-            <div class="modal fade" id="detalhesModal{{ item.solicitacao.id }}" tabindex="-1" aria-labelledby="detalhesModalLabel{{ item.solicitacao.id }}" aria-hidden="true">
-                <div class="modal-dialog modal-lg">
+            <div class="modal fade" id="detalhesModal{{ item.solicitacao.id }}_{{ item.preenchimento.id if item.preenchimento else '0' }}" tabindex="-1" aria-labelledby="detalhesModalLabel{{ item.solicitacao.id }}_{{ item.preenchimento.id if item.preenchimento else '0' }}" aria-hidden="true">
+                <div class="modal-dialog modal-xl">
                     <div class="modal-content">
                         <div class="modal-header">
-                            <h5 class="modal-title" id="detalhesModalLabel{{ item.solicitacao.id }}">Detalhes da Solicitação #{{ item.solicitacao.id }}</h5>
+                            <h5 class="modal-title" id="detalhesModalLabel{{ item.solicitacao.id }}_{{ item.preenchimento.id if item.preenchimento else '0' }}">
+                                Detalhes da Solicitação #{{ item.solicitacao.id }}
+                                {% if item.preenchimento %}
+                                    - Cotação #{{ item.preenchimento.id }}
+                                {% endif %}
+                            </h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body">
@@ -298,6 +436,7 @@
                                                 <p class="mb-1"><strong>Código:</strong> {{ item.material.CodMaterial if item.material else 'N/A' }}</p>
                                                 <p class="mb-1"><strong>Aplicação:</strong> {{ item.material.Aplicacao if item.material else 'N/A' }}</p>
                                                 <p class="mb-1"><strong>Estoque Atual:</strong> {{ item.material.QuantidadeEstoque if item.material else 'N/A' }}</p>
+                                                <p class="mb-1"><strong>Fator Consumo:</strong> {{ item.material.FatorConsumo if item.material else 'N/A' }}</p>
                                             </div>
                                             <hr>
                                             <div>
@@ -305,7 +444,20 @@
                                                 <p>{{ item.solicitacao.especificacao }}</p>
                                                 <p class="mb-1"><strong>Marca:</strong> {{ item.solicitacao.marca or 'Não especificada' }}</p>
                                                 <p class="mb-1"><strong>Quantidade:</strong> {{ item.solicitacao.quantidade }} {{ item.solicitacao.unidade_medida }}</p>
-                                                <p class="mb-1"><strong>Prioridade:</strong> {{ item.solicitacao.prioridade }}</p>
+                                                <p class="mb-1"><strong>Prioridade:</strong> 
+                                                    <span class="priority-badge {{ 'priority-urgente' if item.solicitacao.prioridade == 'Urgente' else 'priority-programado' }}">
+                                                        {{ item.solicitacao.prioridade }}
+                                                    </span>
+                                                </p>
+                                                <p class="mb-1"><strong>Aprovação:</strong> 
+                                                    {% if item.solicitacao.status_aprovacao %}
+                                                        <span class="badge bg-{{ 'success' if item.solicitacao.status_aprovacao == 'Aprovado' else 'danger' }}">
+                                                            {{ item.solicitacao.status_aprovacao }}
+                                                        </span>
+                                                    {% else %}
+                                                        <span class="badge bg-secondary">Pendente</span>
+                                                    {% endif %}
+                                                </p>
                                             </div>
                                         </div>
                                     </div>
@@ -327,6 +479,7 @@
                                                         <span class="badge bg-secondary">Não</span>
                                                     {% endif %}
                                                 </p>
+                                                <p class="mb-1"><strong>Aplicação:</strong> {{ item.solicitacao.aplicacao or 'Não especificada' }}</p>
                                             </div>
                                             <hr>
                                             <div>
@@ -381,7 +534,9 @@
                                                         {% if not item.preenchimento %}
                                                             <span class="badge bg-warning text-dark">Aberta</span>
                                                         {% else %}
-                                                            {% if item.preenchimento.status == 'Aguardando Aprovação' %}
+                                                            {% if item.preenchimento.status == 'Rascunho' %}
+                                                                <span class="badge bg-secondary">Rascunho</span>
+                                                            {% elif item.preenchimento.status == 'Aguardando Aprovação' %}
                                                                 <span class="badge bg-info">Aguardando Aprovação</span>
                                                             {% elif item.preenchimento.status == 'Aprovado' %}
                                                                 <span class="badge bg-success">Aprovado</span>
@@ -400,6 +555,7 @@
                                     </div>
                                 </div>
                             </div>
+                            
                             {% if item.preenchimento %}
                                 <div class="card mb-4">
                                     <div class="card-header">
@@ -417,7 +573,9 @@
                                                 <p><strong>Prazo de Entrega:</strong> {{ item.preenchimento.prazo_entrega }}</p>
                                                 <p><strong>Condição de Pagamento:</strong> {{ item.preenchimento.condicao_pagamento }}</p>
                                                 <p><strong>Status:</strong> 
-                                                    {% if item.preenchimento.status == 'Aguardando Aprovação' %}
+                                                    {% if item.preenchimento.status == 'Rascunho' %}
+                                                        <span class="badge bg-secondary">Rascunho</span>
+                                                    {% elif item.preenchimento.status == 'Aguardando Aprovação' %}
                                                         <span class="badge bg-info">Aguardando Aprovação</span>
                                                     {% elif item.preenchimento.status == 'Aprovado' %}
                                                         <span class="badge bg-success">Aprovado</span>
@@ -429,6 +587,9 @@
                                                         <span class="badge bg-primary">Entregue</span>
                                                     {% endif %}
                                                 </p>
+                                                {% if item.preenchimento.observacoes %}
+                                                    <p><strong>Observações:</strong> {{ item.preenchimento.observacoes }}</p>
+                                                {% endif %}
                                             </div>
                                         </div>
                                         {% if item.preenchimento.pdf_path %}
@@ -442,6 +603,7 @@
                                     </div>
                                 </div>
                             {% endif %}
+                            
                             {% if item.pedido %}
                                 <div class="card mb-4">
                                     <div class="card-header">
@@ -453,6 +615,10 @@
                                                 <p><strong>Número do Pedido:</strong> {{ item.pedido.numero_pedido }}</p>
                                                 <p><strong>Data:</strong> {{ item.pedido.data_criacao.strftime('%d/%m/%Y %H:%M') }}</p>
                                                 <p><strong>Valor Total:</strong> R$ {{ "%.2f"|format(item.pedido.valor_total) }}</p>
+                                                {% if item.pedido.valor_frete %}
+                                                    <p><strong>Valor Frete:</strong> R$ {{ "%.2f"|format(item.pedido.valor_frete) }}</p>
+                                                {% endif %}
+                                                <p><strong>Valor Líquido:</strong> R$ {{ "%.2f"|format(item.pedido.valor_liquido) }}</p>
                                             </div>
                                             <div class="col-md-6">
                                                 <p><strong>Status:</strong> 
@@ -471,6 +637,9 @@
                                                     {% endif %}
                                                 </p>
                                                 <p><strong>Forma de Pagamento:</strong> {{ item.pedido.forma_pagamento }}</p>
+                                                {% if item.pedido.observacoes %}
+                                                    <p><strong>Observações:</strong> {{ item.pedido.observacoes }}</p>
+                                                {% endif %}
                                             </div>
                                         </div>
                                         {% if item.pedido.pdf_path %}
@@ -484,6 +653,7 @@
                                     </div>
                                 </div>
                             {% endif %}
+                            
                             {% if item.estoque %}
                                 <div class="card mb-4">
                                     <div class="card-header">
@@ -498,11 +668,13 @@
                                             <div class="col-md-6">
                                                 <p><strong>Número da NF:</strong> {{ item.estoque.numero_nf }}</p>
                                                 <p><strong>Data de Entrada:</strong> {{ item.estoque.data_entrada.strftime('%d/%m/%Y %H:%M') }}</p>
+                                                <p><strong>Usuário:</strong> {{ item.estoque.usuario }}</p>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             {% endif %}
+                            
                             {% if item.requisicoes %}
                                 <div class="card">
                                     <div class="card-header">
@@ -550,13 +722,15 @@
         // Inicializar DataTables
         $(document).ready(function() {
             $('#auditoriaTable').DataTable({
-                "pageLength": 10,
+                "pageLength": 25,
                 "language": {
                     "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/pt-BR.json"
                 },
                 "columnDefs": [
-                    { "orderable": false, "targets": 8 } // Desabilitar ordenação na coluna de ações
-                ]
+                    { "orderable": false, "targets": 10 } // Desabilitar ordenação na coluna de ações
+                ],
+                "order": [[0, "desc"]], // Ordenar por ID decrescente
+                "dom": '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rt<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>'
             });
         });
 
@@ -573,6 +747,7 @@
         document.getElementById('filterForm').addEventListener('submit', function(event) {
             const dataInicio = document.getElementById('data_inicio').value;
             const dataFim = document.getElementById('data_fim').value;
+            
             if (dataInicio && dataFim && new Date(dataFim) < new Date(dataInicio)) {
                 event.preventDefault();
                 const toast = new bootstrap.Toast(document.getElementById('filterToast'), {

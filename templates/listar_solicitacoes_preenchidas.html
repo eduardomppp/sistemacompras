@@ -229,6 +229,13 @@
             color: #856404;
         }
 
+        /* Estilo para cotações bloqueadas */
+        .status-select[disabled][data-status="Bloqueado"] {
+            background-color: #f8f9fa;
+            border-color: #dee2e6;
+            color: #6c757d;
+        }
+
         .action-buttons {
             display: flex;
             gap: 8px;
@@ -410,6 +417,31 @@
             font-size: 0.85rem;
         }
 
+        /* Novos estilos para cotações aprovadas e bloqueadas */
+        .cotacao-aprovada {
+            border-left: 4px solid var(--success-color);
+            background-color: #f8fff9;
+        }
+
+        .cotacao-bloqueada {
+            background-color: #f8f9fa;
+            opacity: 0.8;
+        }
+
+        .cotacao-bloqueada .material-header {
+            background-color: var(--secondary-color);
+        }
+
+        .badge-aprovado {
+            background-color: var(--success-color);
+            color: white;
+        }
+
+        .badge-bloqueado {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+
         @media (max-width: 768px) {
             .main-container {
                 padding: 15px;
@@ -472,6 +504,9 @@
             font-weight: 600;
             color: var(--primary-color);
             margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .historico-item {
@@ -598,6 +633,31 @@
         {% if preenchimentos_por_material %}
         <div class="accordion" id="solicitacoesAccordion">
             {% for material_nome, preenchimentos in preenchimentos_por_material.items() %}
+            
+            <!-- Lógica para ordenar preenchimentos -->
+            {% set cotacao_aprovada = none %}
+            {% set outras_cotacoes = [] %}
+            
+            {% for preenchimento in preenchimentos %}
+                {% if preenchimento.status == 'Aprovado' %}
+                    {% set cotacao_aprovada = preenchimento %}
+                {% else %}
+                    {% set _ = outras_cotacoes.append(preenchimento) %}
+                {% endif %}
+            {% endfor %}
+            
+            <!-- Ordenar outras cotações por data (mais recente primeiro) -->
+            {% set outras_cotacoes = outras_cotacoes|sort(attribute='data_preenchimento', reverse=true) %}
+            
+            <!-- Definir preenchimentos ordenados -->
+            {% set preenchimentos_ordenados = [] %}
+            {% if cotacao_aprovada %}
+                {% set _ = preenchimentos_ordenados.append(cotacao_aprovada) %}
+            {% endif %}
+            {% for cotacao in outras_cotacoes %}
+                {% set _ = preenchimentos_ordenados.append(cotacao) %}
+            {% endfor %}
+            
             <div class="accordion-item">
                 <h2 class="accordion-header" id="heading{{ loop.index }}">
                     <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
@@ -607,32 +667,40 @@
                             <div>
                                 <h4 class="mb-0">
                                     <i class="bi bi-box-seam"></i> {{ material_nome }}
+                                    {% if cotacao_aprovada %}
+                                    <span class="badge badge-aprovado ms-2">
+                                        <i class="bi bi-check-circle-fill"></i> COTAÇÃO APROVADA (ID{{ cotacao_aprovada.id }})
+                                    </span>
+                                    {% endif %}
                                 </h4>
                                 <div class="solicitacao-info mt-2">
+                                    {% set cotacao_exibicao = cotacao_aprovada if cotacao_aprovada else preenchimentos[0] %}
                                     <span class="material-detail-item">
-                                        <i class="bi bi-tag"></i> Marca: {{ preenchimentos[0].solicitacao.marca |
-                                        default('N/A') }}
+                                        <i class="bi bi-tag"></i> Marca: {{ cotacao_exibicao.solicitacao.marca | default('N/A') }}
                                     </span>
                                     <span class="material-detail-item">
                                         <i class="bi bi-lightning-charge"></i> Ativo:
                                         <span
-                                            class="badge-status bg-{{ 'success' if preenchimentos[0].solicitacao.ativo == 'Sim' else 'secondary' }}">
-                                            {{ preenchimentos[0].solicitacao.ativo }}
+                                            class="badge-status bg-{{ 'success' if cotacao_exibicao.solicitacao.ativo == 'Sim' else 'secondary' }}">
+                                            {{ cotacao_exibicao.solicitacao.ativo }}
                                         </span>
                                     </span>
                                     <span class="material-detail-item">
                                         <i class="bi bi-flag"></i> Prioridade:
                                         <span
-                                            class="priority-badge {{ 'priority-urgent' if preenchimentos[0].solicitacao.prioridade == 'Urgente' else 'priority-normal' }}">
+                                            class="priority-badge {{ 'priority-urgent' if cotacao_exibicao.solicitacao.prioridade == 'Urgente' else 'priority-normal' }}">
                                             <i
-                                                class="bi {{ 'bi-exclamation-triangle-fill' if preenchimentos[0].solicitacao.prioridade == 'Urgente' else 'bi-calendar-check-fill' }}"></i>
-                                            {{ preenchimentos[0].solicitacao.prioridade }}
+                                                class="bi {{ 'bi-exclamation-triangle-fill' if cotacao_exibicao.solicitacao.prioridade == 'Urgente' else 'bi-calendar-check-fill' }}"></i>
+                                            {{ cotacao_exibicao.solicitacao.prioridade }}
                                         </span>
                                     </span>
                                 </div>
                             </div>
                             <span class="cotacao-count-badge">
                                 <i class="bi bi-list-check"></i> {{ preenchimentos|length }} cotações
+                                {% if cotacao_aprovada %}
+                                <span class="badge badge-aprovado ms-1">ID{{ cotacao_aprovada.id }} aprovada</span>
+                                {% endif %}
                             </span>
                         </div>
                     </button>
@@ -640,18 +708,37 @@
                 <div id="collapse{{ loop.index }}" class="accordion-collapse collapse"
                     aria-labelledby="heading{{ loop.index }}" data-bs-parent="#solicitacoesAccordion">
                     <div class="accordion-body">
-                        {% for preenchimento in preenchimentos %}
+                        {% for preenchimento in preenchimentos_ordenados %}
                         {% if preenchimento.status != 'Entregue' %}
-                        <div class="material-card mb-4">
+                        
+                        {% set card_class = '' %}
+                        {% set is_bloqueado = false %}
+                        
+                        {% if preenchimento.status == 'Aprovado' %}
+                            {% set card_class = 'cotacao-aprovada' %}
+                        {% elif cotacao_aprovada and preenchimento.status != 'Aprovado' %}
+                            {% set card_class = 'cotacao-bloqueada' %}
+                            {% set is_bloqueado = true %}
+                        {% endif %}
+                        
+                        <div class="material-card mb-4 {{ card_class }}">
                             <div class="material-header">
                                 <div>
                                     <h5 class="material-title mb-2">
                                         <i class="bi bi-hash"></i> ID: {{ preenchimento.id }}
+                                        {% if preenchimento.status == 'Aprovado' %}
+                                        <span class="badge badge-aprovado ms-2">
+                                            <i class="bi bi-check-circle-fill"></i> COTAÇÃO APROVADA
+                                        </span>
+                                        {% elif is_bloqueado %}
+                                        <span class="badge badge-bloqueado ms-2">
+                                            <i class="bi bi-lock-fill"></i> BLOQUEADA
+                                        </span>
+                                        {% endif %}
                                     </h5>
                                     <div class="material-details">
                                         <span class="material-detail-item">
-                                            <i class="bi bi-building"></i> Fornecedor: {{ preenchimento.fornecedor_nome
-                                            }}
+                                            <i class="bi bi-building"></i> Fornecedor: {{ preenchimento.fornecedor_nome }}
                                         </span>
                                         <span class="material-detail-item">
                                             <i class="bi bi-person"></i> Usuário: {{ preenchimento.usuario }}
@@ -685,8 +772,7 @@
                                         </span>
                                     </div>
                                     <div class="col-md-4">
-                                        <strong>Nome do Ativo:</strong> {{ preenchimento.solicitacao.nome_ativo |
-                                        default('N/A') }}
+                                        <strong>Nome do Ativo:</strong> {{ preenchimento.solicitacao.nome_ativo | default('N/A') }}
                                     </div>
                                 </div>
 
@@ -695,8 +781,7 @@
                                         <strong>Quantidade:</strong> {{ preenchimento.solicitacao.quantidade }}
                                     </div>
                                     <div class="col-md-3">
-                                        <strong>Unitário:</strong> R$ {{ "%.2f" | format(preenchimento.valor_unitario)
-                                        }}
+                                        <strong>Unitário:</strong> R$ {{ "%.2f" | format(preenchimento.valor_unitario) }}
                                     </div>
                                     <div class="col-md-3">
                                         <strong>Frete:</strong>
@@ -720,30 +805,26 @@
                                     </div>
                                 </div>
 
-                                <!-- MANTENHA APENAS ESTA SEÇÃO DE OBSERVAÇÕES -->
+                                <!-- Observações -->
                                 <div class="row mb-3">
                                     <div class="col-md-12">
-                                        <strong>Observações:</strong> {{ preenchimento.observacoes | default('Nenhuma
-                                        observação') }}
+                                        <strong>Observações:</strong> {{ preenchimento.observacoes | default('Nenhuma observação') }}
                                     </div>
                                 </div>
 
                                 <div class="d-flex justify-content-end action-buttons">
+                                    {% if not is_bloqueado %}
                                     <form
                                         action="{{ url_for('routes_bp.atualizar_status_preenchimento', id=preenchimento.id) }}"
                                         method="POST" class="d-inline me-2" id="formStatus{{ preenchimento.id }}">
-
                                         <select name="status" class="status-select"
-                                            onchange="handleStatusChange(this, {{ preenchimento.id }})" {% if
-                                            preenchimento.status in ['Aprovado', 'Reprovado' , 'Em Processamento' ]
-                                            %}disabled data-status="{{ preenchimento.status }}" {% endif %}>
+                                            onchange="handleStatusChange(this, {{ preenchimento.id }})" 
+                                            {% if preenchimento.status in ['Aprovado', 'Reprovado', 'Em Processamento'] %}disabled data-status="{{ preenchimento.status }}" {% endif %}>
                                             <option value="" disabled selected>Alterar Status</option>
-                                            <option value="Aprovado" {% if preenchimento.status=='Aprovado' %}selected{%
-                                                endif %}>
+                                            <option value="Aprovado" {% if preenchimento.status=='Aprovado' %}selected{% endif %}>
                                                 Aprovado
                                             </option>
-                                            <option value="Reprovado" {% if preenchimento.status=='Reprovado'
-                                                %}selected{% endif %}>
+                                            <option value="Reprovado" {% if preenchimento.status=='Reprovado' %}selected{% endif %}>
                                                 Reprovado
                                             </option>
                                             {% if preenchimento.status in ['Aprovado', 'Em Processamento'] %}
@@ -752,7 +833,6 @@
                                         </select>
                                     </form>
 
-                                    <!-- Botão para reverter status (aparece apenas para status Aprovado/Reprovado) -->
                                     {% if preenchimento.status in ['Aprovado', 'Reprovado'] %}
                                     <button class="btn btn-sm btn-reverter btn-sm-icon"
                                         onclick="reverterStatus({{ preenchimento.id }})"
@@ -761,7 +841,6 @@
                                     </button>
                                     {% endif %}
 
-                                    <!-- Botão para editar valores -->
                                     <button class="btn btn-sm btn-outline-warning btn-sm-icon" data-bs-toggle="modal"
                                         data-bs-target="#editarValoresModal"
                                         data-preenchimento-id="{{ preenchimento.id }}"
@@ -772,42 +851,154 @@
                                         title="Editar valores">
                                         <i class="bi bi-pencil-square"></i> Editar Valores
                                     </button>
+                                    {% else %}
+                                    <div class="alert alert-info py-2 mb-0">
+                                        <i class="bi bi-info-circle"></i> Esta cotação está bloqueada porque existe uma cotação aprovada para este material.
+                                    </div>
+                                    {% endif %}
                                 </div>
 
                                 <!-- Rastreabilidade -->
                                 <div class="mt-4">
                                     <h6><i class="bi bi-geo-alt"></i> Rastreabilidade</h6>
                                     <div class="timeline">
+                                        {% set entries = get_rastreabilidade_entries(preenchimento.solicitacao) %}
+                                        
+                                        {% for entry in entries %}
                                         <div class="timeline-item">
                                             <div class="timeline-content">
-                                                <div class="timeline-date">10/05/2023 14:30</div>
-                                                <div class="timeline-title">Solicitação Criada</div>
-                                                <div class="timeline-desc">Solicitação registrada no sistema por {{
-                                                    preenchimento.usuario }}</div>
+                                                <div class="timeline-date">
+                                                    {{ entry.data|format_brasil_time if entry.data else 'Data não disponível' }}
+                                                </div>
+                                                <div class="timeline-title">{{ entry.evento }}</div>
+                                                <div class="timeline-desc">{{ entry.descricao }}</div>
                                             </div>
                                         </div>
+                                        {% endfor %}
+                                        
+                                        <!-- Evento 2: Cotação Enviada -->
                                         <div class="timeline-item">
                                             <div class="timeline-content">
-                                                <div class="timeline-date">11/05/2023 09:15</div>
+                                                <div class="timeline-date">
+                                                    {% if preenchimento.data_preenchimento %}
+                                                    {{ preenchimento.data_preenchimento|format_brasil_time }}
+                                                    {% else %}
+                                                    {% if preenchimento.solicitacao and preenchimento.solicitacao.data_solicitacao %}
+                                                    {{ preenchimento.solicitacao.data_solicitacao|format_brasil_time }}
+                                                    {% else %}
+                                                    Data não disponível
+                                                    {% endif %}
+                                                    {% endif %}
+                                                </div>
                                                 <div class="timeline-title">Cotação Enviada</div>
-                                                <div class="timeline-desc">Cotação enviada para o fornecedor {{
-                                                    preenchimento.fornecedor_nome }}</div>
+                                                <div class="timeline-desc">
+                                                    Cotação enviada para o fornecedor
+                                                    {% if preenchimento.fornecedor_nome %}
+                                                    {{ preenchimento.fornecedor_nome }}
+                                                    {% else %}
+                                                    Fornecedor não informado
+                                                    {% endif %}
+                                                </div>
                                             </div>
                                         </div>
+
+                                        <!-- Evento 3: Resposta do Fornecedor -->
                                         <div class="timeline-item">
                                             <div class="timeline-content">
-                                                <div class="timeline-date">12/05/2023 16:45</div>
+                                                <div class="timeline-date">
+                                                    {% if preenchimento.data_preenchimento %}
+                                                    {{ preenchimento.data_preenchimento|format_brasil_time }}
+                                                    {% else %}
+                                                    {% if preenchimento.solicitacao and preenchimento.solicitacao.data_solicitacao %}
+                                                    {{ preenchimento.solicitacao.data_solicitacao|format_brasil_time }}
+                                                    {% else %}
+                                                    Data não disponível
+                                                    {% endif %}
+                                                    {% endif %}
+                                                </div>
                                                 <div class="timeline-title">Resposta do Fornecedor</div>
-                                                <div class="timeline-desc">Fornecedor respondeu com os valores
-                                                    informados</div>
+                                                <div class="timeline-desc">Fornecedor respondeu com os valores informados</div>
                                             </div>
                                         </div>
-                                        {% if preenchimento.status == 'Aprovado' %}
+
+                                        {% if preenchimento.status and preenchimento.status in ['Aprovado', 'Em Processamento', 'AgPagamento', 'AgEntrega', 'Entregue'] %}
+                                        <!-- Evento 4: Aprovação -->
                                         <div class="timeline-item">
                                             <div class="timeline-content">
-                                                <div class="timeline-date">13/05/2023 10:20</div>
+                                                <div class="timeline-date">
+                                                    {% if preenchimento.data_preenchimento %}
+                                                    {{ preenchimento.data_preenchimento|format_brasil_time }}
+                                                    {% else %}
+                                                    {% if preenchimento.solicitacao and preenchimento.solicitacao.data_solicitacao %}
+                                                    {{ preenchimento.solicitacao.data_solicitacao|format_brasil_time }}
+                                                    {% else %}
+                                                    Data não disponível
+                                                    {% endif %}
+                                                    {% endif %}
+                                                </div>
                                                 <div class="timeline-title">Aprovação</div>
                                                 <div class="timeline-desc">Solicitação aprovada pelo gestor</div>
+                                            </div>
+                                        </div>
+                                        {% endif %}
+
+                                        {% if preenchimento.status and preenchimento.status in ['AgPagamento', 'AgEntrega', 'Entregue'] %}
+                                        <!-- Evento 5: Aguardando Pagamento -->
+                                        <div class="timeline-item">
+                                            <div class="timeline-content">
+                                                <div class="timeline-date">
+                                                    {% if preenchimento.data_preenchimento %}
+                                                    {{ preenchimento.data_preenchimento|format_brasil_time }}
+                                                    {% else %}
+                                                    {% if preenchimento.solicitacao and preenchimento.solicitacao.data_solicitacao %}
+                                                    {{ preenchimento.solicitacao.data_solicitacao|format_brasil_time }}
+                                                    {% else %}
+                                                    Data não disponível
+                                                    {% endif %}
+                                                    {% endif %}
+                                                </div>
+                                                <div class="timeline-title">Aguardando Pagamento</div>
+                                                <div class="timeline-desc">Solicitação aguardando processamento financeiro</div>
+                                            </div>
+                                        </div>
+                                        {% endif %}
+
+                                        {% if preenchimento.status and preenchimento.status in ['AgEntrega', 'Entregue'] %}
+                                        <!-- Evento 6: Aguardando Entrega -->
+                                        <div class="timeline-item">
+                                            <div class="timeline-content">
+                                                <div class="timeline-date">
+                                                    {% if preenchimento.data_preenchimento %}
+                                                    {{ preenchimento.data_preenchimento|format_brasil_time }}
+                                                    {% else %}
+                                                    {% if preenchimento.solicitacao and preenchimento.solicitacao.data_solicitacao %}
+                                                    {{ preenchimento.solicitacao.data_solicitacao|format_brasil_time }}
+                                                    {% else %}
+                                                    Data não disponível
+                                                    {% endif %}
+                                                    {% endif %}
+                                                </div>
+                                                <div class="timeline-title">Aguardando Entrega</div>
+                                                <div class="timeline-desc">Pagamento confirmado, aguardando entrega do fornecedor</div>
+                                            </div>
+                                        </div>
+                                        {% endif %}
+
+                                        {% if preenchimento.status and preenchimento.status == 'Entregue' %}
+                                        <!-- Evento 7: Entregue -->
+                                        <div class="timeline-item">
+                                            <div class="timeline-content">
+                                                <div class="timeline-date">
+                                                    {% if preenchimento.estoque and preenchimento.estoque.data_entrada %}
+                                                    {{ preenchimento.estoque.data_entrada|format_brasil_time }}
+                                                    {% elif preenchimento.data_preenchimento %}
+                                                    {{ preenchimento.data_preenchimento|format_brasil_time }}
+                                                    {% else %}
+                                                    Data não disponível
+                                                    {% endif %}
+                                                </div>
+                                                <div class="timeline-title">Material Entregue</div>
+                                                <div class="timeline-desc">Material entregue e adicionado ao estoque</div>
                                             </div>
                                         </div>
                                         {% endif %}
@@ -930,14 +1121,22 @@
             const form = select.form;
             const selectedValue = select.value;
 
-            // Para todos os status, enviar imediatamente
-            submitStatusForm(form, select, preenchimentoId);
+            // Se for aprovação, confirmar e processar
+            if (selectedValue === 'Aprovado') {
+                if (confirm('Ao aprovar esta cotação, todas as outras cotações para este material serão bloqueadas. Deseja continuar?')) {
+                    submitStatusForm(form, select, preenchimentoId);
+                } else {
+                    select.value = '';
+                }
+            } else {
+                // Para outros status, enviar normalmente
+                submitStatusForm(form, select, preenchimentoId);
+            }
         }
 
         // Função para reverter status
-        // Função para reverter status
         function reverterStatus(preenchimentoId) {
-            if (confirm('Tem certeza que deseja reverter o status para permitir novas alterações?')) {
+            if (confirm('Tem certeza que deseja reverter o status para permitir novas alterações?\nIsso desbloqueará todas as cotações para este material.')) {
                 // Enviar status especial 'Reaberto' para reverter
                 const formData = new FormData();
                 formData.append('status', 'Reaberto');
@@ -949,7 +1148,7 @@
                     .then(response => response.json())
                     .then(data => {
                         if (data.success) {
-                            showFlashMessage('Status revertido com sucesso. Agora você pode alterar o status novamente.', 'success');
+                            showFlashMessage('Status revertido com sucesso. Todas as cotações foram desbloqueadas.', 'success');
                             // Recarregar a página após 1 segundo
                             setTimeout(() => {
                                 location.reload();
@@ -1062,6 +1261,8 @@
                     message = "Esta cotação foi reprovada. Use o botão 'Reverter Status' para permitir alterações.";
                 } else if (status === 'Em Processamento') {
                     message = "Esta cotação está em processo de compra e não pode ser alterada";
+                } else if (status === 'Bloqueado') {
+                    message = "Esta cotação está bloqueada porque existe uma cotação aprovada para este material";
                 }
 
                 select.title = message;

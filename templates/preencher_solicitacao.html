@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -19,14 +20,14 @@
             --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
             --border-radius: 8px;
         }
-        
+
         body {
             background-color: var(--light-bg);
             font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
             padding: 20px 0;
             color: #333;
         }
-        
+
         .form-container {
             max-width: 100%;
             margin: 0 auto;
@@ -36,18 +37,21 @@
             box-shadow: var(--card-shadow);
             border: none;
         }
-        
+
         .header {
             border-bottom: 2px solid var(--primary-color);
             padding-bottom: 15px;
             margin-bottom: 25px;
         }
-        
-        h1, h2, h3, h4 {
+
+        h1,
+        h2,
+        h3,
+        h4 {
             color: var(--primary-color);
             font-weight: 700;
         }
-        
+
         .btn-primary {
             background-color: var(--primary-color);
             border-color: var(--primary-color);
@@ -56,25 +60,44 @@
             border-radius: var(--border-radius);
             transition: all 0.3s ease;
         }
-        
+
         .btn-primary:hover {
             background-color: var(--primary-light);
             border-color: var(--primary-light);
             transform: translateY(-2px);
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
-        
+
         .btn-outline-primary {
             color: var(--primary-color);
             border-color: var(--primary-color);
             font-weight: 500;
         }
-        
+
         .btn-outline-primary:hover {
             background-color: var(--primary-color);
             color: white;
         }
-        
+
+        .btn-warning {
+            background-color: #ffc107;
+            border-color: #ffc107;
+            color: #000;
+            font-weight: 600;
+        }
+
+        .btn-warning:hover {
+            background-color: #e0a800;
+            border-color: #d39e00;
+            color: #000;
+        }
+
+        .alert-info {
+            background-color: #d1ecf1;
+            border-color: #bee5eb;
+            color: #0c5460;
+        }
+
         /* Seção Detalhes da Solicitação - Melhorada */
         .detail-card {
             background-color: white;
@@ -86,7 +109,7 @@
             max-width: 800px;
             position: relative;
         }
-        
+
         .detail-card h4 {
             text-align: center;
             margin-bottom: 25px;
@@ -94,7 +117,7 @@
             border-bottom: 1px solid #eee;
             color: var(--primary-color);
         }
-        
+
         .detail-item {
             display: flex;
             margin-bottom: 15px;
@@ -103,7 +126,7 @@
             flex-wrap: wrap;
             align-items: flex-start;
         }
-        
+
         .detail-label {
             font-weight: 600;
             color: var(--primary-color);
@@ -112,7 +135,7 @@
             text-align: right;
             padding-right: 20px;
         }
-        
+
         .detail-value {
             color: #495057;
             flex: 1;
@@ -120,14 +143,14 @@
             max-width: 500px;
             line-height: 1.5;
         }
-        
+
         .badge-status {
             font-size: 0.85em;
             padding: 5px 10px;
             border-radius: 20px;
             font-weight: 500;
         }
-        
+
         .cotacao-container {
             border: 1px solid #e0e0e0;
             padding: 20px;
@@ -137,7 +160,7 @@
             box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
             position: relative;
         }
-        
+
         .cotacao-header {
             display: flex;
             justify-content: space-between;
@@ -146,7 +169,7 @@
             padding-bottom: 10px;
             border-bottom: 1px solid #eee;
         }
-        
+
         .remove-cotacao {
             background-color: var(--danger-color);
             border: none;
@@ -160,11 +183,11 @@
             font-size: 12px;
             transition: all 0.2s;
         }
-        
+
         .remove-cotacao:hover {
             transform: scale(1.1);
         }
-        
+
         .foto-preview {
             max-width: 100%;
             max-height: 150px;
@@ -174,40 +197,40 @@
             padding: 5px;
             background: white;
         }
-        
+
         .select2-container {
             width: 100% !important;
         }
-        
+
         .select2-selection__rendered {
             line-height: 38px !important;
         }
-        
+
         .select2-container .select2-selection--single {
             height: 38px !important;
             border: 1px solid #ced4da !important;
             border-radius: var(--border-radius) !important;
         }
-        
+
         .select2-selection__arrow {
             height: 38px !important;
         }
-        
+
         .calculated-field {
             background-color: #f8f9fa;
             cursor: not-allowed;
         }
-        
+
         .error-message {
             color: var(--danger-color);
             font-size: 0.85em;
             margin-top: 0.25rem;
         }
-        
+
         .form-section {
             margin-bottom: 30px;
         }
-        
+
         .form-section-title {
             font-size: 1.2rem;
             color: var(--primary-color);
@@ -216,12 +239,12 @@
             border-bottom: 2px solid #eee;
             font-weight: 600;
         }
-        
+
         .alert-flash {
             border-radius: var(--border-radius);
             border: none;
         }
-        
+
         .priority-display {
             display: inline-block;
             padding: 8px 16px;
@@ -230,88 +253,91 @@
             font-size: 0.95rem;
             margin-bottom: 20px;
         }
-        
+
         .priority-urgent-display {
             background-color: #fff8e1;
             color: #e65100;
             border: 1px solid #ffd54f;
         }
-        
+
         .priority-normal-display {
             background-color: #e8f5e9;
             color: #2e7d32;
             border: 1px solid #a5d6a7;
         }
-        
+
         /* Efeito hover para os itens de detalhe */
         .detail-item:hover {
             background-color: #f9f9f9;
             transition: background-color 0.2s ease;
         }
-        
+
         /* Melhorias para ícones */
         .bi {
             margin-right: 5px;
             vertical-align: middle;
         }
-        
+
         /* Mobile optimizations */
         @media (max-width: 768px) {
             .form-container {
                 padding: 15px;
             }
-            
+
             .header {
                 padding-bottom: 10px;
                 margin-bottom: 15px;
             }
-            
+
             h1 {
                 font-size: 1.5rem;
             }
-            
+
             .detail-card {
                 padding: 15px;
                 max-width: 100%;
             }
-            
+
             .detail-label {
                 width: 100%;
                 text-align: left;
                 padding-right: 0;
                 margin-bottom: 5px;
             }
-            
+
             .detail-value {
                 width: 100%;
                 padding-left: 0;
                 max-width: 100%;
             }
-            
+
             .cotacao-container {
                 padding: 15px;
             }
-            
+
             .btn {
                 padding: 8px 15px;
                 font-size: 0.9rem;
             }
-            
-            .form-control, .form-select, .select2-container .select2-selection--single {
+
+            .form-control,
+            .form-select,
+            .select2-container .select2-selection--single {
                 font-size: 0.9rem;
                 height: 36px !important;
             }
-            
+
             .select2-selection__rendered {
                 line-height: 36px !important;
             }
-            
+
             .select2-selection__arrow {
                 height: 36px !important;
             }
         }
     </style>
 </head>
+
 <body>
     <div class="container form-container">
         <div class="header">
@@ -324,56 +350,58 @@
                 </a>
             </div>
         </div>
-        
+
         <!-- Exibição da Prioridade (não editável) -->
         <div class="mb-4 text-center">
             <h5 class="form-section-title"><i class="bi bi-flag"></i> Prioridade da Solicitação</h5>
-            <div class="priority-display {{ 'priority-urgent-display' if solicitacao.prioridade == 'Urgente' else 'priority-normal-display' }}">
-                <i class="bi {{ 'bi-exclamation-triangle-fill' if solicitacao.prioridade == 'Urgente' else 'bi-calendar-check-fill' }}"></i>
+            <div
+                class="priority-display {{ 'priority-urgent-display' if solicitacao.prioridade == 'Urgente' else 'priority-normal-display' }}">
+                <i
+                    class="bi {{ 'bi-exclamation-triangle-fill' if solicitacao.prioridade == 'Urgente' else 'bi-calendar-check-fill' }}"></i>
                 {{ solicitacao.prioridade | upper }}
             </div>
             <input type="hidden" name="prioridade" value="{{ solicitacao.prioridade }}">
         </div>
-        
+
         <!-- Seção Detalhes da Solicitação - Centralizada e Melhorada -->
         <div class="detail-card">
             <h4><i class="bi bi-card-checklist"></i> Detalhes da Solicitação</h4>
-            
+
             <div class="detail-item">
                 <span class="detail-label">Material:</span>
                 <span class="detail-value">{{ solicitacao.material.DescricaoMaterial }}</span>
             </div>
-            
+
             <div class="detail-item">
                 <span class="detail-label">Quantidade:</span>
                 <span class="detail-value" id="quantidade-material">{{ solicitacao.quantidade }}</span>
             </div>
-            
+
             <div class="detail-item">
                 <span class="detail-label">Unidade de Medida:</span>
                 <span class="detail-value">{{ solicitacao.unidade_medida | default('Unidade') }}</span>
             </div>
-            
+
             <div class="detail-item">
                 <span class="detail-label">Especificação:</span>
                 <span class="detail-value">{{ solicitacao.especificacao }}</span>
             </div>
-            
+
             <div class="detail-item">
                 <span class="detail-label">Aplicação:</span>
                 <span class="detail-value">{{ solicitacao.aplicacao | default('N/A') }}</span>
             </div>
-            
+
             <div class="detail-item">
                 <span class="detail-label">Empresa:</span>
                 <span class="detail-value">{{ solicitacao.empresa }}</span>
             </div>
-            
+
             <div class="detail-item">
                 <span class="detail-label">Marca:</span>
                 <span class="detail-value">{{ solicitacao.marca | default('N/A') }}</span>
             </div>
-            
+
             <div class="detail-item">
                 <span class="detail-label">Material é ativo?:</span>
                 <span class="detail-value">
@@ -382,42 +410,53 @@
                     </span>
                 </span>
             </div>
-            
+
             {% if solicitacao.ativo == 'Sim' and solicitacao.nome_ativo %}
             <div class="detail-item">
                 <span class="detail-label">Nome do Ativo:</span>
                 <span class="detail-value">{{ solicitacao.nome_ativo }}</span>
             </div>
             {% endif %}
-            
+
             <div class="detail-item">
                 <span class="detail-label">Foto:</span>
                 <span class="detail-value">
                     {% if solicitacao.foto_path %}
-                        {% set extension = solicitacao.foto_path.rsplit('.', 1)[1].lower() if '.' in solicitacao.foto_path else '' %}
-                        {% if extension in ['jpg', 'jpeg', 'png'] %}
-                            <img src="{{ url_for('routes_bp.uploads', filename=solicitacao.foto_path | basename) }}" 
-                                 alt="Foto do material" 
-                                 class="foto-preview img-fluid">
-                        {% elif extension == 'pdf' %}
-                            <a href="{{ url_for('routes_bp.uploads', filename=solicitacao.foto_path | basename) }}" 
-                               target="_blank" 
-                               class="btn btn-sm btn-outline-primary">
-                                <i class="bi bi-file-earmark-pdf"></i> Visualizar PDF
-                            </a>
-                        {% else %}
-                            <span class="text-muted">Sem foto válida</span>
-                        {% endif %}
+                    {% set extension = solicitacao.foto_path.rsplit('.', 1)[1].lower() if '.' in solicitacao.foto_path
+                    else '' %}
+                    {% if extension in ['jpg', 'jpeg', 'png'] %}
+                    <img src="{{ url_for('routes_bp.uploads', filename=solicitacao.foto_path | basename) }}"
+                        alt="Foto do material" class="foto-preview img-fluid">
+                    {% elif extension == 'pdf' %}
+                    <a href="{{ url_for('routes_bp.uploads', filename=solicitacao.foto_path | basename) }}"
+                        target="_blank" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-file-earmark-pdf"></i> Visualizar PDF
+                    </a>
                     {% else %}
-                        <span class="text-muted">Sem foto</span>
+                    <span class="text-muted">Sem foto válida</span>
+                    {% endif %}
+                    {% else %}
+                    <span class="text-muted">Sem foto</span>
                     {% endif %}
                 </span>
             </div>
         </div>
 
-        <form method="POST" action="{{ url_for('routes_bp.preencher_solicitacao', id=solicitacao.id) }}" enctype="multipart/form-data" id="cotacoes-form">
+        <form method="POST" action="{{ url_for('routes_bp.preencher_solicitacao', id=solicitacao.id) }}"
+            enctype="multipart/form-data" id="cotacoes-form">
             <input type="hidden" name="prioridade" value="{{ solicitacao.prioridade }}">
-            
+
+            <!-- Seção para mostrar cotações salvas anteriormente -->
+            {% if cotacoes_salvas %}
+            <div class="form-section">
+                <h4 class="form-section-title"><i class="bi bi-save"></i> Cotações Salvas Anteriormente</h4>
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> Você tem {{ cotacoes_salvas|length }} cotação(ões) salva(s) como
+                    rascunho.
+                </div>
+            </div>
+            {% endif %}
+
             <div class="form-section">
                 <h4 class="form-section-title"><i class="bi bi-clipboard2-check"></i> Cotações de Fornecedores</h4>
                 <div id="cotacoes-container">
@@ -426,97 +465,109 @@
                         <div class="cotacao-header">
                             <h5 class="mb-0"><i class="bi bi-shop"></i> Cotação 1</h5>
                         </div>
-                        
+
                         <div class="mb-3">
                             <label for="fornecedor_1" class="form-label">Fornecedor *</label>
-                            <select class="form-select fornecedor-select" id="fornecedor_1" name="fornecedor[]" required>
+                            <select class="form-select fornecedor-select" id="fornecedor_1" name="fornecedor[]"
+                                required>
                                 <option value="">Selecione um fornecedor</option>
                             </select>
                             <input type="hidden" id="fornecedor_id_1" name="fornecedor_id[]">
                         </div>
-                        
+
                         <div class="row g-3">
                             <div class="col-md-4">
                                 <label for="valor_unitario_1" class="form-label">Valor Unitário (R$) *</label>
                                 <div class="input-group">
                                     <span class="input-group-text">R$</span>
-                                    <input type="text" class="form-control valor-unitario" id="valor_unitario_1" 
-                                           name="valor_unitario[]" placeholder="0,00" required>
+                                    <input type="text" class="form-control valor-unitario" id="valor_unitario_1"
+                                        name="valor_unitario[]" placeholder="0,00" required>
                                 </div>
                                 <div class="error-message" id="unitario-error-1"></div>
                             </div>
-                            
+
                             <div class="col-md-4">
                                 <label for="valor_frete_1" class="form-label">Valor do Frete (R$)</label>
                                 <div class="input-group">
                                     <span class="input-group-text">R$</span>
-                                    <input type="text" class="form-control valor-frete" id="valor_frete_1" 
-                                           name="valor_frete[]" placeholder="0,00">
+                                    <input type="text" class="form-control valor-frete" id="valor_frete_1"
+                                        name="valor_frete[]" placeholder="0,00">
                                 </div>
                                 <div class="error-message" id="frete-error-1"></div>
                             </div>
-                            
+
                             <div class="col-md-4">
                                 <label for="valor_total_1" class="form-label">Valor Total (R$)</label>
                                 <div class="input-group">
                                     <span class="input-group-text">R$</span>
-                                    <input type="text" class="form-control calculated-field" id="valor_total_1" 
-                                           name="valor_total[]" readonly>
+                                    <input type="text" class="form-control calculated-field" id="valor_total_1"
+                                        name="valor_total[]" readonly>
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="row g-3 mt-2">
                             <div class="col-md-6">
                                 <label for="prazo_entrega_1" class="form-label">Prazo de Entrega *</label>
-                                <input type="text" class="form-control" id="prazo_entrega_1" 
-                                       name="prazo_entrega[]" placeholder="Ex.: 10 dias úteis" required>
+                                <input type="text" class="form-control" id="prazo_entrega_1" name="prazo_entrega[]"
+                                    placeholder="Ex.: 10 dias úteis" required>
                             </div>
-                            
+
                             <div class="col-md-6">
                                 <label for="condicao_pagamento_1" class="form-label">Condição de Pagamento *</label>
-                                <input type="text" class="form-control" id="condicao_pagamento_1" 
-                                       name="condicao_pagamento[]" placeholder="Ex.: 30 dias" required>
+                                <input type="text" class="form-control" id="condicao_pagamento_1"
+                                    name="condicao_pagamento[]" placeholder="Ex.: 30 dias" required>
                             </div>
                         </div>
-                        
+
                         <div class="mt-3">
                             <label for="pdf_file_1" class="form-label">Anexar PDF da Cotação</label>
                             <input type="file" class="form-control" id="pdf_file_1" name="pdf_file[]" accept=".pdf">
                             <div class="form-text">Anexe o arquivo PDF com a cotação formal do fornecedor</div>
                         </div>
-                        
+
                         <!-- NOVO CAMPO ADICIONADO AQUI -->
                         <div class="mt-3">
                             <label for="observacao_1" class="form-label">Observações</label>
-                            <textarea class="form-control" id="observacao_1" name="observacao[]" rows="3" 
-                                      placeholder="Protocolo, Links, informações adicionais, observações sobre a cotação..."></textarea>
-                            <div class="form-text">Informações adicionais sobre esta cotação (links, observações, etc.)</div>
+                            <textarea class="form-control" id="observacao_1" name="observacao[]" rows="3"
+                                placeholder="Protocolo, Links, informações adicionais, observações sobre a cotação..."></textarea>
+                            <div class="form-text">Informações adicionais sobre esta cotação (links, observações, etc.)
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-            
+
             <div class="d-flex justify-content-between flex-wrap gap-2">
                 <button type="button" class="btn btn-outline-primary" id="add-cotacao">
                     <i class="bi bi-plus-circle"></i> Adicionar Cotação
                 </button>
-                <button type="submit" class="btn btn-primary flex-grow-1 flex-md-grow-0">
-                    <i class="bi bi-check-circle"></i> Salvar Cotações
-                </button>
+
+                <div class="d-flex gap-2">
+                    <!-- Botão Salvar Rascunho -->
+                    <button type="submit" name="action" value="salvar_rascunho" class="btn btn-warning">
+                        <i class="bi bi-save"></i> Salvar Rascunho
+                    </button>
+
+                    <!-- Botão Finalizar -->
+                    <button type="submit" name="action" value="salvar_finalizar" class="btn btn-success">
+                        <i class="bi bi-check-circle"></i> Finalizar e Enviar para Aprovação
+                    </button>
+                </div>
             </div>
         </form>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show mt-4 alert-flash" role="alert">
-                        <i class="bi bi-{{ 'check-circle' if category == 'success' else 'exclamation-triangle' }}"></i>
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                {% endfor %}
-            {% endif %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show mt-4 alert-flash"
+            role="alert">
+            <i class="bi bi-{{ 'check-circle' if category == 'success' else 'exclamation-triangle' }}"></i>
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+        {% endif %}
         {% endwith %}
     </div>
 
@@ -524,7 +575,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script>
-        $(document).ready(function() {
+        $(document).ready(function () {
             // Configuração do Select2 para busca de fornecedores
             function initializeSelect2(selector, idInputSelector) {
                 $(selector).select2({
@@ -535,14 +586,14 @@
                         url: '{{ url_for("routes_bp.search_fornecedores") }}',
                         dataType: 'json',
                         delay: 250,
-                        data: function(params) {
+                        data: function (params) {
                             return {
                                 q: params.term
                             };
                         },
-                        processResults: function(data) {
+                        processResults: function (data) {
                             return {
-                                results: data.map(function(fornecedor) {
+                                results: data.map(function (fornecedor) {
                                     return {
                                         id: fornecedor.id,
                                         text: `${fornecedor.nome_fantasia} - CNPJ: ${formatCNPJ(fornecedor.cnpj)}`
@@ -552,9 +603,9 @@
                         },
                         cache: true
                     }
-                }).on('select2:select', function(e) {
+                }).on('select2:select', function (e) {
                     $(idInputSelector).val(e.params.data.id);
-                }).on('select2:clear', function() {
+                }).on('select2:clear', function () {
                     $(idInputSelector).val('');
                 });
             }
@@ -568,12 +619,12 @@
             // Função para formatar valor monetário
             function formatCurrency(value) {
                 if (!value) return '0,00';
-                
+
                 // Converte para número
-                let number = typeof value === 'string' ? 
-                    parseFloat(value.replace(/\./g, '').replace(',', '.')) : 
+                let number = typeof value === 'string' ?
+                    parseFloat(value.replace(/\./g, '').replace(',', '.')) :
                     value;
-                
+
                 // Formata para o padrão brasileiro
                 return number.toLocaleString('pt-BR', {
                     minimumFractionDigits: 2,
@@ -597,16 +648,16 @@
                 const quantidade = parseFloat($('#quantidade-material').text());
                 const unitario = parseCurrency($(`#valor_unitario_${cotacaoId}`).val()) || 0;
                 const frete = parseCurrency($(`#valor_frete_${cotacaoId}`).val()) || 0;
-                
+
                 const total = (unitario * quantidade) + frete;
                 $(`#valor_total_${cotacaoId}`).val(formatCurrency(total));
             }
 
             // Validação e formatação de campos monetários
             function setupCurrencyInput(input, errorElementId) {
-                input.on('blur', function() {
+                input.on('blur', function () {
                     let value = $(this).val().replace(/[^\d,]/g, '');
-                    
+
                     // Garante que há pelo menos dois dígitos decimais
                     if (value.includes(',')) {
                         const parts = value.split(',');
@@ -617,12 +668,12 @@
                     } else if (value) {
                         value += ',00';
                     }
-                    
+
                     // Formata como moeda
                     if (value) {
                         value = value.replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.');
                         $(this).val(value);
-                        
+
                         // Validação
                         if (!validateCurrency(value)) {
                             $(`#${errorElementId}`).text('Formato inválido. Use: 1.234,56');
@@ -633,14 +684,14 @@
                         }
                     }
                 });
-                
+
                 // Impede caracteres inválidos
-                input.on('keypress', function(e) {
+                input.on('keypress', function (e) {
                     const char = String.fromCharCode(e.which);
                     if (!/[0-9,]/.test(char)) {
                         e.preventDefault();
                     }
-                    
+
                     // Permite apenas uma vírgula
                     if (char === ',' && $(this).val().indexOf(',') > -1) {
                         e.preventDefault();
@@ -650,20 +701,20 @@
 
             // Inicializa o primeiro select2
             initializeSelect2('#fornecedor_1', '#fornecedor_id_1');
-            
+
             // Configura os eventos para a cotação inicial
             setupCurrencyInput($('#valor_unitario_1'), 'unitario-error-1');
             setupCurrencyInput($('#valor_frete_1'), 'frete-error-1');
-            
+
             // Configura os eventos de cálculo para a cotação inicial
-            $('#valor_unitario_1, #valor_frete_1').on('blur', function() {
+            $('#valor_unitario_1, #valor_frete_1').on('blur', function () {
                 calculateTotal(1);
             });
 
             let cotacaoCount = 1;
             const maxCotações = 9;
 
-            $('#add-cotacao').click(function() {
+            $('#add-cotacao').click(function () {
                 if (cotacaoCount >= maxCotações) {
                     alert('Limite de 9 cotações atingido.');
                     return;
@@ -753,18 +804,18 @@
 
                 // Inicializa o Select2 para o novo campo
                 initializeSelect2(`#fornecedor_${cotacaoCount}`, `#fornecedor_id_${cotacaoCount}`);
-                
+
                 // Configura os eventos para a nova cotação
                 setupCurrencyInput($(`#valor_unitario_${cotacaoCount}`), `unitario-error-${cotacaoCount}`);
                 setupCurrencyInput($(`#valor_frete_${cotacaoCount}`), `frete-error-${cotacaoCount}`);
-                
+
                 // Configura os eventos de cálculo para a nova cotação
-                $(`#valor_unitario_${cotacaoCount}, #valor_frete_${cotacaoCount}`).on('blur', function() {
+                $(`#valor_unitario_${cotacaoCount}, #valor_frete_${cotacaoCount}`).on('blur', function () {
                     calculateTotal(cotacaoCount);
                 });
             });
 
-            $('#cotacoes-container').on('click', '.remove-cotacao', function() {
+            $('#cotacoes-container').on('click', '.remove-cotacao', function () {
                 if (cotacaoCount > 1) {
                     $(this).closest('.cotacao-container').remove();
                     cotacaoCount--;
@@ -772,27 +823,27 @@
             });
 
             // Validação do formulário antes de enviar
-            $('#cotacoes-form').on('submit', function(e) {
+            $('#cotacoes-form').on('submit', function (e) {
                 let isValid = true;
-                
+
                 // Verifica todos os campos de valor unitário
-                $('.valor-unitario').each(function() {
+                $('.valor-unitario').each(function () {
                     const value = $(this).val();
                     if (!value || !validateCurrency(value)) {
                         $(this).addClass('is-invalid');
                         isValid = false;
                     }
                 });
-                
+
                 // Verifica todos os campos de frete (opcional, mas se preenchido deve ser válido)
-                $('.valor-frete').each(function() {
+                $('.valor-frete').each(function () {
                     const value = $(this).val();
                     if (value && !validateCurrency(value)) {
                         $(this).addClass('is-invalid');
                         isValid = false;
                     }
                 });
-                
+
                 if (!isValid) {
                     e.preventDefault();
                     alert('Por favor, corrija os campos destacados em vermelho antes de enviar.');
@@ -801,4 +852,5 @@
         });
     </script>
 </body>
+
 </html>
