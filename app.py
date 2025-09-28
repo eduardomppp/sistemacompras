@@ -3,7 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 import os
 from dotenv import load_dotenv
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import chardet
 import re
 import sqlite3
@@ -20,6 +20,17 @@ from sqlalchemy import or_
 
 # Carregar variáveis de ambiente
 load_dotenv()
+
+# Substitua a função get_local_time() existente (no início do arquivo)
+def get_local_time():
+    """Retorna o datetime atual no fuso horário de Brasília (UTC-3) SEM timezone"""
+    from datetime import datetime, timedelta
+    
+    # Obter o tempo UTC e converter para Brasília (UTC-3)
+    utc_now = datetime.utcnow()
+    brasil_time = utc_now - timedelta(hours=3)
+    
+    return brasil_time
 
 # Inicializar aplicação Flask
 app = Flask(__name__)
@@ -137,7 +148,7 @@ class SolicitacoesCompra(db.Model):
     unidade_medida = db.Column(db.String(20), nullable=False, default='Unidade')
     aplicacao = db.Column(db.Text, nullable=True)
     empresa = db.Column(db.Text, nullable=False)
-    data_solicitacao = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    data_solicitacao = db.Column(db.DateTime, nullable=False, default=get_local_time)
     usuario = db.Column(db.Text, nullable=False)
     foto_path = db.Column(db.Text, nullable=True)
     marca = db.Column(db.Text, nullable=True)
@@ -166,7 +177,7 @@ class SolicitacoesCompra(db.Model):
             'prioridade': self.prioridade,
             'status_aprovacao': self.status_aprovacao
         }
-
+    
 # Modelo para Solicitações Preenchidas
 class SolicitacoesPreenchidas(db.Model):
     __tablename__ = 'SolicitacoesPreenchidas'
@@ -178,9 +189,9 @@ class SolicitacoesPreenchidas(db.Model):
     valor_frete = db.Column(db.Float, nullable=True)
     prazo_entrega = db.Column(db.Text, nullable=False)
     condicao_pagamento = db.Column(db.Text, nullable=False)
-    data_preenchimento = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    data_preenchimento = db.Column(db.DateTime, nullable=False, default=get_local_time)
     usuario = db.Column(db.Text, nullable=False)
-    status = db.Column(db.Text, nullable=True, default='Aguardando Aprovação')
+    status = db.Column(db.Text, nullable=True, default='Rascunho')
     pdf_path = db.Column(db.Text, nullable=True)
     observacoes = db.Column(db.Text, nullable=True)  # Novo campo para observações
     # REMOVER ESTA LINHA: aprovacao_pdf_path = db.Column(db.Text, nullable=True)
@@ -208,7 +219,7 @@ class SolicitacoesPreenchidas(db.Model):
             'usuario': self.usuario,
             'status': self.status,
             'pdf_path': self.pdf_path,
-            'observacoes': self.observacoes,  # Adicionado ao dict
+            'observacoes': self.observacoes,
             'historico_descontos': [h.to_dict() for h in self.historico_descontos]
         }
     
@@ -245,7 +256,7 @@ class Estoque(db.Model):
     quantidade = db.Column(db.Integer, nullable=False)
     fornecedor = db.Column(db.Text, nullable=False)
     numero_nf = db.Column(db.Text, nullable=False)
-    data_entrada = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    data_entrada = db.Column(db.DateTime, nullable=False, default=get_local_time)
     usuario = db.Column(db.Text, nullable=False)
     preenchimento = db.relationship('SolicitacoesPreenchidas', backref='estoque')
     material = db.relationship('Materiais', backref='estoque')
@@ -255,7 +266,7 @@ class Auditoria(db.Model):
     __tablename__ = 'Auditoria'
     id = db.Column(db.Integer, primary_key=True)
     solicitacao_id = db.Column(db.Integer, db.ForeignKey('SolicitacoesCompra.id'), nullable=False)
-    data_validacao = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    data_validacao = db.Column(db.DateTime, nullable=False, default=get_local_time)
     colaborador_1 = db.Column(db.Text, nullable=False)
     colaborador_2 = db.Column(db.Text, nullable=True)
     status = db.Column(db.Text, nullable=False)  # 'Conforme' ou 'Não Conforme'
@@ -270,7 +281,7 @@ class Requisicoes(db.Model):
     cod_material = db.Column(db.Integer, db.ForeignKey('Materiais.CodMaterial'), nullable=False)
     quantidade = db.Column(db.Integer, nullable=False)
     ticket = db.Column(db.Text, nullable=False)
-    data_requisicao = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    data_requisicao = db.Column(db.DateTime, nullable=False, default=get_local_time)
     usuario = db.Column(db.Text, nullable=False)
     preenchimento = db.relationship('SolicitacoesPreenchidas', backref='requisicoes')
     material = db.relationship('Materiais', backref='requisicoes')
@@ -280,7 +291,7 @@ class PedidosCompra(db.Model):
     __tablename__ = 'PedidosCompra'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     numero_pedido = db.Column(db.Text, nullable=False, unique=True)
-    data_criacao = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    data_criacao = db.Column(db.DateTime, nullable=False, default=get_local_time)
     usuario = db.Column(db.Text, nullable=False)
     status = db.Column(db.Text, nullable=False, default='Gerado')
     pdf_path = db.Column(db.Text, nullable=True)
@@ -306,7 +317,7 @@ class HistoricoDescontos(db.Model):
     valor_unitario_novo = db.Column(db.Float, nullable=False)
     valor_frete_anterior = db.Column(db.Float, nullable=True)
     valor_frete_novo = db.Column(db.Float, nullable=True)
-    data_alteracao = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    data_alteracao = db.Column(db.DateTime, nullable=False, default=get_local_time)
     usuario = db.Column(db.Text, nullable=False)
 
     def to_dict(self):
@@ -320,7 +331,7 @@ class HistoricoDescontos(db.Model):
             'data_alteracao': self.data_alteracao.isoformat() if self.data_alteracao else None,
             'usuario': self.usuario
         }
-    
+
 def check_historico_descontos_schema():
     try:
         conn = sqlite3.connect(DATABASE)
@@ -526,6 +537,70 @@ def create_estoque_table():
         return False
     return True
 
+def get_rastreabilidade_entries(solicitacao):
+    """Gera entradas de rastreabilidade com hora local correta"""
+    entries = []
+    
+    # As datas já estão em horário de Brasília (sem timezone)
+    # Entrada de criação
+    data_criacao = solicitacao.data_solicitacao
+    
+    entries.append({
+        'data': data_criacao,
+        'evento': 'Solicitação Criada',
+        'descricao': f'Solicitação registrada no sistema por {solicitacao.usuario}'
+    })
+    
+    # Entrada de cotação (se existir preenchimento)
+    if solicitacao.preenchimentos_fornecidos:
+        primeiro_preenchimento = solicitacao.preenchimentos_fornecidos[0]
+        data_preenchimento = primeiro_preenchimento.data_preenchimento
+        
+        # Obter nome do fornecedor para a descrição
+        fornecedor_nome = get_fornecedor_nome(primeiro_preenchimento.fornecedor_id)
+        
+        entries.append({
+            'data': data_preenchimento,
+            'evento': 'Cotação Enviada',
+            'descricao': f'Cotação enviada para o fornecedor {fornecedor_nome}'
+        })
+        
+        # Entrada de resposta do fornecedor (mesma data do preenchimento)
+        entries.append({
+            'data': data_preenchimento,
+            'evento': 'Resposta do Fornecedor',
+            'descricao': f'Fornecedor {fornecedor_nome} respondeu com os valores informados'
+        })
+    
+    # Ordenar por data
+    entries.sort(key=lambda x: x['data'] if x['data'] else datetime.min)
+    return entries
+
+@app.template_filter('format_brasil_time')
+def format_brasil_time(dt):
+    """Filtro Jinja2 para formatar datetimes no formato brasileiro"""
+    if dt is None:
+        return ""
+    
+    # Se é string, tentar converter para datetime
+    if isinstance(dt, str):
+        try:
+            # Tentar diferentes formatos
+            for fmt in ['%Y-%m-%d %H:%M:%S', '%Y-%m-%d %H:%M:%S.%f', '%Y-%m-%dT%H:%M:%S', '%Y-%m-%dT%H:%M:%S.%f']:
+                try:
+                    dt = datetime.strptime(dt, fmt)
+                    break
+                except ValueError:
+                    continue
+        except:
+            return str(dt)
+    
+    # Se já é um objeto datetime, formatar diretamente
+    if hasattr(dt, 'strftime'):
+        return dt.strftime('%d/%m/%Y %H:%M')
+    
+    return str(dt)
+
 def create_requisicoes_table():
     try:
         conn = sqlite3.connect(DATABASE)
@@ -622,7 +697,7 @@ class HistoricoEstoque(db.Model):
     usuario = db.Column(db.Text, nullable=False)
     quantidade_anterior = db.Column(db.Integer, nullable=False)
     quantidade_nova = db.Column(db.Integer, nullable=False)
-    data_alteracao = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    data_alteracao = db.Column(db.DateTime, nullable=False, default=get_local_time)
     motivo = db.Column(db.Text, nullable=True)
     
     material = db.relationship('Materiais', backref='historico_estoque')
@@ -759,6 +834,7 @@ app.jinja_env.globals.update(
     ler_logs=ler_logs,
     validar_usuario=validar_usuario,
     validar_senha=validar_senha,
+    get_rastreabilidade_entries=get_rastreabilidade_entries,
     Kanban=Kanban,
     Materiais=Materiais,
     SolicitacoesCompra=SolicitacoesCompra,
@@ -1411,12 +1487,15 @@ def listar_solicitacoes():
         return redirect(url_for('routes_bp.login'))
     
     try:
-        # Consulta para obter apenas solicitações sem nenhum preenchimento
+        # Consulta modificada: inclui solicitações sem preenchimento E com preenchimentos em status 'Rascunho'
         solicitacoes = db.session.query(SolicitacoesCompra).outerjoin(
             SolicitacoesPreenchidas,
             SolicitacoesCompra.id == SolicitacoesPreenchidas.solicitacao_id
         ).filter(
-            SolicitacoesPreenchidas.id.is_(None)
+            or_(
+                SolicitacoesPreenchidas.id.is_(None),  # Sem nenhum preenchimento
+                SolicitacoesPreenchidas.status == 'Rascunho'  # Ou com preenchimento em rascunho
+            )
         ).all()
         
         # Função para ler usuários e empresas do arquivo senhas.txt
@@ -1427,7 +1506,7 @@ def listar_solicitacoes():
                 with open('senhas.txt', 'r', encoding='utf-8') as f:
                     for line in f:
                         partes = line.strip().split('%')
-                        if len(partes) >= 4:  # Verifica se tem pelo menos 4 partes
+                        if len(partes) >= 4:
                             usuario = partes[0]
                             empresa = partes[3]
                             usuarios.add(usuario)
@@ -1441,6 +1520,7 @@ def listar_solicitacoes():
         
         if not solicitacoes:
             flash('Nenhuma solicitação aberta encontrada.', 'info')
+        
         return render_template('listar_solicitacoes.html', 
                             solicitacoes=solicitacoes,
                             empresas=empresas,
@@ -1450,21 +1530,25 @@ def listar_solicitacoes():
         flash(f'Erro ao carregar solicitações: {str(e)}', 'error')
         return redirect(url_for('routes_bp.buscar_material'))
 
+
 @routes_bp.route('/aprovar_solicitacao', methods=['GET'])
 def aprovar_solicitacao():
     if 'usuario' not in session:
         return redirect(url_for('routes_bp.login'))
     
     try:
-        # Consulta para obter apenas solicitações sem nenhum preenchimento
+        # Consulta modificada: mesma lógica do listar_solicitacoes
         solicitacoes = db.session.query(SolicitacoesCompra).outerjoin(
             SolicitacoesPreenchidas,
             SolicitacoesCompra.id == SolicitacoesPreenchidas.solicitacao_id
         ).filter(
-            SolicitacoesPreenchidas.id.is_(None)
+            or_(
+                SolicitacoesPreenchidas.id.is_(None),
+                SolicitacoesPreenchidas.status == 'Rascunho'
+            )
         ).all()
         
-        # Função para ler usuários e empresas do arquivo senhas.txt
+        # Restante do código permanece igual...
         def get_usuarios_empresas():
             usuarios = set()
             empresas = set()
@@ -1472,7 +1556,7 @@ def aprovar_solicitacao():
                 with open('senhas.txt', 'r', encoding='utf-8') as f:
                     for line in f:
                         partes = line.strip().split('%')
-                        if len(partes) >= 4:  # Verifica se tem pelo menos 4 partes
+                        if len(partes) >= 4:
                             usuario = partes[0]
                             empresa = partes[3]
                             usuarios.add(usuario)
@@ -1481,7 +1565,6 @@ def aprovar_solicitacao():
                 logging.error(f"Erro ao ler senhas.txt: {str(e)}")
             return sorted(usuarios), sorted(empresas)
         
-        # Obter listas únicas de empresas e usuários do arquivo
         usuarios, empresas = get_usuarios_empresas()
         
         if not solicitacoes:
@@ -1577,15 +1660,19 @@ def preencher_solicitacao(id):
             fornecedores = []
             flash('Erro ao conectar ao banco de fornecedores', 'warning')
 
-        if request.method == 'POST':
-            # Verificar limite de cotações
-            cotacoes_existentes = SolicitacoesPreenchidas.query.filter_by(solicitacao_id=id).count()
-            if cotacoes_existentes >= 9:
-                flash('Limite de 9 cotações atingido para esta solicitação.', 'error')
-                return render_template('preencher_solicitacao.html', 
-                                      solicitacao=solicitacao, 
-                                      fornecedores=fornecedores)
+        # Buscar cotações já salvas (rascunhos)
+        cotacoes_salvas = SolicitacoesPreenchidas.query.filter_by(
+            solicitacao_id=id, 
+            status='Rascunho'
+        ).all()
 
+        if request.method == 'POST':
+            action = request.form.get('action', 'salvar_finalizar')
+            
+            # Verificar se é para finalizar ou salvar como rascunho
+            is_finalizar = action == 'salvar_finalizar'
+            is_rascunho = action == 'salvar_rascunho'
+            
             # Obter listas de dados do formulário
             fornecedor_ids = request.form.getlist('fornecedor_id[]')
             valor_unitario_list = request.form.getlist('valor_unitario[]')
@@ -1593,39 +1680,49 @@ def preencher_solicitacao(id):
             valor_frete_list = request.form.getlist('valor_frete[]')
             prazo_entrega_list = request.form.getlist('prazo_entrega[]')
             condicao_pagamento_list = request.form.getlist('condicao_pagamento[]')
-            observacao_list = request.form.getlist('observacao[]')  # Adicionado: capturar observações
+            observacao_list = request.form.getlist('observacao[]')
             pdf_files = request.files.getlist('pdf_file[]')
 
             # Log para depuração
-            logging.info(f"Dados recebidos do formulário: {request.form}")
-            logging.info(f"Arquivos recebidos: {[f.filename for f in pdf_files if f]}")
-            logging.info(f"Observações recebidas: {observacao_list}")
+            logging.info(f"Ação: {action}, Finalizar: {is_finalizar}, Rascunho: {is_rascunho}")
+            logging.info(f"Fornecedores recebidos: {fornecedor_ids}")
 
             # Verificar consistência das listas
             expected_length = len(fornecedor_ids)
             if not all(len(lst) == expected_length for lst in [
                 valor_unitario_list, valor_total_list, prazo_entrega_list, 
-                condicao_pagamento_list, observacao_list, pdf_files]):
+                condicao_pagamento_list, observacao_list]):
                 flash('Erro: Número inconsistente de campos nas cotações.', 'error')
                 return render_template('preencher_solicitacao.html', 
                                       solicitacao=solicitacao, 
-                                      fornecedores=fornecedores)
+                                      fornecedores=fornecedores,
+                                      cotacoes_salvas=cotacoes_salvas)
 
             if not fornecedor_ids or not valor_unitario_list:
                 flash('Nenhuma cotação fornecida.', 'error')
                 return render_template('preencher_solicitacao.html', 
                                       solicitacao=solicitacao, 
-                                      fornecedores=fornecedores)
+                                      fornecedores=fornecedores,
+                                      cotacoes_salvas=cotacoes_salvas)
 
-            if len(fornecedor_ids) > (9 - cotacoes_existentes):
-                flash(f'Você pode adicionar no máximo {9 - cotacoes_existentes} cotações.', 'error')
-                return render_template('preencher_solicitacao.html', 
-                                      solicitacao=solicitacao, 
-                                      fornecedores=fornecedores)
+            # Validar se pelo menos uma cotação está preenchida para finalizar
+            if is_finalizar:
+                cotacoes_preenchidas = 0
+                for i in range(len(fornecedor_ids)):
+                    if (fornecedor_ids[i] and valor_unitario_list[i].strip() and 
+                        prazo_entrega_list[i].strip() and condicao_pagamento_list[i].strip()):
+                        cotacoes_preenchidas += 1
+                
+                if cotacoes_preenchidas == 0:
+                    flash('É necessário preencher pelo menos uma cotação para finalizar.', 'error')
+                    return render_template('preencher_solicitacao.html', 
+                                          solicitacao=solicitacao, 
+                                          fornecedores=fornecedores,
+                                          cotacoes_salvas=cotacoes_salvas)
 
             # Função auxiliar para parse de valores monetários
             def parse_br_currency(value):
-                if not value:
+                if not value or not value.strip():
                     return None
                 try:
                     cleaned = value.replace('.', '').replace(',', '.')
@@ -1633,6 +1730,9 @@ def preencher_solicitacao(id):
                 except (ValueError, AttributeError) as e:
                     logging.error(f"Erro ao parsear valor monetário '{value}': {str(e)}")
                     return None
+
+            cotacoes_processadas = 0
+            cotacoes_com_erro = 0
 
             for i in range(len(fornecedor_ids)):
                 try:
@@ -1642,11 +1742,17 @@ def preencher_solicitacao(id):
                     valor_frete = valor_frete_list[i].strip() if i < len(valor_frete_list) else ''
                     prazo_entrega = prazo_entrega_list[i].strip()
                     condicao_pagamento = condicao_pagamento_list[i].strip()
-                    observacao = observacao_list[i].strip() if i < len(observacao_list) else None  # Adicionado: processar observação
+                    observacao = observacao_list[i].strip() if i < len(observacao_list) else None
                     pdf_file = pdf_files[i] if i < len(pdf_files) else None
 
-                    if not all([fornecedor_id, valor_unitario, valor_total, prazo_entrega, condicao_pagamento]):
+                    # Pular cotações vazias (apenas para rascunho)
+                    if is_rascunho and not all([fornecedor_id, valor_unitario, prazo_entrega, condicao_pagamento]):
+                        continue
+
+                    # Para finalizar, validar campos obrigatórios
+                    if is_finalizar and not all([fornecedor_id, valor_unitario, prazo_entrega, condicao_pagamento]):
                         flash(f'Todos os campos obrigatórios devem ser preenchidos para a cotação {i+1}.', 'error')
+                        cotacoes_com_erro += 1
                         continue
                     
                     # Verificar se o fornecedor existe
@@ -1658,6 +1764,7 @@ def preencher_solicitacao(id):
                         if not cursor.fetchone():
                             flash(f'Fornecedor inválido na cotação {i+1}.', 'error')
                             conn.close()
+                            cotacoes_com_erro += 1
                             continue
                         conn.close()
 
@@ -1666,17 +1773,22 @@ def preencher_solicitacao(id):
                     valor_total_parsed = parse_br_currency(valor_total)
                     valor_frete_parsed = parse_br_currency(valor_frete) if valor_frete else None
 
-                    if valor_unitario_parsed is None or valor_total_parsed is None:
+                    if valor_unitario_parsed is None or (is_finalizar and valor_total_parsed is None):
                         flash(f'Valor unitário e total devem ser números válidos na cotação {i+1}.', 'error')
+                        cotacoes_com_erro += 1
                         continue
-                    if valor_unitario_parsed <= 0 or valor_total_parsed <= 0:
+                    
+                    if valor_unitario_parsed <= 0 or (is_finalizar and valor_total_parsed <= 0):
                         flash(f'Valores unitário e total devem ser positivos na cotação {i+1}.', 'error')
+                        cotacoes_com_erro += 1
                         continue
+                    
                     if valor_frete_parsed is not None and valor_frete_parsed < 0:
                         flash(f'O valor do frete deve ser positivo ou zero na cotação {i+1}.', 'error')
+                        cotacoes_com_erro += 1
                         continue
 
-                    # Processar o upload do PDF
+                    # Processar o upload do PDF (obrigatório apenas ao finalizar)
                     pdf_path = None
                     if pdf_file and pdf_file.filename:
                         if allowed_file(pdf_file.filename):
@@ -1687,51 +1799,96 @@ def preencher_solicitacao(id):
                                 logging.info(f"PDF salvo em: {pdf_path}")
                             except Exception as e:
                                 logging.error(f"Erro ao salvar PDF na cotação {i+1}: {str(e)}")
-                                flash(f'Erro ao salvar o PDF na cotação {i+1}.', 'error')
-                                continue
+                                if is_finalizar:  # PDF é obrigatório apenas ao finalizar
+                                    flash(f'Erro ao salvar o PDF na cotação {i+1}.', 'error')
+                                    cotacoes_com_erro += 1
+                                    continue
                         else:
                             extension = pdf_file.filename.rsplit('.', 1)[1].lower() if '.' in pdf_file.filename else 'N/A'
-                            flash(f'Arquivo inválido na cotação {i+1}. Apenas PDFs são permitidos. Extensão detectada: {extension}', 'error')
-                            continue
+                            if is_finalizar:  # PDF é obrigatório apenas ao finalizar
+                                flash(f'Arquivo inválido na cotação {i+1}. Apenas PDFs são permitidos. Extensão detectada: {extension}', 'error')
+                                cotacoes_com_erro += 1
+                                continue
 
-                    # Criar nova instância de SolicitacoesPreenchidas
-                    preenchimento = SolicitacoesPreenchidas(
-                        solicitacao_id=id,
-                        fornecedor_id=int(fornecedor_id),
-                        valor_unitario=valor_unitario_parsed,
-                        valor_frete=valor_frete_parsed,
-                        valor_total=valor_total_parsed,
-                        prazo_entrega=prazo_entrega,
-                        condicao_pagamento=condicao_pagamento,
-                        usuario=session['usuario'],
-                        data_preenchimento=datetime.utcnow(),
-                        status='Aguardando Aprovação',
-                        pdf_path=pdf_path,
-                        observacoes=observacao if observacao else None  # Adicionado: salvar observação
-                    )
-                    db.session.add(preenchimento)
-                    logging.info(f"Cotação {i+1} adicionada: Fornecedor ID {fornecedor_id}, Observações: {observacao}")
+                    # Determinar o status baseado na ação
+                    status_cotacao = 'Aguardando Aprovacao' if is_finalizar else 'Rascunho'
+
+                    # Verificar se já existe uma cotação para este fornecedor (para evitar duplicatas)
+                    cotacao_existente = SolicitacoesPreenchidas.query.filter_by(
+                        solicitacao_id=id, 
+                        fornecedor_id=int(fornecedor_id)
+                    ).first()
+
+                    if cotacao_existente:
+                        # Atualizar cotação existente
+                        cotacao_existente.valor_unitario = valor_unitario_parsed
+                        cotacao_existente.valor_frete = valor_frete_parsed
+                        cotacao_existente.valor_total = valor_total_parsed
+                        cotacao_existente.prazo_entrega = prazo_entrega
+                        cotacao_existente.condicao_pagamento = condicao_pagamento
+                        cotacao_existente.observacoes = observacao if observacao else None
+                        cotacao_existente.status = status_cotacao  # Atualizar status
+                        if pdf_path:
+                            cotacao_existente.pdf_path = pdf_path
+                        cotacao_existente.data_preenchimento = datetime.utcnow()
+                        cotacao_existente.usuario = session['usuario']
+                    else:
+                        # Criar nova instância de SolicitacoesPreenchidas
+                        preenchimento = SolicitacoesPreenchidas(
+                            solicitacao_id=id,
+                            fornecedor_id=int(fornecedor_id),
+                            valor_unitario=valor_unitario_parsed,
+                            valor_frete=valor_frete_parsed,
+                            valor_total=valor_total_parsed,
+                            prazo_entrega=prazo_entrega,
+                            condicao_pagamento=condicao_pagamento,
+                            usuario=session['usuario'],
+                            data_preenchimento=datetime.utcnow(),
+                            status=status_cotacao,  # Status baseado na ação
+                            pdf_path=pdf_path,
+                            observacoes=observacao if observacao else None
+                        )
+                        db.session.add(preenchimento)
+
+                    cotacoes_processadas += 1
+                    logging.info(f"Cotação {i+1} processada: Fornecedor ID {fornecedor_id}, Status: {status_cotacao}")
 
                 except Exception as e:
                     logging.error(f"Erro ao processar cotação {i+1}: {str(e)}")
                     flash(f'Erro ao processar cotação {i+1}: {str(e)}', 'error')
+                    cotacoes_com_erro += 1
                     continue
 
             try:
                 db.session.commit()
-                flash('Cotações preenchidas com sucesso.', 'success')
-                return redirect(url_for('routes_bp.listar_solicitacoes'))
+                
+                if is_finalizar:
+                    if cotacoes_com_erro == 0:
+                        flash('Cotações finalizadas e enviadas para aprovação com sucesso!', 'success')
+                        return redirect(url_for('routes_bp.listar_solicitacoes'))
+                    else:
+                        flash('Corrija os erros antes de finalizar.', 'error')
+                else:  # Rascunho
+                    if cotacoes_processadas > 0:
+                        flash(f'Cotações salvas como rascunho ({cotacoes_processadas} processadas).', 'success')
+                    else:
+                        flash('Nenhuma cotação válida para salvar.', 'info')
+                        
+                # Recarregar cotações salvas após o commit
+                cotacoes_salvas = SolicitacoesPreenchidas.query.filter_by(
+                    solicitacao_id=id, 
+                    status='Rascunho'
+                ).all()
+                
             except Exception as e:
                 db.session.rollback()
                 flash(f'Erro ao salvar as cotações: {str(e)}', 'error')
                 logging.error(f"Erro no commit do banco: {str(e)}")
-                return render_template('preencher_solicitacao.html', 
-                                      solicitacao=solicitacao, 
-                                      fornecedores=fornecedores)
         
         return render_template('preencher_solicitacao.html', 
                               solicitacao=solicitacao, 
-                              fornecedores=fornecedores)
+                              fornecedores=fornecedores,
+                              cotacoes_salvas=cotacoes_salvas)
     
     except Exception as e:
         db.session.rollback()
@@ -1739,30 +1896,8 @@ def preencher_solicitacao(id):
         logging.error(f"Erro geral em preencher_solicitacao: {str(e)}")
         return render_template('preencher_solicitacao.html', 
                               solicitacao=solicitacao, 
-                              fornecedores=fornecedores)
-def add_observacoes_column_to_solicitacoes_preenchidas():
-    try:
-        conn = sqlite3.connect(DATABASE)
-        cursor = conn.cursor()
-        
-        # Verificar se a coluna já existe
-        cursor.execute("PRAGMA table_info(SolicitacoesPreenchidas)")
-        columns = [col[1] for col in cursor.fetchall()]
-        
-        if 'observacoes' not in columns:
-            cursor.execute("ALTER TABLE SolicitacoesPreenchidas ADD COLUMN observacoes TEXT")
-            conn.commit()
-            logging.info("Coluna observacoes adicionada à tabela SolicitacoesPreenchidas")
-            print("✓ Coluna observacoes adicionada com sucesso!")
-        else:
-            print("✓ Coluna observacoes já existe na tabela")
-        
-        conn.close()
-        return True
-    except sqlite3.Error as e:
-        logging.error(f"Erro ao adicionar coluna observacoes: {str(e)}")
-        print(f"✗ Erro ao adicionar coluna: {str(e)}")
-        return False
+                              fornecedores=fornecedores,
+                              cotacoes_salvas=[])
     
 @routes_bp.route('/listar_solicitacoes_preenchidas', methods=['GET'])
 def listar_solicitacoes_preenchidas():
@@ -3534,22 +3669,28 @@ def auditoria_solicitacoes():
         return redirect(url_for('routes_bp.login'))
     
     try:
-        # Obter parâmetros de filtro
+        # Parâmetros de filtro
         empresa = request.args.get('empresa')
         usuario = request.args.get('usuario')
         ativo = request.args.get('ativo')
         nome_ativo = request.args.get('nome_ativo')
+        status = request.args.get('status')
+        prioridade_filtro = request.args.get('prioridade')
         data_inicio = request.args.get('data_inicio')
         data_fim = request.args.get('data_fim')
-        status = request.args.get('status')
 
-        # Query base
-        query = db.session.query(SolicitacoesCompra)
+        # Query base para buscar TODAS as solicitações - EXCLUINDO RASCUNHOS
+        query = db.session.query(SolicitacoesCompra).join(
+            SolicitacoesPreenchidas,
+            SolicitacoesCompra.id == SolicitacoesPreenchidas.solicitacao_id
+        ).filter(
+            SolicitacoesPreenchidas.status != 'Rascunho'  # EXCLUIR RASCUNHOS
+        )
         
         # Aplicar filtros
-        if empresa:
+        if empresa and empresa != 'Todas':
             query = query.filter(SolicitacoesCompra.empresa == empresa)
-        if usuario:
+        if usuario and usuario != 'Todos':
             query = query.filter(SolicitacoesCompra.usuario == usuario)
         if ativo:
             query = query.filter(SolicitacoesCompra.ativo == ativo)
@@ -3561,86 +3702,99 @@ def auditoria_solicitacoes():
             data_fim_ajustada = datetime.strptime(data_fim, '%Y-%m-%d') + timedelta(days=1)
             query = query.filter(SolicitacoesCompra.data_solicitacao <= data_fim_ajustada)
 
-        # Executar query
+        # Executar query - buscar solicitações SEM rascunhos
         solicitacoes = query.order_by(SolicitacoesCompra.data_solicitacao.desc()).all()
 
-        # Obter fornecedores
-        fornecedor_ids = set()
-        for solicitacao in solicitacoes:
-            preenchimento = db.session.query(SolicitacoesPreenchidas).filter_by(
-                solicitacao_id=solicitacao.id
-            ).first()
-            if preenchimento and preenchimento.fornecedor_id:
-                fornecedor_ids.add(preenchimento.fornecedor_id)
-
-        fornecedores = {}
-        if fornecedor_ids:
-            conn = get_db_connection(DB_PATH_FORNECEDORES)
-            if conn:
-                try:
-                    cursor = conn.cursor()
-                    cursor.execute(
-                        f'SELECT id, nome_fantasia, cnpj FROM fornecedores WHERE id IN ({",".join("?"*len(fornecedor_ids))})',
-                        list(fornecedor_ids)
-                    )
-                    for row in cursor.fetchall():
-                        fornecedores[row[0]] = {
-                            'nome_fantasia': row[1],
-                            'cnpj': format_cnpj(row[2]) if row[2] else 'N/A'
-                        }
-                finally:
-                    conn.close()
-
         # Preparar dados para o template
-        auditoria = []
+        auditoria_data = []
         for solicitacao in solicitacoes:
             material = db.session.get(Materiais, solicitacao.cod_material)
-            preenchimento = db.session.query(SolicitacoesPreenchidas).filter_by(
+            
+            # Buscar TODOS os preenchimentos (excluindo rascunhos)
+            preenchimentos = db.session.query(SolicitacoesPreenchidas).filter_by(
                 solicitacao_id=solicitacao.id
-            ).first()
-            pedido = None
-            if preenchimento:
-                pedido = db.session.query(PedidosCompra).join(
-                    pedido_preenchimento_associacao,
-                    PedidosCompra.id == pedido_preenchimento_associacao.c.pedido_id
-                ).filter(
-                    pedido_preenchimento_associacao.c.preenchimento_id == preenchimento.id
-                ).first()
-            estoque = None
-            if preenchimento:
-                estoque = db.session.query(Estoque).filter_by(
-                    preenchimento_id=preenchimento.id
-                ).first()
-            requisicoes = []
-            if preenchimento:
-                requisicoes = db.session.query(Requisicoes).filter_by(
-                    preenchimento_id=preenchimento.id
-                ).all()
+            ).filter(
+                SolicitacoesPreenchidas.status != 'Rascunho'
+            ).all()
             
-            # Aplicar filtro de status
-            if status:
-                if status == 'Aberta' and preenchimento:
-                    continue
-                elif status != 'Aberta' and (not preenchimento or preenchimento.status != status):
-                    continue
-            
-            # Adicionar informações do fornecedor
-            fornecedor_info = {}
-            if preenchimento and preenchimento.fornecedor_id:
-                fornecedor_info = fornecedores.get(preenchimento.fornecedor_id, {
-                    'nome_fantasia': 'Fornecedor não encontrado',
-                    'cnpj': 'N/A'
+            # Para cada preenchimento, criar um registro na auditoria
+            for preenchimento in preenchimentos:
+                # Buscar pedido associado (se existir)
+                pedido = None
+                if preenchimento:
+                    pedido = db.session.query(PedidosCompra).join(
+                        pedido_preenchimento_associacao,
+                        PedidosCompra.id == pedido_preenchimento_associacao.c.pedido_id
+                    ).filter(
+                        pedido_preenchimento_associacao.c.preenchimento_id == preenchimento.id
+                    ).first()
+                
+                # Buscar estoque (se existir)
+                estoque = None
+                if preenchimento:
+                    estoque = db.session.query(Estoque).filter_by(
+                        preenchimento_id=preenchimento.id
+                    ).first()
+                
+                # Buscar requisições (se existirem)
+                requisicoes = []
+                if preenchimento:
+                    requisicoes = db.session.query(Requisicoes).filter_by(
+                        preenchimento_id=preenchimento.id
+                    ).all()
+                
+                # Aplicar filtro de status se especificado
+                if status and status != 'Todos':
+                    if status == 'Aberta':
+                        continue  # Pular se filtro é "Aberta" mas tem preenchimento
+                    elif preenchimento.status != status:
+                        continue  # Pular se status não corresponde
+                
+                # Calcular prioridade para ordenação
+                prioridade = 0
+                if preenchimento.status == 'Entregue':
+                    prioridade = 3  # Máxima prioridade
+                elif preenchimento.status == 'Aprovado' and pedido:
+                    prioridade = 2  # Alta prioridade
+                elif preenchimento.status == 'Aprovado':
+                    prioridade = 1  # Média prioridade
+                
+                # Aplicar filtro de prioridade se especificado
+                if prioridade_filtro and prioridade_filtro != '':
+                    if int(prioridade_filtro) != prioridade:
+                        continue
+                
+                # Buscar informações do fornecedor
+                fornecedor_info = {}
+                if preenchimento and preenchimento.fornecedor_id:
+                    conn = get_db_connection(DB_PATH_FORNECEDORES)
+                    if conn:
+                        try:
+                            cursor = conn.cursor()
+                            cursor.execute('SELECT nome_fantasia, cnpj FROM fornecedores WHERE id = ?', 
+                                         (preenchimento.fornecedor_id,))
+                            result = cursor.fetchone()
+                            if result:
+                                fornecedor_info = {
+                                    'nome_fantasia': result[0],
+                                    'cnpj': format_cnpj(result[1]) if result[1] else 'N/A'
+                                }
+                        finally:
+                            conn.close()
+                
+                auditoria_data.append({
+                    'solicitacao': solicitacao,
+                    'material': material,
+                    'preenchimento': preenchimento,
+                    'pedido': pedido,
+                    'estoque': estoque,
+                    'requisicoes': requisicoes,
+                    'fornecedor': fornecedor_info,
+                    'prioridade': prioridade
                 })
 
-            auditoria.append({
-                'solicitacao': solicitacao,
-                'material': material,
-                'preenchimento': preenchimento,
-                'pedido': pedido,
-                'estoque': estoque,
-                'requisicoes': requisicoes,
-                'fornecedor': fornecedor_info
-            })
+        # Ordenar por prioridade (mais alta primeiro) e depois por data
+        auditoria_data.sort(key=lambda x: (-x['prioridade'], x['solicitacao'].data_solicitacao), reverse=True)
 
         # Obter valores para filtros
         empresas = db.session.query(
@@ -3664,36 +3818,51 @@ def auditoria_solicitacoes():
             SolicitacoesCompra.nome_ativo
         ).all()
 
+        total_registros = len(auditoria_data)
+
         return render_template(
             'auditoria_solicitacoes.html',
-            auditoria=auditoria,
+            auditoria=auditoria_data,
             empresas=[e[0] for e in empresas if e[0]],
             usuarios=[u[0] for u in usuarios if u[0]],
             nomes_ativos=[n[0] for n in nomes_ativos if n[0]],
+            total_registros=total_registros,
             filtros={
                 'empresa': empresa,
                 'usuario': usuario,
                 'ativo': ativo,
                 'nome_ativo': nome_ativo,
+                'status': status,
+                'prioridade': prioridade_filtro,
                 'data_inicio': data_inicio,
-                'data_fim': data_fim,
-                'status': status
+                'data_fim': data_fim
             }
         )
-
     except Exception as e:
-        db.session.rollback()
-        flash(f'Erro ao carregar auditoria: {str(e)}', 'error')
-        app.logger.error(f'Erro em auditoria_solicitacoes: {str(e)}', exc_info=True)
+        flash(f'Erro ao carregar página de auditoria: {str(e)}', 'error')
+        app.logger.error(f'Erro em auditoria_solicitacoes: {str(e)}')
         return render_template(
             'auditoria_solicitacoes.html',
             auditoria=[],
             empresas=[],
             usuarios=[],
             nomes_ativos=[],
+            total_registros=0,
             filtros={}
         )
     
+def get_fornecedor_cnpj(fornecedor_id):
+    conn = get_db_connection(DB_PATH_FORNECEDORES)
+    if conn:
+        try:
+            cursor = conn.cursor()
+            cursor.execute('SELECT cnpj FROM fornecedores WHERE id = ?', (fornecedor_id,))
+            result = cursor.fetchone()
+            return format_cnpj(result['cnpj']) if result and result['cnpj'] else 'N/A'
+        finally:
+            conn.close()
+    return 'N/A'
+
 # 2° Tela Auditoria
 @routes_bp.route('/tela_auditoria', methods=['GET', 'POST'])
 def tela_auditoria():
@@ -3924,10 +4093,10 @@ def create_auditoria_table():
         print("Tabela 'Auditoria' criada com sucesso.")
         cursor.close()
         conn.close()
+        return True
     except sqlite3.Error as e:
         print(f"Erro ao criar a tabela Auditoria: {str(e)}")
         return False
-    return True
 
 @routes_bp.route('/excluir_auditoria/<int:id>', methods=['POST'])
 def excluir_auditoria(id):
@@ -4604,32 +4773,109 @@ def listar_historico_descontos():
 def migrate_solicitacoes_compra_status_aprovacao():
     """Adiciona a coluna status_aprovacao na tabela SolicitacoesCompra se não existir"""
     try:
-        conn = sqlite3.connect(DATABASE)
-        cursor = conn.cursor()
+        # Usar SQLAlchemy em vez de sqlite3 direto
+        from sqlalchemy import inspect
         
-        # Verificar se a coluna status_aprovacao já existe
-        cursor.execute("PRAGMA table_info(SolicitacoesCompra)")
-        columns = [col[1] for col in cursor.fetchall()]
+        inspector = inspect(db.engine)
+        columns = [col['name'] for col in inspector.get_columns('SolicitacoesCompra')]
         
         if 'status_aprovacao' not in columns:
-            cursor.execute("ALTER TABLE SolicitacoesCompra ADD COLUMN status_aprovacao TEXT")
-            conn.commit()
+            # Usar SQLAlchemy para executar o ALTER TABLE
+            db.engine.execute("ALTER TABLE SolicitacoesCompra ADD COLUMN status_aprovacao TEXT")
             logging.info("Coluna status_aprovacao adicionada à tabela SolicitacoesCompra")
             print("✓ Coluna status_aprovacao adicionada com sucesso!")
         else:
             print("✓ Coluna status_aprovacao já existe na tabela")
         
-        conn.close()
         return True
-    except sqlite3.Error as e:
+    except Exception as e:
         logging.error(f"Erro na migração status_aprovacao: {str(e)}")
         print(f"✗ Erro na migração: {str(e)}")
         return False
+    
+def add_observacoes_column_to_solicitacoes_preenchidas():
+    try:
+        conn = sqlite3.connect(DATABASE)
+        cursor = conn.cursor()
+        
+        # Verificar se a coluna já existe
+        cursor.execute("PRAGMA table_info(SolicitacoesPreenchidas)")
+        columns = [col[1] for col in cursor.fetchall()]
+        
+        if 'observacoes' not in columns:
+            cursor.execute("ALTER TABLE SolicitacoesPreenchidas ADD COLUMN observacoes TEXT")
+            conn.commit()
+            logging.info("Coluna observacoes adicionada à tabela SolicitacoesPreenchidas")
+            print("✓ Coluna observacoes adicionada com sucesso!")
+        else:
+            print("✓ Coluna observacoes já existe na tabela")
+        
+        conn.close()
+        return True
+    except sqlite3.Error as e:
+        logging.error(f"Erro ao adicionar coluna observacoes: {str(e)}")
+        print(f"✗ Erro ao adicionar coluna: {str(e)}")
+        return False
+    
+def migrate_solicitacoes_preenchidas_status():
+    """Migra o status padrão para suportar 'Rascunho'"""
+    try:
+        conn = sqlite3.connect(DATABASE)
+        cursor = conn.cursor()
+        
+        # Verificar se existem registros com status vazio ou nulo
+        cursor.execute("UPDATE SolicitacoesPreenchidas SET status = 'Rascunho' WHERE status IS NULL OR status = ''")
+        conn.commit()
+        
+        # Verificar se a atualização foi bem-sucedida
+        cursor.execute("SELECT COUNT(*) FROM SolicitacoesPreenchidas WHERE status = 'Rascunho'")
+        count = cursor.fetchone()[0]
+        
+        logging.info(f"Migração de status concluída: {count} registros atualizados para 'Rascunho'")
+        print(f"✓ Migração de status concluída: {count} registros atualizados")
+        
+        conn.close()
+        return True
+    except sqlite3.Error as e:
+        logging.error(f"Erro na migração de status: {str(e)}")
+        print(f"✗ Erro na migração: {str(e)}")
+        return False
+
+@routes_bp.route('/teste_data_hora')
+def teste_data_hora():
+    from datetime import datetime
+    return f"""
+    <h3>Teste de Data/Hora</h3>
+    <p>datetime.utcnow(): {datetime.utcnow()}</p>
+    <p>datetime.now(): {datetime.now()}</p>
+    <p>get_local_time(): {get_local_time()}</p>
+    <p>Ano atual: {get_local_time().year}</p>
+    """
+
+@app.template_filter('format_brasil_time')
+def format_brasil_time(dt):
+    if dt is None:
+        return ""
+    
+    # Converte para fuso horário de Brasília se não tiver informação de timezone
+    if dt.tzinfo is None:
+        from datetime import timezone, timedelta
+        brasil_tz = timezone(timedelta(hours=-3))
+        dt = dt.replace(tzinfo=timezone.utc).astimezone(brasil_tz)
+    
+    return dt.strftime('%d/%m/%Y %H:%M')
+
+# Registre o filtro (ADICIONE ESTA LINHA)
+app.jinja_env.filters['format_brasil_time'] = format_brasil_time
 
   # Registro do Blueprint (apenas uma vez)
 app.register_blueprint(routes_bp)  
 
 
+# Inicialização do banco de dados e execução do app
+# CORRIJA ESTA PARTE NO FINAL DO ARQUIVO:
+
+# Inicialização do banco de dados e execução do app
 # Inicialização do banco de dados e execução do app
 if __name__ == '__main__':
     create_database()
@@ -4638,24 +4884,21 @@ if __name__ == '__main__':
     create_solicitacoes_preenchidas_table()
     create_historico_descontos_table()
     
-    # Adicione esta linha para criar a coluna status_aprovacao
-    migrate_solicitacoes_compra_status_aprovacao()
-    
-    # Nova migração para observacoes
-    migrate_observacoes_col()  # ADICIONE ESTA LINHA
-    migrate_solicitacoes_compra_status_aprovacao()
-    add_observacoes_column_to_solicitacoes_preenchidas()
-   
     with app.app_context():
-        # Cria todas as tabelas definidas nos modelos
         db.create_all()
         
-        # Executa migrações manuais se necessário
         if not atualizar_estrutura_requisicoes():
-            print("Falha na migração. Verifique os logs acima.")
-            exit(1)
+            print("Falha na migração de requisicoes. Verifique os logs.")
         
         migrate_solicitacoes_compra()
+        migrate_solicitacoes_compra_status_aprovacao()
+        migrate_observacoes_col()
+        add_observacoes_column_to_solicitacoes_preenchidas()
+        migrate_solicitacoes_preenchidas_status()
+        verificar_coluna_observacoes()
+        add_comprovante_pagamento_column()
+        
+        print("✓ Todas as migrações concluídas!")
     
     logging.basicConfig(
         filename='app_errors.log',
@@ -4664,4 +4907,6 @@ if __name__ == '__main__':
         datefmt='%Y-%m-%d %H:%M:%S',
         encoding='utf-8'
     )
-    app.run(debug=True, host='0.0.0.0', port=80)
+    
+    # USE ESTA LINHA CORRIGIDA:
+    app.run(debug=True, host='0.0.0.0', port=80, threaded=False, use_reloader=False)
