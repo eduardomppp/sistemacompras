@@ -405,10 +405,6 @@
                                 </td>
                                 <td>
                                     <div class="status-actions">
-                                        <a href="{{ url_for('routes_bp.preencher_solicitacao', id=solicitacao.id) }}" 
-                                           class="btn btn-preencher">
-                                            <i class="fas fa-edit"></i> Preencher
-                                        </a>
                                         <button class="btn btn-aprovar" onclick="atualizarStatus({{ solicitacao.id }}, 'Aprovado')">
                                             <i class="fas fa-check"></i> Aprovar
                                         </button>
