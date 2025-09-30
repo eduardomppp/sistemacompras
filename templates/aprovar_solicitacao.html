@@ -1,3 +1,5 @@
+[file name]: aprovar_solicitacao.html
+[file content begin]
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -29,7 +31,7 @@
         }
         
         .container {
-            max-width: 1600px;
+            max-width: 1800px;
             margin: 0 auto;
             padding: 20px;
             background-color: white;
@@ -149,6 +151,25 @@
         .status-pendente {
             background-color: #fff3cd;
             color: var(--status-pendente);
+        }
+        
+        .ativo-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            display: inline-block;
+            text-align: center;
+        }
+        
+        .ativo-sim {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .ativo-nao {
+            background-color: #f8d7da;
+            color: #721c24;
         }
         
         .alert {
@@ -340,6 +361,15 @@
                 </div>
                 
                 <div class="filter-group">
+                    <label for="ativoFilter">Material Ativo</label>
+                    <select id="ativoFilter" class="form-select">
+                        <option value="">Todos</option>
+                        <option value="Sim">Sim</option>
+                        <option value="Não">Não</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
                     <label for="statusFilter">Status</label>
                     <select id="statusFilter" class="form-select" disabled style="background-color: #f8f9fa;">
                         <option value="Pendente" selected>Pendente</option>
@@ -381,6 +411,8 @@
                             <th>Empresa</th>
                             <th>Data Solicitação</th>
                             <th>Usuário</th>
+                            <th>Material Ativo</th>
+                            <th>Nome do Ativo</th>
                             <th>Status</th>
                             <th>Ações</th>
                         </tr>
@@ -399,12 +431,25 @@
                                 </td>
                                 <td>{{ solicitacao.usuario }}</td>
                                 <td>
+                                    <span class="ativo-badge ativo-{{ 'sim' if solicitacao.ativo == 'Sim' else 'nao' }}">
+                                        {{ solicitacao.ativo }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if solicitacao.ativo == 'Sim' and solicitacao.nome_ativo %}
+                                        {{ solicitacao.nome_ativo }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td>
                                     <span class="status-badge status-pendente">
                                         Pendente
                                     </span>
                                 </td>
                                 <td>
                                     <div class="status-actions">
+                                        </a>
                                         <button class="btn btn-aprovar" onclick="atualizarStatus({{ solicitacao.id }}, 'Aprovado')">
                                             <i class="fas fa-check"></i> Aprovar
                                         </button>
@@ -450,6 +495,7 @@
         function applyFilters() {
             const empresaFilter = document.getElementById('empresaFilter').value;
             const usuarioFilter = document.getElementById('usuarioFilter').value;
+            const ativoFilter = document.getElementById('ativoFilter').value;
             const dataInicio = document.getElementById('dataInicio').value;
             const dataFim = document.getElementById('dataFim').value;
             
@@ -459,17 +505,19 @@
             rows.forEach(row => {
                 const empresa = row.cells[4].textContent.trim();
                 const usuario = row.cells[6].textContent.trim();
+                const ativo = row.cells[7].textContent.trim();
                 const dataSolicitacao = row.cells[5].getAttribute('data-order');
                 
                 // Verificar filtros (status sempre será Pendente)
                 const empresaMatch = !empresaFilter || empresa === empresaFilter;
                 const usuarioMatch = !usuarioFilter || usuario === usuarioFilter;
+                const ativoMatch = !ativoFilter || ativo === ativoFilter;
                 const dataMatch = 
                     (!dataInicio || dataSolicitacao >= dataInicio) && 
                     (!dataFim || dataSolicitacao <= dataFim);
                 
                 // Mostrar ou esconder a linha baseado nos filtros
-                if (empresaMatch && usuarioMatch && dataMatch) {
+                if (empresaMatch && usuarioMatch && ativoMatch && dataMatch) {
                     row.style.display = '';
                     visibleCount++;
                 } else {
@@ -500,6 +548,7 @@
         function clearFilters() {
             document.getElementById('empresaFilter').value = '';
             document.getElementById('usuarioFilter').value = '';
+            document.getElementById('ativoFilter').value = '';
             
             // Resetar datas para o padrão (últimos 30 dias)
             const thirtyDaysAgo = new Date();
@@ -541,3 +590,4 @@
     </script>
 </body>
 </html>
+[file content end]
