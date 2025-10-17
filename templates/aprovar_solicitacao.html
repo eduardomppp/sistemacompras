@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -19,7 +20,7 @@
             --status-reprovado: #dc3545;
             --status-pendente: #ffc107;
         }
-        
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
@@ -27,7 +28,7 @@
             background-color: var(--secondary-color);
             color: var(--text-color);
         }
-        
+
         .container {
             max-width: 1800px;
             margin: 0 auto;
@@ -36,7 +37,7 @@
             border-radius: 8px;
             box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
         }
-        
+
         h1 {
             text-align: center;
             color: var(--primary-color);
@@ -45,26 +46,27 @@
             border-bottom: 2px solid var(--light-gray);
             font-weight: 600;
         }
-        
+
         .table-responsive {
             overflow-x: auto;
             margin-top: 20px;
         }
-        
+
         table {
             width: 100%;
             border-collapse: collapse;
             background-color: white;
-            box-shadow: 0 0 10px rgba(0,0,0,0.05);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
         }
-        
-        th, td {
+
+        th,
+        td {
             padding: 15px;
             text-align: left;
             border-bottom: 1px solid var(--border-color);
             vertical-align: middle;
         }
-        
+
         th {
             background-color: var(--primary-color);
             color: white;
@@ -72,11 +74,11 @@
             position: sticky;
             top: 0;
         }
-        
+
         tr:hover {
             background-color: rgba(0, 0, 0, 0.02);
         }
-        
+
         .btn {
             padding: 8px 16px;
             text-decoration: none;
@@ -91,41 +93,41 @@
             border: none;
             cursor: pointer;
         }
-        
+
         .btn-preencher {
             background-color: var(--accent-color);
         }
-        
+
         .btn-preencher:hover {
             background-color: var(--hover-color);
             transform: translateY(-1px);
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
-        
+
         .btn-preencher:disabled {
             background-color: #6c757d;
             cursor: not-allowed;
             opacity: 0.6;
         }
-        
+
         .btn-preencher:disabled:hover {
             transform: none;
             box-shadow: none;
             background-color: #6c757d;
         }
-        
+
         .btn-aprovar {
             background-color: var(--status-aprovado);
             padding: 6px 12px;
             font-size: 12px;
         }
-        
+
         .btn-reprovar {
             background-color: var(--status-reprovado);
             padding: 6px 12px;
             font-size: 12px;
         }
-        
+
         .status-badge {
             padding: 6px 12px;
             border-radius: 20px;
@@ -135,22 +137,22 @@
             text-align: center;
             min-width: 80px;
         }
-        
+
         .status-aprovado {
             background-color: #d4edda;
             color: var(--status-aprovado);
         }
-        
+
         .status-reprovado {
             background-color: #f8d7da;
             color: var(--status-reprovado);
         }
-        
+
         .status-pendente {
             background-color: #fff3cd;
             color: var(--status-pendente);
         }
-        
+
         .ativo-badge {
             padding: 4px 8px;
             border-radius: 12px;
@@ -159,17 +161,26 @@
             display: inline-block;
             text-align: center;
         }
-        
+
         .ativo-sim {
             background-color: #d4edda;
             color: #155724;
         }
-        
+
         .ativo-nao {
             background-color: #f8d7da;
             color: #721c24;
         }
-        
+
+        .aplicacao-badge {
+            background-color: #e7f3ff;
+            color: #022855;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
         .alert {
             padding: 12px 20px;
             margin-bottom: 25px;
@@ -179,58 +190,58 @@
             align-items: center;
             gap: 10px;
         }
-        
+
         .alert-error {
             background-color: #f8d7da;
             color: #721c24;
             border-left: 4px solid #f5c6cb;
         }
-        
+
         .alert-success {
             background-color: #d4edda;
             color: #155724;
             border-left: 4px solid #c3e6cb;
         }
-        
+
         .empty-state {
             text-align: center;
             padding: 40px;
             color: #6c757d;
         }
-        
+
         .empty-state i {
             font-size: 50px;
             margin-bottom: 20px;
             color: #dee2e6;
         }
-        
+
         .search-filter-container {
             background-color: #f8fafc;
             padding: 20px;
             border-radius: 8px;
             margin-bottom: 25px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
         }
-        
+
         .filter-row {
             display: flex;
             flex-wrap: wrap;
             gap: 15px;
             margin-bottom: 15px;
         }
-        
+
         .filter-group {
             flex: 1;
             min-width: 200px;
         }
-        
+
         .filter-group label {
             display: block;
             margin-bottom: 5px;
             font-size: 14px;
             color: #555;
         }
-        
+
         .filter-group select,
         .filter-group input {
             width: 100%;
@@ -239,20 +250,20 @@
             border-radius: 4px;
             font-size: 14px;
         }
-        
+
         .date-range-picker {
             display: flex;
             gap: 10px;
             align-items: center;
         }
-        
+
         .filter-actions {
             display: flex;
             justify-content: flex-end;
             gap: 10px;
             margin-top: 10px;
         }
-        
+
         .btn-filter {
             background-color: var(--primary-color);
             color: white;
@@ -261,7 +272,7 @@
             border: none;
             cursor: pointer;
         }
-        
+
         .btn-clear {
             background-color: #6c757d;
             color: white;
@@ -270,13 +281,13 @@
             border: none;
             cursor: pointer;
         }
-        
+
         .status-actions {
             display: flex;
             gap: 5px;
             flex-wrap: wrap;
         }
-        
+
         .info-badge {
             background-color: #e7f3ff;
             color: #022855;
@@ -288,32 +299,34 @@
             align-items: center;
             gap: 8px;
         }
-        
+
         @media (max-width: 768px) {
             .filter-row {
                 flex-direction: column;
             }
-            
+
             .filter-group {
                 min-width: 100%;
             }
-            
+
             .date-range-picker {
                 flex-direction: column;
                 align-items: flex-start;
             }
-            
-            th, td {
+
+            th,
+            td {
                 padding: 10px 8px;
                 font-size: 14px;
             }
-            
+
             .status-actions {
                 flex-direction: column;
             }
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <h1>
@@ -321,20 +334,15 @@
         </h1>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category }}">
-                        <i class="fas fa-{% if category == 'error' %}exclamation-circle{% else %}check-circle{% endif %}"></i>
-                        {{ message }}
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-
-        <div class="info-badge">
-            <i class="fas fa-info-circle"></i>
-            Apenas solicitações com status "Pendente" são exibidas nesta lista
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">
+            <i class="fas fa-{% if category == 'error' %}exclamation-circle{% else %}check-circle{% endif %}"></i>
+            {{ message }}
         </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
 
         <div class="search-filter-container">
             <div class="filter-row">
@@ -343,21 +351,28 @@
                     <select id="empresaFilter" class="form-select">
                         <option value="">Todas empresas</option>
                         {% for empresa in empresas %}
-                            <option value="{{ empresa }}">{{ empresa }}</option>
+                        <option value="{{ empresa }}">{{ empresa }}</option>
                         {% endfor %}
                     </select>
                 </div>
-                
+
                 <div class="filter-group">
                     <label for="usuarioFilter">Usuário</label>
                     <select id="usuarioFilter" class="form-select">
                         <option value="">Todos usuários</option>
                         {% for usuario in usuarios %}
-                            <option value="{{ usuario }}">{{ usuario }}</option>
+                        <option value="{{ usuario }}">{{ usuario }}</option>
                         {% endfor %}
                     </select>
                 </div>
-                
+
+                <div class="filter-group">
+                    <label for="aplicacaoFilter">Aplicação</label>
+                    <select id="aplicacaoFilter" class="form-select">
+                        <option value="">Todas aplicações</option>
+                    </select>
+                </div>
+
                 <div class="filter-group">
                     <label for="ativoFilter">Material Ativo</label>
                     <select id="ativoFilter" class="form-select">
@@ -366,7 +381,7 @@
                         <option value="Não">Não</option>
                     </select>
                 </div>
-                
+
                 <div class="filter-group">
                     <label for="statusFilter">Status</label>
                     <select id="statusFilter" class="form-select" disabled style="background-color: #f8f9fa;">
@@ -376,7 +391,7 @@
                         Apenas solicitações pendentes são exibidas
                     </small>
                 </div>
-                
+
                 <div class="filter-group">
                     <label>Data de Solicitação</label>
                     <div class="date-range-picker">
@@ -386,7 +401,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <div class="filter-actions">
                 <button class="btn-clear" id="clearFilters">
                     <i class="fas fa-times"></i> Limpar Filtros
@@ -398,169 +413,234 @@
         </div>
 
         {% if solicitacoes %}
-            <div class="table-responsive">
-                <table id="solicitacoesTable">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Material</th>
-                            <th>Especificação</th>
-                            <th>Quantidade</th>
-                            <th>Empresa</th>
-                            <th>Data Solicitação</th>
-                            <th>Usuário</th>
-                            <th>Material Ativo</th>
-                            <th>Nome do Ativo</th>
-                            <th>Status</th>
-                            <th>Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for solicitacao in solicitacoes | sort(attribute='data_solicitacao', reverse=True) %}
-                            {% if not solicitacao.status_aprovacao or solicitacao.status_aprovacao == 'Pendente' %}
-                            <tr data-id="{{ solicitacao.id }}">
-                                <td>{{ solicitacao.id }}</td>
-                                <td>{{ solicitacao.material.DescricaoMaterial }}</td>
-                                <td>{{ solicitacao.especificacao or '-' }}</td>
-                                <td>{{ solicitacao.quantidade }}</td>
-                                <td>{{ solicitacao.empresa }}</td>
-                                <td data-order="{{ solicitacao.data_solicitacao.strftime('%Y-%m-%d') }}">
-                                    {{ solicitacao.data_solicitacao.strftime('%d/%m/%Y %H:%M') }}
-                                </td>
-                                <td>{{ solicitacao.usuario }}</td>
-                                <td>
-                                    <span class="ativo-badge ativo-{{ 'sim' if solicitacao.ativo == 'Sim' else 'nao' }}">
-                                        {{ solicitacao.ativo }}
-                                    </span>
-                                </td>
-                                <td>
-                                    {% if solicitacao.ativo == 'Sim' and solicitacao.nome_ativo %}
-                                        {{ solicitacao.nome_ativo }}
-                                    {% else %}
-                                        -
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    <span class="status-badge status-pendente">
-                                        Pendente
-                                    </span>
-                                </td>
-                                <td>
-                                        </a>
-                                        <button class="btn btn-aprovar" onclick="atualizarStatus({{ solicitacao.id }}, 'Aprovado')">
-                                            <i class="fas fa-check"></i> Aprovar
-                                        </button>
-                                        <button class="btn btn-reprovar" onclick="atualizarStatus({{ solicitacao.id }}, 'Reprovado')">
-                                            <i class="fas fa-times"></i> Reprovar
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
+        <div class="table-responsive">
+            <table id="solicitacoesTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Material</th>
+                        <th>Especificação</th>
+                        <th>Aplicação</th>
+                        <th>Quantidade</th>
+                        <th>Empresa</th>
+                        <th>Data Solicitação</th>
+                        <th>Usuário</th>
+                        <th>Material Ativo</th>
+                        <th>Nome do Ativo</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for solicitacao in solicitacoes %}
+                    <tr data-id="{{ solicitacao.id }}">
+                        <td>{{ solicitacao.id }}</td>
+                        <td>
+                            {% if solicitacao.material %}
+                            {{ solicitacao.material.DescricaoMaterial }}
+                            {% else %}
+                            Material não encontrado (Cód: {{ solicitacao.cod_material }})
                             {% endif %}
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+                        </td>
+                        <td>{{ solicitacao.especificacao or '-' }}</td>
+                        <td>
+                            {% if solicitacao.aplicacao %}
+                            <span class="aplicacao-badge" title="Aplicação específica">{{ solicitacao.aplicacao }}</span>
+                            {% elif solicitacao.aplicacao_geral %}
+                            <span class="aplicacao-badge" title="Aplicação geral">{{ solicitacao.aplicacao_geral }}</span>
+                            {% elif solicitacao.material and solicitacao.material.Aplicacao %}
+                            <span class="aplicacao-badge" title="Aplicação do material">{{ solicitacao.material.Aplicacao }}</span>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ solicitacao.quantidade }}</td>
+                        <td>{{ solicitacao.empresa }}</td>
+                        <td data-order="{{ solicitacao.data_solicitacao.strftime('%Y-%m-%d') }}">
+                            {{ solicitacao.data_solicitacao.strftime('%d/%m/%Y %H:%M') }}
+                        </td>
+                        <td>{{ solicitacao.usuario }}</td>
+                        <td>
+                            <span class="ativo-badge ativo-{{ 'sim' if solicitacao.ativo == 'Sim' else 'nao' }}">
+                                {{ solicitacao.ativo }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if solicitacao.ativo == 'Sim' and solicitacao.nome_ativo %}
+                            {{ solicitacao.nome_ativo }}
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if solicitacao.status_aprovacao %}
+                            <span class="status-badge status-{{ solicitacao.status_aprovacao|lower }}">
+                                {{ solicitacao.status_aprovacao }}
+                            </span>
+                            {% else %}
+                            <span class="status-badge status-pendente">
+                                Pendente
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="status-actions">
+                                {% if not solicitacao.status_aprovacao or solicitacao.status_aprovacao == 'Pendente' %}
+                                <button class="btn btn-aprovar" onclick="atualizarStatus({{ solicitacao.id }}, 'Aprovado')">
+                                    <i class="fas fa-check"></i> Aprovar
+                                </button>
+                                <button class="btn btn-reprovar" onclick="atualizarStatus({{ solicitacao.id }}, 'Reprovado')">
+                                    <i class="fas fa-times"></i> Reprovar
+                                </button>
+                                {% else %}
+                                <span class="text-muted">Ação concluída</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
         {% else %}
-            <div class="empty-state">
-                <i class="far fa-clock"></i>
-                <h3>Nenhuma solicitação pendente encontrada</h3>
-                <p>Não há solicitações de compra pendentes no momento.</p>
-            </div>
+        <div class="empty-state">
+            <i class="far fa-clock"></i>
+            <h3>Nenhuma solicitação pendente encontrada</h3>
+            <p>Não há solicitações de compra pendentes no momento.</p>
+        </div>
         {% endif %}
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             // Configurar data inicial para 30 dias atrás
             const thirtyDaysAgo = new Date();
             thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
             document.getElementById('dataInicio').valueAsDate = thirtyDaysAgo;
-            
+
             // Configurar data final para hoje
             document.getElementById('dataFim').valueAsDate = new Date();
-            
+
+            // Atualizar opções do filtro de Aplicação
+            updateAplicacaoFilter();
+
             // Aplicar filtros ao carregar a página
             applyFilters();
-            
+
             // Event listeners
             document.getElementById('applyFilters').addEventListener('click', applyFilters);
             document.getElementById('clearFilters').addEventListener('click', clearFilters);
         });
-        
+
+        function updateAplicacaoFilter() {
+            const aplicacaoSelect = document.getElementById('aplicacaoFilter');
+            const rows = document.querySelectorAll('#solicitacoesTable tbody tr');
+            const aplicacoes = new Set();
+
+            // Coletar todas as aplicações únicas da tabela
+            rows.forEach(row => {
+                const aplicacao = row.cells[3].textContent.trim();
+                if (aplicacao !== '-') {
+                    aplicacoes.add(aplicacao);
+                }
+            });
+
+            // Limpar opções existentes, exceto "Todas aplicações"
+            aplicacaoSelect.innerHTML = '<option value="">Todas aplicações</option>';
+
+            // Adicionar novas opções
+            [...aplicacoes].sort().forEach(aplicacao => {
+                const option = document.createElement('option');
+                option.value = aplicacao;
+                option.textContent = aplicacao;
+                aplicacaoSelect.appendChild(option);
+            });
+
+            // Se não houver aplicações, exibir mensagem
+            if (aplicacoes.size === 0) {
+                const small = document.createElement('small');
+                small.className = 'text-muted';
+                small.textContent = 'Nenhuma aplicação cadastrada';
+                aplicacaoSelect.parentNode.appendChild(small);
+            }
+        }
+
         function applyFilters() {
             const empresaFilter = document.getElementById('empresaFilter').value;
             const usuarioFilter = document.getElementById('usuarioFilter').value;
+            const aplicacaoFilter = document.getElementById('aplicacaoFilter').value;
             const ativoFilter = document.getElementById('ativoFilter').value;
             const dataInicio = document.getElementById('dataInicio').value;
             const dataFim = document.getElementById('dataFim').value;
-            
+
             const rows = document.querySelectorAll('#solicitacoesTable tbody tr');
             let visibleCount = 0;
-            
+            let emptyState = document.querySelector('.empty-state');
+
+            // Remove qualquer estado vazio existente
+            if (emptyState) {
+                emptyState.remove();
+            }
+
             rows.forEach(row => {
-                const empresa = row.cells[4].textContent.trim();
-                const usuario = row.cells[6].textContent.trim();
-                const ativo = row.cells[7].textContent.trim();
-                const dataSolicitacao = row.cells[5].getAttribute('data-order');
-                
-                // Verificar filtros (status sempre será Pendente)
+                const empresa = row.cells[5].textContent.trim();
+                const usuario = row.cells[7].textContent.trim();
+                const aplicacao = row.cells[3].textContent.trim();
+                const ativo = row.cells[8].textContent.trim();
+                const dataSolicitacao = row.cells[6].getAttribute('data-order');
+
                 const empresaMatch = !empresaFilter || empresa === empresaFilter;
                 const usuarioMatch = !usuarioFilter || usuario === usuarioFilter;
+                const aplicacaoMatch = !aplicacaoFilter || aplicacao === aplicacaoFilter || (aplicacao === '-' && aplicacaoFilter === '');
                 const ativoMatch = !ativoFilter || ativo === ativoFilter;
-                const dataMatch = 
-                    (!dataInicio || dataSolicitacao >= dataInicio) && 
-                    (!dataFim || dataSolicitacao <= dataFim);
-                
-                // Mostrar ou esconder a linha baseado nos filtros
-                if (empresaMatch && usuarioMatch && ativoMatch && dataMatch) {
+                const dataMatch = (!dataInicio || dataSolicitacao >= dataInicio) && (!dataFim || dataSolicitacao <= dataFim);
+
+                if (empresaMatch && usuarioMatch && aplicacaoMatch && ativoMatch && dataMatch) {
                     row.style.display = '';
                     visibleCount++;
                 } else {
                     row.style.display = 'none';
                 }
             });
-            
+
+            // Atualizar opções do filtro de Aplicação com base nas linhas visíveis
+            updateAplicacaoFilter();
+
             // Mostrar mensagem se nenhum resultado for encontrado
-            const emptyState = document.querySelector('.empty-state');
-            const table = document.querySelector('#solicitacoesTable');
-            
             if (visibleCount === 0 && rows.length > 0) {
-                if (!emptyState && table) {
-                    const newEmptyState = document.createElement('div');
-                    newEmptyState.className = 'empty-state';
-                    newEmptyState.innerHTML = `
-                        <i class="far fa-folder-open"></i>
-                        <h3>Nenhum resultado encontrado</h3>
-                        <p>Nenhuma solicitação pendente corresponde aos filtros aplicados.</p>
-                    `;
-                    table.parentNode.insertBefore(newEmptyState, table.nextSibling);
-                }
-            } else if (emptyState && visibleCount > 0) {
-                emptyState.remove();
+                const table = document.querySelector('#solicitacoesTable');
+                const newEmptyState = document.createElement('div');
+                newEmptyState.className = 'empty-state';
+                newEmptyState.innerHTML = `
+                    <i class="far fa-folder-open"></i>
+                    <h3>Nenhum resultado encontrado</h3>
+                    <p>Nenhuma solicitação pendente corresponde aos filtros aplicados.</p>
+                `;
+                table.parentNode.insertBefore(newEmptyState, table.nextSibling);
             }
         }
-        
+
         function clearFilters() {
             document.getElementById('empresaFilter').value = '';
             document.getElementById('usuarioFilter').value = '';
+            document.getElementById('aplicacaoFilter').value = '';
             document.getElementById('ativoFilter').value = '';
-            
+
             // Resetar datas para o padrão (últimos 30 dias)
             const thirtyDaysAgo = new Date();
             thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
             document.getElementById('dataInicio').valueAsDate = thirtyDaysAgo;
             document.getElementById('dataFim').valueAsDate = new Date();
-            
+
             applyFilters();
         }
-        
+
         function atualizarStatus(solicitacaoId, status) {
             if (!confirm(`Tem certeza que deseja ${status.toLowerCase()} esta solicitação?`)) {
                 return;
             }
-            
+
             fetch(`/api/solicitacoes/${solicitacaoId}/status`, {
                 method: 'POST',
                 headers: {
@@ -570,20 +650,21 @@
                     status: status
                 })
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert(data.message);
-                    location.reload();
-                } else {
-                    alert('Erro: ' + data.error);
-                }
-            })
-            .catch(error => {
-                console.error('Erro:', error);
-                alert('Erro ao atualizar status');
-            });
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert(data.message);
+                        location.reload();
+                    } else {
+                        alert('Erro: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                    alert('Erro ao atualizar status');
+                });
         }
     </script>
 </body>
+
 </html>

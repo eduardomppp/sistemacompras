@@ -93,15 +93,6 @@
             vertical-align: middle;
         }
 
-        .actions-cell {
-            white-space: nowrap;
-        }
-
-        .actions-btn {
-            margin-bottom: 5px;
-            width: 100%;
-        }
-
         .filter-btn-group {
             display: flex;
             gap: 10px;
@@ -148,21 +139,6 @@
             .table td, .table th {
                 padding: 8px 10px;
             }
-
-            .actions-cell {
-                display: flex;
-                flex-direction: column;
-                gap: 5px;
-            }
-
-            .actions-btn {
-                padding: 5px 8px;
-                font-size: 0.8rem;
-            }
-
-            .actions-btn i {
-                margin-right: 3px !important;
-            }
         }
 
         @media (max-width: 576px) {
@@ -194,7 +170,7 @@
             </div>
         </div>
 
-        <!-- Filtros - Versão Mobile Otimizada -->
+        <!-- Filtros -->
         <div class="filter-section mb-3">
             <form method="POST" id="filterForm">
                 <div class="row g-2">
@@ -235,7 +211,7 @@
             </form>
         </div>
 
-        <!-- Resultados - Versão Mobile Otimizada -->
+        <!-- Resultados -->
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <span>Resultados</span>
@@ -252,7 +228,6 @@
                                     <th>Código</th>
                                     <th>Descrição</th>
                                     <th>Empresa</th>
-                                    <th>Ações</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -261,18 +236,6 @@
                                         <td>{{ material.CodMaterial }}</td>
                                         <td>{{ material.DescricaoMaterial }}</td>
                                         <td>{{ material.Empresa }}</td>
-                                        <td class="actions-cell">
-                                            <a href="{{ url_for('routes_bp.solicitar_compra', cod=material.CodMaterial) }}" 
-                                               class="btn btn-primary btn-sm actions-btn">
-                                                <i class="fas fa-shopping-cart"></i>
-                                                <span class="d-none d-md-inline"> Solicitar</span>
-                                            </a>
-                                            <a href="{{ url_for('routes_bp.pcp_material', cod=material.CodMaterial) }}" 
-                                               class="btn btn-outline-secondary btn-sm actions-btn">
-                                                <i class="fas fa-cog"></i>
-                                                <span class="d-none d-md-inline"> Configurar</span>
-                                            </a>
-                                        </td>
                                     </tr>
                                 {% endfor %}
                             </tbody>
@@ -288,7 +251,6 @@
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
     <script>
-        // Inicializar DataTables com configuração mobile-friendly
         $(document).ready(function() {
             $('#materiaisTable').DataTable({
                 "pageLength": 10,
@@ -296,12 +258,6 @@
                 "language": {
                     "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/pt-BR.json"
                 },
-                "columnDefs": [
-                    { "orderable": false, "targets": 3 }, // Desabilitar ordenação na coluna de ações
-                    { "responsivePriority": 1, "targets": 0 }, // Prioridade para coluna Código
-                    { "responsivePriority": 2, "targets": 1 }, // Prioridade para coluna Descrição
-                    { "responsivePriority": 3, "targets": 3 }  // Prioridade para coluna Ações
-                ],
                 "dom": '<"top"f>rt<"bottom"lip><"clear">',
                 "initComplete": function() {
                     $('.dataTables_filter input').attr('placeholder', 'Pesquisar...');
@@ -309,7 +265,7 @@
             });
         });
 
-        // Mostrar toast quando houver mensagens flash
+        // Toast
         $(document).ready(function() {
             {% with messages = get_flashed_messages(with_categories=true) %}
                 {% if messages %}
@@ -325,16 +281,14 @@
             {% endwith %}
         });
 
-        // Melhorar experiência em dispositivos móveis
+        // UX Mobile
         $(document).ready(function() {
-            // Adicionar feedback visual ao toque
             $('a, button').on('touchstart', function() {
                 $(this).css('opacity', '0.8');
             }).on('touchend', function() {
                 $(this).css('opacity', '1');
             });
             
-            // Ajustar foco em campos de formulário
             $('input, select').on('focus', function() {
                 $(this).css('background-color', '#fff');
             }).on('blur', function() {
