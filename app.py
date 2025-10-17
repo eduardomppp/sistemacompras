@@ -146,7 +146,8 @@ class SolicitacoesCompra(db.Model):
     especificacao = db.Column(db.Text, nullable=False)
     quantidade = db.Column(db.Integer, nullable=False)
     unidade_medida = db.Column(db.String(20), nullable=False, default='Unidade')
-    aplicacao = db.Column(db.Text, nullable=True)
+    aplicacao = db.Column(db.Text, nullable=True)  # Aplicação específica do item
+    aplicacao_geral = db.Column(db.Text, nullable=True)  # NOVA COLUNA: Aplicação geral do formulário
     empresa = db.Column(db.Text, nullable=False)
     data_solicitacao = db.Column(db.DateTime, nullable=False, default=get_local_time)
     usuario = db.Column(db.Text, nullable=False)
@@ -156,7 +157,7 @@ class SolicitacoesCompra(db.Model):
     nome_ativo = db.Column(db.Text, nullable=True)
     prioridade = db.Column(db.String(20), nullable=False, default='Programado')
     status_aprovacao = db.Column(db.String(20), nullable=True, default=None)
-    observacoes_col = db.Column(db.Text, nullable=True)  # NOVA COLUNA AQUI
+    observacoes_col = db.Column(db.Text, nullable=True)
     material = db.relationship('Materiais', backref='solicitacoes')
 
     def to_dict(self):
@@ -167,6 +168,7 @@ class SolicitacoesCompra(db.Model):
             'quantidade': self.quantidade,
             'unidade_medida': self.unidade_medida,
             'aplicacao': self.aplicacao,
+            'aplicacao_geral': self.aplicacao_geral,  # Adicione esta linha
             'empresa': self.empresa,
             'data_solicitacao': self.data_solicitacao.isoformat() if self.data_solicitacao else None,
             'usuario': self.usuario,
@@ -1314,27 +1316,42 @@ def buscar_material():
                          empresas_unicas=empresas_unicas,
                          aplicacoes_unicas=aplicacoes_unicas)
 
+@routes_bp.route('/solicitar_compra', defaults={'cod': None}, methods=['GET'])
 @routes_bp.route('/solicitar_compra/<int:cod>', methods=['GET'])
 def solicitar_compra(cod):
     if 'usuario' not in session:
         return redirect(url_for('routes_bp.login'))
-    
+
     try:
-        # Busca o material
-        material = Materiais.query.get_or_404(cod)
-        
-        # Carrega os dados do usuário
         senhas = ler_senhas()
         usuario = session.get('usuario')
-        
-        # Verifica se o usuário existe
+
         if usuario not in senhas:
             flash('Usuário não encontrado.', 'error')
             return redirect(url_for('routes_bp.login'))
-        
+
         empresa_usuario = senhas[usuario].get('empresa', '')
         
-        return render_template('solicitar_compra.html', material=material, empresa_usuario=empresa_usuario)
+        # BUSCAR TODOS OS MATERIAIS - ADICIONE ESTA LINHA
+        todos_materiais = Materiais.query.all()
+
+        # Se o código foi passado (botão de material)
+        if cod:
+            material = Materiais.query.get_or_404(cod)
+            return render_template(
+                'solicitar_compra.html',
+                material=material,
+                empresa_usuario=empresa_usuario,
+                todos_materiais=todos_materiais  # ADICIONE ESTE PARÂMETRO
+            )
+        else:
+            # Se o acesso veio do menu (sem material específico)
+            return render_template(
+                'solicitar_compra.html',
+                material=None,
+                empresa_usuario=empresa_usuario,
+                todos_materiais=todos_materiais  # ADICIONE ESTE PARÂMETRO
+            )
 
     except SQLAlchemyError as e:
         flash(f'Erro ao carregar material: {str(e)}', 'error')
@@ -1342,6 +1359,118 @@ def solicitar_compra(cod):
     except Exception as e:
         flash(f'Erro inesperado: {str(e)}', 'error')
         return redirect(url_for('routes_bp.buscar_material'))
+    
+@routes_bp.route('/debug_materiais')
+def debug_materiais():
+    """Rota temporária para debug dos materiais"""
+    try:
+        materiais = Materiais.query.all()
+        resultado = {
+            'total': len(materiais),
+            'materiais': [{
+                'CodMaterial': m.CodMaterial,
+                'DescricaoMaterial': m.DescricaoMaterial
+            } for m in materiais]
+        }
+        return jsonify(resultado)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
+@routes_bp.route('/api/materiais_search', methods=['GET'])
+def api_materiais_search():
+    """API para buscar materiais com paginação para Select2"""
+    try:
+        search_term = request.args.get('q', '').strip()
+        page = request.args.get('page', 1, type=int)
+        per_page = 30
+        
+        # Query base
+        query = Materiais.query
+        
+        # Aplicar filtro de busca se houver termo
+        if search_term:
+            if search_term.isdigit():
+                # Busca por código
+                query = query.filter(Materiais.CodMaterial == int(search_term))
+            else:
+                # Busca por descrição
+                query = query.filter(Materiais.DescricaoMaterial.ilike(f'%{search_term}%'))
+        
+        # Paginação
+        materiais_paginated = query.order_by(Materiais.DescricaoMaterial).paginate(
+            page=page, 
+            per_page=per_page, 
+            error_out=False
+        )
+        
+        # Formatar resultados para Select2
+        materiais_data = []
+        for material in materiais_paginated.items:
+            materiais_data.append({
+                'id': material.CodMaterial,
+                'text': f"{material.DescricaoMaterial} (Cód: {material.CodMaterial})",
+                'CodMaterial': material.CodMaterial,
+                'DescricaoMaterial': material.DescricaoMaterial
+            })
+        
+        return jsonify({
+            'success': True,
+            'materiais': materiais_data,
+            'total_count': materiais_paginated.total,
+            'pagination': {
+                'more': materiais_paginated.has_next
+            }
+        })
+        
+    except Exception as e:
+        logging.error(f"Erro na API de busca de materiais: {str(e)}")
+        return jsonify({
+            'success': False, 
+            'error': str(e),
+            'materiais': []
+        }), 500
+
+@routes_bp.route('/api/materiais', methods=['GET'])
+def api_materiais():
+    """API para buscar todos os materiais"""
+    try:
+        print("🔍 Acessando API de materiais...")
+        
+        # Buscar todos os materiais
+        materiais = Materiais.query.all()
+        print(f"📦 Materiais encontrados: {len(materiais)}")
+        
+        # Log dos primeiros 3 materiais para debug
+        for i, material in enumerate(materiais[:3]):
+            print(f"  {i+1}. Cód: {material.CodMaterial}, Desc: {material.DescricaoMaterial}")
+        
+        if not materiais:
+            print("⚠️ Nenhum material encontrado no banco de dados!")
+            return jsonify({
+                'success': False, 
+                'error': 'Nenhum material cadastrado',
+                'materiais': []
+            })
+        
+        resultado = {
+            'success': True,
+            'materiais': [{
+                'CodMaterial': m.CodMaterial,
+                'DescricaoMaterial': m.DescricaoMaterial
+            } for m in materiais]
+        }
+        
+        print("✅ API de materiais retornando dados com sucesso")
+        return jsonify(resultado)
+        
+    except Exception as e:
+        print(f"❌ Erro na API de materiais: {str(e)}")
+        logging.error(f"Erro na API de materiais: {str(e)}", exc_info=True)
+        return jsonify({
+            'success': False, 
+            'error': str(e),
+            'materiais': []
+        }), 500
 
 @routes_bp.route('/abrir_solicitacao', methods=['POST'])
 def abrir_solicitacao():
@@ -1350,136 +1479,128 @@ def abrir_solicitacao():
         return redirect(url_for('routes_bp.login'))
     
     try:
-        # Extração dos campos do formulário
-        cod_material = request.form.get('cod_material')
-        especificacao = request.form.get('especificacao', '').strip()
-        quantidade = request.form.get('quantidade', '').strip()
-        unidade_medida = request.form.get('unidade_medida', '').strip()
-        aplicacao = request.form.get('aplicacao', '').strip()
-        empresa = request.form.get('empresa', '').strip()
-        marca = request.form.get('marca', '').strip()
-        ativo = request.form.get('ativo', '').strip()
-        nome_ativo = request.form.get('nome_ativo', '').strip()
-        prioridade = request.form.get('prioridade', 'Programado').strip()  # Novo campo
-        foto = request.files.get('foto')
+        # Obter arrays do formulário
+        cod_materiais = request.form.getlist('cod_material[]')
+        especificacoes = request.form.getlist('especificacao[]')
+        quantidades = request.form.getlist('quantidade[]')
+        unidades_medida = request.form.getlist('unidade_medida[]')
+        aplicacoes = request.form.getlist('aplicacao[]')  # Aplicações específicas por item
+        empresas = request.form.getlist('empresa[]')
+        marcas = request.form.getlist('marca[]')
+        ativos = request.form.getlist('ativo[]')
+        nomes_ativos = request.form.getlist('nome_ativo[]')
+        prioridades = request.form.getlist('prioridade[]')
+        fotos = request.files.getlist('foto[]')
 
-        # Validação do cod_material
-        if not cod_material:
-            flash('Código do material é obrigatório.', 'error')
-            return redirect(url_for('routes_bp.buscar_material'))
+        # DEBUG: Verificar o que está chegando
+        aplicacao_geral = request.form.get('aplicacao', '').strip()
+        print(f"🔍 DEBUG - Dados recebidos:")
+        print(f"  Total de itens: {len(cod_materiais)}")
+        print(f"  Aplicação geral: '{aplicacao_geral}'")
+        print(f"  Aplicações específicas: {aplicacoes}")
+        print(f"  Empresas: {empresas}")
+        print(f"  Quantidades: {quantidades}")
+
+        # Processar cada solicitação
+        solicitacoes_criadas = 0
         
-        try:
-            cod_material = int(cod_material)
-            if cod_material <= 0:
-                raise ValueError
-        except ValueError:
-            flash('Código do material deve ser um número positivo.', 'error')
-            return redirect(url_for('routes_bp.buscar_material'))
+        for i, cod_material in enumerate(cod_materiais):
+            if not cod_material:
+                print(f"⚠️  Pular índice {i}: cod_material vazio")
+                continue  # Pular se não tem código de material
+                
+            # Validação do cod_material
+            try:
+                cod_material = int(cod_material)
+                if cod_material <= 0:
+                    raise ValueError
+            except ValueError:
+                flash(f'Código do material inválido na solicitação {i+1}.', 'error')
+                print(f"❌ Código material inválido: {cod_material}")
+                continue
 
-        # Verificar se o material existe
-        material = db.session.get(Materiais, cod_material)
-        if not material:
-            flash(f'Material com código {cod_material} não encontrado.', 'error')
-            return redirect(url_for('routes_bp.buscar_material'))
+            # Verificar se o material existe
+            material = db.session.get(Materiais, cod_material)
+            if not material:
+                flash(f'Material com código {cod_material} não encontrado na solicitação {i+1}.', 'error')
+                print(f"❌ Material não encontrado: {cod_material}")
+                continue
 
-        # Validação dos campos obrigatórios
-        required_fields = {
-            'especificacao': especificacao,
-            'quantidade': quantidade,
-            'unidade_medida': unidade_medida,
-            'empresa': empresa,
-            'ativo': ativo,
-            'prioridade': prioridade  # Novo campo obrigatório
-        }
-        
-        for field_name, field_value in required_fields.items():
-            if not field_value:
-                flash(f'O campo {field_name} é obrigatório.', 'error')
-                return redirect(url_for('routes_bp.solicitar_compra', cod=cod_material))
+            # Validação dos campos obrigatórios para esta solicitação
+            if (i >= len(especificacoes) or not especificacoes[i] or 
+                i >= len(quantidades) or not quantidades[i] or
+                i >= len(unidades_medida) or not unidades_medida[i] or
+                i >= len(empresas) or not empresas[i] or
+                i >= len(ativos) or not ativos[i] or
+                i >= len(prioridades) or not prioridades[i]):
+                flash(f'Campos obrigatórios não preenchidos na solicitação {i+1}.', 'error')
+                print(f"❌ Campos obrigatórios faltando no índice {i}")
+                continue
 
-        # Validação específica para ativo e nome_ativo
-        if ativo not in ['Sim', 'Não']:
-            flash('O campo "Material é ativo?" deve ser "Sim" ou "Não".', 'error')
-            return redirect(url_for('routes_bp.solicitar_compra', cod=cod_material))
-        
-        if ativo == 'Sim' and not nome_ativo:
-            flash('O nome do ativo é obrigatório quando o material é ativo.', 'error')
-            return redirect(url_for('routes_bp.solicitar_compra', cod=cod_material))
+            # CORREÇÃO: Processar aplicação corretamente
+            aplicacao = None
 
-        # Validação da prioridade
-        if prioridade not in ['Programado', 'Urgente']:
-            flash('Prioridade inválida. Deve ser "Programado" ou "Urgente".', 'error')
-            return redirect(url_for('routes_bp.solicitar_compra', cod=cod_material))
-
-        # Validação de quantidade
-        if not quantidade.isdigit() or int(quantidade) <= 0:
-            flash('Quantidade deve ser um número positivo.', 'error')
-            return redirect(url_for('routes_bp.solicitar_compra', cod=cod_material))
-
-        # Validação de unidade de medida
-        valid_unidades = [
-            'Peça', 'Unidade', 'Metro', 'Metro quadrado', 'Metro cúbico', 
-            'Litro', 'Quilograma', 'Grama', 'Caixa', 'Pacote', 'Par'
-        ]
-        if unidade_medida not in valid_unidades:
-            flash('Unidade de medida inválida.', 'error')
-            return redirect(url_for('routes_bp.solicitar_compra', cod=cod_material))
-
-        # Processamento do upload da foto
-        foto_path = None
-        if foto and foto.filename:
-            logging.info(f"Uploaded file: {foto.filename}")
-            if allowed_file(foto.filename, {'jpg', 'jpeg', 'png', 'pdf'}):
-                filename = f"{uuid.uuid4()}_{secure_filename(foto.filename)}"
-                foto_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-                try:
-                    foto.save(foto_path)
-                    logging.info(f"File saved to: {foto_path}")
-                except Exception as e:
-                    logging.error(f"Failed to save file: {str(e)}")
-                    flash(f'Erro ao salvar a foto: {str(e)}', 'error')
-                    return redirect(url_for('routes_bp.solicitar_compra', cod=cod_material))
+            # Primeiro tenta pegar a aplicação específica do item
+            if i < len(aplicacoes) and aplicacoes[i] and aplicacoes[i].strip():
+                aplicacao = aplicacoes[i].strip()
+                print(f"✅ Aplicação específica encontrada para índice {i}: '{aplicacao}'")
             else:
-                extension = foto.filename.rsplit('.', 1)[1].lower() if '.' in foto.filename else 'N/A'
-                logging.error(f"Invalid file extension: {extension}")
-                flash(f'Arquivo de foto inválido. Apenas JPG, JPEG, PNG e PDF são permitidos. Extensão detectada: {extension}', 'error')
-                return redirect(url_for('routes_bp.solicitar_compra', cod=cod_material))
-        elif foto:
-            logging.warning("Empty file uploaded")
-            flash('Nenhum arquivo selecionado ou arquivo vazio.', 'error')
-            return redirect(url_for('routes_bp.solicitar_compra', cod=cod_material))
+                # Se não tem aplicação específica, tenta a aplicação geral do formulário
+                if aplicacao_geral:
+                    aplicacao = aplicacao_geral
+                    print(f"✅ Usando aplicação geral do formulário: '{aplicacao}'")
+                else:
+                    # Se não tem aplicação geral, usa a do material como fallback
+                    aplicacao = material.Aplicacao if material and material.Aplicacao else 'Aplicação não especificada'
+                    print(f"ℹ️  Usando aplicação do material: '{aplicacao}'")
 
-        # Criar a solicitação de compra
-        solicitacao = SolicitacoesCompra(
-            cod_material=cod_material,
-            especificacao=especificacao,
-            quantidade=int(quantidade),
-            unidade_medida=unidade_medida,
-            aplicacao=aplicacao or None,
-            empresa=empresa,
-            usuario=session['usuario'],
-            foto_path=foto_path,
-            marca=marca or None,
-            ativo=ativo,
-            nome_ativo=nome_ativo or None if ativo == 'Sim' else None,
-            prioridade=prioridade  # Novo campo
-        )
-        db.session.add(solicitacao)
-        db.session.commit()
+            # Processar upload da foto se existir
+            foto_path = None
+            if i < len(fotos) and fotos[i] and fotos[i].filename:
+                foto = fotos[i]
+                if allowed_file(foto.filename, {'jpg', 'jpeg', 'png', 'pdf'}):
+                    filename = f"{uuid.uuid4()}_{secure_filename(foto.filename)}"
+                    foto_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                    foto.save(foto_path)
+                    print(f"📸 Foto salva: {foto_path}")
 
-        flash('Solicitação de compra aberta com sucesso.', 'success')
-        return redirect(url_for('routes_bp.buscar_material'))
+            # Criar a solicitação de compra
+            solicitacao = SolicitacoesCompra(
+                cod_material=cod_material,
+                especificacao=especificacoes[i],
+                quantidade=int(quantidades[i]),
+                unidade_medida=unidades_medida[i],
+                aplicacao=aplicacao,  # Aplicação específica ou geral
+                aplicacao_geral=aplicacao_geral,  # Salva a aplicação geral separadamente
+                empresa=empresas[i],
+                usuario=session['usuario'],
+                foto_path=foto_path,
+                marca=marcas[i] if i < len(marcas) and marcas[i] else None,
+                ativo=ativos[i],
+                nome_ativo=nomes_ativos[i] if i < len(nomes_ativos) and ativos[i] == 'Sim' and nomes_ativos[i] else None,
+                prioridade=prioridades[i],
+                status_aprovacao=None  # Garantir que seja NULL
+            )
+            db.session.add(solicitacao)
+            solicitacoes_criadas += 1
+            print(f"✅ Solicitação {i+1} criada: Material {cod_material}, Qtd {quantidades[i]}, Aplicação: '{aplicacao}'")
+
+        if solicitacoes_criadas > 0:
+            db.session.commit()
+            flash(f'{solicitacoes_criadas} solicitações de compra abertas com sucesso.', 'success')
+            print(f"🎉 {solicitacoes_criadas} solicitações salvas no banco")
+        else:
+            flash('Nenhuma solicitação válida para criar.', 'error')
+            print("❌ Nenhuma solicitação criada")
+
+        return redirect(url_for('routes_bp.listar_solicitacoes'))
+        
     except Exception as e:
         db.session.rollback()
         logging.error(f"Error in abrir_solicitacao: {str(e)}")
-        flash(f'Erro ao abrir solicitação: {str(e)}', 'error')
+        print(f"💥 ERRO CRÍTICO: {str(e)}")
+        flash(f'Erro ao abrir solicitações: {str(e)}', 'error')
         return redirect(url_for('routes_bp.buscar_material'))
-    
-# Registrar filtro basename no Jinja2
-def basename_filter(filepath):
-    return os.path.basename(filepath) if filepath else ''
-
-app.jinja_env.filters['basename'] = basename_filter
        
 @routes_bp.route('/listar_solicitacoes', methods=['GET'])
 def listar_solicitacoes():
@@ -1487,66 +1608,30 @@ def listar_solicitacoes():
         return redirect(url_for('routes_bp.login'))
     
     try:
-        # Consulta modificada: inclui solicitações sem preenchimento E com preenchimentos em status 'Rascunho'
-        solicitacoes = db.session.query(SolicitacoesCompra).outerjoin(
-            SolicitacoesPreenchidas,
-            SolicitacoesCompra.id == SolicitacoesPreenchidas.solicitacao_id
-        ).filter(
-            or_(
-                SolicitacoesPreenchidas.id.is_(None),  # Sem nenhum preenchimento
-                SolicitacoesPreenchidas.status == 'Rascunho'  # Ou com preenchimento em rascunho
-            )
-        ).all()
+        # Obter parâmetro de filtro (opcional)
+        filtro_status = request.args.get('filtro_status', 'todas')  # 'todas', 'abertas', 'preenchidas'
         
-        # Função para ler usuários e empresas do arquivo senhas.txt
-        def get_usuarios_empresas():
-            usuarios = set()
-            empresas = set()
-            try:
-                with open('senhas.txt', 'r', encoding='utf-8') as f:
-                    for line in f:
-                        partes = line.strip().split('%')
-                        if len(partes) >= 4:
-                            usuario = partes[0]
-                            empresa = partes[3]
-                            usuarios.add(usuario)
-                            empresas.add(empresa)
-            except Exception as e:
-                logging.error(f"Erro ao ler senhas.txt: {str(e)}")
-            return sorted(usuarios), sorted(empresas)
-        
-        # Obter listas únicas de empresas e usuários do arquivo
-        usuarios, empresas = get_usuarios_empresas()
-        
-        if not solicitacoes:
-            flash('Nenhuma solicitação aberta encontrada.', 'info')
-        
-        return render_template('listar_solicitacoes.html', 
-                            solicitacoes=solicitacoes,
-                            empresas=empresas,
-                            usuarios=usuarios)
-    except Exception as e:
-        logging.error(f"Error in listar_solicitacoes: {str(e)}")
-        flash(f'Erro ao carregar solicitações: {str(e)}', 'error')
-        return redirect(url_for('routes_bp.buscar_material'))
-
-
-@routes_bp.route('/aprovar_solicitacao', methods=['GET'])
-def aprovar_solicitacao():
-    if 'usuario' not in session:
-        return redirect(url_for('routes_bp.login'))
-    
-    try:
-        # Consulta modificada: mesma lógica do listar_solicitacoes
-        solicitacoes = db.session.query(SolicitacoesCompra).outerjoin(
-            SolicitacoesPreenchidas,
-            SolicitacoesCompra.id == SolicitacoesPreenchidas.solicitacao_id
-        ).filter(
-            or_(
-                SolicitacoesPreenchidas.id.is_(None),
-                SolicitacoesPreenchidas.status == 'Rascunho'
-            )
-        ).all()
+        if filtro_status == 'abertas':
+            # Apenas solicitações sem preenchimento ou com rascunhos
+            solicitacoes = db.session.query(SolicitacoesCompra).outerjoin(
+                SolicitacoesPreenchidas,
+                SolicitacoesCompra.id == SolicitacoesPreenchidas.solicitacao_id
+            ).filter(
+                or_(
+                    SolicitacoesPreenchidas.id.is_(None),
+                    SolicitacoesPreenchidas.status == 'Rascunho'
+                )
+            ).all()
+        elif filtro_status == 'preenchidas':
+            # Apenas solicitações com preenchimento (excluindo rascunhos)
+            solicitacoes = db.session.query(SolicitacoesCompra).join(
+                SolicitacoesPreenchidas
+            ).filter(
+                SolicitacoesPreenchidas.status != 'Rascunho'
+            ).all()
+        else:
+            # TODAS as solicitações
+            solicitacoes = db.session.query(SolicitacoesCompra).all()
         
         # Restante do código permanece igual...
         def get_usuarios_empresas():
@@ -1568,15 +1653,390 @@ def aprovar_solicitacao():
         usuarios, empresas = get_usuarios_empresas()
         
         if not solicitacoes:
-            flash('Nenhuma solicitação aberta encontrada.', 'info')
+            flash('Nenhuma solicitação encontrada.', 'info')
+        
+        return render_template('listar_solicitacoes.html', 
+                            solicitacoes=solicitacoes,
+                            empresas=empresas,
+                            usuarios=usuarios,
+                            filtro_status=filtro_status)
+    except Exception as e:
+        logging.error(f"Error in listar_solicitacoes: {str(e)}")
+        flash(f'Erro ao carregar solicitações: {str(e)}', 'error')
+        return redirect(url_for('routes_bp.buscar_material'))
+
+@routes_bp.route('/aprovar_solicitacao', methods=['GET'])
+def aprovar_solicitacao():
+    if 'usuario' not in session:
+        return redirect(url_for('routes_bp.login'))
+    
+    try:
+        # Obter parâmetro de filtro
+        filtro_status = request.args.get('filtro_status', 'pendentes')
+        aplicacao_filtro = request.args.get('aplicacao', '')  # NOVO: Filtro por aplicação
+        
+        print(f"🚀 DEBUG - aprovar_solicitacao com filtro: {filtro_status}")
+        
+        if filtro_status == 'pendentes':
+            # Buscar solicitações pendentes
+            solicitacoes_none = SolicitacoesCompra.query.filter(
+                SolicitacoesCompra.status_aprovacao.is_(None)
+            ).all()
+            
+            solicitacoes_empty = SolicitacoesCompra.query.filter(
+                SolicitacoesCompra.status_aprovacao == ''
+            ).all()
+            
+            solicitacoes_pendente = SolicitacoesCompra.query.filter(
+                SolicitacoesCompra.status_aprovacao == 'Pendente'
+            ).all()
+            
+            # Combinar todos os resultados
+            solicitacoes = solicitacoes_none + solicitacoes_empty + solicitacoes_pendente
+            
+            # Remover duplicatas
+            seen_ids = set()
+            solicitacoes_unique = []
+            for sol in solicitacoes:
+                if sol.id not in seen_ids:
+                    seen_ids.add(sol.id)
+                    solicitacoes_unique.append(sol)
+            
+            solicitacoes = solicitacoes_unique
+            
+        elif filtro_status == 'abertas':
+            # Solicitações sem preenchimento FINALIZADO
+            subquery = db.session.query(SolicitacoesPreenchidas.solicitacao_id).filter(
+                SolicitacoesPreenchidas.status.in_(['Aprovado', 'Reprovado', 'Entregue', 'Em Processamento'])
+            ).distinct()
+            
+            solicitacoes = SolicitacoesCompra.query.filter(
+                ~SolicitacoesCompra.id.in_(subquery)
+            ).all()
+            
+        elif filtro_status == 'aprovadas':
+            solicitacoes = SolicitacoesCompra.query.filter(
+                SolicitacoesCompra.status_aprovacao == 'Aprovado'
+            ).all()
+            
+        elif filtro_status == 'reprovadas':
+            solicitacoes = SolicitacoesCompra.query.filter(
+                SolicitacoesCompra.status_aprovacao == 'Reprovado'
+            ).all()
+            
+        elif filtro_status == 'preenchidas':
+            subquery = db.session.query(SolicitacoesPreenchidas.solicitacao_id).filter(
+                SolicitacoesPreenchidas.status.in_(['Aprovado', 'Reprovado', 'Entregue', 'Em Processamento'])
+            ).distinct()
+            
+            solicitacoes = SolicitacoesCompra.query.filter(
+                SolicitacoesCompra.id.in_(subquery)
+            ).all()
+            
+        else:
+            solicitacoes = SolicitacoesCompra.query.all()
+
+        # CORREÇÃO COMPLETA: Obter aplicações únicas de forma mais abrangente
+        aplicacoes_unicas = set()
+        
+        # 1. Buscar aplicações dos materiais
+        materiais_com_aplicacao = Materiais.query.filter(
+            Materiais.Aplicacao.isnot(None),
+            Materiais.Aplicacao != ''
+        ).all()
+        for material in materiais_com_aplicacao:
+            if material.Aplicacao and material.Aplicacao.strip():
+                aplicacoes_unicas.add(material.Aplicacao.strip())
+        
+        # 2. Buscar aplicações das solicitações (tanto aplicacao quanto aplicacao_geral)
+        solicitacoes_com_aplicacao = SolicitacoesCompra.query.filter(
+            or_(
+                SolicitacoesCompra.aplicacao.isnot(None),
+                SolicitacoesCompra.aplicacao_geral.isnot(None)
+            )
+        ).all()
+        
+        for solicitacao in solicitacoes_com_aplicacao:
+            if solicitacao.aplicacao and solicitacao.aplicacao.strip():
+                aplicacoes_unicas.add(solicitacao.aplicacao.strip())
+            if solicitacao.aplicacao_geral and solicitacao.aplicacao_geral.strip():
+                aplicacoes_unicas.add(solicitacao.aplicacao_geral.strip())
+        
+        # 3. Buscar também das solicitações atuais para garantir completude
+        for solicitacao in solicitacoes:
+            if solicitacao.aplicacao and solicitacao.aplicacao.strip():
+                aplicacoes_unicas.add(solicitacao.aplicacao.strip())
+            if solicitacao.aplicacao_geral and solicitacao.aplicacao_geral.strip():
+                aplicacoes_unicas.add(solicitacao.aplicacao_geral.strip())
+            # Se não tem aplicação específica, usar a do material
+            elif solicitacao.material and solicitacao.material.Aplicacao and solicitacao.material.Aplicacao.strip():
+                aplicacoes_unicas.add(solicitacao.material.Aplicacao.strip())
+        
+        aplicacoes_unicas = sorted(aplicacoes_unicas)
+        
+        print(f"🔍 DEBUG - Total de aplicações únicas encontradas: {len(aplicacoes_unicas)}")
+        for i, aplicacao in enumerate(aplicacoes_unicas[:10]):  # Mostrar apenas as primeiras 10 para debug
+            print(f"  {i+1}. {aplicacao}")
+
+        # NOVO: Aplicar filtro por aplicação se especificado
+        if aplicacao_filtro:
+            solicitacoes_filtradas = []
+            for solicitacao in solicitacoes:
+                # Verificar aplicação em várias fontes
+                aplicacao_encontrada = False
+                
+                # 1. Verificar aplicação específica da solicitação
+                if solicitacao.aplicacao and aplicacao_filtro.lower() in solicitacao.aplicacao.lower():
+                    aplicacao_encontrada = True
+                
+                # 2. Verificar aplicação geral da solicitação
+                elif solicitacao.aplicacao_geral and aplicacao_filtro.lower() in solicitacao.aplicacao_geral.lower():
+                    aplicacao_encontrada = True
+                
+                # 3. Verificar aplicação do material
+                elif solicitacao.material and solicitacao.material.Aplicacao and aplicacao_filtro.lower() in solicitacao.material.Aplicacao.lower():
+                    aplicacao_encontrada = True
+                
+                if aplicacao_encontrada:
+                    solicitacoes_filtradas.append(solicitacao)
+            
+            solicitacoes = solicitacoes_filtradas
+            print(f"✅ Aplicado filtro por aplicação: '{aplicacao_filtro}' - {len(solicitacoes)} solicitações encontradas")
+
+        def get_usuarios_empresas():
+            usuarios = set()
+            empresas = set()
+            try:
+                with open('senhas.txt', 'r', encoding='utf-8') as f:
+                    for line in f:
+                        partes = line.strip().split('%')
+                        if len(partes) >= 4:
+                            usuario = partes[0]
+                            empresa = partes[3]
+                            usuarios.add(usuario)
+                            empresas.add(empresa)
+            except Exception as e:
+                logging.error(f"Erro ao ler senhas.txt: {str(e)}")
+            return sorted(usuarios), sorted(empresas)
+        
+        usuarios, empresas = get_usuarios_empresas()
+        
+        if not solicitacoes:
+            flash('Nenhuma solicitação encontrada com os filtros aplicados.', 'info')
+            print("⚠️ DEBUG - Nenhuma solicitação para exibir")
+        
         return render_template('aprovar_solicitacao.html', 
                             solicitacoes=solicitacoes,
                             empresas=empresas,
-                            usuarios=usuarios)
+                            usuarios=usuarios,
+                            aplicacoes_unicas=aplicacoes_unicas,  # CORRIGIDO
+                            filtro_status=filtro_status,
+                            aplicacao_filtro=aplicacao_filtro)
+        
     except Exception as e:
         logging.error(f"Error in aprovar_solicitacao: {str(e)}")
+        print(f"❌ DEBUG - Erro: {str(e)}")
         flash(f'Erro ao carregar solicitações: {str(e)}', 'error')
         return redirect(url_for('routes_bp.buscar_material'))
+    
+@routes_bp.route('/debug_ultimas_solicitacoes')
+def debug_ultimas_solicitacoes():
+    """Debug das últimas solicitações criadas"""
+    if 'usuario' not in session:
+        return jsonify({'error': 'Não autorizado'}), 401
+    
+    try:
+        # Buscar as últimas 5 solicitações
+        solicitacoes = SolicitacoesCompra.query.order_by(SolicitacoesCompra.id.desc()).limit(5).all()
+        
+        resultado = []
+        for sol in solicitacoes:
+            resultado.append({
+                'id': sol.id,
+                'cod_material': sol.cod_material,
+                'descricao_material': sol.material.DescricaoMaterial if sol.material else 'N/A',
+                'especificacao': sol.especificacao,
+                'quantidade': sol.quantidade,
+                'empresa': sol.empresa,
+                'usuario': sol.usuario,
+                'data_solicitacao': sol.data_solicitacao.isoformat() if sol.data_solicitacao else None,
+                'status_aprovacao': str(sol.status_aprovacao),
+                'ativo': sol.ativo,
+                'nome_ativo': sol.nome_ativo,
+                'prioridade': sol.prioridade
+            })
+        
+        return jsonify({
+            'total_solicitacoes': len(solicitacoes),
+            'solicitacoes': resultado
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
+@routes_bp.route('/debug_solicitacoes_status')
+def debug_solicitacoes_status():
+    """Debug completo do status das solicitações"""
+    if 'usuario' not in session:
+        return jsonify({'error': 'Não autorizado'}), 401
+    
+    try:
+        # Buscar as últimas 20 solicitações
+        solicitacoes = SolicitacoesCompra.query.order_by(SolicitacoesCompra.id.desc()).limit(20).all()
+        
+        resultado = []
+        for sol in solicitacoes:
+            resultado.append({
+                'id': sol.id,
+                'cod_material': sol.cod_material,
+                'especificacao': sol.especificacao[:50] + '...' if sol.especificacao else '',
+                'status_aprovacao': str(sol.status_aprovacao),  # Converter para string para ver NULL
+                'status_aprovacao_raw': sol.status_aprovacao,
+                'data_solicitacao': sol.data_solicitacao.isoformat() if sol.data_solicitacao else None,
+                'usuario': sol.usuario,
+                'is_null': sol.status_aprovacao is None,
+                'is_empty': sol.status_aprovacao == '',
+                'is_pendente': sol.status_aprovacao == 'Pendente'
+            })
+        
+        # Contar por status
+        counts = {
+            'total': len(solicitacoes),
+            'null': len([s for s in resultado if s['is_null']]),
+            'empty': len([s for s in resultado if s['is_empty']]),
+            'pendente': len([s for s in resultado if s['is_pendente']]),
+            'aprovado': len([s for s in resultado if s['status_aprovacao'] == 'Aprovado']),
+            'reprovado': len([s for s in resultado if s['status_aprovacao'] == 'Reprovado']),
+        }
+        
+        return jsonify({
+            'counts': counts,
+            'solicitacoes': resultado
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@routes_bp.route('/debug_ultima_solicitacao')
+def debug_ultima_solicitacao():
+    """Debug da última solicitação criada"""
+    if 'usuario' not in session:
+        return jsonify({'error': 'Não autorizado'}), 401
+    
+    try:
+        ultima_solicitacao = SolicitacoesCompra.query.order_by(SolicitacoesCompra.id.desc()).first()
+        
+        if not ultima_solicitacao:
+            return jsonify({'message': 'Nenhuma solicitação encontrada'})
+        
+        resultado = {
+            'id': ultima_solicitacao.id,
+            'cod_material': ultima_solicitacao.cod_material,
+            'especificacao': ultima_solicitacao.especificacao,
+            'status_aprovacao': str(ultima_solicitacao.status_aprovacao),
+            'status_aprovacao_is_none': ultima_solicitacao.status_aprovacao is None,
+            'data_solicitacao': ultima_solicitacao.data_solicitacao.isoformat() if ultima_solicitacao.data_solicitacao else None,
+            'usuario': ultima_solicitacao.usuario,
+            'empresa': ultima_solicitacao.empresa
+        }
+        
+        return jsonify(resultado)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
+@routes_bp.route('/debug_solicitacoes_recentes')
+def debug_solicitacoes_recentes():
+    """Rota para debug - mostra as últimas 10 solicitações criadas"""
+    if 'usuario' not in session:
+        return redirect(url_for('routes_bp.login'))
+    
+    try:
+        solicitacoes = SolicitacoesCompra.query.order_by(SolicitacoesCompra.id.desc()).limit(10).all()
+        
+        resultado = []
+        for sol in solicitacoes:
+            resultado.append({
+                'id': sol.id,
+                'cod_material': sol.cod_material,
+                'especificacao': sol.especificacao,
+                'status_aprovacao': sol.status_aprovacao,
+                'data_solicitacao': sol.data_solicitacao.isoformat() if sol.data_solicitacao else None,
+                'usuario': sol.usuario
+            })
+        
+        return jsonify({
+            'total': len(solicitacoes),
+            'solicitacoes': resultado
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
+@routes_bp.route('/debug_solicitacoes_detalhado')
+def debug_solicitacoes_detalhado():
+    """Debug detalhado de TODAS as solicitações"""
+    if 'usuario' not in session:
+        return jsonify({'error': 'Não autorizado'}), 401
+    
+    try:
+        solicitacoes = SolicitacoesCompra.query.order_by(SolicitacoesCompra.id.desc()).limit(10).all()
+        
+        resultado = []
+        for sol in solicitacoes:
+            # Verificar valores exatos
+            status_raw = sol.status_aprovacao
+            resultado.append({
+                'id': sol.id,
+                'cod_material': sol.cod_material,
+                'especificacao': sol.especificacao[:50] + '...' if sol.especificacao else '',
+                'status_aprovacao_raw': status_raw,
+                'status_aprovacao_repr': repr(status_raw),
+                'status_aprovacao_type': type(status_raw).__name__,
+                'is_none': status_raw is None,
+                'is_empty_string': status_raw == '',
+                'is_pendente': status_raw == 'Pendente',
+                'data_solicitacao': sol.data_solicitacao.isoformat() if sol.data_solicitacao else None,
+                'usuario': sol.usuario
+            })
+        
+        return jsonify({
+            'total': len(solicitacoes),
+            'solicitacoes': resultado
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@routes_bp.route('/debug_verificar_coluna_status')
+def debug_verificar_coluna_status():
+    """Verificar se a coluna existe e seus valores"""
+    try:
+        # Verificar estrutura da tabela
+        result = db.engine.execute("PRAGMA table_info(SolicitacoesCompra)").fetchall()
+        colunas = [col[1] for col in result]
+        
+        # Verificar valores diretamente via SQL
+        sql_result = db.engine.execute("""
+            SELECT id, status_aprovacao, 
+                   typeof(status_aprovacao) as tipo,
+                   length(status_aprovacao) as tamanho
+            FROM SolicitacoesCompra 
+            ORDER BY id DESC 
+            LIMIT 10
+        """).fetchall()
+        
+        sql_data = []
+        for row in sql_result:
+            sql_data.append({
+                'id': row[0],
+                'status_aprovacao': row[1],
+                'tipo': row[2],
+                'tamanho': row[3] if row[3] is not None else 'NULL'
+            })
+        
+        return jsonify({
+            'colunas_tabela': colunas,
+            'existe_status_aprovacao': 'status_aprovacao' in colunas,
+            'dados_sql': sql_data
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
     
 def migrate_solicitacoes_compra():
     try:
@@ -2019,7 +2479,7 @@ def atualizar_status_preenchimento(id):
                 db.session.commit()
                 print(f"DEBUG >> Status revertido para: Aguardando Aprovacao")
                 
-                return jsonify({
+                return jsonify({ 
                     'success': True, 
                     'message': 'Status revertido com sucesso!'
                 })
@@ -4840,6 +5300,7 @@ def migrate_solicitacoes_preenchidas_status():
         logging.error(f"Erro na migração de status: {str(e)}")
         print(f"✗ Erro na migração: {str(e)}")
         return False
+    
 
 @routes_bp.route('/teste_data_hora')
 def teste_data_hora():
@@ -4865,6 +5326,31 @@ def format_brasil_time(dt):
     
     return dt.strftime('%d/%m/%Y %H:%M')
 
+def add_aplicacao_geral_column():
+    """Adiciona a coluna aplicacao_geral na tabela SolicitacoesCompra"""
+    try:
+        conn = sqlite3.connect(DATABASE)
+        cursor = conn.cursor()
+        
+        # Verificar se a coluna já existe
+        cursor.execute("PRAGMA table_info(SolicitacoesCompra)")
+        columns = [col[1] for col in cursor.fetchall()]
+        
+        if 'aplicacao_geral' not in columns:
+            cursor.execute("ALTER TABLE SolicitacoesCompra ADD COLUMN aplicacao_geral TEXT")
+            conn.commit()
+            logging.info("Coluna aplicacao_geral adicionada à tabela SolicitacoesCompra")
+            print("✓ Coluna aplicacao_geral adicionada com sucesso!")
+        else:
+            print("✓ Coluna aplicacao_geral já existe na tabela")
+        
+        conn.close()
+        return True
+    except sqlite3.Error as e:
+        logging.error(f"Erro ao adicionar coluna aplicacao_geral: {str(e)}")
+        print(f"✗ Erro ao adicionar coluna aplicacao_geral: {str(e)}")
+        return False
+
 # Registre o filtro (ADICIONE ESTA LINHA)
 app.jinja_env.filters['format_brasil_time'] = format_brasil_time
 
@@ -4875,7 +5361,6 @@ app.register_blueprint(routes_bp)
 # Inicialização do banco de dados e execução do app
 # CORRIJA ESTA PARTE NO FINAL DO ARQUIVO:
 
-# Inicialização do banco de dados e execução do app
 # Inicialização do banco de dados e execução do app
 if __name__ == '__main__':
     create_database()
@@ -4897,6 +5382,7 @@ if __name__ == '__main__':
         migrate_solicitacoes_preenchidas_status()
         verificar_coluna_observacoes()
         add_comprovante_pagamento_column()
+        add_aplicacao_geral_column()  # NOVA MIGRAÇÃO AQUI
         
         print("✓ Todas as migrações concluídas!")
     
@@ -4908,5 +5394,4 @@ if __name__ == '__main__':
         encoding='utf-8'
     )
     
-    # USE ESTA LINHA CORRIGIDA:
     app.run(debug=True, host='0.0.0.0', port=80, threaded=False, use_reloader=False)
