@@ -522,9 +522,6 @@
             // Configurar data final para hoje
             document.getElementById('dataFim').valueAsDate = new Date();
 
-            // Atualizar opções do filtro de Aplicação
-            updateAplicacaoFilter();
-
             // Aplicar filtros ao carregar a página
             applyFilters();
 
@@ -533,18 +530,22 @@
             document.getElementById('clearFilters').addEventListener('click', clearFilters);
         });
 
-        function updateAplicacaoFilter() {
+        function updateAplicacaoFilter(selectedValue) {
             const aplicacaoSelect = document.getElementById('aplicacaoFilter');
             const rows = document.querySelectorAll('#solicitacoesTable tbody tr');
             const aplicacoes = new Set();
 
-            // Coletar todas as aplicações únicas da tabela
+            // Coletar todas as aplicações únicas da tabela para linhas visíveis e com status Pendente
             rows.forEach(row => {
                 const aplicacao = row.cells[3].textContent.trim();
-                if (aplicacao !== '-') {
+                const status = row.cells[10].textContent.trim();
+                if (aplicacao !== '-' && row.style.display !== 'none' && status === 'Pendente') {
                     aplicacoes.add(aplicacao);
                 }
             });
+
+            // Preservar o valor selecionado
+            const currentValue = selectedValue || aplicacaoSelect.value;
 
             // Limpar opções existentes, exceto "Todas aplicações"
             aplicacaoSelect.innerHTML = '<option value="">Todas aplicações</option>';
@@ -554,10 +555,17 @@
                 const option = document.createElement('option');
                 option.value = aplicacao;
                 option.textContent = aplicacao;
+                if (aplicacao === currentValue) {
+                    option.selected = true;
+                }
                 aplicacaoSelect.appendChild(option);
             });
 
             // Se não houver aplicações, exibir mensagem
+            const existingSmall = aplicacaoSelect.parentNode.querySelector('small.text-muted');
+            if (existingSmall) {
+                existingSmall.remove();
+            }
             if (aplicacoes.size === 0) {
                 const small = document.createElement('small');
                 small.className = 'text-muted';
@@ -589,14 +597,16 @@
                 const aplicacao = row.cells[3].textContent.trim();
                 const ativo = row.cells[8].textContent.trim();
                 const dataSolicitacao = row.cells[6].getAttribute('data-order');
+                const status = row.cells[10].textContent.trim();
 
                 const empresaMatch = !empresaFilter || empresa === empresaFilter;
                 const usuarioMatch = !usuarioFilter || usuario === usuarioFilter;
                 const aplicacaoMatch = !aplicacaoFilter || aplicacao === aplicacaoFilter || (aplicacao === '-' && aplicacaoFilter === '');
                 const ativoMatch = !ativoFilter || ativo === ativoFilter;
                 const dataMatch = (!dataInicio || dataSolicitacao >= dataInicio) && (!dataFim || dataSolicitacao <= dataFim);
+                const statusMatch = status === 'Pendente';
 
-                if (empresaMatch && usuarioMatch && aplicacaoMatch && ativoMatch && dataMatch) {
+                if (empresaMatch && usuarioMatch && aplicacaoMatch && ativoMatch && dataMatch && statusMatch) {
                     row.style.display = '';
                     visibleCount++;
                 } else {
@@ -604,8 +614,8 @@
                 }
             });
 
-            // Atualizar opções do filtro de Aplicação com base nas linhas visíveis
-            updateAplicacaoFilter();
+            // Atualizar opções do filtro de Aplicação, preservando o valor selecionado
+            updateAplicacaoFilter(aplicacaoFilter);
 
             // Mostrar mensagem se nenhum resultado for encontrado
             if (visibleCount === 0 && rows.length > 0) {
@@ -641,6 +651,9 @@
                 return;
             }
 
+            // Preservar o valor atual do filtro de Aplicação
+            const aplicacaoFilter = document.getElementById('aplicacaoFilter').value;
+
             fetch(`/api/solicitacoes/${solicitacaoId}/status`, {
                 method: 'POST',
                 headers: {
@@ -653,15 +666,53 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        alert(data.message);
-                        location.reload();
+                        // Atualizar a linha correspondente na tabela
+                        const row = document.querySelector(`#solicitacoesTable tbody tr[data-id="${solicitacaoId}"]`);
+                        if (row) {
+                            // Atualizar célula de Status
+                            const statusCell = row.cells[10];
+                            statusCell.innerHTML = `<span class="status-badge status-${status.toLowerCase()}">${status}</span>`;
+
+                            // Atualizar célula de Ações
+                            const actionsCell = row.cells[11];
+                            actionsCell.innerHTML = '<span class="text-muted">Ação concluída</span>';
+
+                            // Reaplicar filtros, preservando o valor do filtro de Aplicação
+                            applyFilters();
+
+                            // Exibir mensagem de sucesso
+                            const alertContainer = document.querySelector('.container');
+                            const alert = document.createElement('div');
+                            alert.className = 'alert alert-success';
+                            alert.innerHTML = `<i class="fas fa-check-circle"></i> ${data.message}`;
+                            alertContainer.insertBefore(alert, alertContainer.firstChild);
+
+                            // Remover alerta após 3 segundos
+                            setTimeout(() => alert.remove(), 3000);
+                        }
                     } else {
-                        alert('Erro: ' + data.error);
+                        // Exibir mensagem de erro
+                        const alertContainer = document.querySelector('.container');
+                        const alert = document.createElement('div');
+                        alert.className = 'alert alert-error';
+                        alert.innerHTML = `<i class="fas fa-exclamation-circle"></i> Erro: ${data.error}`;
+                        alertContainer.insertBefore(alert, alertContainer.firstChild);
+
+                        // Remover alerta após 3 segundos
+                        setTimeout(() => alert.remove(), 3000);
                     }
                 })
                 .catch(error => {
                     console.error('Erro:', error);
-                    alert('Erro ao atualizar status');
+                    // Exibir mensagem de erro
+                    const alertContainer = document.querySelector('.container');
+                    const alert = document.createElement('div');
+                    alert.className = 'alert alert-error';
+                    alert.innerHTML = '<i class="fas fa-exclamation-circle"></i> Erro ao atualizar status';
+                    alertContainer.insertBefore(alert, alertContainer.firstChild);
+
+                    // Remover alerta após 3 segundos
+                    setTimeout(() => alert.remove(), 3000);
                 });
         }
     </script>
