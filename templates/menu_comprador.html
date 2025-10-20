@@ -540,14 +540,12 @@
                             class="fas fa-tasks"></i><span>Kanban</span></a></li>
                 <li><a href="{{ url_for('routes_bp.auditoria_solicitacoes') }}" target="content-frame" data-tooltip="Auditoria de Compra"><i
                             class="fas fa-search"></i><span>Status de Solicitação</span></a></li>
-                <li><a href="{{ url_for('routes_bp.listar_solicitacoes') }}" target="content-frame" data-tooltip="Preencher Cotação"><i
-                            class="fas fa-file-alt"></i><span>Preencher Cotação</span></a></li>
-                <li><a href="{{ url_for('routes_bp.listar_solicitacoes_preenchidas') }}" target="content-frame" data-tooltip="Solicit. Preenchidas"><i
-                            class="fas fa-file-alt"></i><span>Solicit. Preenchidas</span></a></li>
-                <li><a href="{{ url_for('routes_bp.listar_pedidos_compra') }}" target="content-frame" data-tooltip="Pedidos Compras"><i
-                            class="fas fa-file-invoice-dollar"></i><span>Pedidos Compras</span></a></li>
-                <li><a href="{{ url_for('routes_bp.lista_fornecedores') }}" target="content-frame" data-tooltip="Listar Fornecedores"><i
-                            class="fas fa-clipboard-list"></i><span>Listar Fornecedores</span></a></li>
+
+                <li><a href="{{ url_for('routes_bp.listar_solicitacoes_comprador') }}" target="content-frame" data-tooltip="Listar Solicitações Aprovadas"><i 
+                    class="fas fa-clipboard-list"></i><span>Solicitações Aprovadas</span></a></li>
+
+               
+               
             </ul>
             
             <div class="logout-container">
