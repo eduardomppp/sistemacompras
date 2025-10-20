@@ -159,6 +159,7 @@ class SolicitacoesCompra(db.Model):
     status_aprovacao = db.Column(db.String(20), nullable=True, default=None)
     observacoes_col = db.Column(db.Text, nullable=True)
     material = db.relationship('Materiais', backref='solicitacoes')
+    comprador_atribuido = db.Column(db.Text, nullable=True)  # Novo campo
 
     def to_dict(self):
         return {
@@ -177,7 +178,8 @@ class SolicitacoesCompra(db.Model):
             'ativo': self.ativo,
             'nome_ativo': self.nome_ativo,
             'prioridade': self.prioridade,
-            'status_aprovacao': self.status_aprovacao
+            'status_aprovacao': self.status_aprovacao,
+            'comprador_atribuido': self.comprador_atribuido
         }
     
 # Modelo para Solicitações Preenchidas
@@ -1570,7 +1572,7 @@ def abrir_solicitacao():
                 especificacao=especificacoes[i],
                 quantidade=int(quantidades[i]),
                 unidade_medida=unidades_medida[i],
-                aplicacao=aplicacao,  # Aplicação específica ou geral
+                aplicacao = aplicacao.strip().lower(),  # Normaliza para evitar duplicidade
                 aplicacao_geral=aplicacao_geral,  # Salva a aplicação geral separadamente
                 empresa=empresas[i],
                 usuario=session['usuario'],
@@ -1579,7 +1581,8 @@ def abrir_solicitacao():
                 ativo=ativos[i],
                 nome_ativo=nomes_ativos[i] if i < len(nomes_ativos) and ativos[i] == 'Sim' and nomes_ativos[i] else None,
                 prioridade=prioridades[i],
-                status_aprovacao=None  # Garantir que seja NULL
+                status_aprovacao=None,  # Garantir que seja NULL
+                comprador_atribuido=get_next_comprador(aplicacao)  # 🔹 atribuição automática
             )
             db.session.add(solicitacao)
             solicitacoes_criadas += 1
@@ -1601,69 +1604,99 @@ def abrir_solicitacao():
         print(f"💥 ERRO CRÍTICO: {str(e)}")
         flash(f'Erro ao abrir solicitações: {str(e)}', 'error')
         return redirect(url_for('routes_bp.buscar_material'))
-       
+
+def get_compradores():
+    """Retorna lista de nomes de compradores a partir do arquivo senhas.txt"""
+    senhas = ler_senhas()
+    compradores = [
+        usuario
+        for usuario, dados in senhas.items()
+        if 'comprador' in dados['pagina']
+    ]
+    return sorted(compradores)
+
+
 @routes_bp.route('/listar_solicitacoes', methods=['GET'])
 def listar_solicitacoes():
     if 'usuario' not in session:
         return redirect(url_for('routes_bp.login'))
-    
+
     try:
-        # Obter parâmetro de filtro (opcional)
-        filtro_status = request.args.get('filtro_status', 'todas')  # 'todas', 'abertas', 'preenchidas'
+        solicitacoes = SolicitacoesCompra.query.all()
+        empresas = sorted({s.empresa for s in solicitacoes if s.empresa})
+        usuarios = sorted({s.usuario for s in solicitacoes if s.usuario})
+        aplicacoes = sorted({s.aplicacao or (s.material.Aplicacao if s.material else '') for s in solicitacoes if (s.aplicacao or (s.material and s.material.Aplicacao))})
         
-        if filtro_status == 'abertas':
-            # Apenas solicitações sem preenchimento ou com rascunhos
-            solicitacoes = db.session.query(SolicitacoesCompra).outerjoin(
-                SolicitacoesPreenchidas,
-                SolicitacoesCompra.id == SolicitacoesPreenchidas.solicitacao_id
-            ).filter(
-                or_(
-                    SolicitacoesPreenchidas.id.is_(None),
-                    SolicitacoesPreenchidas.status == 'Rascunho'
-                )
-            ).all()
-        elif filtro_status == 'preenchidas':
-            # Apenas solicitações com preenchimento (excluindo rascunhos)
-            solicitacoes = db.session.query(SolicitacoesCompra).join(
-                SolicitacoesPreenchidas
-            ).filter(
-                SolicitacoesPreenchidas.status != 'Rascunho'
-            ).all()
-        else:
-            # TODAS as solicitações
-            solicitacoes = db.session.query(SolicitacoesCompra).all()
-        
-        # Restante do código permanece igual...
-        def get_usuarios_empresas():
-            usuarios = set()
-            empresas = set()
-            try:
-                with open('senhas.txt', 'r', encoding='utf-8') as f:
-                    for line in f:
-                        partes = line.strip().split('%')
-                        if len(partes) >= 4:
-                            usuario = partes[0]
-                            empresa = partes[3]
-                            usuarios.add(usuario)
-                            empresas.add(empresa)
-            except Exception as e:
-                logging.error(f"Erro ao ler senhas.txt: {str(e)}")
-            return sorted(usuarios), sorted(empresas)
-        
-        usuarios, empresas = get_usuarios_empresas()
-        
-        if not solicitacoes:
-            flash('Nenhuma solicitação encontrada.', 'info')
-        
-        return render_template('listar_solicitacoes.html', 
-                            solicitacoes=solicitacoes,
-                            empresas=empresas,
-                            usuarios=usuarios,
-                            filtro_status=filtro_status)
+        compradores = get_compradores()
+
+        return render_template(
+            'listar_solicitacoes.html',
+            solicitacoes=solicitacoes,
+            empresas=empresas,
+            usuarios=usuarios,
+            aplicacoes=aplicacoes,
+            compradores=compradores
+        )
     except Exception as e:
-        logging.error(f"Error in listar_solicitacoes: {str(e)}")
         flash(f'Erro ao carregar solicitações: {str(e)}', 'error')
-        return redirect(url_for('routes_bp.buscar_material'))
+        return render_template('listar_solicitacoes.html', solicitacoes=[], compradores=[])
+    
+#Tela Comprado
+@routes_bp.route('/listar_solicitacoes_comprador', methods=['GET'])
+def listar_solicitacoes_comprador():
+    """Rota do menu comprador para exibir solicitações APROVADAS para preenchimento."""
+    
+    if 'usuario' not in session:
+        flash('Acesso não autorizado', 'error')
+        return redirect(url_for('routes_bp.login'))
+
+    try:
+        # Buscar solicitações APROVADAS (status_aprovacao = 'Aprovado')
+        solicitacoes = SolicitacoesCompra.query.filter(
+            SolicitacoesCompra.status_aprovacao == 'Aprovado'
+        ).all()
+
+        # Coletar dados para filtros
+        empresas = db.session.query(SolicitacoesCompra.empresa)\
+                             .distinct().order_by(SolicitacoesCompra.empresa).all()
+        empresas = [e[0] for e in empresas if e[0]]
+
+        usuarios = db.session.query(SolicitacoesCompra.usuario)\
+                             .distinct().order_by(SolicitacoesCompra.usuario).all()
+        usuarios = [u[0] for u in usuarios if u[0]]
+
+        aplicacoes = db.session.query(SolicitacoesCompra.aplicacao)\
+                               .distinct().order_by(SolicitacoesCompra.aplicacao).all()
+        aplicacoes = [a[0] for a in aplicacoes if a[0]]
+
+        # Obter compradores
+        compradores = get_compradores()
+
+        print(f"DEBUG - Solicitações encontradas: {len(solicitacoes)}")
+        print(f"DEBUG - Compradores: {compradores}")
+
+        return render_template(
+            'listar_solicitacoes_comprador.html',
+            solicitacoes=solicitacoes,
+            empresas=empresas,
+            usuarios=usuarios,
+            aplicacoes=aplicacoes,
+            compradores=compradores,
+            titulo_pagina="Solicitações Aprovadas - Preencher Cotação"
+        )
+
+    except Exception as e:
+        flash(f'Erro ao carregar solicitações: {str(e)}', 'error')
+        print(f"ERRO: {str(e)}")
+        return render_template(
+            'listar_solicitacoes_comprador.html',
+            solicitacoes=[],
+            empresas=[],
+            usuarios=[],
+            aplicacoes=[],
+            compradores=[],
+            titulo_pagina="Solicitações Aprovadas - Preencher Cotação"
+        )
 
 @routes_bp.route('/aprovar_solicitacao', methods=['GET'])
 def aprovar_solicitacao():
@@ -5350,16 +5383,158 @@ def add_aplicacao_geral_column():
         logging.error(f"Erro ao adicionar coluna aplicacao_geral: {str(e)}")
         print(f"✗ Erro ao adicionar coluna aplicacao_geral: {str(e)}")
         return False
+    
+#Tela comprador
+# No app.py, substitua a função get_compradores por esta versão
+# Definir o caminho absoluto para senhas.txt
+SENHAS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'senhas.txt')
+
+# Verificar se o arquivo existe no início
+print(f"Verificando caminho de senhas.txt: {SENHAS_FILE}")
+print(f"Arquivo existe: {os.path.exists(SENHAS_FILE)}")
+    
+def get_next_comprador(aplicacao):
+    """
+    Retorna o comprador a ser atribuído com base na aplicação.
+    Se já houver um comprador atribuído a essa aplicação, reutiliza o mesmo.
+    Caso contrário, distribui de forma balanceada entre os compradores disponíveis.
+    """
+    try:
+        compradores = get_compradores()
+        if not compradores:
+            return None
+
+        # Normaliza nome da aplicação
+        aplicacao = aplicacao.strip().lower()
+
+        # Verifica se já há comprador atribuído para essa aplicação
+        solicit_existente = SolicitacoesCompra.query.filter_by(aplicacao=aplicacao).filter(
+            SolicitacoesCompra.comprador_atribuido.isnot(None)
+        ).first()
+
+        if solicit_existente and solicit_existente.comprador_atribuido:
+            # Reutiliza o comprador já existente para essa aplicação
+            return solicit_existente.comprador_atribuido
+
+        # Caso seja uma nova aplicação (sem histórico), distribui automaticamente
+        todas_solicitacoes = SolicitacoesCompra.query.filter(
+            SolicitacoesCompra.comprador_atribuido.isnot(None)
+        ).all()
+
+        # Conta quantas solicitações cada comprador já tem (para balanceamento)
+        contagem = {c: 0 for c in compradores}
+        for sol in todas_solicitacoes:
+            if sol.comprador_atribuido in contagem:
+                contagem[sol.comprador_atribuido] += 1
+
+        # Seleciona o comprador com menor carga de solicitações
+        comprador_escolhido = min(contagem, key=contagem.get)
+        return comprador_escolhido
+
+    except Exception as e:
+        logging.error(f"Erro em get_next_comprador: {str(e)}")
+        return None
+
+
+# Adicione esta migração no init_db ou em uma função separada (ex: no bloco de migrações no final do app.py)
+def add_comprador_atribuido_column():
+    try:
+        conn = sqlite3.connect(DATABASE)
+        cursor = conn.cursor()
+        cursor.execute("PRAGMA table_info(SolicitacoesCompra)")
+        columns = [col[1] for col in cursor.fetchall()]
+        if 'comprador_atribuido' not in columns:
+            cursor.execute("ALTER TABLE SolicitacoesCompra ADD COLUMN comprador_atribuido TEXT")
+            conn.commit()
+            logging.info("Coluna comprador_atribuido adicionada à tabela SolicitacoesCompra")
+            print("✓ Coluna comprador_atribuido adicionada com sucesso!")
+        else:
+            print("✓ Coluna comprador_atribuido já existe na tabela")
+        conn.close()
+        return True
+    except sqlite3.Error as e:
+        logging.error(f"Erro ao adicionar coluna comprador_atribuido: {str(e)}")
+        print(f"✗ Erro ao adicionar coluna: {str(e)}")
+        return False
+
+# No bloco if __name__ == '__main__': adicione esta chamada à migração
+add_comprador_atribuido_column()
+
+# Adicione esta rota no app.py, no bloco de rotas (após outras rotas semelhantes)
+@routes_bp.route('/api/solicitacoes/<int:solicitacao_id>/atribuir_comprador', methods=['POST'])
+def atribuir_comprador(solicitacao_id):
+    if 'usuario' not in session:
+        return jsonify({'success': False, 'error': 'Usuário não autenticado'}), 401
+    try:
+        data = request.get_json()
+        comprador = data.get('comprador')
+        if not comprador:
+            return jsonify({'success': False, 'error': 'Nenhum comprador selecionado'}), 400
+        solicitacao = SolicitacoesCompra.query.get_or_404(solicitacao_id)
+        solicitacao.comprador_atribuido = comprador
+        db.session.commit()
+        return jsonify({
+            'success': True,
+            'message': f'Solicitação atribuída a {comprador} com sucesso!'
+        })
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"Erro ao atribuir comprador: {str(e)}")
+        return jsonify({'success': False, 'error': f'Erro ao atribuir comprador: {str(e)}'}), 500
 
 # Registre o filtro (ADICIONE ESTA LINHA)
 app.jinja_env.filters['format_brasil_time'] = format_brasil_time
 
+# No app.py, substitua ou adicione a rota para listar_solicitacoes_finalizadas
+
+@routes_bp.route('/listar_solicitacoes_finalizadas', methods=['GET'])
+def listar_solicitacoes_finalizadas():
+    if 'usuario' not in session:
+        flash('Acesso não autorizado', 'error')
+        return redirect(url_for('routes_bp.login'))
+    
+    try:
+        solicitacoes = SolicitacoesCompra.query.join(Materiais).all()
+        empresas = db.session.query(SolicitacoesCompra.empresa).distinct().order_by(SolicitacoesCompra.empresa).all()
+        empresas = [e[0] for e in empresas if e[0]]
+        usuarios = db.session.query(SolicitacoesCompra.usuario).distinct().order_by(SolicitacoesCompra.usuario).all()
+        usuarios = [u[0] for u in usuarios if u[0]]
+        aplicacoes = db.session.query(SolicitacoesCompra.aplicacao).distinct().order_by(SolicitacoesCompra.aplicacao).all()
+        aplicacoes = [a[0] for a in aplicacoes if a[0]]
+        
+        compradores = get_compradores()
+        print(f"Compradores enviados ao template: {compradores}")  # Depuração
+        logging.info(f"Compradores enviados ao template: {compradores}")
+        
+        if not compradores:
+            flash('Nenhum comprador encontrado no arquivo senhas.txt. Verifique o arquivo ou a função get_compradores.', 'error')
+        
+        return render_template(
+            'listar_solicitacoes.html',
+            solicitacoes=solicitacoes,
+            empresas=empresas,
+            usuarios=usuarios,
+            aplicacoes=aplicacoes,
+            compradores=compradores  # Garante que compradores seja sempre passado
+        )
+    
+    except Exception as e:
+        flash(f'Erro ao carregar solicitações: {str(e)}', 'error')
+        logging.error(f"Erro em listar_solicitacoes_finalizadas: {str(e)}")
+        print(f"ERRO: Erro em listar_solicitacoes_finalizadas: {str(e)}")
+        return render_template(
+            'listar_solicitacoes.html',
+            solicitacoes=[],
+            empresas=[],
+            usuarios=[],
+            aplicacoes=[],
+            compradores=[]  # Passa lista vazia em caso de erro
+        )
+    
+
+    
   # Registro do Blueprint (apenas uma vez)
 app.register_blueprint(routes_bp)  
-
-
-# Inicialização do banco de dados e execução do app
-# CORRIJA ESTA PARTE NO FINAL DO ARQUIVO:
 
 # Inicialização do banco de dados e execução do app
 if __name__ == '__main__':
@@ -5383,6 +5558,7 @@ if __name__ == '__main__':
         verificar_coluna_observacoes()
         add_comprovante_pagamento_column()
         add_aplicacao_geral_column()  # NOVA MIGRAÇÃO AQUI
+        add_comprador_atribuido_column()
         
         print("✓ Todas as migrações concluídas!")
     
