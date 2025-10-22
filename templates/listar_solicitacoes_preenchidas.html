@@ -1200,152 +1200,179 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Função para lidar com a mudança de status
+        // 🔹 Lida com a mudança de status
         function handleStatusChange(select, preenchimentoId) {
-            const form = select.form;
             const selectedValue = select.value;
-
-            // Se for aprovação, confirmar e processar
             if (selectedValue === 'Aprovado') {
                 if (confirm('Ao aprovar esta cotação, todas as outras cotações para este material serão bloqueadas. Deseja continuar?')) {
-                    submitStatusForm(form, select, preenchimentoId);
+                    submitStatusForm(select.form, select, preenchimentoId);
                 } else {
                     select.value = '';
                 }
             } else {
-                // Para outros status, enviar normalmente
-                submitStatusForm(form, select, preenchimentoId);
+                submitStatusForm(select.form, select, preenchimentoId);
             }
         }
 
-        // Função para reverter status
+        // 🔹 Reverte status de aprovação/reprovação
         function reverterStatus(preenchimentoId) {
-            if (confirm('Tem certeza que deseja reverter o status para permitir novas alterações?\nIsso desbloqueará todas as cotações para este material.')) {
-                const formData = new FormData();
-                formData.append('status', 'Reaberto');
+            if (!confirm('Tem certeza que deseja reverter o status para permitir novas alterações?\nIsso desbloqueará todas as cotações para este material.')) return;
 
-                fetch("{{ url_for('routes_bp.atualizar_status_preenchimento', id=0) }}".replace('0', preenchimentoId), {
-                    method: 'POST',
-                    body: formData
-                })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            showFlashMessage('Status revertido com sucesso. Todas as cotações foram desbloqueadas.', 'success');
-                            setTimeout(() => location.reload(), 1000);
-                        } else {
-                            alert('Erro: ' + data.message);
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Erro:', error);
-                        alert('Erro ao reverter status. Tente novamente.');
-                    });
-            }
-        }
+            const formData = new FormData();
+            formData.append('status', 'Reaberto');
 
-        // Função para enviar o formulário de status
-        function submitStatusForm(form, select, preenchimentoId) {
-            const formData = new FormData(form);
-            const selectedValue = select.value;
-
-            // Desabilitar o select enquanto processa
-            select.disabled = true;
-            const originalHtml = select.innerHTML;
-            select.innerHTML = '<option value="">Processando...</option>';
-
-            fetch(form.action, {
+            fetch("{{ url_for('routes_bp.atualizar_status_preenchimento', id=0) }}".replace('0', preenchimentoId), {
                 method: 'POST',
                 body: formData
             })
-                .then(response => response.json())
+                .then(res => res.json())
                 .then(data => {
                     if (data.success) {
-                        // Exibir mensagem de sucesso
-                        showFlashMessage(data.message, 'success');
-
-                        // Atualizar o DOM para refletir o novo status
-                        updateCotacaoDOM(preenchimentoId, selectedValue);
-
-                        // Se for aprovação, bloquear outras cotações do mesmo material
-                        if (selectedValue === 'Aprovado') {
-                            blockOtherCotacoes(preenchimentoId);
+                        showFlashMessage('Status revertido com sucesso. Todas as cotações foram desbloqueadas.', 'success');
+                        // Atualiza DOM sem reload
+                        const card = document.querySelector(`[data-cotacao-id="${preenchimentoId}"]`)?.closest('.material-card');
+                        if (card) {
+                            const statusBadge = card.querySelector('.badge-status');
+                            if (statusBadge) {
+                                statusBadge.textContent = 'Reaberto';
+                                statusBadge.className = 'badge-status bg-secondary';
+                            }
+                            const select = card.querySelector('.status-select');
+                            if (select) {
+                                select.disabled = false;
+                                select.dataset.status = 'Reaberto';
+                                select.title = 'Status reaberto. Pode ser alterado.';
+                            }
                         }
+                        // Desbloqueia todas cotações visualmente
+                        document.querySelectorAll('.material-card.cotacao-bloqueada').forEach(c => {
+                            c.classList.remove('cotacao-bloqueada');
+                            const s = c.querySelector('.status-select');
+                            if (s) s.disabled = false;
+                        });
                     } else {
-                        alert('Erro: ' + data.message);
-                        resetSelect(select, originalHtml);
+                        showFlashMessage('Erro: ' + data.message, 'danger');
                     }
                 })
-                .catch(error => {
-                    console.error('Erro:', error);
-                    alert('Erro ao atualizar status. Tente novamente.');
-                    resetSelect(select, originalHtml);
+                .catch(err => {
+                    console.error('Erro:', err);
+                    showFlashMessage('Erro ao reverter status. Tente novamente.', 'danger');
                 });
         }
-        function resetSelect(select, originalHtml) {
-            select.disabled = false;
-            select.innerHTML = originalHtml;
-            select.value = '';
+
+        // 🔹 Envia status para backend
+        function submitStatusForm(form, select, preenchimentoId) {
+            const formData = new FormData(form);
+            const selectedValue = select.value;
+            select.disabled = true;
+
+            fetch(form.action, { method: 'POST', body: formData })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        showFlashMessage(data.message, 'success');
+                        updateStatusInDOM(preenchimentoId, selectedValue);
+                        if (selectedValue === 'Aprovado') blockOtherCotacoes(preenchimentoId);
+                    } else {
+                        showFlashMessage(data.message || 'Erro ao atualizar status', 'danger');
+                        select.disabled = false;
+                    }
+                })
+                .catch(err => {
+                    console.error('Erro:', err);
+                    showFlashMessage('Erro ao atualizar status.', 'danger');
+                    select.disabled = false;
+                });
         }
 
+        // 🔹 Atualiza visualmente o status
+        function updateStatusInDOM(preenchimentoId, novoStatus) {
+            const card = document.querySelector(`[data-cotacao-id="${preenchimentoId}"]`)?.closest('.material-card');
+            if (!card) return;
+
+            const statusBadge = card.querySelector('.badge-status');
+            if (statusBadge) {
+                statusBadge.textContent = novoStatus;
+                statusBadge.className = 'badge-status';
+                if (novoStatus === 'Aprovado') statusBadge.classList.add('bg-success');
+                else if (novoStatus === 'Reprovado') statusBadge.classList.add('bg-danger');
+                else statusBadge.classList.add('bg-secondary');
+            }
+
+            const select = card.querySelector('.status-select');
+            if (select) {
+                select.disabled = true;
+                select.dataset.status = novoStatus;
+                select.title = `Esta cotação foi ${novoStatus.toLowerCase()}. Use 'Reverter Status' para alterar.`;
+            }
+        }
+
+        // 🔹 Bloqueia visualmente outras cotações do mesmo material
+        function blockOtherCotacoes(preenchimentoId) {
+            const card = document.querySelector(`[data-cotacao-id="${preenchimentoId}"]`)?.closest('.accordion-item');
+            if (!card) return;
+
+            const cards = card.querySelectorAll('.material-card');
+            cards.forEach(c => {
+                const cid = c.querySelector('[data-cotacao-id]')?.dataset.cotacaoId;
+                if (cid && cid != preenchimentoId) {
+                    c.classList.add('cotacao-bloqueada');
+                    const select = c.querySelector('.status-select');
+                    if (select) {
+                        select.disabled = true;
+                        select.title = 'Cotação bloqueada pois há uma aprovada.';
+                    }
+                }
+            });
+        }
+
+        // 🔹 Flash messages
         function showFlashMessage(message, type) {
             const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
             const iconClass = type === 'success' ? 'bi-check-circle' : 'bi-exclamation-triangle';
 
-            const flashMessage = `
-            <div class="alert ${alertClass} alert-dismissible fade show mt-4 alert-flash" role="alert">
-                <i class="bi ${iconClass}"></i>
-                ${message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        `;
-
-            const mainContainer = document.querySelector('.main-container');
-            mainContainer.insertAdjacentHTML('afterbegin', flashMessage);
-
-            setTimeout(() => {
-                const alert = document.querySelector('.alert-flash');
-                if (alert) alert.remove();
-            }, 5000);
+            const div = document.createElement('div');
+            div.className = `alert ${alertClass} alert-dismissible fade show mt-3 alert-flash`;
+            div.innerHTML = `
+            <i class="bi ${iconClass}"></i> ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
+            document.querySelector('.main-container').prepend(div);
+            setTimeout(() => div.remove(), 4000);
         }
 
-        // Validação das datas
-        document.querySelector('form').addEventListener('submit', function (e) {
-            const dataInicio = document.getElementById('data_inicio').value;
-            const dataFim = document.getElementById('data_fim').value;
-
-            if (dataInicio && dataFim && dataInicio > dataFim) {
-                alert('A data de início não pode ser maior que a data de fim');
-                e.preventDefault();
-            }
-        });
-
-        // Inicializar tooltips
+        // 🔹 Inicialização DOMContentLoaded
         document.addEventListener('DOMContentLoaded', function () {
-            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'));
-            tooltipTriggerList.forEach(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
+            // Tooltips
+            document.querySelectorAll('[title]').forEach(el => new bootstrap.Tooltip(el));
 
-            const disabledSelects = document.querySelectorAll('select.status-select:disabled');
-            disabledSelects.forEach(select => {
+            document.querySelectorAll('select.status-select:disabled').forEach(select => {
                 const status = select.dataset.status;
-                let message = "";
-
-                if (status === 'Aprovado') message = "Esta cotação foi aprovada. Use o botão 'Reverter Status' para permitir alterações.";
-                else if (status === 'Reprovado') message = "Esta cotação foi reprovada. Use o botão 'Reverter Status' para permitir alterações.";
-                else if (status === 'Em Processamento') message = "Esta cotação está em processo de compra e não pode ser alterada";
-                else if (status === 'Bloqueado') message = "Esta cotação está bloqueada porque existe uma cotação aprovada para este material";
-
-                select.title = message;
+                let msg = "";
+                if (status === 'Aprovado') msg = "Esta cotação foi aprovada. Use 'Reverter Status' para alterações.";
+                else if (status === 'Reprovado') msg = "Esta cotação foi reprovada. Use 'Reverter Status' para alterações.";
+                else if (status === 'Bloqueado') msg = "Cotação bloqueada pois há uma aprovada.";
+                else if (status === 'Em Processamento') msg = "Cotação em processo de compra, não pode ser alterada";
+                select.title = msg;
                 new bootstrap.Tooltip(select);
             });
 
-            // Script para o modal de edição de valores
+            // Validação datas
+            document.querySelector('form')?.addEventListener('submit', e => {
+                const dataInicio = document.getElementById('data_inicio')?.value;
+                const dataFim = document.getElementById('data_fim')?.value;
+                if (dataInicio && dataFim && dataInicio > dataFim) {
+                    alert('A data de início não pode ser maior que a data de fim');
+                    e.preventDefault();
+                }
+            });
+
+            // Modal edição de valores
             const editarValoresModal = document.getElementById('editarValoresModal');
             let quantidadeAtual = 0;
             let valorUnitarioOriginal = 0;
             let historicoDescontos = [];
 
-            editarValoresModal.addEventListener('show.bs.modal', function (event) {
+            editarValoresModal?.addEventListener('show.bs.modal', event => {
                 const button = event.relatedTarget;
                 const preenchimentoId = button.getAttribute('data-preenchimento-id');
                 valorUnitarioOriginal = parseFloat(button.getAttribute('data-valor-unitario'));
@@ -1365,22 +1392,16 @@
                 exibirHistoricoDescontos();
             });
 
-            document.getElementById('valorUnitarioNovo').addEventListener('input', function () {
-                calcularDescontoEAtualizarTotal(quantidadeAtual);
-            });
-
-            document.getElementById('valorFrete').addEventListener('input', function () {
-                calcularDescontoEAtualizarTotal(quantidadeAtual);
+            // Input calculo desconto
+            ['valorUnitarioNovo', 'valorFrete'].forEach(id => {
+                document.getElementById(id)?.addEventListener('input', () => calcularDescontoEAtualizarTotal(quantidadeAtual));
             });
 
             function calcularDescontoEAtualizarTotal(quantidade) {
                 const valorUnitarioNovo = parseFloat(document.getElementById('valorUnitarioNovo').value) || 0;
                 const valorFrete = parseFloat(document.getElementById('valorFrete').value) || 0;
-
-                let percentualDesconto = 0;
-                if (valorUnitarioOriginal > 0 && valorUnitarioNovo < valorUnitarioOriginal) {
-                    percentualDesconto = ((valorUnitarioOriginal - valorUnitarioNovo) / valorUnitarioOriginal) * 100;
-                }
+                const percentualDesconto = valorUnitarioOriginal > 0 && valorUnitarioNovo < valorUnitarioOriginal ?
+                    ((valorUnitarioOriginal - valorUnitarioNovo) / valorUnitarioOriginal * 100) : 0;
                 document.getElementById('percentualDesconto').value = percentualDesconto.toFixed(2);
 
                 const valorTotalNovo = (valorUnitarioNovo * quantidade) + valorFrete;
@@ -1389,36 +1410,24 @@
 
             function exibirHistoricoDescontos() {
                 const historicoLista = document.getElementById('historicoLista');
-                const historicoContainer = document.getElementById('historicoContainer');
-                if (!historicoLista || !historicoContainer) return;
-
+                if (!historicoLista) return;
                 historicoLista.innerHTML = '';
-                if (!historicoDescontos || historicoDescontos.length === 0) {
+                if (!historicoDescontos.length) {
                     historicoLista.innerHTML = '<div class="text-center text-muted py-3">Nenhuma alteração registrada</div>';
                     return;
                 }
-
                 historicoDescontos.sort((a, b) => new Date(b.data_alteracao) - new Date(a.data_alteracao));
-
                 historicoDescontos.forEach(item => {
-                    const itemElement = document.createElement('div');
-                    itemElement.className = 'historico-item';
                     const valorAnterior = parseFloat(item.valor_unitario_anterior) || 0;
                     const valorNovo = parseFloat(item.valor_unitario_novo) || 0;
                     const valorFreteAnterior = parseFloat(item.valor_frete_anterior) || 0;
                     const valorFreteNovo = parseFloat(item.valor_frete_novo) || 0;
+                    const percentualDesconto = valorAnterior > 0 && valorNovo < valorAnterior ? ((valorAnterior - valorNovo) / valorAnterior * 100) : 0;
+                    const dataFormatada = item.data_alteracao ? new Date(item.data_alteracao).toLocaleString('pt-BR') : 'Data não disponível';
 
-                    let percentualDesconto = 0;
-                    if (valorAnterior > 0 && valorNovo < valorAnterior) {
-                        percentualDesconto = ((valorAnterior - valorNovo) / valorAnterior * 100);
-                    }
-
-                    const dataFormatada = item.data_alteracao ?
-                        new Date(item.data_alteracao).toLocaleDateString('pt-BR') + ' ' +
-                        new Date(item.data_alteracao).toLocaleTimeString('pt-BR') :
-                        'Data não disponível';
-
-                    itemElement.innerHTML = `
+                    const div = document.createElement('div');
+                    div.className = 'historico-item';
+                    div.innerHTML = `
                     <div class="historico-item-content">
                         <div class="historico-valores">
                             <div class="historico-campo">
@@ -1434,26 +1443,22 @@
                                 <span class="valor-antigo">R$ ${valorFreteAnterior.toFixed(2)}</span>
                                 <span class="seta">→</span>
                                 <span class="valor-novo">R$ ${valorFreteNovo.toFixed(2)}</span>
-                            </div>` : ''}
+                            </div>`: ''}
                         </div>
                         <div class="historico-metadata">
                             <small class="historico-data">${dataFormatada}</small>
                             <small class="historico-usuario">por ${item.usuario || 'usuário'}</small>
                         </div>
                     </div>`;
-                    historicoLista.appendChild(itemElement);
+                    historicoLista.appendChild(div);
                 });
             }
 
-            document.getElementById('btnSalvarValores').addEventListener('click', function () {
+            document.getElementById('btnSalvarValores')?.addEventListener('click', function () {
                 const preenchimentoId = document.getElementById('preenchimentoId').value;
                 const valorUnitarioNovo = parseFloat(document.getElementById('valorUnitarioNovo').value);
                 const valorFreteNovo = parseFloat(document.getElementById('valorFrete').value) || 0;
-
-                if (isNaN(valorUnitarioNovo) || valorUnitarioNovo < 0) {
-                    alert('Por favor, insira um valor unitário válido.');
-                    return;
-                }
+                if (isNaN(valorUnitarioNovo) || valorUnitarioNovo < 0) { alert('Por favor, insira um valor unitário válido.'); return; }
 
                 fetch("{{ url_for('routes_bp.atualizar_valores_cotacao') }}", {
                     method: 'POST',
@@ -1464,47 +1469,25 @@
                         valor_frete: valorFreteNovo,
                         valor_unitario_original: valorUnitarioOriginal
                     })
-                })
-                    .then(response => response.json())
-                    .then(data => data.success ? location.reload() : alert('Erro ao salvar alterações: ' + data.message))
-                    .catch(error => {
-                        console.error('Erro:', error);
-                        alert('Erro ao salvar alterações. Tente novamente.');
-                    });
+                }).then(res => res.json()).then(data => data.success ? location.reload() : alert('Erro: ' + data.message))
+                    .catch(err => { console.error(err); alert('Erro ao salvar alterações.'); });
             });
         });
 
-        // 🔹 Função global para impressão — agora fora do DOMContentLoaded
+        // 🔹 Impressão das cotações selecionadas
         function printSelectedCotacoes() {
             const printBtn = document.getElementById('printSelectedBtn');
             const checkboxes = document.querySelectorAll('.cotacao-checkbox:checked');
-
-            if (checkboxes.length === 0) {
-                showFlashMessage('Por favor, selecione pelo menos uma cotação para imprimir.', 'danger');
-                return;
-            }
+            if (!checkboxes.length) { showFlashMessage('Selecione pelo menos uma cotação.', 'danger'); return; }
 
             printBtn.disabled = true;
             printBtn.innerHTML = '<i class="bi bi-printer"></i> Processando...';
 
             try {
-                let printContent = `
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <title>Cotações Selecionadas</title>
-                    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-                    <style>
-                        body { font-family: 'Segoe UI', sans-serif; padding: 20px; }
-                        .material-card { border: 1px solid #e9ecef; border-radius: 8px; margin-bottom: 20px; }
-                        .material-header { background-color: #022855; color: white; padding: 15px; }
-                        .material-title { font-size: 1.25rem; font-weight: 600; }
-                        @media print { .material-card { page-break-inside: avoid; } .no-print { display: none; } }
-                    </style>
-                </head>
-                <body>
-                    <h1 style="color:#022855;margin-bottom:20px;">Cotações Selecionadas</h1>
-            `;
+                let printContent = `<!DOCTYPE html><html><head><title>Cotações Selecionadas</title>
+                <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+                <style>body{font-family:'Segoe UI',sans-serif;padding:20px}.material-card{border:1px solid #e9ecef;border-radius:8px;margin-bottom:20px}.material-header{background-color:#022855;color:white;padding:15px}.material-title{font-size:1.25rem;font-weight:600}@media print{.material-card{page-break-inside:avoid}.no-print{display:none}}</style>
+                </head><body><h1 style="color:#022855;margin-bottom:20px;">Cotações Selecionadas</h1>`;
 
                 checkboxes.forEach(checkbox => {
                     const card = checkbox.closest('.material-card');
@@ -1513,34 +1496,18 @@
                     const header = card.querySelector('.material-header').innerHTML.replace(/<input[^>]*>/, '');
                     const detailsRows = card.querySelectorAll('.row.mb-3');
 
-                    printContent += `
-                    <div class="material-card">
-                        <div class="material-header">${header}</div>
-                        <div class="p-3">
-                            <h5>${materialNome}</h5>
-                            ${Array.from(detailsRows).map(r => r.outerHTML).join('')}
-                        </div>
-                    </div>`;
+                    printContent += `<div class="material-card"><div class="material-header">${header}</div><div class="p-3"><h5>${materialNome}</h5>${Array.from(detailsRows).map(r => r.outerHTML).join('')}</div></div>`;
                 });
 
                 printContent += `</body></html>`;
-
                 const w = window.open('', '_blank');
-                if (!w) {
-                    showFlashMessage('Não foi possível abrir a janela de impressão. Verifique se pop-ups estão bloqueados.', 'danger');
-                    return;
-                }
+                if (!w) { showFlashMessage('Não foi possível abrir a janela de impressão.', 'danger'); return; }
                 w.document.write(printContent);
                 w.document.close();
                 w.onload = () => { w.print(); setTimeout(() => w.close(), 800); };
 
-            } catch (error) {
-                console.error(error);
-                showFlashMessage('Erro ao preparar a impressão.', 'danger');
-            } finally {
-                printBtn.disabled = false;
-                printBtn.innerHTML = '<i class="bi bi-printer"></i> Imprimir Selecionadas';
-            }
+            } catch (err) { console.error(err); showFlashMessage('Erro ao preparar impressão.', 'danger'); }
+            finally { printBtn.disabled = false; printBtn.innerHTML = '<i class="bi bi-printer"></i> Imprimir Selecionadas'; }
         }
     </script>
 
