@@ -5459,6 +5459,105 @@ def get_fornecedor_details(fornecedor_id):
     except sqlite3.Error as e:
         logging.error(f"Erro ao buscar fornecedor {fornecedor_id}: {str(e)}")
         return None, None
+
+@routes_bp.route('/api/fornecedores', methods=['GET'])
+def api_fornecedores():
+    """API para fornecedores com paginação no servidor"""
+    if 'usuario' not in session:
+        return jsonify({'error': 'Não autenticado'}), 401
+    
+    try:
+        # Parâmetros de paginação
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 25, type=int)
+        search_name = request.args.get('search_name', '').strip()
+        search_material = request.args.get('search_material', '').strip()
+        
+        # Conexão com o banco de fornecedores
+        conn = get_db_connection(DB_PATH_FORNECEDORES)
+        if not conn:
+            return jsonify({'error': 'Erro ao conectar ao banco'}), 500
+        
+        try:
+            cursor = conn.cursor()
+            
+            # Query base com filtros
+            query = '''
+                SELECT id, nome_fantasia, cnpj, telefone, email, endereco, 
+                       bairro, cidade, estado, contato, materiais
+                FROM fornecedores 
+                WHERE 1=1
+            '''
+            params = []
+            
+            if search_name:
+                query += ' AND (nome_fantasia LIKE ? OR cnpj LIKE ?)'
+                params.extend([f'%{search_name}%', f'%{search_name}%'])
+            
+            if search_material:
+                query += ' AND materiais LIKE ?'
+                params.append(f'%{search_material}%')
+            
+            # Ordenação
+            query += ' ORDER BY nome_fantasia'
+            
+            # Contagem total (para paginação)
+            count_query = 'SELECT COUNT(*) FROM fornecedores WHERE 1=1'
+            count_params = []
+            
+            if search_name:
+                count_query += ' AND (nome_fantasia LIKE ? OR cnpj LIKE ?)'
+                count_params.extend([f'%{search_name}%', f'%{search_name}%'])
+            
+            if search_material:
+                count_query += ' AND materiais LIKE ?'
+                count_params.append(f'%{search_material}%')
+            
+            cursor.execute(count_query, count_params)
+            total_count = cursor.fetchone()[0]
+            
+            # Query com paginação
+            query += ' LIMIT ? OFFSET ?'
+            offset = (page - 1) * per_page
+            params.extend([per_page, offset])
+            
+            cursor.execute(query, params)
+            fornecedores = []
+            
+            for row in cursor.fetchall():
+                fornecedor = {
+                    'id': row[0],
+                    'nome_fantasia': row[1],
+                    'cnpj': row[2],
+                    'telefone': row[3],
+                    'email': row[4],
+                    'endereco': row[5],
+                    'bairro': row[6],
+                    'cidade': row[7],
+                    'estado': row[8],
+                    'contato': row[9],
+                    'materiais': row[10],
+                    'cnpj_formatado': format_cnpj(row[2]) if row[2] else ''
+                }
+                fornecedores.append(fornecedor)
+            
+            return jsonify({
+                'success': True,
+                'fornecedores': fornecedores,
+                'pagination': {
+                    'page': page,
+                    'per_page': per_page,
+                    'total_count': total_count,
+                    'total_pages': (total_count + per_page - 1) // per_page
+                }
+            })
+            
+        finally:
+            conn.close()
+            
+    except Exception as e:
+        logging.error(f"Erro na API de fornecedores: {str(e)}")
+        return jsonify({'error': str(e)}), 500
     
   # Registro do Blueprint (apenas uma vez)
 app.register_blueprint(routes_bp)  
