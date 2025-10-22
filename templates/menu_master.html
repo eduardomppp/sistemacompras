@@ -218,6 +218,69 @@
             font-weight: 600;
         }
 
+        /* Estilos para o submenu */
+        .submenu {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+            background-color: rgba(0, 0, 0, 0.1);
+            border-radius: 4px;
+            margin-top: 5px;
+        }
+
+        .submenu.open {
+            max-height: 500px;
+        }
+
+        .submenu li {
+            margin: 2px 0;
+        }
+
+        .submenu a {
+            padding: 6px 10px 6px 30px;
+            font-size: 0.8rem;
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        .submenu a:hover {
+            padding-left: 32px;
+        }
+
+        .menu.collapsed .submenu a {
+            padding: 6px 5px;
+            justify-content: center;
+        }
+
+        .menu.collapsed .submenu a:hover {
+            padding-left: 5px;
+        }
+
+        .menu.collapsed .submenu a i {
+            margin-right: 0;
+        }
+
+        .menu-toggle {
+            cursor: pointer;
+            position: relative;
+        }
+
+        .menu-toggle::after {
+            content: '\f107';
+            font-family: 'Font Awesome 5 Free';
+            font-weight: 900;
+            position: absolute;
+            right: 10px;
+            transition: transform 0.3s ease;
+        }
+
+        .menu-toggle.open::after {
+            transform: rotate(180deg);
+        }
+
+        .menu.collapsed .menu-toggle::after {
+            display: none;
+        }
+
         .logout-container {
             margin-top: 15px;
             padding-top: 12px;
@@ -566,21 +629,29 @@
                             class="fas fa-file-alt"></i><span>Solicit. Preenchidas</span></a></li>
                 <li><a href="{{ url_for('routes_bp.listar_pedidos_compra') }}" target="content-frame" data-tooltip="Pedidos Compras"><i
                             class="fas fa-file-invoice-dollar"></i><span>Pedidos Compras</span></a></li>
-                <li><a href="{{ url_for('routes_bp.listar_estoque') }}" target="content-frame" data-tooltip="Estoque de Materiais"><i
-                            class="fas fa-warehouse"></i><span>Estoque de Materiais</span></a></li>
-                <li><a href="{{ url_for('routes_bp.listar_requisicoes') }}" target="content-frame" data-tooltip="Requisições"><i
-                            class="fas fa-clipboard-list"></i><span>Requisições</span></a></li>
-                <li><a href="{{ url_for('routes_bp.lista_fornecedores') }}" target="content-frame" data-tooltip="Listar Fornecedores"><i
-                            class="fas fa-clipboard-list"></i><span>Listar Fornecedores</span></a></li>
-                <li><a href="{{ url_for('routes_bp.cadastro_fornecedores') }}" target="content-frame" data-tooltip="Cadastro Fornecedor"><i
-                            class="fas fa-list-ul"></i><span>Cadastro Fornecedor</span></a></li>
-                <li><a href="{{ url_for('routes_bp.listar_materiais') }}" target="content-frame" data-tooltip="Cadastro Materiais"><i
-                            class="fas fa-list-ul"></i><span>Cadastro Materiais</span></a></li>
-                   
-                                    <li><a href="{{ url_for('routes_bp.registros') }}" target="content-frame" data-tooltip="Cadastrar Ativos">
-                        <i class="fas fa-clipboard-list"></i><span>Cadastrar Ativos</span></a></li>
-                <li><a href="{{ url_for('routes_bp.listar_senhas') }}" target="content-frame" data-tooltip="Gerenciar Usuários"><i
-                            class="fas fa-users"></i><span>Gerenciar Usuários</span></a></li>
+                
+                <!-- Menu "Outros" com submenu -->
+                <li class="menu-item-with-submenu">
+                    <a href="javascript:void(0)" class="menu-toggle" data-tooltip="Outros">
+                        <i class="fas fa-ellipsis-h"></i><span>Outros</span>
+                    </a>
+                    <ul class="submenu">
+                        <li><a href="{{ url_for('routes_bp.listar_estoque') }}" target="content-frame" data-tooltip="Estoque de Materiais"><i
+                                    class="fas fa-warehouse"></i><span>Estoque de Materiais</span></a></li>
+                        <li><a href="{{ url_for('routes_bp.listar_requisicoes') }}" target="content-frame" data-tooltip="Requisições"><i
+                                    class="fas fa-clipboard-list"></i><span>Requisições</span></a></li>
+                        <li><a href="{{ url_for('routes_bp.lista_fornecedores') }}" target="content-frame" data-tooltip="Listar Fornecedores"><i
+                                    class="fas fa-clipboard-list"></i><span>Listar Fornecedores</span></a></li>
+                        <li><a href="{{ url_for('routes_bp.cadastro_fornecedores') }}" target="content-frame" data-tooltip="Cadastro Fornecedor"><i
+                                    class="fas fa-list-ul"></i><span>Cadastro Fornecedor</span></a></li>
+                        <li><a href="{{ url_for('routes_bp.listar_materiais') }}" target="content-frame" data-tooltip="Cadastro Materiais"><i
+                                    class="fas fa-list-ul"></i><span>Cadastro Materiais</span></a></li>
+                        <li><a href="{{ url_for('routes_bp.registros') }}" target="content-frame" data-tooltip="Cadastrar Ativos">
+                                    <i class="fas fa-clipboard-list"></i><span>Cadastrar Ativos</span></a></li>
+                        <li><a href="{{ url_for('routes_bp.listar_senhas') }}" target="content-frame" data-tooltip="Gerenciar Usuários"><i
+                                    class="fas fa-users"></i><span>Gerenciar Usuários</span></a></li>
+                    </ul>
+                </li>
             </ul>
             
             <div class="logout-container">
@@ -689,8 +760,30 @@
                     document.body.style.overflow = '';
                 }
             });
+
+            // Toggle submenu
+            document.querySelectorAll('.menu-toggle').forEach(toggle => {
+                toggle.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const submenu = this.nextElementSibling;
+                    const isOpen = submenu.classList.contains('open');
+                    
+                    // Fecha todos os submenus abertos
+                    document.querySelectorAll('.submenu').forEach(menu => {
+                        menu.classList.remove('open');
+                    });
+                    document.querySelectorAll('.menu-toggle').forEach(toggle => {
+                        toggle.classList.remove('open');
+                    });
+                    
+                    // Abre o submenu atual se não estava aberto
+                    if (!isOpen) {
+                        submenu.classList.add('open');
+                        this.classList.add('open');
+                    }
+                });
+            });
         });
     </script>
 </body>
-
 </html>
