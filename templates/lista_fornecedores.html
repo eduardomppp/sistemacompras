@@ -24,14 +24,27 @@
             margin: 0 10px;
             font-size: 14px;
         }
+        .search-button {
+            padding: 10px 20px;
+            background-color: #022855;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        .search-button:hover {
+            background-color: #011c3f;
+        }
         .table-container {
             max-width: 100%;
             overflow-x: auto;
+            margin-top: 20px;
+            min-height: 400px;
         }
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
             border-radius: 8px;
             overflow: hidden;
@@ -67,7 +80,7 @@
             transition: background-color 0.3s;
         }
         .export-button:hover {
-            background-color: #022855;
+            background-color: #011c3f;
         }
         .delete-btn {
             background-color: #ff4d4d;
@@ -80,6 +93,11 @@
         }
         .delete-btn:hover {
             background-color: #cc0000;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
         }
         
         /* Estilos da Paginação */
@@ -125,9 +143,12 @@
 </head>
 <body>
     <div class="search-container">
-        <input type="text" id="searchNameCNPJ" class="search-input" placeholder="Pesquisar por Nome ou CNPJ" onkeyup="filterTable()">
-        <input type="text" id="searchMaterial" class="search-input" placeholder="Pesquisar por Materiais" onkeyup="filterTable()">
+        <input type="text" id="searchNameCNPJ" class="search-input" placeholder="Pesquisar por Nome ou CNPJ">
+        <input type="text" id="searchMaterial" class="search-input" placeholder="Pesquisar por Materiais">
+        <button class="search-button" onclick="loadFornecedores(1)">Pesquisar</button>
+        <button class="search-button" onclick="clearSearch()">Limpar</button>
     </div>
+    
     <button class="export-button" onclick="exportCSV()">Exportar para CSV</button>
     
     <div class="table-container">
@@ -149,22 +170,9 @@
                 </tr>
             </thead>
             <tbody id="table-body">
-                {% for fornecedor in fornecedores %}
-                <tr data-id="{{ fornecedor.id }}">
-                    <td>{{ fornecedor.id }}</td>
-                    <td class="nome-fantasia">{{ fornecedor.nome_fantasia }}</td>
-                    <td class="cnpj">{{ fornecedor.cnpj_formatado }}</td>
-                    <td>{{ fornecedor.telefone }}</td>
-                    <td>{{ fornecedor.email }}</td>
-                    <td>{{ fornecedor.endereco | default('N/A', true) }}</td>
-                    <td>{{ fornecedor.bairro | default('N/A', true) }}</td>
-                    <td>{{ fornecedor.cidade | default('N/A', true) }}</td>
-                    <td>{{ fornecedor.estado | default('N/A', true) }}</td>
-                    <td>{{ fornecedor.contato | default('N/A', true) }}</td>
-                    <td class="materiais">{{ fornecedor.materiais | default('N/A', true) }}</td>
-                    <td><button class="delete-btn" onclick="deleteRow(this)">Excluir</button></td>
+                <tr>
+                    <td colspan="12" class="loading">Carregando fornecedores...</td>
                 </tr>
-                {% endfor %}
             </tbody>
         </table>
     </div>
@@ -190,101 +198,188 @@
         // Variáveis de paginação
         let currentPage = 1;
         let pageSize = 25;
-        let allRows = [];
-        let filteredRows = [];
+        let totalPages = 1;
+        let totalCount = 0;
+        let currentSearchName = '';
+        let currentSearchMaterial = '';
 
-        // Inicialização quando a página carrega
+        // Carregar fornecedores quando a página é carregada
         document.addEventListener('DOMContentLoaded', function() {
-            // Coletar todas as linhas da tabela
-            const tableBody = document.getElementById('table-body');
-            allRows = Array.from(tableBody.getElementsByTagName('tr'));
-            filteredRows = [...allRows];
+            loadFornecedores(1);
             
-            // Inicializar a paginação
-            updatePagination();
+            // Permitir busca com Enter
+            document.getElementById('searchNameCNPJ').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') loadFornecedores(1);
+            });
+            
+            document.getElementById('searchMaterial').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') loadFornecedores(1);
+            });
         });
+
+        // Função para carregar fornecedores da API
+        function loadFornecedores(page) {
+            const searchName = document.getElementById('searchNameCNPJ').value;
+            const searchMaterial = document.getElementById('searchMaterial').value;
+            
+            currentSearchName = searchName;
+            currentSearchMaterial = searchMaterial;
+            
+            showLoading();
+            
+            const params = new URLSearchParams({
+                page: page,
+                per_page: pageSize,
+                search_name: searchName,
+                search_material: searchMaterial
+            });
+            
+            fetch(`/api/fornecedores?${params}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        renderFornecedores(data.fornecedores);
+                        updatePagination(data.pagination);
+                    } else {
+                        showError('Erro ao carregar fornecedores: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                    showError('Erro ao carregar fornecedores');
+                });
+        }
+
+        // Função para renderizar fornecedores na tabela
+        function renderFornecedores(fornecedores) {
+            const tableBody = document.getElementById('table-body');
+            
+            if (fornecedores.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="12" class="loading">Nenhum fornecedor encontrado</td></tr>';
+                return;
+            }
+            
+            let html = '';
+            fornecedores.forEach(fornecedor => {
+                html += `
+                <tr data-id="${fornecedor.id}">
+                    <td>${fornecedor.id}</td>
+                    <td class="nome-fantasia">${fornecedor.nome_fantasia || 'N/A'}</td>
+                    <td class="cnpj">${fornecedor.cnpj_formatado || 'N/A'}</td>
+                    <td>${fornecedor.telefone || 'N/A'}</td>
+                    <td>${fornecedor.email || 'N/A'}</td>
+                    <td>${fornecedor.endereco || 'N/A'}</td>
+                    <td>${fornecedor.bairro || 'N/A'}</td>
+                    <td>${fornecedor.cidade || 'N/A'}</td>
+                    <td>${fornecedor.estado || 'N/A'}</td>
+                    <td>${fornecedor.contato || 'N/A'}</td>
+                    <td class="materiais">${fornecedor.materiais || 'N/A'}</td>
+                    <td><button class="delete-btn" onclick="deleteRow(this)">Excluir</button></td>
+                </tr>
+                `;
+            });
+            
+            tableBody.innerHTML = html;
+        }
+
+        // Função para mostrar loading
+        function showLoading() {
+            const tableBody = document.getElementById('table-body');
+            tableBody.innerHTML = '<tr><td colspan="12" class="loading">Carregando fornecedores...</td></tr>';
+        }
+
+        // Função para mostrar erro
+        function showError(message) {
+            const tableBody = document.getElementById('table-body');
+            tableBody.innerHTML = `<tr><td colspan="12" class="loading" style="color: red;">${message}</td></tr>`;
+        }
 
         // Função para mudar de página
         function changePage(page) {
-            if (page < 1 || page > Math.ceil(filteredRows.length / pageSize)) return;
-            
+            if (page < 1 || page > totalPages) return;
             currentPage = page;
-            updatePagination();
+            loadFornecedores(page);
         }
 
         // Função para mudar o tamanho da página
         function changePageSize() {
             pageSize = parseInt(document.getElementById('page-size').value);
             currentPage = 1;
-            updatePagination();
+            loadFornecedores(1);
         }
 
-        // Função para atualizar a exibição da paginação
-        function updatePagination() {
-            const tableBody = document.getElementById('table-body');
-            const totalPages = Math.ceil(filteredRows.length / pageSize);
+        // Função para atualizar a paginação
+        function updatePagination(pagination) {
+            currentPage = pagination.page;
+            totalPages = pagination.total_pages;
+            totalCount = pagination.total_count;
             
-            // Esconder todas as linhas
-            allRows.forEach(row => row.style.display = 'none');
-            
-            // Mostrar apenas as linhas da página atual
-            const startIndex = (currentPage - 1) * pageSize;
-            const endIndex = Math.min(startIndex + pageSize, filteredRows.length);
-            
-            for (let i = startIndex; i < endIndex; i++) {
-                if (filteredRows[i]) {
-                    filteredRows[i].style.display = '';
-                }
-            }
-            
-            // Atualizar controles de paginação
-            document.getElementById('page-info').textContent = `Página ${currentPage} de ${totalPages}`;
+            document.getElementById('page-info').textContent = 
+                `Página ${currentPage} de ${totalPages} (${totalCount} registros)`;
             document.getElementById('prev-btn').disabled = currentPage === 1;
             document.getElementById('next-btn').disabled = currentPage === totalPages || totalPages === 0;
         }
 
-        // Função de filtro atualizada para trabalhar com paginação
-        function filterTable() {
-            const nameCNPJFilter = document.getElementById('searchNameCNPJ').value.toLowerCase();
-            const materialFilter = document.getElementById('searchMaterial').value.toLowerCase();
-            
-            filteredRows = allRows.filter(row => {
-                const cells = row.getElementsByTagName('td');
-                if (cells.length === 0) return false;
-                
-                const name = cells[1].innerText.toLowerCase();
-                const cnpj = cells[2].innerText.toLowerCase();
-                const material = cells[10].innerText.toLowerCase();
-                
-                const matchNameCNPJ = name.includes(nameCNPJFilter) || cnpj.includes(nameCNPJFilter);
-                const matchMaterial = material.includes(materialFilter);
-                
-                return matchNameCNPJ && matchMaterial;
-            });
-            
-            currentPage = 1;
-            updatePagination();
+        // Função para limpar busca
+        function clearSearch() {
+            document.getElementById('searchNameCNPJ').value = '';
+            document.getElementById('searchMaterial').value = '';
+            loadFornecedores(1);
         }
 
+        // Função para exportar CSV (agora busca todos os dados)
         function exportCSV() {
-            const table = document.getElementById('fornecedores-table');
-            let csv = [];
+            // Para exportar, buscamos todos os dados sem paginação
+            const params = new URLSearchParams({
+                page: 1,
+                per_page: 1000000, // Número grande para pegar tudo
+                search_name: currentSearchName,
+                search_material: currentSearchMaterial
+            });
             
-            // Cabeçalho
-            let header = [];
-            for (let th of table.rows[0].cells) {
-                header.push(th.innerText);
+            fetch(`/api/fornecedores?${params}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        exportToCSV(data.fornecedores);
+                    } else {
+                        alert('Erro ao exportar dados: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                    alert('Erro ao exportar dados');
+                });
+        }
+
+        // Função auxiliar para exportar para CSV
+        function exportToCSV(fornecedores) {
+            if (fornecedores.length === 0) {
+                alert('Nenhum dado para exportar');
+                return;
             }
-            csv.push(header.join(','));
             
-            // Dados (todos os fornecedores, não apenas os filtrados/visíveis)
-            for (let row of allRows) {
-                let cols = [];
-                for (let cell of row.cells) {
-                    cols.push(cell.innerText);
-                }
-                csv.push(cols.join(','));
-            }
+            const headers = ['ID', 'Nome Fantasia', 'CNPJ', 'Telefone', 'Email', 'Endereço', 
+                           'Bairro', 'Cidade', 'Estado', 'Contato', 'Materiais'];
+            
+            let csv = [headers.join(',')];
+            
+            fornecedores.forEach(fornecedor => {
+                const row = [
+                    fornecedor.id,
+                    `"${fornecedor.nome_fantasia || ''}"`,
+                    `"${fornecedor.cnpj_formatado || ''}"`,
+                    `"${fornecedor.telefone || ''}"`,
+                    `"${fornecedor.email || ''}"`,
+                    `"${fornecedor.endereco || ''}"`,
+                    `"${fornecedor.bairro || ''}"`,
+                    `"${fornecedor.cidade || ''}"`,
+                    `"${fornecedor.estado || ''}"`,
+                    `"${fornecedor.contato || ''}"`,
+                    `"${fornecedor.materiais || ''}"`
+                ];
+                csv.push(row.join(','));
+            });
             
             const csvContent = "data:text/csv;charset=utf-8," + csv.join('\n');
             const encodedUri = encodeURI(csvContent);
@@ -296,6 +391,7 @@
             document.body.removeChild(link);
         }
 
+        // Função para excluir fornecedor
         function deleteRow(button) {
             if (!confirm('Tem certeza que deseja excluir este fornecedor?')) {
                 return;
@@ -303,6 +399,7 @@
             
             const row = button.parentNode.parentNode;
             const supplierId = row.getAttribute('data-id');
+            
             fetch('/delete_supplier', {
                 method: 'POST',
                 headers: {
@@ -313,19 +410,8 @@
             .then(response => response.json())
             .then(data => {
                 if (data.status === 'success') {
-                    // Remover a linha de todas as listas
-                    const rowIndex = allRows.indexOf(row);
-                    if (rowIndex > -1) {
-                        allRows.splice(rowIndex, 1);
-                    }
-                    
-                    const filteredIndex = filteredRows.indexOf(row);
-                    if (filteredIndex > -1) {
-                        filteredRows.splice(filteredIndex, 1);
-                    }
-                    
-                    row.parentNode.removeChild(row);
-                    updatePagination();
+                    // Recarregar a página atual após exclusão
+                    loadFornecedores(currentPage);
                     alert('Fornecedor excluído com sucesso!');
                 } else {
                     alert('Erro ao excluir o fornecedor: ' + data.message);
