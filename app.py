@@ -17,6 +17,7 @@ from collections import Counter
 import random
 import shutil
 from sqlalchemy import or_
+from decimal import Decimal, InvalidOperation
 
 # Carregar variáveis de ambiente
 load_dotenv()
@@ -2135,262 +2136,148 @@ def migrate_solicitacoes_compra():
 @routes_bp.route('/preencher_solicitacao/<int:id>', methods=['GET', 'POST'])
 def preencher_solicitacao(id):
     if 'usuario' not in session:
-        flash('Por favor, faça login para continuar.', 'error')
+        flash('Acesso não autorizado', 'error')
         return redirect(url_for('routes_bp.login'))
     
-    try:
-        solicitacao = SolicitacoesCompra.query.get_or_404(id)
-        
-        # Obter lista de fornecedores com CNPJ
-        conn = get_db_connection(DB_PATH_FORNECEDORES)
-        if conn:
-            conn.row_factory = sqlite3.Row
-            cursor = conn.cursor()
-            cursor.execute('SELECT id, nome_fantasia, cnpj FROM fornecedores ORDER BY nome_fantasia')
-            fornecedores = [dict(row) for row in cursor.fetchall()]
-            conn.close()
-        else:
-            fornecedores = []
-            flash('Erro ao conectar ao banco de fornecedores', 'warning')
-
-        # Buscar cotações já salvas (rascunhos)
-        cotacoes_salvas = SolicitacoesPreenchidas.query.filter_by(
-            solicitacao_id=id, 
-            status='Rascunho'
-        ).all()
-
-        if request.method == 'POST':
-            action = request.form.get('action', 'salvar_finalizar')
-            
-            # Verificar se é para finalizar ou salvar como rascunho
-            is_finalizar = action == 'salvar_finalizar'
-            is_rascunho = action == 'salvar_rascunho'
-            
-            # Obter listas de dados do formulário
-            fornecedor_ids = request.form.getlist('fornecedor_id[]')
-            valor_unitario_list = request.form.getlist('valor_unitario[]')
-            valor_total_list = request.form.getlist('valor_total[]')
-            valor_frete_list = request.form.getlist('valor_frete[]')
-            prazo_entrega_list = request.form.getlist('prazo_entrega[]')
-            condicao_pagamento_list = request.form.getlist('condicao_pagamento[]')
-            observacao_list = request.form.getlist('observacao[]')
-            pdf_files = request.files.getlist('pdf_file[]')
-
-            # Log para depuração
-            logging.info(f"Ação: {action}, Finalizar: {is_finalizar}, Rascunho: {is_rascunho}")
-            logging.info(f"Fornecedores recebidos: {fornecedor_ids}")
-
-            # Verificar consistência das listas
-            expected_length = len(fornecedor_ids)
-            if not all(len(lst) == expected_length for lst in [
-                valor_unitario_list, valor_total_list, prazo_entrega_list, 
-                condicao_pagamento_list, observacao_list]):
-                flash('Erro: Número inconsistente de campos nas cotações.', 'error')
-                return render_template('preencher_solicitacao.html', 
-                                      solicitacao=solicitacao, 
-                                      fornecedores=fornecedores,
-                                      cotacoes_salvas=cotacoes_salvas)
-
-            if not fornecedor_ids or not valor_unitario_list:
-                flash('Nenhuma cotação fornecida.', 'error')
-                return render_template('preencher_solicitacao.html', 
-                                      solicitacao=solicitacao, 
-                                      fornecedores=fornecedores,
-                                      cotacoes_salvas=cotacoes_salvas)
-
-            # Validar se pelo menos uma cotação está preenchida para finalizar
-            if is_finalizar:
-                cotacoes_preenchidas = 0
-                for i in range(len(fornecedor_ids)):
-                    if (fornecedor_ids[i] and valor_unitario_list[i].strip() and 
-                        prazo_entrega_list[i].strip() and condicao_pagamento_list[i].strip()):
-                        cotacoes_preenchidas += 1
-                
-                if cotacoes_preenchidas == 0:
-                    flash('É necessário preencher pelo menos uma cotação para finalizar.', 'error')
-                    return render_template('preencher_solicitacao.html', 
-                                          solicitacao=solicitacao, 
-                                          fornecedores=fornecedores,
-                                          cotacoes_salvas=cotacoes_salvas)
-
-            # Função auxiliar para parse de valores monetários
-            def parse_br_currency(value):
-                if not value or not value.strip():
-                    return None
-                try:
-                    cleaned = value.replace('.', '').replace(',', '.')
-                    return float(cleaned)
-                except (ValueError, AttributeError) as e:
-                    logging.error(f"Erro ao parsear valor monetário '{value}': {str(e)}")
-                    return None
-
-            cotacoes_processadas = 0
-            cotacoes_com_erro = 0
-
-            for i in range(len(fornecedor_ids)):
-                try:
-                    fornecedor_id = fornecedor_ids[i]
-                    valor_unitario = valor_unitario_list[i].strip()
-                    valor_total = valor_total_list[i].strip()
-                    valor_frete = valor_frete_list[i].strip() if i < len(valor_frete_list) else ''
-                    prazo_entrega = prazo_entrega_list[i].strip()
-                    condicao_pagamento = condicao_pagamento_list[i].strip()
-                    observacao = observacao_list[i].strip() if i < len(observacao_list) else None
-                    pdf_file = pdf_files[i] if i < len(pdf_files) else None
-
-                    # Pular cotações vazias (apenas para rascunho)
-                    if is_rascunho and not all([fornecedor_id, valor_unitario, prazo_entrega, condicao_pagamento]):
-                        continue
-
-                    # Para finalizar, validar campos obrigatórios
-                    if is_finalizar and not all([fornecedor_id, valor_unitario, prazo_entrega, condicao_pagamento]):
-                        flash(f'Todos os campos obrigatórios devem ser preenchidos para a cotação {i+1}.', 'error')
-                        cotacoes_com_erro += 1
-                        continue
-                    
-                    # Verificar se o fornecedor existe
-                    conn = get_db_connection(DB_PATH_FORNECEDORES)
-                    if conn:
-                        conn.row_factory = sqlite3.Row
-                        cursor = conn.cursor()
-                        cursor.execute('SELECT id FROM fornecedores WHERE id = ?', (fornecedor_id,))
-                        if not cursor.fetchone():
-                            flash(f'Fornecedor inválido na cotação {i+1}.', 'error')
-                            conn.close()
-                            cotacoes_com_erro += 1
-                            continue
-                        conn.close()
-
-                    # Processamento dos valores monetários
-                    valor_unitario_parsed = parse_br_currency(valor_unitario)
-                    valor_total_parsed = parse_br_currency(valor_total)
-                    valor_frete_parsed = parse_br_currency(valor_frete) if valor_frete else None
-
-                    if valor_unitario_parsed is None or (is_finalizar and valor_total_parsed is None):
-                        flash(f'Valor unitário e total devem ser números válidos na cotação {i+1}.', 'error')
-                        cotacoes_com_erro += 1
-                        continue
-                    
-                    if valor_unitario_parsed <= 0 or (is_finalizar and valor_total_parsed <= 0):
-                        flash(f'Valores unitário e total devem ser positivos na cotação {i+1}.', 'error')
-                        cotacoes_com_erro += 1
-                        continue
-                    
-                    if valor_frete_parsed is not None and valor_frete_parsed < 0:
-                        flash(f'O valor do frete deve ser positivo ou zero na cotação {i+1}.', 'error')
-                        cotacoes_com_erro += 1
-                        continue
-
-                    # Processar o upload do PDF (obrigatório apenas ao finalizar)
-                    pdf_path = None
-                    if pdf_file and pdf_file.filename:
-                        if allowed_file(pdf_file.filename):
-                            filename = f"{uuid.uuid4()}_{secure_filename(pdf_file.filename)}"
-                            pdf_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-                            try:
-                                pdf_file.save(pdf_path)
-                                logging.info(f"PDF salvo em: {pdf_path}")
-                            except Exception as e:
-                                logging.error(f"Erro ao salvar PDF na cotação {i+1}: {str(e)}")
-                                if is_finalizar:  # PDF é obrigatório apenas ao finalizar
-                                    flash(f'Erro ao salvar o PDF na cotação {i+1}.', 'error')
-                                    cotacoes_com_erro += 1
-                                    continue
-                        else:
-                            extension = pdf_file.filename.rsplit('.', 1)[1].lower() if '.' in pdf_file.filename else 'N/A'
-                            if is_finalizar:  # PDF é obrigatório apenas ao finalizar
-                                flash(f'Arquivo inválido na cotação {i+1}. Apenas PDFs são permitidos. Extensão detectada: {extension}', 'error')
-                                cotacoes_com_erro += 1
-                                continue
-
-                    # Determinar o status baseado na ação
-                    status_cotacao = 'Aguardando Aprovacao' if is_finalizar else 'Rascunho'
-
-                    # Verificar se já existe uma cotação para este fornecedor (para evitar duplicatas)
-                    cotacao_existente = SolicitacoesPreenchidas.query.filter_by(
-                        solicitacao_id=id, 
-                        fornecedor_id=int(fornecedor_id)
-                    ).first()
-
-                    if cotacao_existente:
-                        # Atualizar cotação existente
-                        cotacao_existente.valor_unitario = valor_unitario_parsed
-                        cotacao_existente.valor_frete = valor_frete_parsed
-                        cotacao_existente.valor_total = valor_total_parsed
-                        cotacao_existente.prazo_entrega = prazo_entrega
-                        cotacao_existente.condicao_pagamento = condicao_pagamento
-                        cotacao_existente.observacoes = observacao if observacao else None
-                        cotacao_existente.status = status_cotacao  # Atualizar status
-                        if pdf_path:
-                            cotacao_existente.pdf_path = pdf_path
-                        cotacao_existente.data_preenchimento = datetime.utcnow()
-                        cotacao_existente.usuario = session['usuario']
-                    else:
-                        # Criar nova instância de SolicitacoesPreenchidas
-                        preenchimento = SolicitacoesPreenchidas(
-                            solicitacao_id=id,
-                            fornecedor_id=int(fornecedor_id),
-                            valor_unitario=valor_unitario_parsed,
-                            valor_frete=valor_frete_parsed,
-                            valor_total=valor_total_parsed,
-                            prazo_entrega=prazo_entrega,
-                            condicao_pagamento=condicao_pagamento,
-                            usuario=session['usuario'],
-                            data_preenchimento=datetime.utcnow(),
-                            status=status_cotacao,  # Status baseado na ação
-                            pdf_path=pdf_path,
-                            observacoes=observacao if observacao else None
-                        )
-                        db.session.add(preenchimento)
-
-                    cotacoes_processadas += 1
-                    logging.info(f"Cotação {i+1} processada: Fornecedor ID {fornecedor_id}, Status: {status_cotacao}")
-
-                except Exception as e:
-                    logging.error(f"Erro ao processar cotação {i+1}: {str(e)}")
-                    flash(f'Erro ao processar cotação {i+1}: {str(e)}', 'error')
-                    cotacoes_com_erro += 1
-                    continue
-
-            try:
-                db.session.commit()
-                
-                if is_finalizar:
-                    if cotacoes_com_erro == 0:
-                        flash('Cotações finalizadas e enviadas para aprovação com sucesso!', 'success')
-                        return redirect(url_for('routes_bp.listar_solicitacoes'))
-                    else:
-                        flash('Corrija os erros antes de finalizar.', 'error')
-                else:  # Rascunho
-                    if cotacoes_processadas > 0:
-                        flash(f'Cotações salvas como rascunho ({cotacoes_processadas} processadas).', 'success')
-                    else:
-                        flash('Nenhuma cotação válida para salvar.', 'info')
-                        
-                # Recarregar cotações salvas após o commit
-                cotacoes_salvas = SolicitacoesPreenchidas.query.filter_by(
-                    solicitacao_id=id, 
-                    status='Rascunho'
-                ).all()
-                
-            except Exception as e:
-                db.session.rollback()
-                flash(f'Erro ao salvar as cotações: {str(e)}', 'error')
-                logging.error(f"Erro no commit do banco: {str(e)}")
-        
-        return render_template('preencher_solicitacao.html', 
-                              solicitacao=solicitacao, 
-                              fornecedores=fornecedores,
-                              cotacoes_salvas=cotacoes_salvas)
+    solicitacao = SolicitacoesCompra.query.get_or_404(id)
     
-    except Exception as e:
-        db.session.rollback()
-        flash(f'Erro ao processar cotações: {str(e)}', 'error')
-        logging.error(f"Erro geral em preencher_solicitacao: {str(e)}")
-        return render_template('preencher_solicitacao.html', 
-                              solicitacao=solicitacao, 
-                              fornecedores=fornecedores,
-                              cotacoes_salvas=[])
+    if request.method == 'POST':
+        try:
+            action = request.form.get('action')
+            fornecedores = request.form.getlist('fornecedor_id[]')
+            valores_unitarios = request.form.getlist('valor_unitario[]')
+            valores_frete = request.form.getlist('valor_frete[]')
+            prazos_entrega = request.form.getlist('prazo_entrega[]')
+            condicoes_pagamento = request.form.getlist('condicao_pagamento[]')
+            observacoes = request.form.getlist('observacao[]')
+            preenchimento_ids = request.form.getlist('preenchimento_id[]')
+            
+            if not fornecedores or len(fornecedores) == 0:
+                flash('É necessário adicionar pelo menos uma cotação.', 'error')
+                return redirect(url_for('routes_bp.preencher_solicitacao', id=id))
+            
+            for i in range(len(fornecedores)):
+                fornecedor_id = fornecedores[i]
+                valor_unitario_str = valores_unitarios[i].replace(',', '.') if valores_unitarios[i] else '0'
+                valor_frete_str = valores_frete[i].replace(',', '.') if valores_frete[i] else '0'
+                prazo_entrega = prazos_entrega[i]
+                condicao_pagamento = condicoes_pagamento[i]
+                observacao = observacoes[i] if i < len(observacoes) else ''
+                
+                try:
+                    # Usar Decimal para manter PRECISÃO ABSOLUTA de todas as casas decimais
+                    valor_unitario = Decimal(valor_unitario_str)
+                    valor_frete = Decimal(valor_frete_str) if valor_frete_str != '0' else None
+                    
+                    # SEM VALIDAÇÃO de casas decimais - mantém todas as digitadas
+                    # O Decimal não tem limitação prática de casas decimais
+                    
+                    # Se precisar converter para float no final (para o banco):
+                    # valor_unitario = float(valor_unitario)
+                    # valor_frete = float(valor_frete) if valor_frete else None
+                        
+                except (ValueError, InvalidOperation):
+                    flash('Valores unitário ou de frete inválidos. Use o formato correto.', 'error')
+                    return redirect(url_for('routes_bp.preencher_solicitacao', id=id))
+                    
+                # Calcular valor total
+                valor_total = (valor_unitario * solicitacao.quantidade) + (valor_frete or 0)
+                
+                # Verificar se é uma cotação existente (rascunho) ou nova
+                if i < len(preenchimento_ids) and preenchimento_ids[i]:
+                    preenchimento = SolicitacoesPreenchidas.query.get(preenchimento_ids[i])
+                    if preenchimento:
+                        # Registrar no histórico se houver alterações
+                        if (preenchimento.valor_unitario != valor_unitario or 
+                            preenchimento.valor_frete != valor_frete):
+                            historico = HistoricoDescontos(
+                                preenchimento_id=preenchimento.id,
+                                valor_unitario_anterior=preenchimento.valor_unitario,
+                                valor_unitario_novo=valor_unitario,
+                                valor_frete_anterior=preenchimento.valor_frete,
+                                valor_frete_novo=valor_frete,
+                                usuario=session['usuario']
+                            )
+                            db.session.add(historico)
+                        
+                        # Atualizar cotação existente
+                        preenchimento.fornecedor_id = fornecedor_id
+                        preenchimento.valor_unitario = valor_unitario
+                        preenchimento.valor_frete = valor_frete
+                        preenchimento.valor_total = valor_total
+                        preenchimento.prazo_entrega = prazo_entrega
+                        preenchimento.condicao_pagamento = condicao_pagamento
+                        preenchimento.observacoes = observacao
+                        preenchimento.data_preenchimento = get_local_time()
+                        preenchimento.usuario = session['usuario']
+                        
+                        if action == 'salvar_finalizar':
+                            preenchimento.status = 'Aguardando Aprovacao'
+                else:
+                    # Criar nova cotação
+                    preenchimento = SolicitacoesPreenchidas(
+                        solicitacao_id=id,
+                        fornecedor_id=fornecedor_id,
+                        valor_unitario=valor_unitario,
+                        valor_frete=valor_frete,
+                        valor_total=valor_total,
+                        prazo_entrega=prazo_entrega,
+                        condicao_pagamento=condicao_pagamento,
+                        observacoes=observacao,
+                        data_preenchimento=get_local_time(),
+                        usuario=session['usuario'],
+                        status='Rascunho' if action == 'salvar_rascunho' else 'Aguardando Aprovacao'
+                    )
+                    db.session.add(preenchimento)
+                
+                # Processar upload de PDF
+                pdf_key = f'pdf_file_{i+1}'
+                if pdf_key in request.files:
+                    pdf_file = request.files[pdf_key]
+                    if pdf_file and allowed_file(pdf_file.filename, {'pdf'}):
+                        filename = secure_filename(pdf_file.filename)
+                        timestamp = get_local_time().strftime('%Y%m%d_%H%M%S')
+                        unique_filename = f"{timestamp}_{filename}"
+                        pdf_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
+                        pdf_file.save(pdf_path)
+                        preenchimento.pdf_path = unique_filename
+            
+            # Atualizar status da solicitação se for finalizar
+            if action == 'salvar_finalizar':
+                solicitacao.status_aprovacao = 'Aguardando Aprovacao'
+            
+            db.session.commit()
+            flash('Cotações salvas com sucesso!' if action == 'salvar_rascunho' else 'Cotações enviadas para aprovação!', 'success')
+            return redirect(url_for('routes_bp.listar_solicitacoes_comprador'))
+        
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Erro ao salvar cotações: {str(e)}', 'error')
+            logging.error(f"Erro ao salvar cotações: {str(e)}")
+            return redirect(url_for('routes_bp.preencher_solicitacao', id=id))
+    
+    # Parte GET: Carregar cotações salvas (rascunhos)
+    cotacoes_salvas = SolicitacoesPreenchidas.query.filter_by(
+        solicitacao_id=id, 
+        status='Rascunho'
+    ).order_by(SolicitacoesPreenchidas.id).all()
+    
+    # Enriquecer cada cotação com detalhes do fornecedor
+    for cotacao in cotacoes_salvas:
+        if cotacao.fornecedor_id:
+            nome_fantasia, cnpj = get_fornecedor_details(cotacao.fornecedor_id)
+            cotacao.fornecedor_nome_fantasia = nome_fantasia or ''
+            cotacao.fornecedor_cnpj = cnpj or ''
+        else:
+            cotacao.fornecedor_nome_fantasia = ''
+            cotacao.fornecedor_cnpj = ''
+    
+    # Renderizar o template com os dados enriquecidos
+    return render_template(
+        'preencher_solicitacao.html',
+        solicitacao=solicitacao,
+        cotacoes_salvas=cotacoes_salvas
+    )
     
 @routes_bp.route('/listar_solicitacoes_preenchidas', methods=['GET'])
 def listar_solicitacoes_preenchidas():
@@ -5126,18 +5013,50 @@ def atualizar_valores_cotacao():
     try:
         data = request.get_json()
         preenchimento_id = data.get('preenchimento_id')
-        valor_unitario = data.get('valor_unitario')
-        valor_frete = data.get('valor_frete', 0)
-        valor_unitario_original = data.get('valor_unitario_original')
-        observacoes = data.get('observacoes')  # Novo: Pegar observações do request
+        valor_unitario_str = data.get('valor_unitario')
+        valor_frete_str = data.get('valor_frete', '0')
+        valor_unitario_original_str = data.get('valor_unitario_original')
+        observacoes = data.get('observacoes')
         
-        if not all([preenchimento_id, valor_unitario, valor_unitario_original]):
-            return jsonify({'success': False, 'message': 'Dados incompletos'}), 400
+        # Validações
+        if not preenchimento_id:
+            return jsonify({'success': False, 'message': 'ID do preenchimento é obrigatório'}), 400
+        
+        if not valor_unitario_str:
+            return jsonify({'success': False, 'message': 'Valor unitário é obrigatório'}), 400
+        
+        # Função robusta para conversão
+        def safe_currency_convert(value_str):
+            if not value_str:
+                return 0.0
+            try:
+                # Remove caracteres não numéricos exceto vírgula e ponto
+                cleaned = re.sub(r'[^\d,.]', '', str(value_str))
+                # Remove pontos de milhar (preserva apenas o último ponto como decimal)
+                if ',' in cleaned and '.' in cleaned:
+                    # Formato: 1.234,56 -> remove pontos de milhar
+                    cleaned = cleaned.replace('.', '')
+                    cleaned = cleaned.replace(',', '.')
+                elif ',' in cleaned:
+                    # Formato: 1234,56
+                    cleaned = cleaned.replace(',', '.')
+                # Se só tem ponto, assume que é decimal
+                return float(cleaned) if cleaned else 0.0
+            except (ValueError, TypeError):
+                return 0.0
+        
+        valor_unitario = safe_currency_convert(valor_unitario_str)
+        valor_frete = safe_currency_convert(valor_frete_str)
+        valor_unitario_original = safe_currency_convert(valor_unitario_original_str)
+        
+        # Valida se os valores são números válidos
+        if valor_unitario <= 0:
+            return jsonify({'success': False, 'message': 'Valor unitário deve ser maior que zero'}), 400
         
         # Buscar o preenchimento
         preenchimento = SolicitacoesPreenchidas.query.get_or_404(preenchimento_id)
         
-        # Salvar valores anteriores para o histórico
+        # Salvar valores anteriores
         valor_unitario_anterior = preenchimento.valor_unitario
         valor_frete_anterior = preenchimento.valor_frete
         
@@ -5149,29 +5068,24 @@ def atualizar_valores_cotacao():
         preenchimento.valor_unitario = valor_unitario
         preenchimento.valor_frete = valor_frete if valor_frete > 0 else None
         preenchimento.valor_total = novo_valor_total
-        preenchimento.observacoes = observacoes  # Novo: Atualizar observações
-        
-        # Registrar no histórico (mantendo o existente, sem mudança aqui)
-        historico = HistoricoDescontos(
-            preenchimento_id=preenchimento_id,
-            valor_unitario_anterior=valor_unitario_anterior,
-            valor_unitario_novo=valor_unitario,
-            valor_frete_anterior=valor_frete_anterior,
-            valor_frete_novo=valor_frete if valor_frete > 0 else None,
-            usuario=session['usuario']
-        )
-        db.session.add(historico)
+        preenchimento.observacoes = observacoes
         
         db.session.commit()
         
         return jsonify({
             'success': True, 
-            'message': 'Valores atualizados com sucesso!'
+            'message': 'Valores atualizados com sucesso',
+            'novo_valor_total': novo_valor_total,
+            'valor_unitario': valor_unitario,
+            'valor_frete': valor_frete
         })
         
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'message': f'Erro ao atualizar valores: {str(e)}'}), 500
+        return jsonify({
+            'success': False, 
+            'message': f'Erro ao atualizar valores: {str(e)}'
+        }), 500
     
 def create_historico_descontos_table():
     try:
@@ -5531,7 +5445,20 @@ def listar_solicitacoes_finalizadas():
             compradores=[]  # Passa lista vazia em caso de erro
         )
     
-
+def get_fornecedor_details(fornecedor_id):
+    """Busca nome_fantasia e cnpj do fornecedor pelo ID no banco fornecedores.db"""
+    try:
+        conn = sqlite3.connect(DB_PATH_FORNECEDORES)
+        cursor = conn.cursor()
+        cursor.execute('SELECT nome_fantasia, cnpj FROM fornecedores WHERE id = ?', (fornecedor_id,))
+        result = cursor.fetchone()
+        conn.close()
+        if result:
+            return result[0], result[1]  # nome_fantasia, cnpj
+        return None, None
+    except sqlite3.Error as e:
+        logging.error(f"Erro ao buscar fornecedor {fornecedor_id}: {str(e)}")
+        return None, None
     
   # Registro do Blueprint (apenas uma vez)
 app.register_blueprint(routes_bp)  
