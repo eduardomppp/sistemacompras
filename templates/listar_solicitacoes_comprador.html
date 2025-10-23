@@ -7,6 +7,7 @@
     <title>Listar Solicitações Aprovadas/Reprovadas</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <style>
         :root {
             --primary-color: #022855;
@@ -38,15 +39,46 @@
             box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
         }
 
-        h1 {
-            text-align: center;
-            color: var(--primary-color);
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             margin-bottom: 30px;
             padding-bottom: 15px;
             border-bottom: 2px solid var(--light-gray);
+        }
+
+        h1 {
+            color: var(--primary-color);
+            margin: 0;
             font-weight: 600;
         }
 
+        .btn-novo-pedido {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 4px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: none;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+
+        .btn-novo-pedido:hover {
+            background-color: var(--hover-color);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            color: white;
+            text-decoration: none;
+        }
+
+        /* Resto do CSS permanece igual */
         h4 {
             margin-top: 20px;
             color: var(--primary-color);
@@ -283,6 +315,12 @@
         }
 
         @media (max-width: 768px) {
+            .page-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+            
             .filter-row {
                 flex-direction: column;
             }
@@ -310,12 +348,18 @@
 
 <body>
     <div class="container">
-        <h1>
-            <i class="fas fa-clipboard-list"></i> Solicitações de Compras
-        </h1>
+        <div class="page-header">
+            <h1>
+                <i class="fas fa-clipboard-list"></i> Solicitações de Compras
+            </h1>
+            <a href="{{ url_for('routes_bp.gerar_pedido_compra') }}" class="btn-novo-pedido">
+                <i class="bi bi-cart-plus"></i> Novo Pedido
+            </a>
+        </div>
 
         <!-- FILTROS -->
         <div class="search-filter-container">
+            <!-- Resto do código dos filtros permanece igual -->
             <div class="filter-row">
                 <div class="filter-group">
                     <label for="empresaFilter">Empresa</label>
@@ -383,7 +427,7 @@
             </div>
         </div>
 
-        <!-- TABELA AGRUPADA -->
+        <!-- O resto do template permanece igual -->
         {% if solicitacoes %}
         <div id="tablesContainer">
             {% set grouped = {} %}
@@ -467,6 +511,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // O JavaScript permanece igual
         document.addEventListener('DOMContentLoaded', function () {
             const thirtyDaysAgo = new Date();
             thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);

@@ -64,27 +64,69 @@
             font-weight: 500;
         }
         
+        .btn-outline-primary {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+        
+        .btn-outline-primary:hover {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .btn-outline-primary.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .application-section {
+            margin-bottom: 40px;
+            border: 2px solid var(--primary-color);
+            border-radius: var(--border-radius);
+            overflow: hidden;
+        }
+        
+        .application-header {
+            background: linear-gradient(135deg, var(--primary-color), #1a3a6e);
+            color: white;
+            padding: 20px;
+        }
+        
+        .application-title {
+            color: white !important;
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+        
+        .application-subtitle {
+            color: #e9ecef;
+            font-size: 1rem;
+            margin-top: 5px;
+        }
+        
         .material-card {
             background-color: white;
             border-radius: var(--border-radius);
             padding: 0;
-            margin-bottom: 30px;
+            margin: 20px;
             box-shadow: var(--card-shadow);
             border: 1px solid #e9ecef;
             overflow: hidden;
         }
         
         .material-header {
-            background-color: var(--primary-color);
-            color: white;
+            background-color: #f8f9fa;
+            color: var(--primary-color);
             padding: 15px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            border-bottom: 1px solid #dee2e6;
         }
         
         .material-title {
-            color: #FFFFFF !important;
+            color: var(--primary-color) !important;
             margin: 0;
             font-size: 1.25rem;
             font-weight: 600;
@@ -92,10 +134,11 @@
         
         .material-details {
             font-size: 0.9rem;
-            color: #f8f9fa;
+            color: #6c757d;
             display: flex;
             flex-wrap: wrap;
             gap: 15px;
+            margin-top: 10px;
         }
         
         .material-details span {
@@ -170,8 +213,8 @@
         }
         
         .badge-count {
-            background-color: white;
-            color: var(--primary-color);
+            background-color: var(--primary-color);
+            color: white;
             font-weight: 600;
             padding: 5px 10px;
             border-radius: 20px;
@@ -275,6 +318,55 @@
             color: var(--primary-color);
         }
         
+        .application-count {
+            background-color: white;
+            color: var(--primary-color);
+            font-weight: 700;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+        
+        .filter-section {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: var(--border-radius);
+            margin-bottom: 25px;
+            border: 1px solid #dee2e6;
+        }
+        
+        .filter-section h5 {
+            color: var(--primary-color);
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+        
+        .comprador-badge {
+            background-color: #e3f2fd;
+            color: var(--primary-color);
+            border: 1px solid var(--primary-color);
+            font-weight: 500;
+        }
+        
+        .comprador-badge.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .hidden-section {
+            display: none;
+        }
+        
+        .comprador-indicator {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        
         @media (max-width: 768px) {
             .main-container {
                 padding: 15px;
@@ -283,6 +375,13 @@
             .table-responsive {
                 border-radius: var(--border-radius);
                 border: 1px solid #dee2e6;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            
+            .table th, .table td {
+                font-size: 0.85rem;
+                padding: 8px;
             }
             
             .material-header {
@@ -294,6 +393,19 @@
             .material-details {
                 flex-direction: column;
                 gap: 5px;
+            }
+            
+            .application-header {
+                padding: 15px;
+            }
+            
+            .application-title {
+                font-size: 1.3rem;
+            }
+            
+            .filter-buttons {
+                flex-direction: column;
+                gap: 10px;
             }
         }
     </style>
@@ -313,36 +425,55 @@
 
         <form action="{{ url_for('routes_bp.gerar_pedido_compra') }}" method="POST">
             {% if preenchimentos_por_material %}
+                <!-- Seção de Filtro por Comprador -->
+                <div class="filter-section">
+                    <h5><i class="bi bi-funnel"></i> Filtrar por Comprador Atribuído</h5>
+                    <div class="d-flex flex-wrap gap-2 filter-buttons">
+                        <button type="button" class="btn btn-outline-primary active" data-comprador="todos">
+                            <i class="bi bi-people"></i> Todos os Compradores
+                        </button>
+                        {% set compradores = [] %}
+                        {% for material_nome, preenchimentos in preenchimentos_por_material.items() %}
+                            {% for p in preenchimentos %}
+                                {% set comprador = p.solicitacao.comprador_atribuido | default('Não Atribuído') %}
+                                {% if comprador not in compradores %}
+                                    {% set _ = compradores.append(comprador) %}
+                                    <button type="button" class="btn btn-outline-primary" data-comprador="{{ comprador }}">
+                                        <i class="bi bi-person"></i> {{ comprador }}
+                                    </button>
+                                {% endif %}
+                            {% endfor %}
+                        {% endfor %}
+                    </div>
+                    <div class="mt-3">
+                        <small class="text-muted">
+                            <i class="bi bi-info-circle"></i> Selecione um comprador para visualizar apenas as cotações atribuídas a ele
+                        </small>
+                    </div>
+                </div>
+
                 <!-- Seção de Resumo do Pedido -->
                 <div class="summary-card">
                     <h4><i class="bi bi-clipboard-data"></i> Resumo do Pedido</h4>
                     <div class="summary-item">
-                        <span class="summary-label">Total de Itens:</span>
-                        <span class="summary-value">{{ preenchimentos_por_material|length }}</span>
+                        <span class="summary-label">Cotações Selecionadas:</span>
+                        <span class="summary-value" id="cotacoes-selecionadas">0</span>
                     </div>
                     <div class="summary-item">
-                        <span class="summary-label">Total de Cotações:</span>
-                        <span class="summary-value">
-                            {% set total_cotacoes = [] %}
-                            {% for material_nome, preenchimentos in preenchimentos_por_material.items() %}
-                                {% for p in preenchimentos %}
-                                    {% if total_cotacoes.append(1) %}{% endif %}
-                                {% endfor %}
-                            {% endfor %}
-                            {{ total_cotacoes|length }}
-                        </span>
+                        <span class="summary-label">Materiais Selecionados:</span>
+                        <span class="summary-value" id="materiais-selecionados">0</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Aplicações Selecionadas:</span>
+                        <span class="summary-value" id="aplicacoes-selecionadas">0</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Compradores Selecionados:</span>
+                        <span class="summary-value" id="compradores-selecionados">0</span>
                     </div>
                     <div class="summary-item">
                         <span class="summary-label">Valor Estimado Total:</span>
-                        <span class="summary-value total-value">
-                            {% set total_valor = [] %}
-                            {% for material_nome, preenchimentos in preenchimentos_por_material.items() %}
-                                {% for p in preenchimentos %}
-                                    {% if total_valor.append(p.valor_total) %}{% endif %}
-                                {% endfor %}
-                            {% endfor %}
-                            R$ {{ "%.2f"|format(total_valor|sum) }}
-                        </span>
+                        <span class="summary-value total-value" id="valor-total-selecionado">R$ 0,00</span>
                     </div>
                 </div>
                 
@@ -382,102 +513,155 @@
                     </div>
                 </div>
                 
-                <!-- Listagem de Materiais e Cotações -->
+                <!-- Agrupamento por Aplicação -->
+                {% set aplicacoes_agrupadas = {} %}
                 {% for material_nome, preenchimentos in preenchimentos_por_material.items() %}
-                    <div class="material-card">
-                        <div class="material-header">
+                    {% for preenchimento in preenchimentos %}
+                        {% set aplicacao = preenchimento.solicitacao.aplicacao | default('Sem Aplicação Definida') %}
+                        {% if aplicacao not in aplicacoes_agrupadas %}
+                            {% set _ = aplicacoes_agrupadas.update({aplicacao: {}}) %}
+                        {% endif %}
+                        {% if material_nome not in aplicacoes_agrupadas[aplicacao] %}
+                            {% set _ = aplicacoes_agrupadas[aplicacao].update({material_nome: []}) %}
+                        {% endif %}
+                        {% set _ = aplicacoes_agrupadas[aplicacao][material_nome].append(preenchimento) %}
+                    {% endfor %}
+                {% endfor %}
+                
+                <!-- Listagem por Aplicação -->
+                {% for aplicacao, materiais in aplicacoes_agrupadas.items() %}
+                <div class="application-section" data-aplicacao="{{ aplicacao }}">
+                    <div class="application-header">
+                        <div class="d-flex justify-content-between align-items-center flex-wrap">
                             <div>
-                                <h3 class="material-title text-warning"> <!-- text-warning = amarelo -->
-                                    <i class="bi bi-box-seam"></i> {{ material_nome }}
-                                </h3>
-                                <div class="material-details">
-                                    <span>
-                                        <i class="bi bi-tag"></i> Marca: {{ preenchimentos[0].solicitacao.marca | default('N/A') }}
-                                    </span>
-                                    <span>
-                                        <i class="bi bi-building"></i> Fornecedor Principal: {{ preenchimentos[0].fornecedor_nome | default('N/A') }}
-                                    </span>
-                                    <span>
-                                        <i class="bi bi-lightning-charge"></i> Ativo: 
-                                        <span class="badge bg-{{ 'success' if preenchimentos[0].solicitacao.ativo == 'Sim' else 'secondary' }}">
-                                            {{ preenchimentos[0].solicitacao.ativo }}
-                                        </span>
-                                    </span>
-                                    <span>
-                                        <i class="bi bi-exclamation-triangle"></i> Prioridade: 
-                                        <span class="priority-badge priority-{{ 'urgente' if preenchimentos[0].solicitacao.prioridade == 'Urgente' else 'programado' }}">
-                                            {{ preenchimentos[0].solicitacao.prioridade }}
-                                        </span>
-                                    </span>
+                                <h2 class="application-title">
+                                    <i class="bi bi-tools"></i> {{ aplicacao }}
+                                </h2>
+                                <div class="application-subtitle">
+                                    {{ materiais|length }} material(is) nesta aplicação
                                 </div>
                             </div>
-                            <span class="badge-count">{{ preenchimentos|length }} cotações</span>
-                        </div>
-                        
-                        <div class="table-responsive">
-                            <table class="table table-hover align-middle">
-                                <thead>
-                                    <tr>
-                                        <th class="checkbox-cell">
-                                            <input type="checkbox" class="form-check-input" onclick="toggleAll(this)">
-                                        </th>
-                                        <th>Fornecedor (CNPJ)</th>
-                                        <th>Marca/Especificação</th>
-                                        <th class="text-end">Quantidade</th>
-                                        <th class="text-end">Unitário</th>
-                                        <th class="text-end">Frete</th>
-                                        <th class="text-end">Total</th>
-                                        <th>Entrega</th>
-                                        <th>Pagamento</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for preenchimento in preenchimentos %}
-                                    <tr>
-                                        <td class="checkbox-cell">
-                                            <input type="checkbox" 
-                                                   name="preenchimento_ids" 
-                                                   value="{{ preenchimento.id }}"
-                                                   class="form-check-input"
-                                                   aria-label="Selecionar cotação">
-                                        </td>
-                                        <td>
-                                            <div class="supplier-info">
-                                                <span class="supplier-name">{{ preenchimento.fornecedor_nome }}</span>
-                                                <span class="supplier-details">
-                                                    {% if preenchimento.fornecedor_cnpj %}
-                                                        CNPJ: {{ preenchimento.fornecedor_cnpj }}
-                                                    {% endif %}
-                                                    <span class="ms-2">ID: {{ preenchimento.id }}</span>
-                                                </span>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div class="brand-info">
-                                                <span class="brand-name">{{ preenchimento.solicitacao.marca | default('N/A') }}</span>
-                                                {% if preenchimento.solicitacao.especificacao %}
-                                                <span class="model-details">{{ preenchimento.solicitacao.especificacao }}</span>
-                                                {% endif %}
-                                            </div>
-                                        </td>
-                                        <td class="text-end">{{ preenchimento.solicitacao.quantidade }}</td>
-                                        <td class="text-end currency-value">R$ {{ "%.2f" | format(preenchimento.valor_unitario) }}</td>
-                                        <td class="text-end currency-value">
-                                            {% if preenchimento.valor_frete is not none %}
-                                                R$ {{ "%.2f" | format(preenchimento.valor_frete) }}
-                                            {% else %}
-                                                <span class="text-muted-light">-</span>
-                                            {% endif %}
-                                        </td>
-                                        <td class="text-end currency-value fw-bold">R$ {{ "%.2f" | format(preenchimento.valor_total) }}</td>
-                                        <td>{{ preenchimento.prazo_entrega }}</td>
-                                        <td>{{ preenchimento.condicao_pagamento }}</td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
+                            <span class="application-count">
+                                <i class="bi bi-collection"></i> Aplicação {{ loop.index }}
+                            </span>
                         </div>
                     </div>
+                    
+                    <!-- Materiais dentro desta aplicação -->
+                    {% for material_nome, preenchimentos in materiais.items() %}
+                        <div class="material-card" data-material="{{ material_nome }}">
+                            <div class="material-header">
+                                <div>
+                                    <h3 class="material-title">
+                                        <i class="bi bi-box-seam"></i> {{ material_nome }}
+                                    </h3>
+                                    <div class="material-details">
+                                        <span>
+                                            <i class="bi bi-tag"></i> Marca: {{ preenchimentos[0].solicitacao.marca | default('N/A') }}
+                                        </span>
+                                        <span>
+                                            <i class="bi bi-building"></i> Fornecedor Principal: {{ preenchimentos[0].fornecedor_nome | default('N/A') }}
+                                        </span>
+                                        <span>
+                                            <i class="bi bi-lightning-charge"></i> Ativo: 
+                                            <span class="badge bg-{{ 'success' if preenchimentos[0].solicitacao.ativo == 'Sim' else 'secondary' }}">
+                                                {{ preenchimentos[0].solicitacao.ativo }}
+                                            </span>
+                                        </span>
+                                        <span>
+                                            <i class="bi bi-exclamation-triangle"></i> Prioridade: 
+                                            <span class="priority-badge priority-{{ 'urgente' if preenchimentos[0].solicitacao.prioridade == 'Urgente' else 'programado' }}">
+                                                {{ preenchimentos[0].solicitacao.prioridade }}
+                                            </span>
+                                        </span>
+                                        <span>
+                                            <i class="bi bi-person"></i> Comprador Atribuído: 
+                                            <span class="comprador-indicator">{{ preenchimentos[0].solicitacao.comprador_atribuido | default('Não Atribuído') }}</span>
+                                        </span>
+                                    </div>
+                                </div>
+                                <span class="badge-count">{{ preenchimentos|length }} cotações</span>
+                            </div>
+                            
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th class="checkbox-cell">
+                                                <input type="checkbox" class="form-check-input select-all" data-material="{{ material_nome }}">
+                                            </th>
+                                            <th>Fornecedor (CNPJ)</th>
+                                            <th>Marca/Especificação</th>
+                                            <th>Comprador Atribuído</th>
+                                            <th class="text-end">Quantidade</th>
+                                            <th class="text-end">Unitário</th>
+                                            <th class="text-end">Frete</th>
+                                            <th class="text-end">Total</th>
+                                            <th>Entrega</th>
+                                            <th>Pagamento</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for preenchimento in preenchimentos %}
+                                        <tr data-comprador="{{ preenchimento.solicitacao.comprador_atribuido | default('Não Atribuído') }}" 
+                                            data-valor="{{ preenchimento.valor_total }}"
+                                            data-material="{{ material_nome }}"
+                                            data-aplicacao="{{ aplicacao }}">
+                                            <td class="checkbox-cell">
+                                                <input type="checkbox" 
+                                                       name="preenchimento_ids" 
+                                                       value="{{ preenchimento.id }}"
+                                                       class="form-check-input cotacao-checkbox"
+                                                       data-comprador="{{ preenchimento.solicitacao.comprador_atribuido | default('Não Atribuído') }}"
+                                                       data-valor="{{ preenchimento.valor_total }}"
+                                                       data-material="{{ material_nome }}"
+                                                       data-aplicacao="{{ aplicacao }}"
+                                                       aria-label="Selecionar cotação">
+                                            </td>
+                                            <td>
+                                                <div class="supplier-info">
+                                                    <span class="supplier-name">{{ preenchimento.fornecedor_nome }}</span>
+                                                    <span class="supplier-details">
+                                                        {% if preenchimento.fornecedor_cnpj %}
+                                                            CNPJ: {{ preenchimento.fornecedor_cnpj }}
+                                                        {% endif %}
+                                                        <span class="ms-2">ID: {{ preenchimento.id }}</span>
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="brand-info">
+                                                    <span class="brand-name">{{ preenchimento.solicitacao.marca | default('N/A') }}</span>
+                                                    {% if preenchimento.solicitacao.especificacao %}
+                                                    <span class="model-details">{{ preenchimento.solicitacao.especificacao }}</span>
+                                                    {% endif %}
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span class="badge comprador-badge">
+                                                    {{ preenchimento.solicitacao.comprador_atribuido | default('Não Atribuído') }}
+                                                </span>
+                                            </td>
+                                            <td class="text-end">{{ preenchimento.solicitacao.quantidade }}</td>
+                                            <td class="text-end currency-value">R$ {{ "%.2f" | format(preenchimento.valor_unitario) }}</td>
+                                            <td class="text-end currency-value">
+                                                {% if preenchimento.valor_frete is not none %}
+                                                    R$ {{ "%.2f" | format(preenchimento.valor_frete) }}
+                                                {% else %}
+                                                    <span class="text-muted-light">-</span>
+                                                {% endif %}
+                                            </td>
+                                            <td class="text-end currency-value fw-bold">R$ {{ "%.2f" | format(preenchimento.valor_total) }}</td>
+                                            <td>{{ preenchimento.prazo_entrega }}</td>
+                                            <td>{{ preenchimento.condicao_pagamento }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
                 {% endfor %}
                 
                 <div class="d-flex justify-content-between mt-5">
@@ -523,15 +707,189 @@
             checkboxes.forEach(checkbox => {
                 checkbox.checked = source.checked;
             });
+            updateSummary();
         }
         
-        // Seleciona automaticamente todas as checkboxes ao carregar a página
+        // Filtro por Comprador
         document.addEventListener('DOMContentLoaded', function() {
-            document.querySelectorAll('thead .form-check-input').forEach(headerCheckbox => {
-                headerCheckbox.checked = true;
-                const checkboxes = headerCheckbox.closest('table').querySelectorAll('tbody input[type="checkbox"]');
+            const filterButtons = document.querySelectorAll('[data-comprador]');
+            let currentFilter = 'todos';
+            
+            // Inicializa com todas as cotações visíveis e sem seleção
+            showAllCotacoes();
+            updateSummary();
+            
+            filterButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const comprador = this.getAttribute('data-comprador');
+                    
+                    // Atualiza botões ativos
+                    filterButtons.forEach(btn => {
+                        btn.classList.remove('active');
+                    });
+                    this.classList.add('active');
+                    
+                    currentFilter = comprador;
+                    
+                    if (comprador === 'todos') {
+                        showAllCotacoes();
+                    } else {
+                        filterByComprador(comprador);
+                    }
+                    
+                    updateSummaryVisibility();
+                    updateSummary();
+                });
+            });
+            
+            function showAllCotacoes() {
+                // Mostra todas as aplicações e materiais
+                document.querySelectorAll('.application-section').forEach(section => {
+                    section.style.display = 'block';
+                });
+                
+                document.querySelectorAll('.material-card').forEach(material => {
+                    material.style.display = 'block';
+                });
+                
+                // Mostra todas as linhas da tabela
+                document.querySelectorAll('tbody tr').forEach(row => {
+                    row.style.display = '';
+                });
+                
+                // Atualiza contadores
+                updateMaterialCounters();
+            }
+            
+            function filterByComprador(comprador) {
+                // Primeiro, esconde tudo
+                document.querySelectorAll('.application-section').forEach(section => {
+                    section.style.display = 'none';
+                });
+                
+                document.querySelectorAll('.material-card').forEach(material => {
+                    material.style.display = 'none';
+                });
+                
+                document.querySelectorAll('tbody tr').forEach(row => {
+                    row.style.display = 'none';
+                });
+                
+                // Depois, mostra apenas o que pertence ao comprador
+                document.querySelectorAll(`tbody tr[data-comprador="${comprador}"]`).forEach(row => {
+                    row.style.display = '';
+                    
+                    // Mostra o material card pai
+                    const materialCard = row.closest('.material-card');
+                    if (materialCard) {
+                        materialCard.style.display = 'block';
+                    }
+                    
+                    // Mostra a application section pai
+                    const applicationSection = row.closest('.application-section');
+                    if (applicationSection) {
+                        applicationSection.style.display = 'block';
+                    }
+                });
+                
+                // Atualiza contadores
+                updateMaterialCounters();
+            }
+            
+            function updateMaterialCounters() {
+                document.querySelectorAll('.material-card').forEach(materialCard => {
+                    if (materialCard.style.display !== 'none') {
+                        const visibleRows = materialCard.querySelectorAll('tbody tr[style=""]').length;
+                        const totalRows = materialCard.querySelectorAll('tbody tr').length;
+                        const badge = materialCard.querySelector('.badge-count');
+                        if (badge) {
+                            badge.textContent = `${visibleRows} cotações`;
+                        }
+                    }
+                });
+            }
+            
+            function updateSummaryVisibility() {
+                // Atualiza a visibilidade das seções baseado no filtro
+                document.querySelectorAll('.application-section').forEach(section => {
+                    const hasVisibleRows = section.querySelector('tbody tr[style=""]');
+                    if (!hasVisibleRows && currentFilter !== 'todos') {
+                        section.style.display = 'none';
+                    }
+                });
+                
+                document.querySelectorAll('.material-card').forEach(material => {
+                    const hasVisibleRows = material.querySelector('tbody tr[style=""]');
+                    if (!hasVisibleRows && currentFilter !== 'todos') {
+                        material.style.display = 'none';
+                    }
+                });
+            }
+            
+            // Função para atualizar o resumo baseado nas seleções
+            function updateSummary() {
+                const checkboxes = document.querySelectorAll('.cotacao-checkbox:checked');
+                const cotacoesSelecionadas = checkboxes.length;
+                
+                // Contar materiais únicos selecionados
+                const materiaisSelecionados = new Set();
+                // Contar aplicações únicas selecionadas
+                const aplicacoesSelecionadas = new Set();
+                // Contar compradores únicos selecionados
+                const compradoresSelecionados = new Set();
+                // Calcular valor total
+                let valorTotal = 0;
+                
                 checkboxes.forEach(checkbox => {
-                    checkbox.checked = true;
+                    const material = checkbox.getAttribute('data-material');
+                    const aplicacao = checkbox.getAttribute('data-aplicacao');
+                    const comprador = checkbox.getAttribute('data-comprador');
+                    const valor = parseFloat(checkbox.getAttribute('data-valor'));
+                    
+                    if (material) materiaisSelecionados.add(material);
+                    if (aplicacao) aplicacoesSelecionadas.add(aplicacao);
+                    if (comprador) compradoresSelecionados.add(comprador);
+                    if (!isNaN(valor)) valorTotal += valor;
+                });
+                
+                // Atualizar a interface
+                document.getElementById('cotacoes-selecionadas').textContent = cotacoesSelecionadas;
+                document.getElementById('materiais-selecionados').textContent = materiaisSelecionados.size;
+                document.getElementById('aplicacoes-selecionadas').textContent = aplicacoesSelecionadas.size;
+                document.getElementById('compradores-selecionados').textContent = compradoresSelecionados.size;
+                document.getElementById('valor-total-selecionado').textContent = 'R$ ' + valorTotal.toFixed(2).replace('.', ',');
+            }
+            
+            // Event listeners para checkboxes individuais
+            document.querySelectorAll('.cotacao-checkbox').forEach(checkbox => {
+                checkbox.addEventListener('change', updateSummary);
+                
+                // Atualiza o estado do checkbox "selecionar todos" quando checkboxes individuais mudam
+                checkbox.addEventListener('change', function() {
+                    const material = this.getAttribute('data-material');
+                    const materialCheckboxes = document.querySelectorAll(`.cotacao-checkbox[data-material="${material}"]`);
+                    const selectAllCheckbox = document.querySelector(`.select-all[data-material="${material}"]`);
+                    
+                    const allChecked = Array.from(materialCheckboxes).every(cb => cb.checked);
+                    const someChecked = Array.from(materialCheckboxes).some(cb => cb.checked);
+                    
+                    if (selectAllCheckbox) {
+                        selectAllCheckbox.checked = allChecked;
+                        selectAllCheckbox.indeterminate = someChecked && !allChecked;
+                    }
+                });
+            });
+            
+            // Event listeners para checkboxes "selecionar todos"
+            document.querySelectorAll('.select-all').forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const material = this.getAttribute('data-material');
+                    const checkboxes = document.querySelectorAll(`.cotacao-checkbox[data-material="${material}"]`);
+                    checkboxes.forEach(cb => {
+                        cb.checked = this.checked;
+                    });
+                    this.indeterminate = false;
+                    updateSummary();
                 });
             });
             
@@ -556,7 +914,7 @@
             
             // Validação do formulário antes de enviar
             document.querySelector('form').addEventListener('submit', function(e) {
-                const checkboxes = document.querySelectorAll('tbody input[type="checkbox"]:checked');
+                const checkboxes = document.querySelectorAll('.cotacao-checkbox:checked');
                 if (checkboxes.length === 0) {
                     e.preventDefault();
                     alert('Selecione pelo menos uma cotação para gerar o pedido.');
