@@ -1597,7 +1597,7 @@ def abrir_solicitacao():
             flash('Nenhuma solicitação válida para criar.', 'error')
             print("❌ Nenhuma solicitação criada")
 
-        return redirect(url_for('routes_bp.listar_solicitacoes'))
+        return redirect(url_for('routes_bp.solicitar_compra'))
         
     except Exception as e:
         db.session.rollback()
