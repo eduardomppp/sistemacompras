@@ -607,10 +607,7 @@
                             class="fas fa-search"></i><span>Auditoria</span></a></li>
                 <li><a href="{{ url_for('routes_bp.relatorio_estoque') }}" target="content-frame" data-tooltip="Histórico de Estoque">
                             <i class="fas fa-history"></i><span>EstoqLog</span></a></li>
-                <li><a href="{{ url_for('routes_bp.listar_pcp') }}" target="content-frame" data-tooltip="Controle Estoque"><i
-                            class="fas fa-cogs"></i><span>Controle PCP</span></a></li>
-                <li><a href="{{ url_for('routes_bp.listar_ativos') }}" target="content-frame" data-tooltip="Controle Ativos"><i
-                            class="fas fa-cogs"></i><span>Controle PCM</span></a></li>
+                
                 <li><a href="{{ url_for('routes_bp.logs') }}" target="content-frame" data-tooltip="Registro de Acessos"><i
                             class="fas fa-history"></i><span>Registro de Acessos</span></a></li>
                 <li><a href="{{ url_for('routes_bp.buscar_material') }}" target="content-frame" data-tooltip="Buscar Material"><i
@@ -636,6 +633,10 @@
                         <i class="fas fa-ellipsis-h"></i><span>Outros</span>
                     </a>
                     <ul class="submenu">
+                        <li><a href="{{ url_for('routes_bp.listar_pcp') }}" target="content-frame" data-tooltip="Controle Estoque"><i
+                            class="fas fa-cogs"></i><span>Controle PCP</span></a></li>
+                       <li><a href="{{ url_for('routes_bp.listar_ativos') }}" target="content-frame" data-tooltip="Controle Ativos"><i
+                            class="fas fa-cogs"></i><span>Controle PCM</span></a></li>
                         <li><a href="{{ url_for('routes_bp.listar_estoque') }}" target="content-frame" data-tooltip="Estoque de Materiais"><i
                                     class="fas fa-warehouse"></i><span>Estoque de Materiais</span></a></li>
                         <li><a href="{{ url_for('routes_bp.listar_requisicoes') }}" target="content-frame" data-tooltip="Requisições"><i
