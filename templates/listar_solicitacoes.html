@@ -1,605 +1,498 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Listar Solicitações Aprovadas/Reprovadas</title>
+    <title>Solicitações de Compra Finalizadas</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         :root {
             --primary-color: #022855;
             --secondary-color: #f8f9fa;
-            --accent-color: #022855;
-            --hover-color: #3c94ff;
-            --text-color: #343a40;
-            --light-gray: #f1f1f1;
-            --border-color: #e0e0e0;
+            --text-color: #333;
+            --border-color: #dee2e6;
             --status-aprovado: #28a745;
             --status-reprovado: #dc3545;
             --status-pendente: #ffc107;
         }
-        
+
         body {
+            background-color: var(--secondary-color);
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: var(--text-color);
             margin: 0;
             padding: 20px;
-            background-color: var(--secondary-color);
-            color: var(--text-color);
         }
-        
+
         .container {
-            max-width: 1600px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+            background: #fff;
+            padding: 20px 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            max-width: 1400px;
+            margin: auto;
         }
-        
+
         h1 {
+            color: var(--primary-color);
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 22px;
+            font-weight: 700;
+        }
+
+        .filter-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .filter-group label {
+            font-size: 12px;
+            color: #555;
+            font-weight: 600;
+            margin-bottom: 3px;
+        }
+
+        .filter-group select,
+        .filter-group input {
+            font-size: 13px;
+            padding: 6px;
+        }
+
+        .filter-actions {
+            text-align: right;
+            margin-top: 10px;
+        }
+
+        .btn-filter,
+        .btn-clear {
+            font-size: 13px;
+            padding: 6px 12px;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .btn-filter {
+            background-color: var(--primary-color);
+            color: #fff;
+        }
+
+        .btn-filter:hover {
+            background-color: #004080;
+        }
+
+        .btn-clear {
+            background-color: #6c757d;
+            color: white;
+        }
+
+        .btn-clear:hover {
+            background-color: #5a6268;
+        }
+
+        .aplicacao-section {
+            margin-top: 40px;
+            page-break-after: always;
+        }
+
+        .aplicacao-title {
             text-align: center;
             color: var(--primary-color);
-            margin-bottom: 30px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid var(--light-gray);
+            background: #e9f0fb;
+            padding: 8px;
+            border-radius: 8px;
             font-weight: 600;
+            margin-bottom: 10px;
+            font-size: 16px;
         }
-        
-        .table-responsive {
-            overflow-x: auto;
-            margin-top: 20px;
-        }
-        
+
         table {
             width: 100%;
             border-collapse: collapse;
-            background-color: white;
-            box-shadow: 0 0 10px rgba(0,0,0,0.05);
+            margin-bottom: 30px;
+            font-size: 13px;
         }
-        
-        th, td {
-            padding: 15px;
-            text-align: left;
-            border-bottom: 1px solid var(--border-color);
+
+        th,
+        td {
+            border: 1px solid var(--border-color);
+            padding: 8px 10px;
+            text-align: center;
             vertical-align: middle;
         }
-        
+
         th {
             background-color: var(--primary-color);
-            color: white;
-            font-weight: 500;
+            color: #fff;
+            font-size: 13px;
             position: sticky;
             top: 0;
         }
-        
-        tr:hover {
-            background-color: rgba(0, 0, 0, 0.02);
+
+        tr:nth-child(even) {
+            background-color: #f9fbfd;
         }
-        
-        .btn {
-            padding: 8px 16px;
-            text-decoration: none;
-            color: white;
-            border-radius: 4px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            border: none;
-            cursor: pointer;
-        }
-        
-        .btn-preencher {
-            background-color: var(--accent-color);
-        }
-        
-        .btn-preencher:hover {
-            background-color: var(--hover-color);
-            transform: translateY(-1px);
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        
-        .btn-preencher:disabled {
-            background-color: #6c757d;
-            cursor: not-allowed;
-            opacity: 0.6;
-        }
-        
-        .btn-preencher:disabled:hover {
-            transform: none;
-            box-shadow: none;
-            background-color: #6c757d;
-        }
-        
-        .btn-atribuir {
-            background-color: var(--primary-color);
-            padding: 6px 12px;
-            font-size: 12px;
-        }
-        
+
         .status-badge {
-            padding: 6px 12px;
-            border-radius: 20px;
+            padding: 3px 8px;
+            border-radius: 10px;
             font-size: 12px;
             font-weight: 600;
             display: inline-block;
-            text-align: center;
-            min-width: 80px;
         }
-        
+
         .status-aprovado {
             background-color: #d4edda;
             color: var(--status-aprovado);
         }
-        
+
         .status-reprovado {
             background-color: #f8d7da;
             color: var(--status-reprovado);
         }
-        
+
         .status-pendente {
             background-color: #fff3cd;
             color: var(--status-pendente);
         }
-        
-        .alert {
-            padding: 12px 20px;
-            margin-bottom: 25px;
-            border-radius: 6px;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .alert-error {
-            background-color: #f8d7da;
-            color: #721c24;
-            border-left: 4px solid #f5c6cb;
-        }
-        
-        .alert-success {
-            background-color: #d4edda;
-            color: #155724;
-            border-left: 4px solid #c3e6cb;
-        }
-        
-        .empty-state {
-            text-align: center;
-            padding: 40px;
-            color: #6c757d;
-        }
-        
-        .empty-state i {
-            font-size: 50px;
-            margin-bottom: 20px;
-            color: #dee2e6;
-        }
-        
-        .search-filter-container {
-            background-color: #f8fafc;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 25px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        }
-        
-        .filter-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
-            margin-bottom: 15px;
-        }
-        
-        .filter-group {
-            flex: 1;
-            min-width: 200px;
-        }
-        
-        .filter-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-size: 14px;
-            color: #555;
-        }
-        
-        .filter-group select,
-        .filter-group input {
-            width: 100%;
-            padding: 8px 12px;
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            font-size: 14px;
-        }
-        
-        .date-range-picker {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-        
-        .filter-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-            margin-top: 10px;
-        }
-        
-        .btn-filter {
+
+        .btn-atribuir {
             background-color: var(--primary-color);
             color: white;
-            padding: 8px 16px;
-            border-radius: 4px;
+            font-size: 12px;
+            padding: 4px 8px;
             border: none;
-            cursor: pointer;
+            border-radius: 6px;
+            transition: background 0.2s;
         }
-        
-        .btn-clear {
-            background-color: #6c757d;
-            color: white;
-            padding: 8px 16px;
-            border-radius: 4px;
-            border: none;
-            cursor: pointer;
+
+        .btn-atribuir:hover {
+            background-color: #004080;
         }
-        
-        .status-actions {
-            display: flex;
-            gap: 5px;
-            flex-wrap: wrap;
-        }
-        
+
         .comprador-select {
-            width: auto;
-            min-width: 150px;
-            display: inline-block;
+            font-size: 12px;
+            padding: 4px;
         }
-        
-        @media (max-width: 768px) {
-            .filter-row {
-                flex-direction: column;
+
+        .empty-state {
+            text-align: center;
+            color: #777;
+            margin-top: 30px;
+        }
+
+        /* Quebra de página na impressão */
+        @media print {
+            body {
+                background: white;
             }
-            
-            .filter-group {
-                min-width: 100%;
+
+            .filter-row,
+            .filter-actions,
+            h1 {
+                display: none;
             }
-            
-            .date-range-picker {
-                flex-direction: column;
-                align-items: flex-start;
+
+            .container {
+                box-shadow: none;
+                padding: 0;
             }
-            
-            th, td {
-                padding: 10px 8px;
-                font-size: 14px;
+
+            .aplicacao-section {
+                page-break-after: always;
             }
-            
-            .status-actions {
-                flex-direction: column;
+
+            table {
+                page-break-inside: auto;
             }
-            
-            .comprador-select {
-                width: 100%;
-                margin-bottom: 5px;
+
+            tr {
+                page-break-inside: avoid;
+                page-break-after: auto;
+            }
+        }
+
+        /* Destaque suave para solicitações com mais de 7 dias */
+        .highlight-old {
+            background-color: #fff6c2 !important;
+            animation: softBlink 2s ease-in-out infinite;
+        }
+
+        @keyframes softBlink {
+
+            0%,
+            100% {
+                background-color: #fff6c2;
+            }
+
+            50% {
+                background-color: #fffbdb;
             }
         }
     </style>
 </head>
+
 <body>
     <div class="container">
-        <h1>
-            <i class="fas fa-clipboard-list"></i> Solicitações de Compra Finalizadas
-        </h1>
+        <h1><i class="fas fa-clipboard-list"></i> Solicitações de Compra Finalizadas</h1>
 
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category }}">
-                        <i class="fas fa-{% if category == 'error' %}exclamation-circle{% else %}check-circle{% endif %}"></i>
-                        {{ message }}
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-
-        <!-- Mensagem de depuração para verificar compradores -->
-        {% if not compradores %}
-            <div class="alert alert-error">
-                <i class="fas fa-exclamation-circle"></i>
-                Nenhum comprador encontrado. Verifique o arquivo senhas.txt ou a função get_compradores no backend.
-            </div>
-        {% endif %}
-
+        <!-- Filtros -->
         <div class="search-filter-container">
             <div class="filter-row">
-                <div class="filter-group">
-                    <label for="empresaFilter">Empresa</label>
+                <div class="filter-group flex-fill">
+                    <label>Empresa</label>
                     <select id="empresaFilter" class="form-select">
-                        <option value="">Todas empresas</option>
+                        <option value="">Todas</option>
                         {% for empresa in empresas %}
-                            <option value="{{ empresa }}">{{ empresa }}</option>
+                        <option value="{{ empresa }}">{{ empresa }}</option>
                         {% endfor %}
                     </select>
                 </div>
-                
-                <div class="filter-group">
-                    <label for="usuarioFilter">Usuário</label>
+                <div class="filter-group flex-fill">
+                    <label>Usuário</label>
                     <select id="usuarioFilter" class="form-select">
-                        <option value="">Todos usuários</option>
+                        <option value="">Todos</option>
                         {% for usuario in usuarios %}
-                            <option value="{{ usuario }}">{{ usuario }}</option>
+                        <option value="{{ usuario }}">{{ usuario }}</option>
                         {% endfor %}
                     </select>
                 </div>
-                
-                <div class="filter-group">
-                    <label for="aplicacaoFilter">Aplicação</label>
+                <div class="filter-group flex-fill">
+                    <label>Aplicação</label>
                     <select id="aplicacaoFilter" class="form-select">
-                        <option value="">Todas aplicações</option>
+                        <option value="">Todas</option>
                         {% for aplicacao in aplicacoes %}
-                            <option value="{{ aplicacao }}">{{ aplicacao }}</option>
+                        <option value="{{ aplicacao }}">{{ aplicacao }}</option>
                         {% endfor %}
                     </select>
                 </div>
-                
-                <div class="filter-group">
-                    <label for="statusFilter">Status</label>
+                <div class="filter-group flex-fill">
+                    <label>Status</label>
                     <select id="statusFilter" class="form-select">
-                        <option value="">Todos status</option>
+                        <option value="">Todos</option>
                         <option value="Aprovado">Aprovado</option>
                         <option value="Reprovado">Reprovado</option>
                     </select>
                 </div>
-                
-                <div class="filter-group">
-                    <label for="compradorFilter">Comprador Atribuído</label>
+                <div class="filter-group flex-fill">
+                    <label>Comprador</label>
                     <select id="compradorFilter" class="form-select">
-                        <option value="">Todos compradores</option>
-                        {% if compradores %}
-                            {% for comprador in compradores %}
-                                <option value="{{ comprador }}">{{ comprador }}</option>
-                            {% endfor %}
-                        {% else %}
-                            <option value="" disabled>Nenhum comprador encontrado</option>
-                        {% endif %}
+                        <option value="">Todos</option>
+                        {% for comprador in compradores %}
+                        <option value="{{ comprador }}">{{ comprador }}</option>
+                        {% endfor %}
                         <option value="Não atribuído">Não atribuído</option>
                     </select>
                 </div>
-                
+            </div>
+            <div class="filter-row">
                 <div class="filter-group">
                     <label>Data de Solicitação</label>
-                    <div class="date-range-picker">
+                    <div class="d-flex align-items-center gap-2">
                         <input type="date" id="dataInicio" class="form-control">
                         <span>até</span>
                         <input type="date" id="dataFim" class="form-control">
                     </div>
                 </div>
-            </div>
-            
-            <div class="filter-actions">
-                <button class="btn-clear" id="clearFilters">
-                    <i class="fas fa-times"></i> Limpar Filtros
-                </button>
-                <button class="btn-filter" id="applyFilters">
-                    <i class="fas fa-filter"></i> Aplicar Filtros
-                </button>
+                <div class="filter-actions flex-grow-1 text-end">
+                    <button class="btn-clear" id="clearFilters"><i class="fas fa-times"></i> Limpar</button>
+                    <button class="btn-filter" id="applyFilters"><i class="fas fa-filter"></i> Aplicar</button>
+                </div>
             </div>
         </div>
 
         {% if solicitacoes %}
-            <div class="table-responsive">
-                <table id="solicitacoesTable">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Material</th>
-                            <th>Especificação</th>
-                            <th>Quantidade</th>
-                            <th>Empresa</th>
-                            <th>Aplicação</th>
-                            <th>Data Solicitação</th>
-                            <th>Usuário</th>
-                            <th>Status</th>
-                            <th>Ações</th>
-                            <th>Comprador Atribuído</th>
-                            <th>Atribuição</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for solicitacao in solicitacoes | sort(attribute='data_solicitacao', reverse=True) %}
-                            {% if solicitacao.status_aprovacao and solicitacao.status_aprovacao != 'Pendente' %}
-                            <tr data-id="{{ solicitacao.id }}">
-                                <td>{{ solicitacao.id }}</td>
-                                <td>{{ solicitacao.material.DescricaoMaterial }}</td>
-                                <td>{{ solicitacao.especificacao or '-' }}</td>
-                                <td>{{ solicitacao.quantidade }}</td>
-                                <td>{{ solicitacao.empresa }}</td>
-                                <td>{{ solicitacao.aplicacao or solicitacao.material.Aplicacao or '-' }}</td>
-                                <td data-order="{{ solicitacao.data_solicitacao.strftime('%Y-%m-%d') }}">
-                                    {{ solicitacao.data_solicitacao | format_brasil_time }}
-                                </td>
-                                <td>{{ solicitacao.usuario }}</td>
-                                <td>
-                                    <span class="status-badge status-{{ solicitacao.status_aprovacao|lower if solicitacao.status_aprovacao else 'pendente' }}">
-                                        {{ solicitacao.status_aprovacao or 'Pendente' }}
-                                    </span>
-                                </td>
-                                <td>
-                                    <div class="status-actions">
-                                        <a href="{{ url_for('routes_bp.preencher_solicitacao', id=solicitacao.id) }}" 
-                                           class="btn btn-preencher {% if solicitacao.status_aprovacao == 'Reprovado' %}disabled-link{% endif %}"
-                                           {% if solicitacao.status_aprovacao == 'Reprovado' %}onclick="return false;" style="pointer-events: none; opacity: 0.6;"{% endif %}>
-                                            <i class="fas fa-edit"></i> Preencher
-                                        </a>
-                                    </div>
-                                </td>
-                                <td>{{ solicitacao.comprador_atribuido or 'Não atribuído' }}</td>
-                                <td>
-                                    <div class="status-actions">
-                                        <select class="form-select comprador-select" data-id="{{ solicitacao.id }}">
-                                            <option value="">Selecione um comprador</option>
-                                            {% if compradores %}
-                                                {% for comprador in compradores %}
-                                                    <option value="{{ comprador }}" {% if solicitacao.comprador_atribuido == comprador %}selected{% endif %}>
-                                                        {{ comprador }}
-                                                    </option>
-                                                {% endfor %}
-                                            {% else %}
-                                                <option value="" disabled>Nenhum comprador disponível</option>
-                                            {% endif %}
-                                        </select>
-                                        <button class="btn btn-atribuir" data-id="{{ solicitacao.id }}">
-                                            <i class="fas fa-user-check"></i> Atribuir
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                            {% endif %}
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+        {% set aplicacoes_ordenadas = [] %}
+        {% for solicitacao in solicitacoes %}
+        {% if solicitacao.aplicacao and solicitacao.aplicacao not in aplicacoes_ordenadas %}
+        {% set _ = aplicacoes_ordenadas.append(solicitacao.aplicacao) %}
+        {% endif %}
+        {% endfor %}
+        {% set aplicacoes_ordenadas = aplicacoes_ordenadas|sort %}
+
+        {% for aplicacao in aplicacoes_ordenadas %}
+        <div class="aplicacao-section">
+            <div class="aplicacao-title">{{ aplicacao }}</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Material</th>
+                        <th>Especificação</th>
+                        <th>Quantidade</th>
+                        <th>Empresa</th>
+                        <th>Aplicação</th>
+                        <th>Data Solicitação</th>
+                        <th>Usuário</th>
+                        <th>Status</th>
+                        <th>Comprador</th>
+                        <th>Atribuição</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for solicitacao in solicitacoes if solicitacao.aplicacao == aplicacao %}
+                    <tr data-id="{{ solicitacao.id }}">
+                        <td>{{ solicitacao.id }}</td>
+                        <td>{{ solicitacao.material.DescricaoMaterial }}</td>
+                        <td>{{ solicitacao.especificacao or '-' }}</td>
+                        <td>{{ solicitacao.quantidade }}</td>
+                        <td>{{ solicitacao.empresa }}</td>
+                        <td>{{ solicitacao.aplicacao }}</td>
+                        <td data-order="{{ solicitacao.data_solicitacao.strftime('%Y-%m-%d') }}">{{
+                            solicitacao.data_solicitacao | format_brasil_time }}</td>
+                        <td>{{ solicitacao.usuario }}</td>
+                        <td>
+                            <span class="status-badge status-{{ solicitacao.status_aprovacao|lower }}">{{
+                                solicitacao.status_aprovacao }}</span>
+                        </td>
+                        <td>{{ solicitacao.comprador_atribuido or 'Não atribuído' }}</td>
+                        <td>
+                            <select class="form-select comprador-select" data-id="{{ solicitacao.id }}">
+                                <option value="">Selecionar</option>
+                                {% for comprador in compradores %}
+                                <option value="{{ comprador }}" {% if solicitacao.comprador_atribuido==comprador
+                                    %}selected{% endif %}>{{ comprador }}</option>
+                                {% endfor %}
+                            </select>
+                            <button class="btn-atribuir" data-id="{{ solicitacao.id }}"><i
+                                    class="fas fa-user-check"></i></button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endfor %}
         {% else %}
-            <div class="empty-state">
-                <i class="far fa-folder-open"></i>
-                <h3>Nenhuma solicitação finalizada encontrada</h3>
-                <p>Não há solicitações de compra aprovadas ou reprovadas no momento.</p>
-            </div>
+        <div class="empty-state">
+            <i class="far fa-folder-open fa-3x mb-3"></i>
+            <p>Nenhuma solicitação finalizada encontrada.</p>
+        </div>
         {% endif %}
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Configurar data inicial para 30 dias atrás
-            const thirtyDaysAgo = new Date();
-            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-            document.getElementById('dataInicio').valueAsDate = thirtyDaysAgo;
-            
-            // Configurar data final para hoje
+        document.addEventListener('DOMContentLoaded', () => {
+            const start = new Date();
+            start.setDate(start.getDate() - 30);
+            document.getElementById('dataInicio').valueAsDate = start;
             document.getElementById('dataFim').valueAsDate = new Date();
-            
-            // Aplicar filtros ao carregar a página
             applyFilters();
-            
-            // Event listeners
+
             document.getElementById('applyFilters').addEventListener('click', applyFilters);
-            document.getElementById('clearFilters').addEventListener('click', clearFilters);
-            
-            // Listener para botões de atribuição
-            document.querySelectorAll('.btn-atribuir').forEach(button => {
-                button.addEventListener('click', function() {
-                    const solicitacaoId = this.dataset.id;
-                    const select = document.querySelector(`.comprador-select[data-id="${solicitacaoId}"]`);
+            document.getElementById('clearFilters').addEventListener('click', () => location.reload());
+
+            document.querySelectorAll('.btn-atribuir').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const id = btn.dataset.id;
+                    const select = document.querySelector(`.comprador-select[data-id="${id}"]`);
                     const comprador = select.value;
-                    
-                    if (!comprador) {
-                        alert('Selecione um comprador primeiro');
-                        return;
-                    }
-                    
-                    if (!confirm(`Atribuir esta solicitação a ${comprador}?`)) {
-                        return;
-                    }
-                    
-                    fetch(`/api/solicitacoes/${solicitacaoId}/atribuir_comprador`, {
+                    if (!comprador) return alert('Selecione um comprador.');
+
+                    if (!confirm(`Atribuir esta solicitação a ${comprador}?`)) return;
+                    const resp = await fetch(`/api/solicitacoes/${id}/atribuir_comprador`, {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            comprador: comprador
-                        })
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            alert(data.message);
-                            location.reload();
-                        } else {
-                            alert('Erro: ' + data.error);
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Erro:', error);
-                        alert('Erro ao atribuir comprador');
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ comprador })
                     });
+                    const data = await resp.json();
+                    alert(data.message || 'Atualizado!');
+                    location.reload();
                 });
             });
         });
-        
+
         function applyFilters() {
-            const empresaFilter = document.getElementById('empresaFilter').value;
-            const usuarioFilter = document.getElementById('usuarioFilter').value;
-            const statusFilter = document.getElementById('statusFilter').value;
-            const aplicacaoFilter = document.getElementById('aplicacaoFilter').value;
-            const compradorFilter = document.getElementById('compradorFilter').value;
-            const dataInicio = document.getElementById('dataInicio').value;
-            const dataFim = document.getElementById('dataFim').value;
-            
-            const rows = document.querySelectorAll('#solicitacoesTable tbody tr');
-            let visibleCount = 0;
-            
-            rows.forEach(row => {
-                const empresa = row.cells[4].textContent.trim();
-                const aplicacao = row.cells[5].textContent.trim();
-                const dataSolicitacao = row.cells[6].getAttribute('data-order');
-                const usuario = row.cells[7].textContent.trim();
-                const status = row.cells[8].textContent.trim();
-                const comprador = row.cells[10].textContent.trim();
-                
-                const empresaMatch = !empresaFilter || empresa === empresaFilter;
-                const usuarioMatch = !usuarioFilter || usuario === usuarioFilter;
-                const statusMatch = !statusFilter || status === statusFilter;
-                const aplicacaoMatch = !aplicacaoFilter || aplicacao === aplicacaoFilter;
-                const compradorMatch = !compradorFilter || (compradorFilter === 'Não atribuído' ? comprador === 'Não atribuído' : comprador === compradorFilter);
-                const dataMatch = 
-                    (!dataInicio || dataSolicitacao >= dataInicio) && 
-                    (!dataFim || dataSolicitacao <= dataFim);
-                
-                if (empresaMatch && usuarioMatch && statusMatch && aplicacaoMatch && compradorMatch && dataMatch) {
-                    row.style.display = '';
-                    visibleCount++;
-                } else {
-                    row.style.display = 'none';
+            const empresa = document.getElementById('empresaFilter').value.trim();
+            const usuario = document.getElementById('usuarioFilter').value.trim();
+            const aplicacao = document.getElementById('aplicacaoFilter').value.trim();
+            const status = document.getElementById('statusFilter').value.trim();
+            const comprador = document.getElementById('compradorFilter').value.trim();
+            const inicio = document.getElementById('dataInicio').value;
+            const fim = document.getElementById('dataFim').value;
+
+            // percorre todas as seções de aplicação
+            document.querySelectorAll('.aplicacao-section').forEach(section => {
+                const rows = section.querySelectorAll('tbody tr');
+                let visibleCount = 0;
+
+                rows.forEach(row => {
+                    const rowData = {
+                        empresa: row.cells[4].textContent.trim(),
+                        aplicacao: row.cells[5].textContent.trim(),
+                        data: row.cells[6].getAttribute('data-order'),
+                        usuario: row.cells[7].textContent.trim(),
+                        status: row.cells[8].textContent.trim(),
+                        comprador: row.cells[9].textContent.trim()
+                    };
+
+                    const match =
+                        (!empresa || rowData.empresa === empresa) &&
+                        (!usuario || rowData.usuario === usuario) &&
+                        (!aplicacao || rowData.aplicacao === aplicacao) &&
+                        (!status || rowData.status === status) &&
+                        (!comprador || rowData.comprador === comprador ||
+                            (comprador === 'Não atribuído' && rowData.comprador === 'Não atribuído')) &&
+                        (!inicio || rowData.data >= inicio) &&
+                        (!fim || rowData.data <= fim);
+
+                    if (match) {
+                        row.style.display = '';
+                        visibleCount++;
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+
+                // se nenhuma linha visível, esconde a seção inteira
+                section.style.display = visibleCount > 0 ? '' : 'none';
+            });
+        }
+
+        // Destaque suave para solicitações com mais de 7 dias
+        document.addEventListener('DOMContentLoaded', () => {
+            const hoje = new Date();
+
+            document.querySelectorAll('td[data-order]').forEach(cellData => {
+                const dataTexto = cellData.getAttribute('data-order');
+                if (!dataTexto) return;
+
+                const dataSolicitacao = new Date(dataTexto);
+                const diffDias = Math.floor((hoje - dataSolicitacao) / (1000 * 60 * 60 * 24));
+
+                if (diffDias > 7) {
+                    cellData.classList.add('highlight-old');
                 }
             });
-            
-            const emptyState = document.querySelector('.empty-state');
-            if (visibleCount === 0 && rows.length > 0) {
-                if (!emptyState) {
-                    const table = document.querySelector('#solicitacoesTable');
-                    const newEmptyState = document.createElement('div');
-                    newEmptyState.className = 'empty-state';
-                    newEmptyState.innerHTML = `
-                        <i class="far fa-folder-open"></i>
-                        <h3>Nenhum resultado encontrado</h3>
-                        <p>Nenhuma solicitação corresponde aos filtros aplicados.</p>
-                    `;
-                    table.parentNode.insertBefore(newEmptyState, table.nextSibling);
+        });
+
+        // Destaque suave para solicitações com mais de 7 dias
+        document.addEventListener('DOMContentLoaded', () => {
+            const rows = document.querySelectorAll('tbody tr');
+            const hoje = new Date();
+
+            rows.forEach(row => {
+                const cellData = row.querySelector('td[data-order]');
+                if (!cellData) return;
+
+                const dataTexto = cellData.getAttribute('data-order');
+                if (!dataTexto) return;
+
+                const dataSolicitacao = new Date(dataTexto);
+                const diffDias = Math.floor((hoje - dataSolicitacao) / (1000 * 60 * 60 * 24));
+
+                if (diffDias > 7) {
+                    cellData.classList.add('highlight-old');
                 }
-            } else if (emptyState && visibleCount > 0) {
-                emptyState.remove();
-            }
-        }
-        
-        function clearFilters() {
-            document.getElementById('empresaFilter').value = '';
-            document.getElementById('usuarioFilter').value = '';
-            document.getElementById('statusFilter').value = '';
-            document.getElementById('aplicacaoFilter').value = '';
-            document.getElementById('compradorFilter').value = '';
-            
-            const thirtyDaysAgo = new Date();
-            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-            document.getElementById('dataInicio').valueAsDate = thirtyDaysAgo;
-            document.getElementById('dataFim').valueAsDate = new Date();
-            
-            applyFilters();
-        }
+            });
+        });
+
     </script>
 </body>
+
 </html>
