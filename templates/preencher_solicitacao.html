@@ -150,14 +150,45 @@
             font-weight: 500;
         }
 
+        .cotacoes-wrapper {
+            overflow-x: auto;
+            white-space: nowrap;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+            scrollbar-color: var(--primary-color) #e0e0e0;
+        }
+
+        .cotacoes-wrapper::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        .cotacoes-wrapper::-webkit-scrollbar-track {
+            background: #e0e0e0;
+            border-radius: 4px;
+        }
+
+        .cotacoes-wrapper::-webkit-scrollbar-thumb {
+            background: var(--primary-color);
+            border-radius: 4px;
+        }
+
+        .cotacoes-wrapper::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-light);
+        }
+
         .cotacao-container {
             border: 1px solid #e0e0e0;
             padding: 20px;
-            margin-bottom: 20px;
             border-radius: var(--border-radius);
             background-color: #fff;
             box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
-            position: relative;
+            width: 400px;
+            min-width: 400px;
+            margin-right: 20px;
+            display: inline-block;
+            vertical-align: top;
         }
 
         .cotacao-header {
@@ -317,6 +348,8 @@
 
             .cotacao-container {
                 padding: 15px;
+                width: 300px;
+                min-width: 300px;
             }
 
             .btn {
@@ -450,7 +483,7 @@
 
             <div class="form-section">
                 <h4 class="form-section-title"><i class="bi bi-clipboard2-check"></i> Cotações de Fornecedores</h4>
-                <div id="cotacoes-container">
+                <div class="cotacoes-wrapper" id="cotacoes-container">
                     {% for cotacao in cotacoes_salvas %}
                     {% set index = loop.index %}
                     <div class="cotacao-container" id="cotacao-{{ index }}">
@@ -489,7 +522,7 @@
                         </div>
 
                         <div class="row g-3">
-                            <div class="col-md-4">
+                            <div class="col-12">
                                 <label for="valor_unitario_{{ index }}" class="form-label">Valor Unitário (R$) *</label>
                                 <div class="input-group">
                                     <span class="input-group-text">R$</span>
@@ -501,7 +534,7 @@
                                 <div class="error-message" id="unitario-error-{{ index }}"></div>
                             </div>
 
-                            <div class="col-md-4">
+                            <div class="col-12">
                                 <label for="valor_frete_{{ index }}" class="form-label">Valor do Frete (R$)</label>
                                 <div class="input-group">
                                     <span class="input-group-text">R$</span>
@@ -512,7 +545,7 @@
                                 <div class="error-message" id="frete-error-{{ index }}"></div>
                             </div>
 
-                            <div class="col-md-4">
+                            <div class="col-12">
                                 <label for="valor_total_{{ index }}" class="form-label">Valor Total (R$)</label>
                                 <div class="input-group">
                                     <span class="input-group-text">R$</span>
@@ -524,14 +557,14 @@
                         </div>
 
                         <div class="row g-3 mt-2">
-                            <div class="col-md-6">
+                            <div class="col-12">
                                 <label for="prazo_entrega_{{ index }}" class="form-label">Prazo de Entrega *</label>
                                 <input type="text" class="form-control" id="prazo_entrega_{{ index }}"
                                     name="prazo_entrega[]" placeholder="Ex.: 10 dias úteis" required
                                     value="{{ cotacao.prazo_entrega }}">
                             </div>
 
-                            <div class="col-md-6">
+                            <div class="col-12">
                                 <label for="condicao_pagamento_{{ index }}" class="form-label">Condição de Pagamento
                                     *</label>
                                 <input type="text" class="form-control" id="condicao_pagamento_{{ index }}"
@@ -595,7 +628,7 @@
                         </div>
 
                         <div class="row g-3">
-                            <div class="col-md-4">
+                            <div class="col-12">
                                 <label for="valor_unitario_1" class="form-label">Valor Unitário (R$) *</label>
                                 <div class="input-group">
                                     <span class="input-group-text">R$</span>
@@ -605,7 +638,7 @@
                                 <div class="error-message" id="unitario-error-1"></div>
                             </div>
 
-                            <div class="col-md-4">
+                            <div class="col-12">
                                 <label for="valor_frete_1" class="form-label">Valor do Frete (R$)</label>
                                 <div class="input-group">
                                     <span class="input-group-text">R$</span>
@@ -615,7 +648,7 @@
                                 <div class="error-message" id="frete-error-1"></div>
                             </div>
 
-                            <div class="col-md-4">
+                            <div class="col-12">
                                 <label for="valor_total_1" class="form-label">Valor Total (R$)</label>
                                 <div class="input-group">
                                     <span class="input-group-text">R$</span>
@@ -626,13 +659,13 @@
                         </div>
 
                         <div class="row g-3 mt-2">
-                            <div class="col-md-6">
+                            <div class="col-12">
                                 <label for="prazo_entrega_1" class="form-label">Prazo de Entrega *</label>
                                 <input type="text" class="form-control" id="prazo_entrega_1" name="prazo_entrega[]"
                                     placeholder="Ex.: 10 dias úteis" required>
                             </div>
 
-                            <div class="col-md-6">
+                            <div class="col-12">
                                 <label for="condicao_pagamento_1" class="form-label">Condição de Pagamento *</label>
                                 <input type="text" class="form-control" id="condicao_pagamento_1"
                                     name="condicao_pagamento[]" placeholder="Ex.: 30 dias" required>
@@ -948,7 +981,7 @@
                         </div>
                     </div>
                     <div class="row g-3">
-                        <div class="col-md-4">
+                        <div class="col-12">
                             <label for="valor_unitario_${cotacaoCount}" class="form-label">Valor Unitário (R$) *</label>
                             <div class="input-group">
                                 <span class="input-group-text">R$</span>
@@ -957,7 +990,7 @@
                             </div>
                             <div class="error-message" id="unitario-error-${cotacaoCount}"></div>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-12">
                             <label for="valor_frete_${cotacaoCount}" class="form-label">Valor do Frete (R$)</label>
                             <div class="input-group">
                                 <span class="input-group-text">R$</span>
@@ -966,7 +999,7 @@
                             </div>
                             <div class="error-message" id="frete-error-${cotacaoCount}"></div>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-12">
                             <label for="valor_total_${cotacaoCount}" class="form-label">Valor Total (R$)</label>
                             <div class="input-group">
                                 <span class="input-group-text">R$</span>
@@ -976,12 +1009,12 @@
                         </div>
                     </div>
                     <div class="row g-3 mt-2">
-                        <div class="col-md-6">
+                        <div class="col-12">
                             <label for="prazo_entrega_${cotacaoCount}" class="form-label">Prazo de Entrega *</label>
                             <input type="text" class="form-control" id="prazo_entrega_${cotacaoCount}" 
                                    name="prazo_entrega[]" placeholder="Ex.: 10 dias úteis" required>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-12">
                             <label for="condicao_pagamento_${cotacaoCount}" class="form-label">Condição de Pagamento *</label>
                             <input type="text" class="form-control" id="condicao_pagamento_${cotacaoCount}" 
                                    name="condicao_pagamento[]" placeholder="Ex.: 30 dias" required>
@@ -1035,6 +1068,21 @@
             if (!isValid) {
                 e.preventDefault();
                 alert('Por favor, corrija os campos destacados em vermelho antes de enviar.');
+                return;
+            }
+
+            // Obter o valor do botão que disparou o submit
+            const action = $(document.activeElement).val();
+            let confirmMessage = '';
+            if (action === 'salvar_rascunho') {
+                confirmMessage = 'Tem certeza de que deseja salvar como rascunho?';
+            } else if (action === 'salvar_finalizar') {
+                confirmMessage = 'Tem certeza de que deseja finalizar e enviar para aprovação?';
+            }
+
+            // Mostrar o alerta de confirmação
+            if (!confirm(confirmMessage)) {
+                e.preventDefault(); // Cancela o envio do formulário se o usuário clicar em "Cancelar"
             }
         });
         });
