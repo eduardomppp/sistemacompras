@@ -1,0 +1,1615 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solicitações Preenchidas | Sistema de Compras</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #022855;
+            --primary-light: #2c4d8a;
+            --secondary-color: #6c757d;
+            --success-color: #198754;
+            --danger-color: #dc3545;
+            --warning-color: #ffc107;
+            --info-color: #0dcaf0;
+            --light-bg: #f8f9fa;
+            --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --border-radius: 8px;
+        }
+
+        body {
+            background-color: var(--light-bg);
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            padding: 20px 0;
+        }
+
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--card-shadow);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .header {
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+
+        .header h1 {
+            color: white !important;
+            background-color: var(--primary-color);
+            padding: 10px 20px;
+            border-radius: var(--border-radius);
+            display: inline-block;
+            margin: 0;
+        }
+
+        h2,
+        h3,
+        h4 {
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        .material-header .material-title {
+            color: white !important;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            padding: 8px 20px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-light);
+            border-color: var(--primary-light);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-secondary {
+            background-color: var(--secondary-color);
+            border-color: var(--secondary-color);
+            padding: 8px 20px;
+            font-weight: 500;
+        }
+
+        .btn-outline-primary {
+            color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .btn-outline-primary:hover {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .material-card {
+            background-color: white;
+            border-radius: var(--border-radius);
+            padding: 0;
+            margin-bottom: 30px;
+            box-shadow: var(--card-shadow);
+            border: 1px solid #e9ecef;
+            overflow: hidden;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .material-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+        }
+
+        .material-header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .material-title {
+            margin: 0;
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .material-details {
+            font-size: 0.9rem;
+            color: #f8f9fa;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 8px;
+        }
+
+        .material-detail-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .priority-badge {
+            font-size: 0.8rem;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .priority-urgent {
+            background-color: #fff8e1;
+            color: #e65100;
+            border: 1px solid #ffd54f;
+        }
+
+        .priority-normal {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+            border: 1px solid #a5d6a7;
+        }
+
+        .table {
+            margin-bottom: 0;
+        }
+
+        .table th {
+            background-color: #f1f5f9;
+            color: var(--primary-color);
+            font-weight: 600;
+            padding: 12px 15px;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .table td {
+            padding: 12px 15px;
+            vertical-align: middle;
+            border-top: 1px solid #f1f1f1;
+        }
+
+        .table tr:hover td {
+            background-color: #f8fafc;
+        }
+
+        .badge-status {
+            font-size: 0.85em;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-weight: 500;
+            min-width: 100px;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .status-select {
+            padding: 6px 10px;
+            border-radius: var(--border-radius);
+            border: 1px solid #ced4da;
+            font-size: 0.9rem;
+            min-width: 120px;
+            transition: all 0.2s;
+        }
+
+        .status-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.25rem rgba(2, 40, 85, 0.25);
+        }
+
+        .status-select:disabled {
+            opacity: 1;
+            cursor: not-allowed;
+        }
+
+        .status-select[disabled][data-status="Aprovado"] {
+            background-color: #e8f5e9;
+            border-color: #c3e6cb;
+            color: #28a745;
+        }
+
+        .status-select[disabled][data-status="Reprovado"] {
+            background-color: #f8d7da;
+            border-color: #f1aeb5;
+            color: #dc3545;
+        }
+
+        .status-select[disabled][data-status="Em Processamento"] {
+            background-color: #fff3cd;
+            border-color: #ffeeba;
+            color: #856404;
+        }
+
+        .status-select[disabled][data-status="Bloqueado"] {
+            background-color: #f8f9fa;
+            border-color: #dee2e6;
+            color: #6c757d;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .btn-sm-icon {
+            padding: 5px 8px;
+            font-size: 0.85rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn-sm-icon i {
+            font-size: 0.9rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--secondary-color);
+        }
+
+        .empty-state i {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            color: #dee2e6;
+        }
+
+        .alert-flash {
+            border-radius: var(--border-radius);
+        }
+
+        .currency-value {
+            font-family: 'Courier New', monospace;
+            font-weight: 500;
+        }
+
+        .text-muted-light {
+            color: #adb5bd;
+        }
+
+        .cotacao-count-badge {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .filter-card {
+            background-color: white;
+            border-radius: var(--border-radius);
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: var(--card-shadow);
+            border: 1px solid #e9ecef;
+        }
+
+        .filter-title {
+            font-size: 1rem;
+            color: var(--primary-color);
+            font-weight: 600;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .filter-item {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .filter-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .timeline {
+            position: relative;
+            padding: 20px 0;
+            margin-top: 20px;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 15px;
+            top: 0;
+            height: 100%;
+            width: 2px;
+            background-color: #dee2e6;
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 20px;
+            padding-left: 40px;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: 8px;
+            top: 0;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background-color: var(--primary-color);
+            border: 2px solid white;
+            z-index: 1;
+        }
+
+        .timeline-content {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: var(--border-radius);
+            border-left: 3px solid var(--primary-color);
+        }
+
+        .timeline-date {
+            font-size: 0.85rem;
+            color: var(--secondary-color);
+            margin-bottom: 5px;
+        }
+
+        .timeline-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: var(--primary-color);
+        }
+
+        .timeline-desc {
+            font-size: 0.9rem;
+            color: var(--secondary-color);
+        }
+
+        .accordion-button:not(.collapsed) {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .accordion-button:not(.collapsed)::after {
+            filter: brightness(0) invert(1);
+        }
+
+        .solicitacao-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+
+        .solicitacao-info {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .solicitacao-id {
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .solicitacao-status {
+            font-size: 0.85rem;
+        }
+
+        .cotacao-aprovada {
+            border-left: 4px solid var(--success-color);
+            background-color: #f8fff9;
+        }
+
+        .cotacao-bloqueada {
+            background-color: #f8f9fa;
+            opacity: 0.8;
+        }
+
+        .cotacao-bloqueada .material-header {
+            background-color: var(--secondary-color);
+        }
+
+        .badge-aprovado {
+            background-color: var(--success-color);
+            color: white;
+        }
+
+        .badge-bloqueado {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                padding: 15px;
+            }
+
+            .material-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            .material-details {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .table-responsive {
+                border-radius: var(--border-radius);
+                border: 1px solid #dee2e6;
+            }
+
+            .table th,
+            .table td {
+                padding: 8px 10px;
+                font-size: 0.85rem;
+            }
+
+            .filter-group {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .filter-item {
+                min-width: 100%;
+            }
+
+            .solicitacao-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            .solicitacao-info {
+                flex-direction: column;
+                gap: 5px;
+            }
+        }
+
+        .historico-desconto {
+            background-color: #f8f9fa;
+            border-radius: var(--border-radius);
+            padding: 15px;
+            margin-top: 15px;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .historico-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .historico-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .historico-item:last-child {
+            border-bottom: none;
+        }
+
+        .valor-antigo {
+            text-decoration: line-through;
+            color: var(--secondary-color);
+        }
+
+        .valor-novo {
+            color: var(--success-color);
+            font-weight: 500;
+        }
+
+        .percentual-desconto {
+            background-color: var(--primary-light);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+        }
+
+        .btn-reverter {
+            background-color: #6c757d;
+            border-color: #6c757d;
+            color: white;
+        }
+
+        .btn-reverter:hover {
+            background-color: #5a6268;
+            border-color: #545b62;
+            color: white;
+        }
+
+        .status-pendente {
+            background-color: #e9ecef;
+            border-color: #dee2e6;
+            color: #6c757d;
+        }
+
+        .cotacoes-row {
+            display: flex;
+            flex-wrap: nowrap;
+            gap: 20px;
+            overflow-x: auto;
+            padding-bottom: 10px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .cotacao-col {
+            flex: 0 0 auto;
+            width: 300px;
+        }
+
+        @media (max-width: 768px) {
+            .cotacao-col {
+                width: 100%;
+            }
+        }
+
+        .print-selected-btn {
+            background-color: #17a2b8;
+            border-color: #17a2b8;
+            padding: 8px 20px;
+            font-weight: 500;
+        }
+
+        .print-selected-btn:hover {
+            background-color: #138496;
+            border-color: #117a8b;
+        }
+
+        .print-selected-btn:disabled {
+            background-color: #6c757d;
+            border-color: #6c757d;
+            cursor: not-allowed;
+        }
+
+        .cotacao-checkbox {
+            margin-right: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container main-container">
+        <div class="header">
+            <div class="d-flex justify-content-between align-items-center flex-wrap">
+                <h1 class="mb-0">
+                    <i class="bi bi-file-earmark-check"></i> Solicitações Preenchidas - Aguardando Aprovação
+                </h1>
+                <div class="d-flex gap-2 mt-2 mt-md-0">
+                    <a href="{{ url_for('routes_bp.menu_master') }}" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Voltar
+                    </a>
+                    <a href="{{ url_for('routes_bp.gerar_pedido_compra') }}" class="btn btn-primary">
+                        <i class="bi bi-cart-plus"></i> Novo Pedido
+                    </a>
+                    <a href="{{ url_for('routes_bp.listar_historico_descontos') }}" class="btn btn-info">
+                        <i class="bi bi-clock-history"></i> Ver Histórico de Alterações
+                    </a>
+                    <button class="btn print-selected-btn" id="printSelectedBtn" onclick="printSelectedCotacoes()">
+                        <i class="bi bi-printer"></i> Imprimir Selecionadas
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="filter-card">
+            <h3 class="filter-title">
+                <i class="bi bi-funnel"></i> Filtros
+            </h3>
+            <form method="get" action="{{ url_for('routes_bp.listar_solicitacoes_preenchidas') }}">
+                <div class="filter-group">
+                    <div class="filter-item">
+                        <label for="empresa" class="form-label">Empresa</label>
+                        <select class="form-select" id="empresa" name="empresa">
+                            <option value="">Todas</option>
+                            {% for empresa in empresas %}
+                            <option value="{{ empresa }}" {% if filtros.empresa==empresa %}selected{% endif %}>{{
+                                empresa }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="filter-item">
+                        <label for="usuario" class="form-label">Usuário</label>
+                        <select class="form-select" id="usuario" name="usuario">
+                            <option value="">Todos</option>
+                            {% for usuario in usuarios %}
+                            <option value="{{ usuario }}" {% if filtros.usuario==usuario %}selected{% endif %}>{{
+                                usuario }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="filter-item">
+                        <label for="data_inicio" class="form-label">Data Início</label>
+                        <input type="date" class="form-control" id="data_inicio" name="data_inicio"
+                            value="{{ filtros.data_inicio if filtros.data_inicio else '' }}">
+                    </div>
+                    <div class="filter-item">
+                        <label for="data_fim" class="form-label">Data Fim</label>
+                        <input type="date" class="form-control" id="data_fim" name="data_fim"
+                            value="{{ filtros.data_fim if filtros.data_fim else '' }}">
+                    </div>
+                </div>
+                <div class="filter-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-funnel"></i> Aplicar Filtros
+                    </button>
+                    <a href="{{ url_for('routes_bp.listar_solicitacoes_preenchidas') }}"
+                        class="btn btn-outline-secondary">
+                        <i class="bi bi-x-circle"></i> Limpar
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Lista de Solicitações -->
+        {% if preenchimentos_por_material %}
+        <div class="accordion" id="solicitacoesAccordion">
+            {% for material_nome, preenchimentos in preenchimentos_por_material.items() %}
+
+            <!-- Filtrar apenas cotações com status "Aguardando Aprovacao" -->
+            {% set preenchimentos_filtrados = [] %}
+            {% for preenchimento in preenchimentos %}
+                {% if preenchimento.status == 'Aguardando Aprovacao' %}
+                    {% set _ = preenchimentos_filtrados.append(preenchimento) %}
+                {% endif %}
+            {% endfor %}
+
+            {% if preenchimentos_filtrados %}
+            <!-- Lógica para ordenar preenchimentos -->
+            {% set cotacao_aprovada = none %}
+            {% set outras_cotacoes = [] %}
+
+            {% for preenchimento in preenchimentos_filtrados %}
+            {% if preenchimento.status == 'Aprovado' %}
+            {% set cotacao_aprovada = preenchimento %}
+            {% else %}
+            {% set _ = outras_cotacoes.append(preenchimento) %}
+            {% endif %}
+            {% endfor %}
+
+            <!-- Ordenar outras cotações por data (mais recente primeiro) -->
+            {% set outras_cotacoes = outras_cotacoes|sort(attribute='data_preenchimento', reverse=true) %}
+
+            <!-- Definir preenchimentos ordenados -->
+            {% set preenchimentos_ordenados = [] %}
+            {% if cotacao_aprovada %}
+            {% set _ = preenchimentos_ordenados.append(cotacao_aprovada) %}
+            {% endif %}
+            {% for cotacao in outras_cotacoes %}
+            {% set _ = preenchimentos_ordenados.append(cotacao) %}
+            {% endfor %}
+
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="heading{{ loop.index }}">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#collapse{{ loop.index }}" aria-expanded="false"
+                        aria-controls="collapse{{ loop.index }}">
+                        <div class="solicitacao-header">
+                            <div>
+                                <h4 class="mb-0">
+                                    <i class="bi bi-box-seam"></i> {{ material_nome }}
+                                    {% if cotacao_aprovada %}
+                                    <span class="badge badge-aprovado ms-2">
+                                        <i class="bi bi-check-circle-fill"></i> COTAÇÃO APROVADA (ID{{
+                                        cotacao_aprovada.id }})
+                                    </span>
+                                    {% endif %}
+                                </h4>
+                                <div class="solicitacao-info mt-2">
+                                    {% set cotacao_exibicao = cotacao_aprovada if cotacao_aprovada else
+                                    preenchimentos_filtrados[0] %}
+                                    <span class="material-detail-item">
+                                        <i class="bi bi-tag"></i> Marca: {{ cotacao_exibicao.solicitacao.marca |
+                                        default('N/A') }}
+                                    </span>
+                                    <span class="material-detail-item">
+                                        <i class="bi bi-lightning-charge"></i> Ativo:
+                                        <span
+                                            class="badge-status bg-{{ 'success' if cotacao_exibicao.solicitacao.ativo == 'Sim' else 'secondary' }}">
+                                            {{ cotacao_exibicao.solicitacao.ativo }}
+                                        </span>
+                                    </span>
+                                    <span class="material-detail-item">
+                                        <i class="bi bi-flag"></i> Prioridade:
+                                        <span
+                                            class="priority-badge {{ 'priority-urgent' if cotacao_exibicao.solicitacao.prioridade == 'Urgente' else 'priority-normal' }}">
+                                            <i
+                                                class="bi {{ 'bi-exclamation-triangle-fill' if cotacao_exibicao.solicitacao.prioridade == 'Urgente' else 'bi-calendar-check-fill' }}"></i>
+                                            {{ cotacao_exibicao.solicitacao.prioridade }}
+                                        </span>
+                                    </span>
+                                </div>
+                            </div>
+                            <span class="cotacao-count-badge">
+                                <i class="bi bi-list-check"></i> {{ preenchimentos_filtrados|length }} cotações
+                                {% if cotacao_aprovada %}
+                                <span class="badge badge-aprovado ms-1">ID{{ cotacao_aprovada.id }} aprovada</span>
+                                {% endif %}
+                            </span>
+                        </div>
+                    </button>
+                </h2>
+                <div id="collapse{{ loop.index }}" class="accordion-collapse collapse"
+                    aria-labelledby="heading{{ loop.index }}" data-bs-parent="#solicitacoesAccordion">
+                    <div class="accordion-body">
+                        <div class="cotacoes-row">
+                            {% for preenchimento in preenchimentos_ordenados %}
+                            {% if preenchimento.status != 'Entregue' %}
+
+                            {% set card_class = '' %}
+                            {% set is_bloqueado = false %}
+
+                            {% if preenchimento.status == 'Aprovado' %}
+                            {% set card_class = 'cotacao-aprovada' %}
+                            {% elif cotacao_aprovada and preenchimento.status != 'Aprovado' %}
+                            {% set card_class = 'cotacao-bloqueada' %}
+                            {% set is_bloqueado = true %}
+                            {% endif %}
+
+                            <div class="cotacao-col">
+                                <div class="material-card {{ card_class }}">
+                                    <div class="material-header">
+                                        <div>
+                                            <input type="checkbox" class="cotacao-checkbox"
+                                                data-cotacao-id="{{ preenchimento.id }}">
+                                            <h5 class="material-title mb-2">
+                                                <i class="bi bi-hash"></i> ID: {{ preenchimento.id }}
+                                                {% if preenchimento.status == 'Aprovado' %}
+                                                <span class="badge badge-aprovado ms-2">
+                                                    <i class="bi bi-check-circle-fill"></i> COTAÇÃO APROVADA
+                                                </span>
+                                                {% elif is_bloqueado %}
+                                                <span class="badge badge-bloqueado ms-2">
+                                                    <i class="bi bi-lock-fill"></i> BLOQUEADA
+                                                </span>
+                                                {% endif %}
+                                            </h5>
+                                            <div class="material-details">
+                                                <span class="material-detail-item">
+                                                    <i class="bi bi-building"></i> Fornecedor: {{
+                                                    preenchimento.fornecedor_nome }}
+                                                </span>
+                                                <span class="material-detail-item">
+                                                    <i class="bi bi-person"></i> Usuário: {{ preenchimento.usuario }}
+                                                </span>
+                                                <span class="material-detail-item">
+                                                    <i class="bi bi-tag"></i> Status:
+                                                    <span class="badge-status 
+                                                        {% if preenchimento.status == 'Aprovado' %}bg-success
+                                                        {% elif preenchimento.status == 'Reprovado' %}bg-danger
+                                                        {% elif preenchimento.status == 'Em Processamento' %}bg-warning
+                                                        {% elif preenchimento.status == 'Entregue' %}bg-primary
+                                                        {% else %}bg-secondary{% endif %}">
+                                                        {{ preenchimento.status }}
+                                                    </span>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="p-3">
+                                        <!-- Informações adicionais do material -->
+                                        <div class="row mb-3">
+                                            <div class="col-md-4">
+                                                <strong>Nome do Material:</strong> {{ material_nome }}
+                                            </div>
+                                            <div class="col-md-4">
+                                                <strong>Status Ativo:</strong>
+                                                <span
+                                                    class="badge bg-{{ 'success' if preenchimento.solicitacao.ativo == 'Sim' else 'secondary' }}">
+                                                    {{ preenchimento.solicitacao.ativo }}
+                                                </span>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <strong>Nome do Ativo:</strong> {{ preenchimento.solicitacao.nome_ativo
+                                                | default('N/A') }}
+                                            </div>
+                                        </div>
+
+                                        <div class="row mb-3">
+                                            <div class="col-md-3">
+                                                <strong>Quantidade:</strong> {{ preenchimento.solicitacao.quantidade }}
+                                            </div>
+                                            <div class="col-md-3">
+                                                <strong>Unitário:</strong> R$ {{ "%.2f" |
+                                                format(preenchimento.valor_unitario) }}
+                                            </div>
+                                            <div class="col-md-3">
+                                                <strong>Frete:</strong>
+                                                {% if preenchimento.valor_frete is not none %}
+                                                R$ {{ "%.2f" | format(preenchimento.valor_frete) }}
+                                                {% else %}
+                                                <span class="text-muted-light">-</span>
+                                                {% endif %}
+                                            </div>
+                                            <div class="col-md-3">
+                                                <strong>Total:</strong> R$ {{ "%.2f" | format(preenchimento.valor_total)
+                                                }}
+                                            </div>
+                                        </div>
+
+                                        <div class="row mb-3">
+                                            <div class="col-md-6">
+                                                <strong>Entrega:</strong> {{ preenchimento.prazo_entrega }}
+                                            </div>
+                                            <div class="col-md-6">
+                                                <strong>Pagamento:</strong> {{ preenchimento.condicao_pagamento }}
+                                            </div>
+                                        </div>
+
+                                        <!-- Observações -->
+                                        <div class="row mb-3">
+                                            <div class="col-md-12">
+                                                <strong>Observações:</strong> {{ preenchimento.observacoes |
+                                                default('Nenhuma observação') }}
+                                            </div>
+                                        </div>
+
+                                        <div class="d-flex justify-content-end action-buttons">
+                                            {% if not is_bloqueado %}
+                                            <form
+                                                action="{{ url_for('routes_bp.atualizar_status_preenchimento', id=preenchimento.id) }}"
+                                                method="POST" class="d-inline me-2"
+                                                id="formStatus{{ preenchimento.id }}">
+                                                <select name="status" class="status-select"
+                                                    onchange="handleStatusChange(this, {{ preenchimento.id }})" {% if
+                                                    preenchimento.status in ['Aprovado', 'Reprovado'
+                                                    , 'Em Processamento' ] %}disabled
+                                                    data-status="{{ preenchimento.status }}" {% endif %}>
+                                                    <option value="" disabled selected>Alterar Status</option>
+                                                    <option value="Aprovado" {% if preenchimento.status=='Aprovado'
+                                                        %}selected{% endif %}>
+                                                        Aprovado
+                                                    </option>
+                                                    <option value="Reprovado" {% if preenchimento.status=='Reprovado'
+                                                        %}selected{% endif %}>
+                                                        Reprovado
+                                                    </option>
+                                                    {% if preenchimento.status in ['Aprovado', 'Em Processamento'] %}
+                                                    <option value="Entregue">Entregue</option>
+                                                    {% endif %}
+                                                </select>
+                                            </form>
+
+                                            {% if preenchimento.status in ['Aprovado', 'Reprovado'] %}
+                                            <button class="btn btn-sm btn-reverter btn-sm-icon"
+                                                onclick="reverterStatus({{ preenchimento.id }})"
+                                                title="Reverter status para permitir novas alterações">
+                                                <i class="bi bi-arrow-counterclockwise"></i> Reverter Status
+                                            </button>
+                                            {% endif %}
+
+                                            <button class="btn btn-sm btn-outline-warning btn-sm-icon"
+                                                data-bs-toggle="modal" data-bs-target="#editarValoresModal"
+                                                data-preenchimento-id="{{ preenchimento.id }}"
+                                                data-valor-unitario="{{ preenchimento.valor_unitario }}"
+                                                data-valor-frete="{{ preenchimento.valor_frete if preenchimento.valor_frete else 0 }}"
+                                                data-quantidade="{{ preenchimento.solicitacao.quantidade }}"
+                                                data-historico="{{ preenchimento.historico_descontos|tojson|safe }}"
+                                                title="Editar valores">
+                                                <i class="bi bi-pencil-square"></i> Editar Valores
+                                            </button>
+                                            {% else %}
+                                            <div class="alert alert-info py-2 mb-0">
+                                                <i class="bi bi-info-circle"></i> Esta cotação está bloqueada porque
+                                                existe uma cotação aprovada para este material.
+                                            </div>
+                                            {% endif %}
+                                        </div>
+
+                                        <!-- Rastreabilidade -->
+                                        <div class="mt-4">
+                                            <h6><i class="bi bi-geo-alt"></i> Rastreabilidade</h6>
+                                            <div class="timeline">
+                                                {% set entries = get_rastreabilidade_entries(preenchimento.solicitacao)
+                                                %}
+
+                                                {% for entry in entries %}
+                                                <div class="timeline-item">
+                                                    <div class="timeline-content">
+                                                        <div class="timeline-date">
+                                                            {{ entry.data|format_brasil_time if entry.data else 'Data
+                                                            não disponível' }}
+                                                        </div>
+                                                        <div class="timeline-title">{{ entry.evento }}</div>
+                                                        <div class="timeline-desc">{{ entry.descricao }}</div>
+                                                    </div>
+                                                </div>
+                                                {% endfor %}
+
+                                                <!-- Evento 2: Cotação Enviada -->
+                                                <div class="timeline-item">
+                                                    <div class="timeline-content">
+                                                        <div class="timeline-date">
+                                                            {% if preenchimento.data_preenchimento %}
+                                                            {{ preenchimento.data_preenchimento|format_brasil_time }}
+                                                            {% else %}
+                                                            {% if preenchimento.solicitacao and
+                                                            preenchimento.solicitacao.data_solicitacao %}
+                                                            {{
+                                                            preenchimento.solicitacao.data_solicitacao|format_brasil_time
+                                                            }}
+                                                            {% else %}
+                                                            Data não disponível
+                                                            {% endif %}
+                                                            {% endif %}
+                                                        </div>
+                                                        <div class="timeline-title">Cotação Enviada</div>
+                                                        <div class="timeline-desc">
+                                                            Cotação enviada para o fornecedor
+                                                            {% if preenchimento.fornecedor_nome %}
+                                                            {{ preenchimento.fornecedor_nome }}
+                                                            {% else %}
+                                                            Fornecedor não informado
+                                                            {% endif %}
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Evento 3: Resposta do Fornecedor -->
+                                                <div class="timeline-item">
+                                                    <div class="timeline-content">
+                                                        <div class="timeline-date">
+                                                            {% if preenchimento.data_preenchimento %}
+                                                            {{ preenchimento.data_preenchimento|format_brasil_time }}
+                                                            {% else %}
+                                                            {% if preenchimento.solicitacao and
+                                                            preenchimento.solicitacao.data_solicitacao %}
+                                                            {{
+                                                            preenchimento.solicitacao.data_solicitacao|format_brasil_time
+                                                            }}
+                                                            {% else %}
+                                                            Data não disponível
+                                                            {% endif %}
+                                                            {% endif %}
+                                                        </div>
+                                                        <div class="timeline-title">Resposta do Fornecedor</div>
+                                                        <div class="timeline-desc">Fornecedor respondeu com os valores
+                                                            informados</div>
+                                                    </div>
+                                                </div>
+
+                                                {% if preenchimento.status and preenchimento.status in ['Aprovado', 'Em
+                                                Processamento', 'AgPagamento', 'AgEntrega', 'Entregue'] %}
+                                                <!-- Evento 4: Aprovação -->
+                                                <div class="timeline-item">
+                                                    <div class="timeline-content">
+                                                        <div class="timeline-date">
+                                                            {% if preenchimento.data_preenchimento %}
+                                                            {{ preenchimento.data_preenchimento|format_brasil_time }}
+                                                            {% else %}
+                                                            {% if preenchimento.solicitacao and
+                                                            preenchimento.solicitacao.data_solicitacao %}
+                                                            {{
+                                                            preenchimento.solicitacao.data_solicitacao|format_brasil_time
+                                                            }}
+                                                            {% else %}
+                                                            Data não disponível
+                                                            {% endif %}
+                                                            {% endif %}
+                                                        </div>
+                                                        <div class="timeline-title">Aprovação</div>
+                                                        <div class="timeline-desc">Solicitação aprovada pelo gestor
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                {% endif %}
+
+                                                {% if preenchimento.status and preenchimento.status in ['AgPagamento',
+                                                'AgEntrega', 'Entregue'] %}
+                                                <!-- Evento 5: Aguardando Pagamento -->
+                                                <div class="timeline-item">
+                                                    <div class="timeline-content">
+                                                        <div class="timeline-date">
+                                                            {% if preenchimento.data_preenchimento %}
+                                                            {{ preenchimento.data_preenchimento|format_brasil_time }}
+                                                            {% else %}
+                                                            {% if preenchimento.solicitacao and
+                                                            preenchimento.solicitacao.data_solicitacao %}
+                                                            {{
+                                                            preenchimento.solicitacao.data_solicitacao|format_brasil_time
+                                                            }}
+                                                            {% else %}
+                                                            Data não disponível
+                                                            {% endif %}
+                                                            {% endif %}
+                                                        </div>
+                                                        <div class="timeline-title">Aguardando Pagamento</div>
+                                                        <div class="timeline-desc">Aguardando processamento do
+                                                            pagamento</div>
+                                                    </div>
+                                                </div>
+                                                {% endif %}
+
+                                                {% if preenchimento.status and preenchimento.status in ['AgEntrega',
+                                                'Entregue'] %}
+                                                <!-- Evento 6: Aguardando Entrega -->
+                                                <div class="timeline-item">
+                                                    <div class="timeline-content">
+                                                        <div class="timeline-date">
+                                                            {% if preenchimento.data_preenchimento %}
+                                                            {{ preenchimento.data_preenchimento|format_brasil_time }}
+                                                            {% else %}
+                                                            {% if preenchimento.solicitacao and
+                                                            preenchimento.solicitacao.data_solicitacao %}
+                                                            {{
+                                                            preenchimento.solicitacao.data_solicitacao|format_brasil_time
+                                                            }}
+                                                            {% else %}
+                                                            Data não disponível
+                                                            {% endif %}
+                                                            {% endif %}
+                                                        </div>
+                                                        <div class="timeline-title">Aguardando Entrega</div>
+                                                        <div class="timeline-desc">Aguardando entrega do fornecedor
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                {% endif %}
+
+                                                {% if preenchimento.status and preenchimento.status == 'Entregue' %}
+                                                <!-- Evento 7: Entregue -->
+                                                <div class="timeline-item">
+                                                    <div class="timeline-content">
+                                                        <div class="timeline-date">
+                                                            {% if preenchimento.data_preenchimento %}
+                                                            {{ preenchimento.data_preenchimento|format_brasil_time }}
+                                                            {% else %}
+                                                            {% if preenchimento.solicitacao and
+                                                            preenchimento.solicitacao.data_solicitacao %}
+                                                            {{
+                                                            preenchimento.solicitacao.data_solicitacao|format_brasil_time
+                                                            }}
+                                                            {% else %}
+                                                            Data não disponível
+                                                            {% endif %}
+                                                            {% endif %}
+                                                        </div>
+                                                        <div class="timeline-title">Entregue</div>
+                                                        <div class="timeline-desc">Produto entregue com sucesso</div>
+                                                    </div>
+                                                </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="bi bi-inbox"></i>
+            <h3>Nenhuma solicitação encontrada</h3>
+            <p>Não há solicitações preenchidas com status "Aguardando Aprovação" para exibir.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Modal para Editar Valores -->
+    <div class="modal fade" id="editarValoresModal" tabindex="-1" aria-labelledby="editarValoresModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editarValoresModalLabel">
+                        <i class="bi bi-pencil-square"></i> Editar Valores da Cotação
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formEditarValores" method="POST" action="">
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label for="quantidade" class="form-label">Quantidade</label>
+                                <input type="number" class="form-control" id="quantidade" name="quantidade" min="1"
+                                    required>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="valor_unitario" class="form-label">Valor Unitário (R$)</label>
+                                <input type="number" class="form-control" id="valor_unitario" name="valor_unitario"
+                                    step="0.01" min="0" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="valor_frete" class="form-label">Valor do Frete (R$)</label>
+                                <input type="number" class="form-control" id="valor_frete" name="valor_frete"
+                                    step="0.01" min="0">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <label for="observacoes" class="form-label">Observações</label>
+                                <textarea class="form-control" id="observacoes" name="observacoes" rows="3"></textarea>
+                            </div>
+                        </div>
+                        <div id="historicoDescontos" class="historico-desconto" style="display: none;">
+                            <div class="historico-title">
+                                <i class="bi bi-clock-history"></i> Histórico de Alterações
+                            </div>
+                            <div id="historicoLista"></div>
+                        </div>
+                        <div class="alert alert-info mt-3">
+                            <i class="bi bi-info-circle"></i> As alterações serão registradas no histórico para
+                            auditoria.
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="salvarValores()">Salvar Alterações</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 🔹 Lida com a mudança de status
+        function handleStatusChange(select, preenchimentoId) {
+            const selectedValue = select.value;
+            
+            if (selectedValue === 'Aprovado') {
+                if (confirm('Ao aprovar esta cotação, todas as outras cotações para este material serão automaticamente reprovadas. Deseja continuar?')) {
+                    // Primeiro reprova todas as outras cotações do material
+                    reprovarOutrasCotacoes(preenchimentoId)
+                        .then(() => {
+                            // Depois aprova a cotação selecionada
+                            return submitStatusForm(select.form, select, preenchimentoId, selectedValue);
+                        })
+                        .then(() => {
+                            // Finalmente bloqueia visualmente
+                            blockOtherCotacoes(preenchimentoId);
+                            showFlashMessage('Cotação aprovada com sucesso! As outras cotações foram reprovadas automaticamente.', 'success');
+                        })
+                        .catch(error => {
+                            console.error('Erro no processo:', error);
+                            select.disabled = false;
+                            select.value = '';
+                            showFlashMessage('Erro ao processar aprovação.', 'danger');
+                        });
+                } else {
+                    select.value = '';
+                }
+            } else {
+                submitStatusForm(select.form, select, preenchimentoId, selectedValue);
+            }
+        }
+
+        // 🔹 Função para reprovar automaticamente outras cotações do mesmo material
+        function reprovarOutrasCotacoes(preenchimentoIdAprovado) {
+            return new Promise((resolve, reject) => {
+                const cardAprovado = document.querySelector(`[data-cotacao-id="${preenchimentoIdAprovado}"]`)?.closest('.material-card');
+                if (!cardAprovado) {
+                    reject('Cotação aprovada não encontrada');
+                    return;
+                }
+                
+                const accordionItem = cardAprovado.closest('.accordion-item');
+                if (!accordionItem) {
+                    reject('Accordion item não encontrado');
+                    return;
+                }
+                
+                // Encontrar todas as outras cotações do mesmo material
+                const outrasCotacoes = accordionItem.querySelectorAll('.material-card');
+                const promises = [];
+                
+                outrasCotacoes.forEach(card => {
+                    const cotacaoId = card.querySelector('[data-cotacao-id]')?.dataset.cotacaoId;
+                    
+                    // Pular a cotação que será aprovada
+                    if (cotacaoId && cotacaoId != preenchimentoIdAprovado) {
+                        const select = card.querySelector('.status-select');
+                        if (select && !select.disabled) {
+                            promises.push(reprovarCotacaoIndividual(cotacaoId, card));
+                        }
+                    }
+                });
+                
+                // Esperar todas as reprovações serem processadas
+                if (promises.length > 0) {
+                    Promise.all(promises)
+                        .then(() => resolve())
+                        .catch(error => reject(error));
+                } else {
+                    resolve(); // Não há outras cotações para reprovar
+                }
+            });
+        }
+
+        // 🔹 Reprovar uma cotação individual
+        function reprovarCotacaoIndividual(preenchimentoId, cardElement) {
+            return new Promise((resolve, reject) => {
+                const formData = new FormData();
+                formData.append('status', 'Reprovado');
+
+                fetch("{{ url_for('routes_bp.atualizar_status_preenchimento', id=0) }}".replace('0', preenchimentoId), {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        console.log(`Cotação ${preenchimentoId} reprovada automaticamente`);
+                        // Atualizar visualmente o status imediatamente
+                        updateStatusInDOM(preenchimentoId, 'Reprovado', cardElement);
+                        resolve(data);
+                    } else {
+                        console.error('Erro ao reprovar cotação:', data.message);
+                        reject(data.message);
+                    }
+                })
+                .catch(err => {
+                    console.error('Erro ao reprovar cotação:', err);
+                    reject(err);
+                });
+            });
+        }
+
+        // 🔹 Envia status para backend (função atualizada)
+        function submitStatusForm(form, select, preenchimentoId, status) {
+            return new Promise((resolve, reject) => {
+                const formData = new FormData(form);
+                select.disabled = true;
+
+                fetch(form.action, { method: 'POST', body: formData })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            updateStatusInDOM(preenchimentoId, status);
+                            resolve(data);
+                        } else {
+                            showFlashMessage(data.message || 'Erro ao atualizar status', 'danger');
+                            select.disabled = false;
+                            reject(data.message);
+                        }
+                    })
+                    .catch(err => {
+                        console.error('Erro:', err);
+                        showFlashMessage('Erro ao atualizar status.', 'danger');
+                        select.disabled = false;
+                        reject(err);
+                    });
+            });
+        }
+
+        // 🔹 Atualiza visualmente o status (função atualizada)
+        function updateStatusInDOM(preenchimentoId, novoStatus, cardElement = null) {
+            const card = cardElement || document.querySelector(`[data-cotacao-id="${preenchimentoId}"]`)?.closest('.material-card');
+            if (!card) return;
+
+            const statusBadge = card.querySelector('.badge-status');
+            if (statusBadge) {
+                statusBadge.textContent = novoStatus;
+                statusBadge.className = 'badge-status';
+                if (novoStatus === 'Aprovado') statusBadge.classList.add('bg-success');
+                else if (novoStatus === 'Reprovado') statusBadge.classList.add('bg-danger');
+                else if (novoStatus === 'Em Processamento') statusBadge.classList.add('bg-warning');
+                else statusBadge.classList.add('bg-secondary');
+            }
+
+            const select = card.querySelector('.status-select');
+            if (select) {
+                select.disabled = true;
+                select.dataset.status = novoStatus;
+                
+                let msg = "";
+                if (novoStatus === 'Aprovado') {
+                    msg = "Esta cotação foi aprovada. Use 'Reverter Status' para alterações.";
+                } else if (novoStatus === 'Reprovado') {
+                    msg = "Esta cotação foi reprovada automaticamente devido à aprovação de outra cotação.";
+                    // Garantir que o select mostra "Reprovado"
+                    select.value = 'Reprovado';
+                } else if (novoStatus === 'Bloqueado') {
+                    msg = "Cotação bloqueada pois há uma aprovada.";
+                } else if (novoStatus === 'Em Processamento') {
+                    msg = "Cotação em processo de compra, não pode ser alterada";
+                }
+                
+                select.title = msg;
+                
+                // Atualizar tooltip se existir
+                const tooltip = bootstrap.Tooltip.getInstance(select);
+                if (tooltip) {
+                    tooltip.dispose();
+                }
+                new bootstrap.Tooltip(select);
+            }
+
+            // Atualizar visualmente o card
+            if (novoStatus === 'Aprovado') {
+                card.classList.add('cotacao-aprovada');
+                card.classList.remove('cotacao-bloqueada');
+                const header = card.querySelector('.material-header');
+                if (header) {
+                    header.style.backgroundColor = 'var(--primary-color)';
+                }
+            } else if (novoStatus === 'Reprovado') {
+                card.classList.remove('cotacao-aprovada');
+                card.classList.add('cotacao-bloqueada');
+                const header = card.querySelector('.material-header');
+                if (header) {
+                    header.style.backgroundColor = 'var(--secondary-color)';
+                }
+            }
+        }
+
+        // 🔹 Bloqueia visualmente outras cotações do mesmo material
+        function blockOtherCotacoes(preenchimentoId) {
+            const card = document.querySelector(`[data-cotacao-id="${preenchimentoId}"]`)?.closest('.accordion-item');
+            if (!card) return;
+
+            const cards = card.querySelectorAll('.material-card');
+            cards.forEach(c => {
+                const cid = c.querySelector('[data-cotacao-id]')?.dataset.cotacaoId;
+                if (cid && cid != preenchimentoId) {
+                    c.classList.add('cotacao-bloqueada');
+                    const select = c.querySelector('.status-select');
+                    if (select) {
+                        select.disabled = true;
+                        select.title = 'Cotação bloqueada pois há uma aprovada.';
+                    }
+                }
+            });
+        }
+
+        // 🔹 Reverter status de aprovação/reprovação
+        function reverterStatus(preenchimentoId) {
+            if (!confirm('Tem certeza que deseja reverter o status para permitir novas alterações?\nIsso desbloqueará todas as cotações para este material.')) return;
+
+            const formData = new FormData();
+            formData.append('status', 'Aguardando Aprovacao');
+
+            fetch("{{ url_for('routes_bp.atualizar_status_preenchimento', id=0) }}".replace('0', preenchimentoId), {
+                method: 'POST',
+                body: formData
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        showFlashMessage('Status revertido com sucesso. Todas as cotações foram desbloqueadas.', 'success');
+                        // Atualiza DOM sem reload
+                        const card = document.querySelector(`[data-cotacao-id="${preenchimentoId}"]`)?.closest('.material-card');
+                        if (card) {
+                            const statusBadge = card.querySelector('.badge-status');
+                            if (statusBadge) {
+                                statusBadge.textContent = 'Aguardando Aprovacao';
+                                statusBadge.className = 'badge-status bg-secondary';
+                            }
+                            const select = card.querySelector('.status-select');
+                            if (select) {
+                                select.disabled = false;
+                                select.dataset.status = 'Aguardando Aprovacao';
+                                select.title = 'Status reaberto. Pode ser alterado.';
+                                select.value = '';
+                            }
+                        }
+                        // Desbloqueia todas cotações visualmente
+                        document.querySelectorAll('.material-card.cotacao-bloqueada').forEach(c => {
+                            c.classList.remove('cotacao-bloqueada');
+                            const header = c.querySelector('.material-header');
+                            if (header) {
+                                header.style.backgroundColor = 'var(--primary-color)';
+                            }
+                            const s = c.querySelector('.status-select');
+                            if (s) {
+                                s.disabled = false;
+                                s.title = 'Status reaberto. Pode ser alterado.';
+                            }
+                        });
+                    } else {
+                        showFlashMessage('Erro: ' + data.message, 'danger');
+                    }
+                })
+                .catch(err => {
+                    console.error('Erro:', err);
+                    showFlashMessage('Erro ao reverter status. Tente novamente.', 'danger');
+                });
+        }
+
+        // 🔹 Flash messages
+        function showFlashMessage(message, type) {
+            const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+            const iconClass = type === 'success' ? 'bi-check-circle' : 'bi-exclamation-triangle';
+
+            const div = document.createElement('div');
+            div.className = `alert ${alertClass} alert-dismissible fade show mt-3 alert-flash`;
+            div.innerHTML = `
+            <i class="bi ${iconClass}"></i> ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
+            document.querySelector('.main-container').prepend(div);
+            setTimeout(() => div.remove(), 5000);
+        }
+
+        // 🔹 Inicialização DOMContentLoaded
+        document.addEventListener('DOMContentLoaded', function () {
+            // Tooltips
+            document.querySelectorAll('[title]').forEach(el => new bootstrap.Tooltip(el));
+
+            document.querySelectorAll('select.status-select:disabled').forEach(select => {
+                const status = select.dataset.status;
+                let msg = "";
+                if (status === 'Aprovado') msg = "Esta cotação foi aprovada. Use 'Reverter Status' para alterações.";
+                else if (status === 'Reprovado') msg = "Esta cotação foi reprovada automaticamente devido à aprovação de outra cotação.";
+                else if (status === 'Bloqueado') msg = "Cotação bloqueada pois há uma aprovada.";
+                else if (status === 'Em Processamento') msg = "Cotação em processo de compra, não pode ser alterada";
+                select.title = msg;
+                new bootstrap.Tooltip(select);
+            });
+
+            // Validação datas
+            document.querySelector('form')?.addEventListener('submit', e => {
+                const dataInicio = document.getElementById('data_inicio')?.value;
+                const dataFim = document.getElementById('data_fim')?.value;
+                if (dataInicio && dataFim && dataInicio > dataFim) {
+                    alert('A data de início não pode ser maior que a data de fim');
+                    e.preventDefault();
+                }
+            });
+
+            // Atualizar estado do botão de impressão
+            function updatePrintButtonState() {
+                const checkboxes = document.querySelectorAll('.cotacao-checkbox:checked');
+                const printButton = document.getElementById('printSelectedBtn');
+                printButton.disabled = checkboxes.length === 0;
+            }
+
+            // Adicionar event listeners aos checkboxes
+            const checkboxes = document.querySelectorAll('.cotacao-checkbox');
+            checkboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', updatePrintButtonState);
+            });
+            updatePrintButtonState();
+        });
+
+        // 🔹 Impressão das cotações selecionadas
+        function printSelectedCotacoes() {
+            const printBtn = document.getElementById('printSelectedBtn');
+            const checkboxes = document.querySelectorAll('.cotacao-checkbox:checked');
+            if (!checkboxes.length) { showFlashMessage('Selecione pelo menos uma cotação.', 'danger'); return; }
+
+            printBtn.disabled = true;
+            printBtn.innerHTML = '<i class="bi bi-printer"></i> Processando...';
+
+            try {
+                let printContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Cotações Selecionadas</title>
+            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+            <style>
+                @page {
+                    size: A4 landscape;
+                    margin: 10mm;
+                }
+                body {
+                    font-family: 'Segoe UI', sans-serif;
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 10px;
+                    justify-content: flex-start;
+                    align-items: flex-start;
+                    padding: 10px;
+                }
+                .material-card {
+                    border: 1px solid #e9ecef;
+                    border-radius: 8px;
+                    width: calc(25% - 10px);
+                    min-width: 220px;
+                    background-color: #fff;
+                    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+                    page-break-inside: avoid;
+                    overflow: hidden;
+                    font-size: 0.8rem;
+                }
+                .material-header {
+                    background-color: #022855;
+                    color: white;
+                    padding: 10px;
+                    font-size: 0.9rem;
+                }
+                .material-title {
+                    font-weight: 600;
+                    font-size: 0.95rem;
+                }
+                .p-3 {
+                    padding: 10px !important;
+                }
+                h1 {
+                    width: 100%;
+                    color: #022855;
+                    text-align: center;
+                    margin-bottom: 15px;
+                }
+                @media print {
+                    body { zoom: 90%; }
+                    .no-print { display: none; }
+                }
+            </style>
+        </head>
+        <body>
+            <h1>Cotações Selecionadas</h1>`;
+
+                checkboxes.forEach(checkbox => {
+                    const card = checkbox.closest('.material-card');
+                    const accordionItem = card.closest('.accordion-item');
+                    const materialNome = accordionItem.querySelector('h4')?.textContent.trim().split('COTAÇÃO')[0] || 'Material';
+                    const header = card.querySelector('.material-header').innerHTML.replace(/<input[^>]*>/, '');
+                    const detailsRows = card.querySelectorAll('.row.mb-3');
+
+                    printContent += `
+            <div class="material-card">
+                <div class="material-header">${header}</div>
+                <div class="p-3">
+                    <strong>${materialNome}</strong>
+                    ${Array.from(detailsRows).map(r => r.outerHTML).join('')}
+                </div>
+            </div>`;
+                });
+
+                printContent += `</body></html>`;
+
+                const w = window.open('', '_blank');
+                if (!w) { showFlashMessage('Não foi possível abrir a janela de impressão.', 'danger'); return; }
+
+                w.document.write(printContent);
+                w.document.close();
+                w.onload = () => {
+                    w.print();
+                    setTimeout(() => w.close(), 800);
+                };
+
+            } catch (err) {
+                console.error(err);
+                showFlashMessage('Erro ao preparar impressão.', 'danger');
+            } finally {
+                printBtn.disabled = false;
+                printBtn.innerHTML = '<i class="bi bi-printer"></i> Imprimir Selecionadas';
+            }
+        }
+
+    </script>
+
+</body>
+
+</html>

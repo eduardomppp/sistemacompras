@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Abrir Solicitação</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #022855;
+            --accent-color: #ff6b35;
+            --bg-light: #f8f9fa;
+        }
+
+        body {
+            background-color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
+            color: #333;
+        }
+
+        h1 {
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+
+        .section-title {
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: var(--primary-color);
+            border-left: 4px solid var(--accent-color);
+            padding-left: 8px;
+            margin-top: 25px;
+            margin-bottom: 10px;
+        }
+
+        .form-label {
+            font-weight: 500;
+            color: var(--primary-color);
+        }
+
+        .form-control,
+        .form-select {
+            border-radius: 8px;
+            border: 1px solid #ced4da;
+            transition: 0.2s;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.15rem rgba(2, 40, 85, 0.2);
+        }
+
+        .required-field::after {
+            content: " *";
+            color: var(--accent-color);
+        }
+
+        .solicitacao-item {
+            background-color: #fff;
+            border: 1px solid #eee;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+
+        .solicitacao-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+
+        .remove-solicitacao {
+            color: #dc3545;
+            cursor: pointer;
+            font-size: 1.1rem;
+        }
+
+        .btn {
+            border-radius: 10px;
+            font-weight: 600;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background-color: #011b3f;
+        }
+
+        .btn-success {
+            background-color: var(--accent-color);
+            border: none;
+        }
+
+        .btn-success:hover {
+            background-color: #e35a25;
+        }
+
+        .divider {
+            height: 1px;
+            background-color: #e5e5e5;
+            margin: 20px 0;
+        }
+
+        .select2-container .select2-selection--single {
+            height: 40px !important;
+            border-radius: 8px !important;
+            border: 1px solid #ced4da !important;
+        }
+
+        .select2-selection__rendered {
+            line-height: 38px !important;
+        }
+
+        .alert-warning {
+            border-left: 4px solid var(--accent-color);
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h1><i class="fas fa-shopping-cart me-2"></i>Abrir Solicitação</h1>
+            <a href="{{ url_for('routes_bp.buscar_material') }}" class="btn btn-light border">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+        </div>
+
+        <div id="materialWarning" class="alert alert-warning" style="display: none;">
+            <i class="fas fa-exclamation-triangle"></i>
+            Atenção: A lista de materiais não foi carregada completamente.
+        </div>
+
+        <form method="POST" action="{{ url_for('routes_bp.abrir_solicitacao') }}" enctype="multipart/form-data"
+            id="solicitacaoForm">
+            <input type="hidden" id="aplicacao_geral_hidden" name="aplicacao_geral" value="">
+
+            <div class="section-title"><i class="fas fa-tools me-2"></i>Aplicação Padrão</div>
+            <textarea class="form-control mb-3" id="aplicacao" name="aplicacao" rows="2"
+                placeholder="Descreva onde e como estes materiais serão utilizados (opcional)"></textarea>
+
+            <div id="solicitacoesContainer">
+                <div class="solicitacao-item" id="solicitacao-1" data-index="1">
+                    <div class="solicitacao-header">
+                        <span>Solicitação #1</span>
+                        <span class="remove-solicitacao" onclick="removerSolicitacao(1)"><i
+                                class="fas fa-times"></i></span>
+                    </div>
+
+                    <label for="pesquisa_material-1" class="form-label required-field mt-2">Buscar Material</label>
+                    <select class="form-select select2-pesquisa-material mb-2" id="pesquisa_material-1"
+                        name="pesquisa_material[]" required>
+                        <option value="" disabled selected>Digite para buscar por código ou descrição...</option>
+                    </select>
+                    <input type="hidden" class="cod-material-hidden" name="cod_material[]" value="">
+                    <div id="loadingSpinner-1" class="text-center mb-2" style="display:none;">
+                        <div class="spinner-border spinner-border-sm"></div> Carregando materiais...
+                    </div>
+
+                    <div class="divider"></div>
+
+                    <label for="descricao-1" class="form-label">Descrição do Material</label>
+                    <input type="text" class="form-control descricao-material mb-3" id="descricao-1" name="descricao[]"
+                        readonly>
+
+                    <label for="especificacao-1" class="form-label required-field">Especificação</label>
+                    <textarea class="form-control especificacao-material mb-3" id="especificacao-1"
+                        name="especificacao[]" rows="3" required></textarea>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="quantidade-1" class="form-label required-field">Quantidade</label>
+                            <input type="number" class="form-control quantidade-material" id="quantidade-1"
+                                name="quantidade[]" min="1" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="unidade_medida-1" class="form-label required-field">Unidade</label>
+                            <select class="form-select unidade-medida-material" id="unidade_medida-1"
+                                name="unidade_medida[]" required>
+                                <option value="" disabled selected>Selecione...</option>
+                                <option value="Peça">Peça</option>
+                                <option value="Unidade">Unidade</option>
+                                <option value="Metro">Metro</option>
+                                <option value="Litro">Litro</option>
+                                <option value="Caixa">Caixa</option>
+                                <option value="Pacote">Pacote</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <label for="marca-1" class="form-label">Marca (opcional)</label>
+                    <input type="text" class="form-control mb-3" id="marca-1" name="marca[]">
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="ativo-1" class="form-label required-field">Material é ativo?</label>
+                            <select class="form-select ativo-material" id="ativo-1" name="ativo[]" required>
+                                <option value="" disabled selected>Selecione...</option>
+                                <option value="Sim">Sim</option>
+                                <option value="Não">Não</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3 nome-ativo-container" id="nome_ativo_container-1"
+                            style="display:none;">
+                            <label for="nome_ativo-1" class="form-label required-field">Nome do Ativo</label>
+                            <select class="form-select select2-nome-ativo" id="nome_ativo-1" name="nome_ativo[]">
+                                <option value="" disabled selected>Selecione um ativo...</option>
+                                {% for nome in ler_nomes_registros() %}
+                                <option value="{{ nome }}">{{ nome }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="prioridade-1" class="form-label required-field">Prioridade</label>
+                            <select class="form-select prioridade-material" id="prioridade-1" name="prioridade[]"
+                                required>
+                                <option value="Programado" selected>Programado</option>
+                                <option value="Urgente">Urgente</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="empresa-1" class="form-label required-field">Empresa</label>
+                            <input type="text" class="form-control empresa-material" id="empresa-1" name="empresa[]"
+                                required value="{{ empresa_usuario }}">
+                        </div>
+                    </div>
+
+                    <label for="foto-1" class="form-label">Anexo (Foto ou PDF)</label>
+                    <input class="form-control foto-material" type="file" id="foto-1" name="foto[]"
+                        accept=".jpg,.jpeg,.png,.pdf">
+                </div>
+            </div>
+
+            <div class="d-grid mb-3">
+                <button type="button" class="btn btn-success" id="adicionarSolicitacao">
+                    <i class="fas fa-plus"></i> Adicionar outro material
+                </button>
+            </div>
+
+            <div class="d-grid">
+                <button type="submit" class="btn btn-primary py-2" id="submitBtn" disabled>
+                    <i class="fas fa-paper-plane"></i> Enviar Solicitações
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Mantém todos os scripts originais -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/i18n/pt-BR.js"></script>
+
+    <script>
+        // Variável global para controlar o número de solicitações
+        let solicitacaoCount = 1;
+        let materiaisCarregados = [];
+
+        // Carregar todos os materiais ao inicializar
+        function carregarTodosMateriais() {
+            $('#loadingSpinner-1').show();
+
+            $.ajax({
+                url: '/api/materiais',
+                type: 'GET',
+                success: function (response) {
+                    console.log('Resposta da API:', response);
+
+                    if (response.success && response.materiais && response.materiais.length > 0) {
+                        materiaisCarregados = response.materiais;
+
+                        // Carregar materiais na primeira solicitação
+                        carregarMateriaisSelect2(1);
+
+                        $('#materialWarning').hide();
+                        console.log('Materiais carregados: ' + response.materiais.length);
+                    } else {
+                        $('#materialWarning').show();
+                        console.error('Nenhum material encontrado na resposta');
+                    }
+                },
+                error: function (xhr, status, error) {
+                    $('#materialWarning').show();
+                    console.error('Erro ao carregar materiais:', error);
+                    console.log('Status:', status);
+                    console.log('Resposta:', xhr.responseText);
+                },
+                complete: function () {
+                    $('#loadingSpinner-1').hide();
+                }
+            });
+        }
+
+        // Carregar materiais em um select2 específico
+        function carregarMateriaisSelect2(index) {
+            const selectElement = $(`#pesquisa_material-${index}`);
+
+            selectElement.empty().append('<option value="" disabled selected>Selecione um material...</option>');
+
+            materiaisCarregados.forEach(function (material) {
+                selectElement.append(
+                    $('<option>', {
+                        value: material.CodMaterial,
+                        text: material.DescricaoMaterial + ' (Cód: ' + material.CodMaterial + ')',
+                        'data-descricao': material.DescricaoMaterial
+                    })
+                );
+            });
+
+            // Inicializar Select2
+            selectElement.select2({
+                placeholder: "Selecione um material...",
+                minimumInputLength: 0,
+                language: {
+                    noResults: function () {
+                        return "Nenhum material encontrado";
+                    },
+                    searching: function () {
+                        return "Buscando...";
+                    }
+                },
+                width: '100%',
+                matcher: function (params, data) {
+                    // Filtro customizado para buscar em código e descrição
+                    if ($.trim(params.term) === '') {
+                        return data;
+                    }
+
+                    if (typeof data.text === 'undefined') {
+                        return null;
+                    }
+
+                    var term = params.term.toLowerCase();
+                    var text = data.text.toLowerCase();
+
+                    // Buscar tanto no código quanto na descrição
+                    if (text.indexOf(term) > -1) {
+                        return data;
+                    }
+
+                    return null;
+                }
+            });
+
+            // Inicializar Select2 para o campo Nome do Ativo
+            $(`#nome_ativo-${index}`).select2({
+                placeholder: "Digite para buscar...",
+                minimumInputLength: 3,
+                language: {
+                    noResults: function () {
+                        return "Nenhum resultado encontrado";
+                    },
+                    searching: function () {
+                        return "Buscando...";
+                    },
+                    inputTooShort: function () {
+                        return "Digite pelo menos 3 caracteres";
+                    }
+                },
+                width: '100%'
+            });
+        }
+
+        // Quando um material é selecionado na pesquisa - VERSÃO CORRIGIDA
+        $(document).on('change', '.select2-pesquisa-material', function () {
+            const index = $(this).attr('id').split('-')[1];
+            const selectedOption = $(this).find('option:selected');
+            const codMaterial = selectedOption.val();
+            const descricaoMaterial = selectedOption.data('descricao') || selectedOption.text();
+
+            console.log('Material selecionado na solicitação ' + index + ':', codMaterial, descricaoMaterial);
+
+            if (codMaterial) {
+                // Preencher o campo hidden cod_material para esta solicitação específica
+                $(`#solicitacao-${index} .cod-material-hidden`).val(codMaterial);
+                $(`#solicitacao-${index} .cod-material-hidden`).attr('name', 'cod_material[]');
+
+                let descricaoLimpa = descricaoMaterial;
+                if (descricaoMaterial.includes('(Cód:')) {
+                    descricaoLimpa = descricaoMaterial.split('(Cód:')[0].trim();
+                }
+
+                $(`#descricao-${index}`).val(descricaoLimpa);
+
+                if (!$(`#especificacao-${index}`).val().trim()) {
+                    $(`#especificacao-${index}`).val(descricaoLimpa);
+                }
+
+                $('#submitBtn').prop('disabled', false);
+                $(`#especificacao-${index}`).focus();
+            } else {
+                $(`#descricao-${index}`).val('');
+                $(`#especificacao-${index}`).val('');
+                $(`#solicitacao-${index} .cod-material-hidden`).val('');
+                $(`#solicitacao-${index} .cod-material-hidden`).attr('name', 'cod_material[]');
+
+                verificarSolicitacoesComMaterial();
+            }
+        });
+
+        // Mostrar/ocultar campo nome_ativo
+        $(document).on('change', '.ativo-material', function () {
+            const index = $(this).attr('id').split('-')[1];
+            const nomeAtivoContainer = $(`#nome_ativo_container-${index}`);
+            const nomeAtivoSelect = $(`#nome_ativo-${index}`);
+
+            if (this.value === 'Sim') {
+                nomeAtivoContainer.show();
+                nomeAtivoSelect.attr('required', 'required');
+            } else {
+                nomeAtivoContainer.hide();
+                nomeAtivoSelect.removeAttr('required');
+                nomeAtivoSelect.val('');
+                nomeAtivoSelect.trigger('change');
+            }
+        });
+
+        // Adicionar nova solicitação
+        $('#adicionarSolicitacao').on('click', function () {
+            solicitacaoCount++;
+
+            const novaSolicitacao = `
+                <div class="solicitacao-item" id="solicitacao-${solicitacaoCount}" data-index="${solicitacaoCount}">
+                    <div class="solicitacao-header">
+                        <span class="solicitacao-numero">Solicitação #${solicitacaoCount}</span>
+                        <span class="remove-solicitacao" onclick="removerSolicitacao(${solicitacaoCount})">
+                            <i class="fas fa-times"></i>
+                        </span>
+                    </div>
+                    
+                    <!-- Seção: Pesquisa do Material -->
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <i class="fas fa-search"></i> Pesquisar Material
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label for="pesquisa_material-${solicitacaoCount}" class="form-label required-field">Buscar Material</label>
+                                <select class="form-select select2-pesquisa-material" id="pesquisa_material-${solicitacaoCount}"
+                                    name="pesquisa_material[]" required>
+                                    <option value="" disabled selected>Digite para buscar por código ou descrição...</option>
+                                </select>
+                                <!-- CAMPO HIDDEN ADICIONADO PARA COD_MATERIAL -->
+                                <input type="hidden" class="cod-material-hidden" name="cod_material[]" value="">
+                                <div class="loading-spinner" id="loadingSpinner-${solicitacaoCount}" style="display: none;">
+                                    <div class="spinner-border spinner-border-sm" role="status">
+                                        <span class="visually-hidden">Carregando...</span>
+                                    </div>
+                                    <small class="text-muted ms-2">Carregando materiais...</small>
+                                </div>
+                                <small class="text-muted">Digite pelo menos 3 caracteres para buscar</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Seção 1: Informações Básicas -->
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <i class="fas fa-file-alt"></i> Informações Básicas
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label for="descricao-${solicitacaoCount}" class="form-label">Descrição do Material</label>
+                                <input type="text" class="form-control descricao-material" id="descricao-${solicitacaoCount}" name="descricao[]" readonly>
+                                <small class="text-muted">Material selecionado</small>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="especificacao-${solicitacaoCount}" class="form-label required-field">Especificação</label>
+                                <textarea class="form-control especificacao-material" id="especificacao-${solicitacaoCount}" name="especificacao[]" rows="3" required
+                                    placeholder="Descreva detalhadamente as características, dimensões, especificações técnicas do material..."></textarea>
+                                <small class="text-muted">Descreva detalhadamente o material</small>
+                            </div>
+
+                            <div class="row g-2">
+                                <div class="col-md-6 mb-3">
+                                    <label for="quantidade-${solicitacaoCount}" class="form-label required-field">Quantidade</label>
+                                    <input type="number" class="form-control quantidade-material" id="quantidade-${solicitacaoCount}" name="quantidade[]" min="1" required
+                                        placeholder="Ex: 10">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="unidade_medida-${solicitacaoCount}" class="form-label required-field">Unidade</label>
+                                    <select class="form-select unidade-medida-material" id="unidade_medida-${solicitacaoCount}" name="unidade_medida[]" required>
+                                        <option value="" disabled selected>Selecione...</option>
+                                        <option value="Peça">Peça</option>
+                                        <option value="Unidade">Unidade</option>
+                                        <option value="Metro">Metro</option>
+                                        <option value="Metro quadrado">Metro quadrado</option>
+                                        <option value="Metro cúbico">Metro cúbico</option>
+                                        <option value="Litro">Litro</option>
+                                        <option value="Quilograma">Quilograma</option>
+                                        <option value="Grama">Grama</option>
+                                        <option value="Caixa">Caixa</option>
+                                        <option value="Pacote">Pacote</option>
+                                        <option value="Par">Par</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Seção 2: Detalhes do Material -->
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <i class="fas fa-tags"></i> Detalhes do Material
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label for="marca-${solicitacaoCount}" class="form-label">Marca</label>
+                                <input type="text" class="form-control marca-material" id="marca-${solicitacaoCount}" name="marca[]"
+                                    placeholder="Ex: Bosch, 3M, Intel (opcional)">
+                                <small class="text-muted">Opcional</small>
+                            </div>
+
+                            <div class="row g-2">
+                                <div class="col-md-6 mb-3">
+                                    <label for="ativo-${solicitacaoCount}" class="form-label required-field">Material é ativo?</label>
+                                    <select class="form-select ativo-material" id="ativo-${solicitacaoCount}" name="ativo[]" required>
+                                        <option value="" disabled selected>Selecione...</option>
+                                        <option value="Sim">Sim</option>
+                                        <option value="Não">Não</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-3 nome-ativo-container" id="nome_ativo_container-${solicitacaoCount}" style="display: none;">
+                                    <label for="nome_ativo-${solicitacaoCount}" class="form-label required-field">Nome do Ativo</label>
+                                    <select class="form-select select2-nome-ativo nome-ativo-material" id="nome_ativo-${solicitacaoCount}" name="nome_ativo[]">
+                                        <option value="" disabled selected>Selecione um ativo...</option>
+                                        {% for nome in ler_nomes_registros() %}
+                                        <option value="{{ nome }}">{{ nome }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Seção 3: Prioridade e Empresa -->
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <i class="fas fa-exclamation-triangle"></i> Prioridade e Empresa
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-2">
+                                <div class="col-md-6 mb-3">
+                                    <label for="prioridade-${solicitacaoCount}" class="form-label required-field">Prioridade</label>
+                                    <select class="form-select prioridade-material" id="prioridade-${solicitacaoCount}" name="prioridade[]" required>
+                                        <option value="Programado" selected>Programado</option>
+                                        <option value="Urgente">Urgente</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="empresa-${solicitacaoCount}" class="form-label required-field">Empresa</label>
+                                    <input type="text" class="form-control empresa-material" id="empresa-${solicitacaoCount}" name="empresa[]" required
+                                        value="{{ empresa_usuario }}">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Seção 4: Anexos -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <i class="fas fa-paperclip"></i> Anexos
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label for="foto-${solicitacaoCount}" class="form-label">Foto do Material</label>
+                                <input class="form-control foto-material" type="file" id="foto-${solicitacaoCount}" name="foto[]" accept=".jpg,.jpeg,.png,.pdf">
+                                <small class="text-muted">Formatos: JPG, PNG, PDF (até 5MB)</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            $('#solicitacoesContainer').append(novaSolicitacao);
+
+            // Carregar materiais no novo select2
+            carregarMateriaisSelect2(solicitacaoCount);
+        });
+
+        // Remover solicitação
+        function removerSolicitacao(index) {
+            if (solicitacaoCount > 1) {
+                $(`#solicitacao-${index}`).remove();
+                solicitacaoCount--;
+
+                // Atualizar números das solicitações restantes
+                $('.solicitacao-item').each(function (i) {
+                    const newIndex = i + 1;
+                    $(this).attr('id', `solicitacao-${newIndex}`).data('index', newIndex);
+                    $(this).find('.solicitacao-numero').text(`Solicitação #${newIndex}`);
+                    $(this).find('.remove-solicitacao').attr('onclick', `removerSolicitacao(${newIndex})`);
+
+                    // Atualizar IDs dos elementos
+                    $(this).find('[id]').each(function () {
+                        const oldId = $(this).attr('id');
+                        const parts = oldId.split('-');
+                        if (parts.length > 1) {
+                            const newId = parts[0] + '-' + newIndex;
+                            $(this).attr('id', newId);
+
+                            // Atualizar labels for
+                            $(this).closest('.mb-3').find('label').attr('for', newId);
+                        }
+                    });
+                });
+
+                // Verificar se ainda há alguma solicitação com material
+                verificarSolicitacoesComMaterial();
+            }
+        }
+
+        // Verificar se há pelo menos uma solicitação com material selecionado
+        function verificarSolicitacoesComMaterial() {
+            let hasMaterial = false;
+            $('.cod-material-hidden').each(function () {
+                if ($(this).val().trim() !== '') {
+                    hasMaterial = true;
+                }
+            });
+
+            $('#submitBtn').prop('disabled', !hasMaterial);
+        }
+
+        // Validação do formulário - CORREÇÃO DO CAMPO APLICAÇÃO
+        $('#solicitacaoForm').on('submit', function (e) {
+            // Primeiro, copiar o valor do campo aplicacao para o campo hidden
+            const aplicacaoValue = $('#aplicacao').val();
+            $('#aplicacao_geral_hidden').val(aplicacaoValue);
+
+            console.log('Aplicação a ser enviada:', aplicacaoValue);
+
+            let hasError = false;
+
+            // Verificar se pelo menos uma solicitação tem material
+            let hasMaterial = false;
+            $('.cod-material-hidden').each(function () {
+                if ($(this).val().trim() !== '') {
+                    hasMaterial = true;
+                }
+            });
+
+            if (!hasMaterial) {
+                e.preventDefault();
+                alert('Por favor, selecione pelo menos um material antes de enviar as solicitações.');
+                hasError = true;
+                return false;
+            }
+
+            // Verificar se todas as solicitações têm os campos obrigatórios preenchidos
+            $('.solicitacao-item').each(function () {
+                const index = $(this).data('index');
+                const ativo = $(`#ativo-${index}`).val();
+
+                if (ativo === 'Sim' && !$(`#nome_ativo-${index}`).val()) {
+                    e.preventDefault();
+                    alert(`Por favor, selecione o nome do ativo na solicitação #${index}.`);
+                    $(`#nome_ativo-${index}`).select2('open');
+                    hasError = true;
+                    return false;
+                }
+            });
+
+            // DEBUG: Mostrar todos os dados do formulário
+            console.log('=== DADOS DO FORMULÁRIO ===');
+            const formData = new FormData(this);
+            for (let [key, value] of formData.entries()) {
+                console.log(key + ': ' + value);
+            }
+            console.log('=== FIM DEBUG ===');
+
+            return !hasError;
+        });
+
+        // Inicializar quando o documento estiver pronto
+        $(document).ready(function () {
+            console.log('Iniciando carregamento de materiais...');
+            carregarTodosMateriais();
+        });
+
+    </script>
+</body>
+
+</html>
