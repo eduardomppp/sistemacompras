@@ -9,6 +9,7 @@ import re
 import sqlite3
 import uuid
 from werkzeug.utils import secure_filename
+from os.path import basename
 import pdfkit
 from flask import send_from_directory
 from sqlalchemy.exc import SQLAlchemyError
@@ -18,6 +19,8 @@ import random
 import shutil
 from sqlalchemy import or_
 from decimal import Decimal, InvalidOperation
+
+
 
 # Carregar variáveis de ambiente
 load_dotenv()
@@ -581,6 +584,7 @@ def get_rastreabilidade_entries(solicitacao):
     entries.sort(key=lambda x: x['data'] if x['data'] else datetime.min)
     return entries
 
+
 @app.template_filter('format_brasil_time')
 def format_brasil_time(dt):
     """Filtro Jinja2 para formatar datetimes no formato brasileiro"""
@@ -743,6 +747,7 @@ def ler_senhas():
             print("Arquivo de senhas não encontrado, criando arquivo vazio")
             with open(caminho_absoluto, "w", encoding='utf-8') as f:
                 f.write("")
+            return senhas
         
         # Tentar ler com encoding UTF-8 e fallback para latin-1
         try:
@@ -762,19 +767,23 @@ def ler_senhas():
                     senha = partes[1]
                     pagina = partes[2]
                     empresa = partes[3] if len(partes) >= 4 else ""
+                    
+                    # CORREÇÃO: Armazenar tanto o usuário completo quanto o nome base
                     senhas[usuario] = {
                         "senha": senha,
                         "pagina": pagina,
-                        "empresa": empresa
+                        "empresa": empresa,
+                        "usuario_base": usuario.split('%')[0]  # Adiciona o nome base do usuário
                     }
         
         print(f"Total de usuários carregados: {len(senhas)}")
+        print(f"Usuários disponíveis: {list(senhas.keys())}")  # DEBUG
+        
     except Exception as e:
         print(f"Erro crítico ao ler senhas.txt: {str(e)}")
         logging.error(f"Erro ao ler senhas.txt: {str(e)}", exc_info=True)
     
     return senhas
-
 
 def salvar_senhas(senhas):
     try:
@@ -855,12 +864,12 @@ routes_bp = Blueprint('routes_bp', __name__)
 
 @routes_bp.before_request
 def verificar_tempo_inatividade():
-    if request.endpoint in ['routes_bp.login', 'static']:
+    if request.endpoint in ['routes_bp.login', 'static', 'routes_bp.debug_senhas']:
         return
     
     print(f"Verificando sessão para endpoint: {request.endpoint}")
     print(f"Sessão atual: {dict(session)}")
-    print(f"Cookies recebidos: {request.cookies}")
+    
     if 'usuario' not in session:
         print(f"Usuário não autenticado tentando acessar {request.endpoint}")
         return redirect(url_for('routes_bp.login'))
@@ -897,22 +906,28 @@ def login():
         senhas = ler_senhas()
         print(f"Usuários no sistema: {list(senhas.keys())}")
         
+        # CORREÇÃO: Verificar se o usuário existe e a senha está correta
         if usuario_completo in senhas and senha == senhas[usuario_completo]["senha"]:
-            usuario_real = usuario_completo.split('%')[0]
-            session['usuario'] = usuario_real
+            # CORREÇÃO: Usar o usuário base para a sessão
+            usuario_base = senhas[usuario_completo]["usuario_base"]
+            session['usuario'] = usuario_base
+            session['usuario_completo'] = usuario_completo  # Guardar também o completo para referência
             session['_fresh'] = True
-            print(f"Sessão criada para {usuario_real}. Conteúdo: {dict(session)}")
-            print(f"Cookie de sessão antes de redirecionar: {request.cookies.get('__Secure-sessionid', 'N/A')}")
+            
+            print(f"Sessão criada para {usuario_base}. Conteúdo: {dict(session)}")
+            
             pagina_destino = senhas[usuario_completo]["pagina"].replace('.html', '')
             print(f"Redirecionando para: {pagina_destino}")
+            
+            # Registrar log de login
+            registrar_log(usuario_base, 'login', request.remote_addr)
+            
             response = redirect(url_for(f'routes_bp.{pagina_destino}'))
-            print(f"Headers da resposta: {response.headers}")
             return response
         
         flash('Credenciais inválidas', 'error')
         print("Falha na autenticação")
     
-    print(f"Cookies recebidos na requisição GET: {request.cookies}")
     return render_template('login.html')
 
 @routes_bp.route('/logout', methods=['GET'])
@@ -1609,11 +1624,13 @@ def abrir_solicitacao():
 def get_compradores():
     """Retorna lista de nomes de compradores a partir do arquivo senhas.txt"""
     senhas = ler_senhas()
-    compradores = [
-        usuario
-        for usuario, dados in senhas.items()
-        if 'comprador' in dados['pagina']
-    ]
+    compradores = []
+    
+    for usuario_completo, dados in senhas.items():
+        # CORREÇÃO: Verificar se a página contém 'comprador' e usar o usuário base
+        if 'comprador' in dados['pagina']:
+            compradores.append(dados['usuario_base'])
+    
     return sorted(compradores)
 
 
@@ -5395,11 +5412,23 @@ def atribuir_comprador(solicitacao_id):
         db.session.rollback()
         logging.error(f"Erro ao atribuir comprador: {str(e)}")
         return jsonify({'success': False, 'error': f'Erro ao atribuir comprador: {str(e)}'}), 500
-
+    
+@app.template_filter('basename')
+def basename_filter(path):
+    """
+    Filtro Jinja2 para extrair apenas o nome do arquivo de um caminho completo.
+    Ex: '/Uploads/cotacoes/123.pdf' → '123.pdf'
+    """
+    if not path:
+        return ''
+    
+    return basename(path)
 # Registre o filtro (ADICIONE ESTA LINHA)
 app.jinja_env.filters['format_brasil_time'] = format_brasil_time
+app.jinja_env.filters['basename'] = basename_filter
 
 # No app.py, substitua ou adicione a rota para listar_solicitacoes_finalizadas
+
 
 @routes_bp.route('/listar_solicitacoes_finalizadas', methods=['GET'])
 def listar_solicitacoes_finalizadas():
