@@ -2,7 +2,6 @@ suporte%@Suporte2025%menu_master.html%BrasilCard
 master%@Bcard1993%menu_master.html%BrasilCard
 solicitar%@Bcard1993%menu_solicitante.html%BrasilCard
 cadastro%@Bcard1993%menu_cadastro.html%BrasilCard
-comprador%@Bcard1993%menu_comprador.html%BrasilCard
 supervisor%@Bcard1993%menu_supervisor.html%BrasilCard
 financeiro%@Bcard1993%menu_financeiro.html%BrasilCard
 ruan_ferreira%Grupocobuccio157!%menu_comprador.html%Grupo Adriano Cobuccio
@@ -16,3 +15,4 @@ guilherme_gomes%Grupocobuccio011!%menu_solicitante.html%Grupo Adriano Cobuccio
 joao_nardin%Grupocobuccio024!%menu_solicitante.html%FIDC
 andreia_silva%Grupocobuccio289!%menu_financeiro.html%Grupo Adriano Cobuccio
 auditor%@Bcard123%menu_auditoria.html%Grupo Adriano Cobuccio
+comprado%@Suporte2025%menu_comprador.html%Brasil Card
