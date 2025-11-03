@@ -2734,6 +2734,164 @@ def gerar_pedido_compra():
         flash(f'Erro ao gerar pedido: {str(e)}', 'error')
         return redirect(url_for('routes_bp.listar_solicitacoes_preenchidas'))
     
+#testeaqui
+@routes_bp.route('/pedido/<int:pedido_id>/view')
+def view_pedido_pdf(pedido_id):
+    if 'usuario' not in session:
+        return redirect(url_for('routes_bp.login'))
+    
+    try:
+        # Buscar o pedido no banco de dados
+        pedido = PedidosCompra.query.get_or_404(pedido_id)
+        
+        # Obter informações dos fornecedores e materiais (mesma lógica usada na geração do PDF)
+        fornecedor_ids = {p.fornecedor_id for p in pedido.preenchimentos}
+        fornecedores_info = {}
+        
+        conn = get_db_connection(DB_PATH_FORNECEDORES)
+        if conn:
+            try:
+                cursor = conn.cursor()
+                cursor.execute(f'''
+                    SELECT id, nome_fantasia, cnpj, telefone, email, endereco, cidade, estado 
+                    FROM fornecedores 
+                    WHERE id IN ({",".join("?"*len(fornecedor_ids))})
+                ''', list(fornecedor_ids))
+                
+                for row in cursor.fetchall():
+                    fornecedores_info[row[0]] = {
+                        'nome': row[1],
+                        'cnpj': format_cnpj(row[2]) if row[2] else 'N/A',
+                        'telefone': row[3],
+                        'email': row[4],
+                        'endereco': f"{row[5]}, {row[6]}/{row[7]}"
+                    }
+            finally:
+                conn.close()
+
+        # Organizar materiais por fornecedor
+        materiais_por_fornecedor = {}
+        for preenchimento in pedido.preenchimentos:
+            fornecedor_id = preenchimento.fornecedor_id
+            if fornecedor_id not in materiais_por_fornecedor:
+                materiais_por_fornecedor[fornecedor_id] = {
+                    'info': fornecedores_info.get(fornecedor_id, {
+                        'nome': 'Fornecedor não encontrado',
+                        'cnpj': 'N/A',
+                        'telefone': 'N/A',
+                        'email': 'N/A',
+                        'endereco': 'N/A'
+                    }),
+                    'itens': []
+                }
+            
+            materiais_por_fornecedor[fornecedor_id]['itens'].append({
+                'material': preenchimento.solicitacao.material.DescricaoMaterial,
+                'marca': preenchimento.solicitacao.marca or 'Não especificado',
+                'especificacao': preenchimento.solicitacao.especificacao,
+                'quantidade': preenchimento.solicitacao.quantidade,
+                'unidade': preenchimento.solicitacao.unidade_medida,
+                'valor_unitario': preenchimento.valor_unitario,
+                'valor_total': preenchimento.valor_total,
+                'prazo_entrega': preenchimento.prazo_entrega,
+                'prioridade': preenchimento.solicitacao.prioridade
+            })
+
+        # Renderizar o template com os dados
+        return render_template(
+            'pedido_compra_pdf.html',
+            pedido=pedido,
+            materiais_por_fornecedor=materiais_por_fornecedor,
+            data_criacao=pedido.data_criacao.strftime('%d/%m/%Y %H:%M:%S'),
+            usuario=session['usuario'],
+            total_itens=len(pedido.preenchimentos),
+            fornecedores_count=len(materiais_por_fornecedor),
+            observacoes=pedido.observacoes
+        )
+        
+    except Exception as e:
+        flash(f'Erro ao carregar pedido: {str(e)}', 'error')
+        logging.error(f"Erro em view_pedido_pdf: {str(e)}")
+        return redirect(url_for('routes_bp.listar_pedidos_compra'))
+def get_fornecedor_details_full(fornecedor_id):
+    """Busca todos os detalhes do fornecedor pelo ID no banco fornecedores.db"""
+    try:
+        conn = sqlite3.connect(DB_PATH_FORNECEDORES)
+        cursor = conn.cursor()
+        cursor.execute('''
+            SELECT id, nome_fantasia, cnpj, telefone, email, endereco, bairro, cidade, estado, contato, materiais
+            FROM fornecedores 
+            WHERE id = ?
+        ''', (fornecedor_id,))
+        result = cursor.fetchone()
+        conn.close()
+        if result:
+            return {
+                'id': result[0],
+                'nome_fantasia': result[1],
+                'cnpj': result[2],
+                'telefone': result[3],
+                'email': result[4],
+                'endereco': result[5],
+                'bairro': result[6],
+                'cidade': result[7],
+                'estado': result[8],
+                'contato': result[9],
+                'materiais': result[10]
+            }
+        return None
+    except sqlite3.Error as e:
+        logging.error(f"Erro ao buscar fornecedor {fornecedor_id}: {str(e)}")
+        return None
+
+# Adicione esta nova rota no app.py (próximo às outras rotas do blueprint routes_bp)
+@routes_bp.route('/visualizar_pedido/<int:pedido_id>', methods=['GET'])
+def visualizar_pedido(pedido_id):
+    if 'usuario' not in session:
+        flash('Acesso não autorizado', 'error')
+        return redirect(url_for('routes_bp.login'))
+    
+    try:
+        pedido = PedidosCompra.query.get_or_404(pedido_id)
+        
+        # Agrupar materiais por fornecedor (lógica similar à geração de PDF, adaptada)
+        materiais_por_fornecedor = {}
+        for preench in pedido.preenchimentos:
+            forn_id = str(preench.fornecedor_id)  # Usar string como chave para evitar issues
+            if forn_id not in materiais_por_fornecedor:
+                info = get_fornecedor_details_full(preench.fornecedor_id)
+                materiais_por_fornecedor[forn_id] = {'info': info, 'itens': []}
+            
+            # Detalhes do item
+            item = {
+                'material': preench.solicitacao.material.DescricaoMaterial if preench.solicitacao.material else 'Não informado',
+                'marca': preench.solicitacao.marca or 'Sem marca',
+                'especificacao': preench.solicitacao.especificacao or 'N/A',
+                'quantidade': preench.solicitacao.quantidade,
+                'unidade': preench.solicitacao.unidade_medida or 'Un',
+                'valor_unitario': preench.valor_unitario,
+                'valor_total': preench.valor_total,
+                'prazo_entrega': preench.prazo_entrega or 'N/A'
+            }
+            materiais_por_fornecedor[forn_id]['itens'].append(item)
+        
+        # Calcular total de itens
+        total_itens = sum(len(dados['itens']) for dados in materiais_por_fornecedor.values())
+        
+        # Renderizar o template como HTML (sem conversão para PDF)
+        return render_template(
+            'pedido_compra_pdf.html',
+            pedido=pedido,
+            usuario=pedido.usuario or session['usuario'],  # Ajuste conforme necessário (pode ser pedido.usuario)
+            total_itens=total_itens,
+            materiais_por_fornecedor=materiais_por_fornecedor
+        )
+    
+    except Exception as e:
+        flash(f'Erro ao visualizar pedido: {str(e)}', 'error')
+        logging.error(f"Erro em visualizar_pedido para ID {pedido_id}: {str(e)}", exc_info=True)
+        return redirect(url_for('routes_bp.listar_pedidos_compras'))  # Ajuste para a rota de listagem correta
+    
 @routes_bp.route('/download_comprovante/<int:pedido_id>', methods=['GET'])
 def download_comprovante(pedido_id):
     """Endpoint para download seguro de comprovantes de pedidos"""
