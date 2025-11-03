@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,135 +14,191 @@
             padding: 40px 20px;
             font-family: 'Segoe UI', sans-serif;
         }
+
         .table-container {
             max-width: 1400px;
             margin: auto;
             background: white;
             padding: 20px;
             border-radius: 10px;
-            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
         }
+
         h1 {
             color: #024C89;
         }
+
         .btn-primary {
             background-color: #024C89;
             border-color: #024C89;
         }
+
         .btn-primary:hover {
             background-color: #023b6b;
             border-color: #023b6b;
         }
+
         .btn-comprovante {
             background-color: #28a745;
             border-color: #28a745;
         }
+
         .btn-comprovante:hover {
             background-color: #218838;
             border-color: #1e7e34;
         }
+
         .filter-buttons {
             margin-bottom: 20px;
             display: flex;
             flex-wrap: wrap;
             gap: 10px;
         }
-        .fornecedor-container, .nf-container, .pagamento-container, .pdf-container {
+
+        .fornecedor-container,
+        .nf-container,
+        .pagamento-container,
+        .pdf-container {
             display: none;
             margin-top: 10px;
         }
+
         .action-buttons {
             display: flex;
             gap: 10px;
             align-items: center;
         }
+
         .status-badge {
             font-size: 0.85rem;
             padding: 5px 10px;
             border-radius: 20px;
         }
-        .status-Gerado { background-color: #ffc107; color: #000; }
-        .status-Aprovado { background-color: #17a2b8; color: #fff; }
-        .status-AgPagamento { background-color: #6610f2; color: #fff; }
-        .status-Pago { background-color: #007bff; color: #fff; }
-        .status-AgEntrega { background-color: #fd7e14; color: #fff; }
-        .status-Entregue { background-color: #28a745; color: #fff; }
-        .status-Reprovado { background-color: #dc3545; color: #fff; }
-        .material-info { 
+
+        .status-Gerado {
+            background-color: #ffc107;
+            color: #000;
+        }
+
+        .status-Aprovado {
+            background-color: #17a2b8;
+            color: #fff;
+        }
+
+        .status-AgPagamento {
+            background-color: #6610f2;
+            color: #fff;
+        }
+
+        .status-Pago {
+            background-color: #007bff;
+            color: #fff;
+        }
+
+        .status-AgEntrega {
+            background-color: #fd7e14;
+            color: #fff;
+        }
+
+        .status-Entregue {
+            background-color: #28a745;
+            color: #fff;
+        }
+
+        .status-Reprovado {
+            background-color: #dc3545;
+            color: #fff;
+        }
+
+        .material-info {
             font-size: 0.9rem;
             padding-left: 0;
             list-style: none;
         }
+
         .material-info li {
             margin-bottom: 10px;
             padding-bottom: 10px;
             border-bottom: 1px solid #eee;
         }
+
         .material-info li:last-child {
             border-bottom: none;
         }
+
         .error-message {
             display: none;
             color: #dc3545;
             font-size: 0.8rem;
             margin-top: 5px;
         }
+
         .toast-container {
             position: fixed;
             top: 20px;
             right: 20px;
             z-index: 1055;
         }
+
         .toast-success {
             background-color: #024C89;
             color: #fff;
         }
+
         .toast-error {
             background-color: #dc3545;
             color: #fff;
         }
+
         .modal-content {
             border-radius: 10px;
         }
+
         .modal-header {
             background-color: #024C89;
             color: #fff;
         }
-        
+
         /* Novos estilos para filtros */
         .filters-container {
             background-color: #fff;
             padding: 20px;
             border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             margin-bottom: 20px;
         }
+
         .filter-row {
             display: flex;
             flex-wrap: wrap;
             gap: 15px;
             margin-bottom: 15px;
         }
+
         .filter-group {
             flex: 1;
             min-width: 200px;
         }
+
         .filter-actions {
             display: flex;
             justify-content: flex-end;
             gap: 10px;
             margin-top: 10px;
         }
+
         .filter-label {
             font-weight: 500;
             margin-bottom: 5px;
             color: #024C89;
         }
+
         .date-input-group {
             display: flex;
             align-items: center;
             gap: 10px;
         }
+
         .date-separator {
             color: #6c757d;
         }
@@ -151,44 +208,52 @@
                 flex-direction: column;
                 align-items: flex-start;
             }
+
             .table-container {
                 padding: 10px;
             }
+
             .filter-group {
                 min-width: 100%;
             }
         }
-/* Adicione isso na seção de estilos existente */
-.btn-pulsante {
-    background-color: #ffc107; /* Amarelo */
-    border-color: #006af4;
-    color: #000;
-    animation: pulsar 2s infinite;
-    position: relative;
-}
 
-.btn-pulsante:hover {
-    background-color: #006af4;
-    border-color: #006af4;
-    color: #000;
-}
+        /* Adicione isso na seção de estilos existente */
+        .btn-pulsante {
+            background-color: #ffc107;
+            /* Amarelo */
+            border-color: #006af4;
+            color: #000;
+            animation: pulsar 2s infinite;
+            position: relative;
+        }
 
-@keyframes pulsar {
-    0% {
-        box-shadow: 0 0 0 0 rgba(0, 127, 224, 0.7);
-    }
-    70% {
-        box-shadow: 0 0 0 10px rgba(255, 193, 7, 0);
-    }
-    100% {
-        box-shadow: 0 0 0 0 rgba(255, 193, 7, 0);
-    }
-}
+        .btn-pulsante:hover {
+            background-color: #006af4;
+            border-color: #006af4;
+            color: #000;
+        }
+
+        @keyframes pulsar {
+            0% {
+                box-shadow: 0 0 0 0 rgba(0, 127, 224, 0.7);
+            }
+
+            70% {
+                box-shadow: 0 0 0 10px rgba(255, 193, 7, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(255, 193, 7, 0);
+            }
+        }
     </style>
 </head>
+
 <body>
     <div class="toast-container">
-        <div id="toast-feedback" class="toast" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="5000">
+        <div id="toast-feedback" class="toast" role="alert" aria-live="assertive" aria-atomic="true"
+            data-bs-delay="5000">
             <div class="toast-header">
                 <strong class="me-auto">Notificação</strong>
                 <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Fechar"></button>
@@ -197,7 +262,8 @@
         </div>
     </div>
 
-    <div class="modal fade" id="confirm-entregue-modal" tabindex="-1" aria-labelledby="confirmEntregueModalLabel" aria-hidden="true">
+    <div class="modal fade" id="confirm-entregue-modal" tabindex="-1" aria-labelledby="confirmEntregueModalLabel"
+        aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
@@ -205,7 +271,8 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
                 </div>
                 <div class="modal-body">
-                    Tem certeza de que deseja marcar este pedido como <strong>Entregue</strong>? Esta ação atualizará o estoque e não poderá ser desfeita.
+                    Tem certeza de que deseja marcar este pedido como <strong>Entregue</strong>? Esta ação atualizará o
+                    estoque e não poderá ser desfeita.
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -217,7 +284,7 @@
 
     <div class="table-container">
         <h1 class="mb-4">Pedidos de Compra</h1>
-        
+
         <!-- Seção de Filtros -->
         <div class="filters-container">
             <form method="get" action="{{ url_for('routes_bp.listar_pedidos_compra') }}">
@@ -227,46 +294,54 @@
                         <select name="empresa" class="form-select">
                             <option value="">Todas as empresas</option>
                             {% for empresa in empresas %}
-                                <option value="{{ empresa }}" {% if request.args.get('empresa') == empresa %}selected{% endif %}>{{ empresa }}</option>
+                            <option value="{{ empresa }}" {% if request.args.get('empresa')==empresa %}selected{% endif
+                                %}>{{ empresa }}</option>
                             {% endfor %}
                         </select>
                     </div>
-                    
+
                     <div class="filter-group">
                         <label class="filter-label">Usuário</label>
                         <select name="usuario" class="form-select">
                             <option value="">Todos os usuários</option>
                             {% for usuario in usuarios %}
-                                <option value="{{ usuario }}" {% if request.args.get('usuario') == usuario %}selected{% endif %}>{{ usuario }}</option>
+                            <option value="{{ usuario }}" {% if request.args.get('usuario')==usuario %}selected{% endif
+                                %}>{{ usuario }}</option>
                             {% endfor %}
                         </select>
                     </div>
-                    
+
                     <div class="filter-group">
                         <label class="filter-label">Período</label>
                         <div class="date-input-group">
-                            <input type="date" name="data_inicio" class="form-control" 
-                                   value="{{ request.args.get('data_inicio') }}">
+                            <input type="date" name="data_inicio" class="form-control"
+                                value="{{ request.args.get('data_inicio') }}">
                             <span class="date-separator">até</span>
-                            <input type="date" name="data_fim" class="form-control" 
-                                   value="{{ request.args.get('data_fim') }}">
+                            <input type="date" name="data_fim" class="form-control"
+                                value="{{ request.args.get('data_fim') }}">
                         </div>
                     </div>
-                    
+
                     <div class="filter-group">
                         <label class="filter-label">Status</label>
                         <select name="status" class="form-select">
                             <option value="">Todos os status</option>
-                            <option value="Gerado" {% if request.args.get('status') == 'Gerado' %}selected{% endif %}>Gerado</option>
-                            <option value="Aprovado" {% if request.args.get('status') == 'Aprovado' %}selected{% endif %}>Aprovado</option>
-                            <option value="AgPagamento" {% if request.args.get('status') == 'AgPagamento' %}selected{% endif %}>Aguardando Pagamento</option>
-                            <option value="AgEntrega" {% if request.args.get('status') == 'AgEntrega' %}selected{% endif %}>Aguardando Entrega</option>
-                            <option value="Entregue" {% if request.args.get('status') == 'Entregue' %}selected{% endif %}>Entregue</option>
-                            <option value="Reprovado" {% if request.args.get('status') == 'Reprovado' %}selected{% endif %}>Reprovado</option>
+                            <option value="Gerado" {% if request.args.get('status')=='Gerado' %}selected{% endif %}>
+                                Gerado</option>
+                            <option value="Aprovado" {% if request.args.get('status')=='Aprovado' %}selected{% endif %}>
+                                Aprovado</option>
+                            <option value="AgPagamento" {% if request.args.get('status')=='AgPagamento' %}selected{%
+                                endif %}>Aguardando Pagamento</option>
+                            <option value="AgEntrega" {% if request.args.get('status')=='AgEntrega' %}selected{% endif
+                                %}>Aguardando Entrega</option>
+                            <option value="Entregue" {% if request.args.get('status')=='Entregue' %}selected{% endif %}>
+                                Entregue</option>
+                            <option value="Reprovado" {% if request.args.get('status')=='Reprovado' %}selected{% endif
+                                %}>Reprovado</option>
                         </select>
                     </div>
                 </div>
-                
+
                 <div class="filter-actions">
                     <button type="submit" class="btn btn-primary">
                         <i class="bi bi-funnel"></i> Aplicar Filtros
@@ -280,11 +355,16 @@
 
         <div class="filter-buttons">
             <a href="{{ url_for('routes_bp.listar_pedidos_compra') }}" class="btn btn-primary">Todos</a>
-            <a href="{{ url_for('routes_bp.listar_pedidos_compra', status='Gerado') }}" class="btn btn-primary">Gerados</a>
-            <a href="{{ url_for('routes_bp.listar_pedidos_compra', status='Aprovado') }}" class="btn btn-primary">Aprovados</a>
-            <a href="{{ url_for('routes_bp.listar_pedidos_compra', status='AgPagamento') }}" class="btn btn-pulsante">Ag. Pagamento</a>
-            <a href="{{ url_for('routes_bp.listar_pedidos_compra', status='AgEntrega') }}" class="btn btn-primary">Ag. Entrega</a>
-            <a href="{{ url_for('routes_bp.listar_pedidos_compra', status='Entregue') }}" class="btn btn-primary">Entregues</a>
+            <a href="{{ url_for('routes_bp.listar_pedidos_compra', status='Gerado') }}"
+                class="btn btn-primary">Gerados</a>
+            <a href="{{ url_for('routes_bp.listar_pedidos_compra', status='Aprovado') }}"
+                class="btn btn-primary">Aprovados</a>
+            <a href="{{ url_for('routes_bp.listar_pedidos_compra', status='AgPagamento') }}"
+                class="btn btn-pulsante">Ag. Pagamento</a>
+            <a href="{{ url_for('routes_bp.listar_pedidos_compra', status='AgEntrega') }}" class="btn btn-primary">Ag.
+                Entrega</a>
+            <a href="{{ url_for('routes_bp.listar_pedidos_compra', status='Entregue') }}"
+                class="btn btn-primary">Entregues</a>
         </div>
 
         <table class="table table-striped">
@@ -316,7 +396,8 @@
                             <li>
                                 <strong>Material:</strong> {{ preenchimento.material }}<br>
                                 <strong>Marca:</strong> {{ preenchimento.marca }}<br>
-                                <strong>Fornecedor:</strong> {{ preenchimento.fornecedor_nome }} ({{ preenchimento.fornecedor_cnpj }})<br>
+                                <strong>Fornecedor:</strong> {{ preenchimento.fornecedor_nome }} ({{
+                                preenchimento.fornecedor_cnpj }})<br>
                                 <strong>Empresa:</strong> {{ preenchimento.empresa }}
                             </li>
                             {% endfor %}
@@ -328,47 +409,52 @@
                         </span>
                     </td>
                     <td>
-                        {% if item.pedido.pdf_path %}
-                            <a href="{{ url_for('routes_bp.download_pedido_pdf', pedido_id=item.pedido.id) }}" class="btn btn-sm btn-primary">
-                                <i class="bi bi-file-earmark-pdf"></i> PDF
-                            </a>
+                        {% if item.pedido %}
+                        <a href="{{ url_for('routes_bp.view_pedido_pdf', pedido_id=item.pedido.id) }}"
+                            class="btn btn-sm btn-primary" target="_blank">
+                            <i class="bi bi-file-earmark-pdf"></i> Ver Pedido
+                        </a>
                         {% else %}
-                            Sem PDF
+                        Sem Pedido
                         {% endif %}
                     </td>
                     <td>
                         {% if item.pedido.comprovante_pagamento %}
-                            <a href="{{ url_for('routes_bp.download_comprovante', pedido_id=item.pedido.id) }}" 
-                            class="btn btn-sm btn-comprovante"
-                            title="Baixar comprovante"
-                            download>
-                                <i class="bi bi-receipt"></i> Comprovante
-                            </a>
+                        <a href="{{ url_for('routes_bp.download_comprovante', pedido_id=item.pedido.id) }}"
+                            class="btn btn-sm btn-comprovante" title="Baixar comprovante" download>
+                            <i class="bi bi-receipt"></i> Comprovante
+                        </a>
                         {% else %}
-                            Sem comprovante
+                        Sem comprovante
                         {% endif %}
                     </td>
                     <td>
-                        <form id="form-{{ item.pedido.id }}" method="POST" action="{{ url_for('routes_bp.atualizar_status_pedido', id=item.pedido.id) }}" enctype="multipart/form-data">
+                        <form id="form-{{ item.pedido.id }}" method="POST"
+                            action="{{ url_for('routes_bp.atualizar_status_pedido', id=item.pedido.id) }}"
+                            enctype="multipart/form-data">
                             <div class="action-buttons">
-                                <select name="status" class="status-select form-select form-select-sm" 
-                                    data-pedido-id="{{ item.pedido.id }}" 
-                                    aria-label="Selecionar status do pedido"
-                                    {% if item.pedido.status == 'Entregue' %}disabled{% endif %}>
+                                <select name="status" class="status-select form-select form-select-sm"
+                                    data-pedido-id="{{ item.pedido.id }}" aria-label="Selecionar status do pedido" {% if
+                                    item.pedido.status=='Entregue' %}disabled{% endif %}>
                                     <option value="" disabled selected>Selecione</option>
-                                    <option value="Gerado" {% if item.pedido.status == 'Gerado' %}selected{% endif %}>Gerado</option>
-                                    <option value="Aprovado" {% if item.pedido.status == 'Aprovado' %}selected{% endif %}>Aprovado</option>
-                                    <option value="Reprovado" {% if item.pedido.status == 'Reprovado' %}selected{% endif %}>Reprovado</option>
-                                    
-                                    <option value="Entregue" {% if item.pedido.status == 'Entregue' %}selected{% endif %}>Entregue</option>
+                                    <option value="Gerado" {% if item.pedido.status=='Gerado' %}selected{% endif %}>
+                                        Gerado</option>
+                                    <option value="Aprovado" {% if item.pedido.status=='Aprovado' %}selected{% endif %}>
+                                        Aprovado</option>
+                                    <option value="Reprovado" {% if item.pedido.status=='Reprovado' %}selected{% endif
+                                        %}>Reprovado</option>
+
+                                    <option value="Entregue" {% if item.pedido.status=='Entregue' %}selected{% endif %}>
+                                        Entregue</option>
                                 </select>
                                 {% if item.pedido.status != 'Entregue' %}
                                 <button type="submit" class="btn btn-sm btn-primary">Salvar</button>
                                 {% endif %}
                             </div>
 
-                            <div class="pagamento-container" id="pagamento-container-{{ item.pedido.id }}" style="display: none;">
-                                <input type="text" name="comprovante" class="form-control form-control-sm mt-2" 
+                            <div class="pagamento-container" id="pagamento-container-{{ item.pedido.id }}"
+                                style="display: none;">
+                                <input type="text" name="comprovante" class="form-control form-control-sm mt-2"
                                     placeholder="Nº Comprovante" value="{{ item.pedido.comprovante_pagamento or '' }}"
                                     aria-describedby="comprovante-error-{{ item.pedido.id }}">
                                 <div id="comprovante-error-{{ item.pedido.id }}" class="error-message">
@@ -376,23 +462,25 @@
                                 </div>
                             </div>
                             <div class="pdf-container" id="pdf-container-{{ item.pedido.id }}" style="display: none;">
-                                <input type="file" name="pdf_file" class="form-control form-control-sm mt-2" 
+                                <input type="file" name="pdf_file" class="form-control form-control-sm mt-2"
                                     accept="application/pdf" aria-describedby="pdf-error-{{ item.pedido.id }}">
                                 {% if item.pedido.pdf_path %}
-                                <small class="form-text text-muted">PDF atual: {{ item.pedido.pdf_path.split('/')[-1] }}</small>
+                                <small class="form-text text-muted">PDF atual: {{ item.pedido.pdf_path.split('/')[-1]
+                                    }}</small>
                                 {% endif %}
                                 <div id="pdf-error-{{ item.pedido.id }}" class="error-message">
                                     Anexe um comprovante em PDF (máximo 5MB)!
                                 </div>
                             </div>
-                            <div class="fornecedor-container" id="fornecedor-container-{{ item.pedido.id }}" style="display: none;">
+                            <div class="fornecedor-container" id="fornecedor-container-{{ item.pedido.id }}"
+                                style="display: none;">
                                 <div class="input-group input-group-sm mt-2">
-                                    <input type="text" name="fornecedor" class="form-control fornecedor-input" 
-                                        placeholder="Fornecedor" 
+                                    <input type="text" name="fornecedor" class="form-control fornecedor-input"
+                                        placeholder="Fornecedor"
                                         value="{% if item.preenchimentos and item.preenchimentos[0].fornecedor_nome %}{{ item.preenchimentos[0].fornecedor_nome }} ({{ item.preenchimentos[0].fornecedor_cnpj }}){% endif %}"
                                         aria-label="Selecionar fornecedor"
                                         aria-describedby="fornecedor-error-{{ item.pedido.id }}">
-                                    <input type="hidden" name="fornecedor_id" class="fornecedor-id" 
+                                    <input type="hidden" name="fornecedor_id" class="fornecedor-id"
                                         value="{% if item.preenchimentos and item.preenchimentos[0].fornecedor_id %}{{ item.preenchimentos[0].fornecedor_id }}{% endif %}">
                                 </div>
                                 <div id="fornecedor-error-{{ item.pedido.id }}" class="error-message">
@@ -400,8 +488,8 @@
                                 </div>
                             </div>
                             <div class="nf-container" id="nf-container-{{ item.pedido.id }}" style="display: none;">
-                                <input type="text" name="numero_nf" class="form-control form-control-sm mt-2" 
-                                    placeholder="Número NF" 
+                                <input type="text" name="numero_nf" class="form-control form-control-sm mt-2"
+                                    placeholder="Número NF"
                                     value="{% if item.preenchimentos and item.preenchimentos[0].numero_nf %}{{ item.preenchimentos[0].numero_nf }}{% endif %}"
                                     aria-describedby="nf-error-{{ item.pedido.id }}">
                                 <div id="nf-error-{{ item.pedido.id }}" class="error-message">
@@ -420,252 +508,253 @@
     <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-    $(document).ready(function() {
-        // Inicializar o toast do Bootstrap
-        const toastEl = document.getElementById('toast-feedback');
-        const toast = new bootstrap.Toast(toastEl, { delay: 5000 });
+        $(document).ready(function () {
+            // Inicializar o toast do Bootstrap
+            const toastEl = document.getElementById('toast-feedback');
+            const toast = new bootstrap.Toast(toastEl, { delay: 5000 });
 
-        // Inicializar o modal de confirmação
-        const confirmModalEl = document.getElementById('confirm-entregue-modal');
-        const confirmModal = new bootstrap.Modal(confirmModalEl);
-        let currentForm = null;
+            // Inicializar o modal de confirmação
+            const confirmModalEl = document.getElementById('confirm-entregue-modal');
+            const confirmModal = new bootstrap.Modal(confirmModalEl);
+            let currentForm = null;
 
-        // Função para mostrar toast
-        function showToast(messages, isSuccess) {
-            const toastBody = toastEl.querySelector('.toast-body');
-            toastBody.innerHTML = messages.join('<br>');
-            toastEl.classList.remove('toast-success', 'toast-error');
-            toastEl.classList.add(isSuccess ? 'toast-success' : 'toast-error');
-            toast.show();
-        }
-
-        // Autocomplete para fornecedor
-        $('.fornecedor-input').autocomplete({
-            source: function(request, response) {
-                $.ajax({
-                    url: '{{ url_for("routes_bp.search_fornecedores") }}',
-                    dataType: 'json',
-                    data: { q: request.term },
-                    success: function(data) {
-                        response(data.map(item => ({
-                            label: `${item.nome_fantasia} (${item.cnpj})`,
-                            value: item.nome_fantasia,
-                            id: item.id
-                        })));
-                    }
-                });
-            },
-            minLength: 2,
-            select: function(event, ui) {
-                $(this).siblings('.fornecedor-id').val(ui.item.id);
+            // Função para mostrar toast
+            function showToast(messages, isSuccess) {
+                const toastBody = toastEl.querySelector('.toast-body');
+                toastBody.innerHTML = messages.join('<br>');
+                toastEl.classList.remove('toast-success', 'toast-error');
+                toastEl.classList.add(isSuccess ? 'toast-success' : 'toast-error');
+                toast.show();
             }
-        });
 
-        // Controle dos campos condicionais
-        const selects = document.querySelectorAll('.status-select');
-        selects.forEach(select => {
-            select.addEventListener('change', function() {
-                const pedidoId = this.dataset.pedidoId;
-                const formaPagamento = this.closest('tr').querySelector('td:nth-child(5)').textContent.trim();
-                
-                // Esconder todos os campos extras e mensagens de erro
-                document.querySelectorAll(`#form-${pedidoId} .pagamento-container, 
+            // Autocomplete para fornecedor
+            $('.fornecedor-input').autocomplete({
+                source: function (request, response) {
+                    $.ajax({
+                        url: '{{ url_for("routes_bp.search_fornecedores") }}',
+                        dataType: 'json',
+                        data: { q: request.term },
+                        success: function (data) {
+                            response(data.map(item => ({
+                                label: `${item.nome_fantasia} (${item.cnpj})`,
+                                value: item.nome_fantasia,
+                                id: item.id
+                            })));
+                        }
+                    });
+                },
+                minLength: 2,
+                select: function (event, ui) {
+                    $(this).siblings('.fornecedor-id').val(ui.item.id);
+                }
+            });
+
+            // Controle dos campos condicionais
+            const selects = document.querySelectorAll('.status-select');
+            selects.forEach(select => {
+                select.addEventListener('change', function () {
+                    const pedidoId = this.dataset.pedidoId;
+                    const formaPagamento = this.closest('tr').querySelector('td:nth-child(5)').textContent.trim();
+
+                    // Esconder todos os campos extras e mensagens de erro
+                    document.querySelectorAll(`#form-${pedidoId} .pagamento-container, 
                                          #form-${pedidoId} .pdf-container,
                                          #form-${pedidoId} .fornecedor-container,
                                          #form-${pedidoId} .nf-container,
                                          #form-${pedidoId} .error-message`).forEach(el => {
-                    el.style.display = 'none';
+                        el.style.display = 'none';
+                    });
+
+                    // Mostrar campos conforme status selecionado
+                    if (this.value === 'AgPagamento' && formaPagamento.includes('À Vista')) {
+                        document.getElementById(`pagamento-container-${pedidoId}`).style.display = 'block';
+                        document.getElementById(`pdf-container-${pedidoId}`).style.display = 'block';
+                    }
+                    else if (this.value === 'Entregue') {
+                        document.getElementById(`fornecedor-container-${pedidoId}`).style.display = 'block';
+                        document.getElementById(`nf-container-${pedidoId}`).style.display = 'block';
+                    }
                 });
 
-                // Mostrar campos conforme status selecionado
-                if(this.value === 'AgPagamento' && formaPagamento.includes('À Vista')) {
+                // Inicializar visibilidade dos campos
+                const currentStatus = select.value;
+                const pedidoId = select.dataset.pedidoId;
+                const formaPagamento = select.closest('tr').querySelector('td:nth-child(5)').textContent.trim();
+
+                if (currentStatus === 'AgPagamento' && formaPagamento.includes('À Vista')) {
                     document.getElementById(`pagamento-container-${pedidoId}`).style.display = 'block';
                     document.getElementById(`pdf-container-${pedidoId}`).style.display = 'block';
                 }
-                else if(this.value === 'Entregue') {
+                else if (currentStatus === 'Entregue') {
                     document.getElementById(`fornecedor-container-${pedidoId}`).style.display = 'block';
                     document.getElementById(`nf-container-${pedidoId}`).style.display = 'block';
                 }
             });
 
-            // Inicializar visibilidade dos campos
-            const currentStatus = select.value;
-            const pedidoId = select.dataset.pedidoId;
-            const formaPagamento = select.closest('tr').querySelector('td:nth-child(5)').textContent.trim();
-            
-            if(currentStatus === 'AgPagamento' && formaPagamento.includes('À Vista')) {
-                document.getElementById(`pagamento-container-${pedidoId}`).style.display = 'block';
-                document.getElementById(`pdf-container-${pedidoId}`).style.display = 'block';
-            }
-            else if(currentStatus === 'Entregue') {
-                document.getElementById(`fornecedor-container-${pedidoId}`).style.display = 'block';
-                document.getElementById(`nf-container-${pedidoId}`).style.display = 'block';
-            }
-        });
+            // Validação e envio do formulário via AJAX
+            const forms = document.querySelectorAll('form[id^="form-"]');
+            forms.forEach(form => {
+                form.addEventListener('submit', function (e) {
+                    e.preventDefault();
+                    const status = this.querySelector('select[name="status"]').value;
+                    const formaPagamento = this.closest('tr').querySelector('td:nth-child(5)').textContent.trim();
+                    const submitButton = this.querySelector('button[type="submit"]');
+                    let hasError = false;
 
-        // Validação e envio do formulário via AJAX
-        const forms = document.querySelectorAll('form[id^="form-"]');
-        forms.forEach(form => {
-            form.addEventListener('submit', function(e) {
-                e.preventDefault();
-                const status = this.querySelector('select[name="status"]').value;
-                const formaPagamento = this.closest('tr').querySelector('td:nth-child(5)').textContent.trim();
-                const submitButton = this.querySelector('button[type="submit"]');
-                let hasError = false;
+                    // Esconder mensagens de erro
+                    document.querySelectorAll(`#${this.id} .error-message`).forEach(el => {
+                        el.style.display = 'none';
+                    });
 
-                // Esconder mensagens de erro
-                document.querySelectorAll(`#${this.id} .error-message`).forEach(el => {
-                    el.style.display = 'none';
-                });
+                    // Validações
+                    if (status === 'AgPagamento' && formaPagamento.includes('À Vista')) {
+                        const comprovante = this.querySelector('input[name="comprovante"]').value;
+                        const pdfFile = this.querySelector('input[name="pdf_file"]').files[0];
 
-                // Validações
-                if(status === 'AgPagamento' && formaPagamento.includes('À Vista')) {
-                    const comprovante = this.querySelector('input[name="comprovante"]').value;
-                    const pdfFile = this.querySelector('input[name="pdf_file"]').files[0];
-                    
-                    if(!comprovante.trim()) {
-                        document.getElementById(`comprovante-error-${this.id.split('-')[1]}`).style.display = 'block';
-                        hasError = true;
-                    }
-                    if(!pdfFile) {
-                        document.getElementById(`pdf-error-${this.id.split('-')[1]}`).style.display = 'block';
-                        hasError = true;
-                    } else {
-                        if(pdfFile.size > 5 * 1024 * 1024) {
-                            document.getElementById(`pdf-error-${this.id.split('-')[1]}`).style.display = 'block';
-                            document.getElementById(`pdf-error-${this.id.split('-')[1]}`).textContent = 'O arquivo PDF deve ter no máximo 5MB!';
+                        if (!comprovante.trim()) {
+                            document.getElementById(`comprovante-error-${this.id.split('-')[1]}`).style.display = 'block';
                             hasError = true;
                         }
-                        if(pdfFile.type !== 'application/pdf') {
+                        if (!pdfFile) {
                             document.getElementById(`pdf-error-${this.id.split('-')[1]}`).style.display = 'block';
-                            document.getElementById(`pdf-error-${this.id.split('-')[1]}`).textContent = 'O arquivo deve ser um PDF!';
                             hasError = true;
+                        } else {
+                            if (pdfFile.size > 5 * 1024 * 1024) {
+                                document.getElementById(`pdf-error-${this.id.split('-')[1]}`).style.display = 'block';
+                                document.getElementById(`pdf-error-${this.id.split('-')[1]}`).textContent = 'O arquivo PDF deve ter no máximo 5MB!';
+                                hasError = true;
+                            }
+                            if (pdfFile.type !== 'application/pdf') {
+                                document.getElementById(`pdf-error-${this.id.split('-')[1]}`).style.display = 'block';
+                                document.getElementById(`pdf-error-${this.id.split('-')[1]}`).textContent = 'O arquivo deve ser um PDF!';
+                                hasError = true;
+                            }
                         }
                     }
-                }
-                
-                if(status === 'Entregue') {
-                    const fornecedorId = this.querySelector('.fornecedor-id').value;
-                    const numeroNf = this.querySelector('input[name="numero_nf"]').value;
-                    const hasSavedFornecedor = this.querySelector('.fornecedor-id').dataset.saved === 'true';
-                    const hasSavedNf = this.querySelector('input[name="numero_nf"]').dataset.saved === 'true';
-                    
-                    if(!fornecedorId && !hasSavedFornecedor) {
-                        document.getElementById(`fornecedor-error-${this.id.split('-')[1]}`).style.display = 'block';
-                        hasError = true;
+
+                    if (status === 'Entregue') {
+                        const fornecedorId = this.querySelector('.fornecedor-id').value;
+                        const numeroNf = this.querySelector('input[name="numero_nf"]').value;
+                        const hasSavedFornecedor = this.querySelector('.fornecedor-id').dataset.saved === 'true';
+                        const hasSavedNf = this.querySelector('input[name="numero_nf"]').dataset.saved === 'true';
+
+                        if (!fornecedorId && !hasSavedFornecedor) {
+                            document.getElementById(`fornecedor-error-${this.id.split('-')[1]}`).style.display = 'block';
+                            hasError = true;
+                        }
+                        if (!numeroNf.trim() && !hasSavedNf) {
+                            document.getElementById(`nf-error-${this.id.split('-')[1]}`).style.display = 'block';
+                            hasError = true;
+                        }
+                        if (!hasError) {
+                            currentForm = this;
+                            confirmModal.show();
+                            return;
+                        }
                     }
-                    if(!numeroNf.trim() && !hasSavedNf) {
-                        document.getElementById(`nf-error-${this.id.split('-')[1]}`).style.display = 'block';
-                        hasError = true;
-                    }
-                    if(!hasError) {
-                        currentForm = this;
-                        confirmModal.show();
+
+                    if (hasError) {
                         return;
                     }
-                }
 
-                if(hasError) {
-                    return;
-                }
-
-                submitForm(this, submitButton);
+                    submitForm(this, submitButton);
+                });
             });
-        });
 
-        // Função para enviar o formulário via AJAX
-        function submitForm(form, submitButton) {
-            if(submitButton) {
-                submitButton.disabled = true;
-                submitButton.innerHTML = 'Salvo';
-            }
+            // Função para enviar o formulário via AJAX
+            function submitForm(form, submitButton) {
+                if (submitButton) {
+                    submitButton.disabled = true;
+                    submitButton.innerHTML = 'Salvo';
+                }
 
-            const formData = new FormData(form);
-            $.ajax({
-                url: form.action,
-                type: 'POST',
-                data: formData,
-                processData: false,
-                contentType: false,
-                success: function(data, status, xhr) {
-                    const pedidoId = form.id.split('-')[1];
-                    const newStatus = form.querySelector('select[name="status"]').value;
-                    const statusBadge = form.closest('tr').querySelector('.status-badge');
-                    statusBadge.textContent = newStatus;
-                    statusBadge.className = `status-badge status-${newStatus}`;
+                const formData = new FormData(form);
+                $.ajax({
+                    url: form.action,
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function (data, status, xhr) {
+                        const pedidoId = form.id.split('-')[1];
+                        const newStatus = form.querySelector('select[name="status"]').value;
+                        const statusBadge = form.closest('tr').querySelector('.status-badge');
+                        statusBadge.textContent = newStatus;
+                        statusBadge.className = `status-badge status-${newStatus}`;
 
-                    if(newStatus === 'Entregue') {
-                        form.querySelector('select[name="status"]').disabled = true;
-                        if(submitButton) submitButton.remove();
-                        form.querySelector('.fornecedor-id').dataset.saved = 'true';
-                        form.querySelector('input[name="numero_nf"]').dataset.saved = 'true';
-                    }
+                        if (newStatus === 'Entregue') {
+                            form.querySelector('select[name="status"]').disabled = true;
+                            if (submitButton) submitButton.remove();
+                            form.querySelector('.fornecedor-id').dataset.saved = 'true';
+                            form.querySelector('input[name="numero_nf"]').dataset.saved = 'true';
+                        }
 
-                    if(formData.get('comprovante')) {
-                        form.querySelector('input[name="comprovante"]').value = formData.get('comprovante');
-                        const comprovanteCell = form.closest('tr').querySelector('td:nth-child(9)');
-                        comprovanteCell.innerHTML = `
+                        if (formData.get('comprovante')) {
+                            form.querySelector('input[name="comprovante"]').value = formData.get('comprovante');
+                            const comprovanteCell = form.closest('tr').querySelector('td:nth-child(9)');
+                            comprovanteCell.innerHTML = `
                             <a href="/download_comprovante/${pedidoId}" 
                             class="btn btn-sm btn-comprovante"
                             title="Baixar comprovante">
                                 <i class="bi bi-receipt"></i> Comprovante
                             </a>
                         `;
-                    }
+                        }
 
-                    if(formData.get('pdf_file') && formData.get('pdf_file').size > 0) {
-                        const pdfCell = form.closest('tr').querySelector('td:nth-child(8)');
-                        pdfCell.innerHTML = `<a href="${form.action.replace('atualizar_status_pedido', 'download_pedido_pdf')}" class="btn btn-sm btn-primary">
+                        if (formData.get('pdf_file') && formData.get('pdf_file').size > 0) {
+                            const pdfCell = form.closest('tr').querySelector('td:nth-child(8)');
+                            pdfCell.innerHTML = `<a href="${form.action.replace('atualizar_status_pedido', 'download_pedido_pdf')}" class="btn btn-sm btn-primary">
                             <i class="bi bi-file-earmark-pdf"></i> PDF
                         </a>`;
-                        const pdfContainer = form.querySelector(`#pdf-container-${pedidoId}`);
-                        pdfContainer.querySelector('input[name="pdf_file"]').value = '';
-                        const small = pdfContainer.querySelector('small');
-                        if(small) small.remove();
-                        pdfContainer.insertAdjacentHTML('beforeend', `<small class="form-text text-muted">PDF atual: ${formData.get('pdf_file').name}</small>`);
-                    }
+                            const pdfContainer = form.querySelector(`#pdf-container-${pedidoId}`);
+                            pdfContainer.querySelector('input[name="pdf_file"]').value = '';
+                            const small = pdfContainer.querySelector('small');
+                            if (small) small.remove();
+                            pdfContainer.insertAdjacentHTML('beforeend', `<small class="form-text text-muted">PDF atual: ${formData.get('pdf_file').name}</small>`);
+                        }
 
-                    const flashMessages = data.flash || [['Status atualizado com sucesso.', 'success']];
-                    showToast(flashMessages.map(msg => msg[0]), flashMessages.some(msg => msg[1] === 'success'));
+                        const flashMessages = data.flash || [['Status atualizado com sucesso.', 'success']];
+                        showToast(flashMessages.map(msg => msg[0]), flashMessages.some(msg => msg[1] === 'success'));
 
-                    if(submitButton) {
-                        submitButton.disabled = false;
-                        submitButton.innerHTML = 'Salvar';
-                    }
-                },
-                error: function(xhr) {
-                    const errorMessages = xhr.responseJSON?.flash || [['Erro ao atualizar status.', 'error']];
-                    showToast(errorMessages.map(msg => msg[0]), errorMessages.some(msg => msg[1] === 'success'));
+                        if (submitButton) {
+                            submitButton.disabled = false;
+                            submitButton.innerHTML = 'Salvar';
+                        }
+                    },
+                    error: function (xhr) {
+                        const errorMessages = xhr.responseJSON?.flash || [['Erro ao atualizar status.', 'error']];
+                        showToast(errorMessages.map(msg => msg[0]), errorMessages.some(msg => msg[1] === 'success'));
 
-                    if(submitButton) {
-                        submitButton.disabled = false;
-                        submitButton.innerHTML = 'Salvar';
+                        if (submitButton) {
+                            submitButton.disabled = false;
+                            submitButton.innerHTML = 'Salvar';
+                        }
                     }
+                });
+            }
+
+            // Evento de clique no botão de confirmação do modal
+            document.getElementById('confirm-entregue-btn').addEventListener('click', function () {
+                if (currentForm) {
+                    submitForm(currentForm, currentForm.querySelector('button[type="submit"]'));
+                    confirmModal.hide();
+                    currentForm = null;
                 }
             });
-        }
 
-        // Evento de clique no botão de confirmação do modal
-        document.getElementById('confirm-entregue-btn').addEventListener('click', function() {
-            if(currentForm) {
-                submitForm(currentForm, currentForm.querySelector('button[type="submit"]'));
-                confirmModal.hide();
-                currentForm = null;
-            }
-        });
+            // Validação das datas nos filtros
+            $('form').on('submit', function () {
+                const dataInicio = $('input[name="data_inicio"]').val();
+                const dataFim = $('input[name="data_fim"]').val();
 
-        // Validação das datas nos filtros
-        $('form').on('submit', function() {
-            const dataInicio = $('input[name="data_inicio"]').val();
-            const dataFim = $('input[name="data_fim"]').val();
-            
-            if(dataInicio && dataFim && dataInicio > dataFim) {
-                alert('A data de início não pode ser maior que a data de fim');
-                return false;
-            }
-            return true;
+                if (dataInicio && dataFim && dataInicio > dataFim) {
+                    alert('A data de início não pode ser maior que a data de fim');
+                    return false;
+                }
+                return true;
+            });
         });
-    });
     </script>
 </body>
+
 </html>

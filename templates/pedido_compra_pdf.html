@@ -1,212 +1,520 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-    <title>Pedido de Compra {{ pedido.numero_pedido }}</title>
-    <style>
-        /* Reset e configurações básicas */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body {
-            font-family: Arial, sans-serif;
-            font-size: 10px;
-            line-height: 1.4;
-            color: #333;
-            padding: 10px;
-        }
-        
-        /* Cabeçalho */
-        .header {
-            text-align: center;
-            margin-bottom: 15px;
-            border-bottom: 2px solid #022855;
-            padding-bottom: 8px;
-        }
-        .header h1 {
-            margin: 0;
-            font-size: 16px;
-            color: #022855;
-            text-transform: uppercase;
-        }
-        .header p {
-            margin: 3px 0;
-            font-size: 11px;
-        }
-        
-        /* Informações do pedido */
-        .info-pedido {
-            width: 100%;
-            margin-bottom: 15px;
-            border-collapse: collapse;
-            font-size: 9px;
-        }
-        .info-pedido td {
-            padding: 5px;
-            border: 1px solid #ddd;
-            vertical-align: top;
-        }
-        .info-pedido .label {
-            font-weight: bold;
-            background-color: #f5f5f5;
-            width: 15%;
-            white-space: nowrap;
-        }
-        
-        /* Seção de fornecedores */
-        .fornecedor-header {
-            background-color: #f0f0f0;
-            padding: 6px;
-            margin: 15px 0 8px 0;
-            font-weight: bold;
-            border-left: 4px solid #022855;
-            font-size: 10px;
-            page-break-inside: avoid;
-        }
-        
-        /* Tabela de itens */
-        .tabela-itens {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 15px;
-            font-size: 9px;
-            page-break-inside: avoid;
-        }
-        .tabela-itens th {
-            background-color: #022855;
-            color: white;
-            text-align: left;
-            padding: 5px;
-            font-weight: bold;
-        }
-        .tabela-itens td {
-            padding: 5px;
-            border: 1px solid #ddd;
-        }
-        .tabela-itens tr:nth-child(even) {
-            background-color: #f9f9f9;
-        }
-        
-        /* Totais */
-        .total {
-            font-weight: bold;
-            text-align: right;
-            margin-top: 10px;
-            font-size: 11px;
-            page-break-inside: avoid;
-        }
-        
-        /* Classes auxiliares */
-        .text-right {
-            text-align: right;
-        }
-        .text-center {
-            text-align: center;
-        }
-        .nowrap {
-            white-space: nowrap;
-        }
-        
-        /* Rodapé */
-        .footer {
-            margin-top: 20px;
-            padding-top: 5px;
-            border-top: 1px solid #333;
-            text-align: center;
-            font-size: 8px;
-            page-break-inside: avoid;
-        }
-        
-        /* Controle de quebra de página */
-        .page-break {
-            page-break-after: always;
-        }
-        .keep-together {
-            page-break-inside: avoid;
-        }
-    </style>
+<meta charset="UTF-8">
+<title>Pedido de Compra {{ pedido.numero_pedido }}</title>
+<style>
+/* Reset e impressão */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { height: 100%; }
+
+@page {
+    size: A4 landscape;
+    margin: 10mm;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    font-size: 10px;
+    color: #333;
+    background-color: #fff;
+    counter-reset: fornecedor;
+}
+
+/* Botão de PDF */
+.print-button {
+    position: fixed;
+    top: 15px;
+    right: 20px;
+    background-color: #022855;
+    color: white;
+    padding: 8px 16px;
+    font-size: 11px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    z-index: 1000;
+}
+.print-button:hover { background-color: #0345a0; }
+@media print { .print-button { display: none; } body { margin: 0; } }
+
+/* Cabeçalho */
+.header {
+    background-color: #022855;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    margin: 15px 15px 10px 15px;
+}
+.header h1 { margin: 0; font-size: 18px; text-transform: uppercase; }
+.header p { margin: 5px 0; font-size: 11px; }
+
+/* Layout principal */
+.main-container {
+    display: flex;
+    gap: 12px;
+    align-items: stretch;
+    margin: 0 15px;
+    min-height: calc(100vh - 240px);
+}
+
+/* Coluna esquerda */
+.left-column {
+    flex: 0.25;
+    max-width: 13%;
+    background-color: #022855;
+    color: white;
+    padding: 10px;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+.left-column h2 { color: #FFD700; font-size: 13px; margin-bottom: 6px; }
+
+/* Informações do pedido */
+.info-pedido {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+    margin-bottom: 15px;
+}
+.info-pedido td { padding: 4px; vertical-align: top; }
+.info-pedido .label { font-weight: bold; width: 45%; color: #FFD700; }
+
+/* Tabela mini */
+.mini-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 7.8px;
+    margin: 8px 0 12px 0;
+    background-color: #0A2C5C;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid #fff;
+}
+.mini-table th {
+    background-color: #144288;
+    color: white;
+    padding: 4px;
+    text-align: center;
+    font-weight: bold;
+    border: 1px solid #fff;
+}
+.mini-table td {
+    background-color: #0A2C5C;
+    color: white;
+    padding: 3px 4px;
+    border: 1px solid #fff;
+}
+.mini-table .qtd { text-align: center; width: 18%; }
+.mini-table .desc { 
+    text-align: left; 
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 130px;
+    font-size: 7.6px;
+}
+.mini-table .ativo { text-align: center; width: 18%; }
+.mini-table .ativo input { transform: scale(1.3); }
+
+/* Destaque */
+.destaque-section { background-color: #0A2C5C; padding: 7px; border-radius: 8px; }
+.destaque-section h2 { color: #FFD700; text-align: center; font-size: 12px; margin-bottom: 6px; }
+.destaque-table { width: 100%; border-collapse: collapse; font-size: 8.5px; margin-bottom: 8px; }
+.destaque-table th { background-color: #144288; color: white; padding: 3px; text-align: center; }
+.destaque-table td { background-color: #0A2C5C; padding: 3px; text-align: center; color: white; }
+.checkbox-duo { display: flex; flex-direction: column; gap: 2px; }
+.checkbox-item { display: flex; align-items: center; gap: 3px; font-size: 8.5px; color: white; }
+.entrega-group { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 8.5px; }
+.entrega-options { display: flex; gap: 6px; justify-content: center; }
+
+/* Checkboxes e radios MAIORES (para caneta) */
+.checkbox-item input[type="checkbox"],
+.entrega-options input[type="radio"],
+.pagamento-item input[type="radio"] {
+    transform: scale(1.3);
+    margin-right: 6px;
+}
+
+/* Pagamento e Justificativa */
+.forma-pagamento strong, .justificativa strong {
+    display: block; margin-bottom: 3px; font-size: 10px; color: #FFD700;
+}
+.pagamento-options { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+.pagamento-item { display: flex; align-items: center; gap: 2px; font-size: 8.5px; }
+.justificativa textarea {
+    width: 100%; height: 45px; padding: 5px; font-size: 8.5px;
+    border-radius: 4px; border: none; resize: none;
+}
+
+/* Coluna direita */
+.right-column {
+    flex: 3;
+    max-width: 87%;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 12px;
+}
+
+/* === CARTÃO FORNECEDOR === */
+.fornecedor-card {
+    background: white;
+    border: 2px solid #022855;
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 4px 12px rgba(2, 40, 85, 0.1);
+    page-break-inside: avoid;
+    position: relative;
+    overflow: hidden;
+}
+@media screen {
+    .fornecedor-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(2, 40, 85, 0.15);
+    }
+}
+.fornecedor-card::before {
+    content: "FORNECEDOR " counter(fornecedor);
+    counter-increment: fornecedor;
+    position: absolute;
+    top: -2px; left: -2px;
+    background: #022855; color: white;
+    font-size: 9px; font-weight: bold;
+    padding: 4px 10px; border-radius: 0 0 8px 0;
+    letter-spacing: 0.5px;
+}
+
+/* Informações do fornecedor */
+.fornecedor-info {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px 10px;
+    font-size: 9.5px;
+    margin-bottom: 12px;
+    color: #1e40af;
+    line-height: 1.4;
+}
+.fornecedor-info strong { color: #022855; font-weight: 600; }
+
+/* Produto */
+.produto-item {
+    background: #f8f9fc;
+    padding: 9px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    margin-bottom: 8px;
+}
+.produto-header {
+    font-weight: bold;
+    color: #022855;
+    margin-bottom: 5px;
+    font-size: 9.8px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    display: flex;
+    align-items: center;
+}
+.produto-header::before {
+    content: "•";
+    color: #022855;
+    margin-right: 5px;
+    font-weight: bold;
+}
+
+/* DETALHES DO PRODUTO: 3 COLUNAS */
+.produto-detalhes {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 4px 8px;
+    font-size: 9.2px;
+    color: #333;
+    margin-bottom: 6px;
+}
+.produto-detalhes strong { color: #022855; }
+
+/* Valores */
+.produto-valores {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+    padding-top: 6px;
+    border-top: 1px dashed #cbd5e1;
+    font-size: 9.5px;
+    font-weight: 500;
+}
+.valor-item {
+    display: flex;
+    justify-content: space-between;
+    color: #1e40af;
+}
+.valor-item span:last-child {
+    font-weight: 600;
+    color: #022855;
+}
+
+/* Total fornecedor */
+.total-fornecedor {
+    background: linear-gradient(135deg, #e6f0ff 0%, #f8f9fc 100%);
+    border: 1px solid #022855;
+    border-radius: 8px;
+    padding: 10px;
+    font-size: 10px;
+    margin-top: 10px;
+    font-weight: 500;
+}
+.total-line {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 4px;
+    color: #333;
+}
+.total-line.frete-line { color: #d94600; font-weight: 600; }
+
+/* Total geral */
+.total-geral-fornecedor {
+    font-weight: 700 !important;
+    color: white !important;
+    background: #022855 !important;
+    padding: 7px 10px;
+    border-radius: 6px;
+    text-align: center;
+    font-size: 11px !important;
+    margin-top: 8px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+/* Total geral do pedido */
+.total-geral {
+    font-weight: bold;
+    text-align: right;
+    margin: 10px 15px;
+    font-size: 12px;
+    padding: 8px;
+    background-color: #022855;
+    color: white;
+    border-radius: 6px;
+}
+
+/* Rodapé */
+.footer { margin: 15px; text-align: center; font-size: 9px; color: #333; }
+.assinaturas { display: flex; justify-content: center; gap: 80px; margin-top: 25px; }
+.assinatura { text-align: center; font-size: 10px; color: #022855; }
+.assinatura p { margin: 3px 0; }
+.linha-assinatura { margin-bottom: 5px; }
+</style>
 </head>
 <body>
-    <div class="header">
-        <h1>PEDIDO DE COMPRA Nº {{ pedido.numero_pedido }}</h1>
-        <p>Data de Emissão: {{ pedido.data_criacao.strftime('%d/%m/%Y às %H:%M') }}</p>
-    </div>
 
-    <table class="info-pedido">
-        <tr>
-            <td class="label">Solicitante:</td>
-            <td>{{ usuario }}</td>
-            <td class="label">Forma de Pagamento:</td>
-            <td>{{ pedido.forma_pagamento }}</td>
-        </tr>
-        <tr>
-            <td class="label">Status:</td>
-            <td>{{ pedido.status }}</td>
-            <td class="label">Total de Itens:</td>
-            <td>{{ total_itens }}</td>
-        </tr>
-        {% if pedido.observacoes %}
-        <tr>
-            <td class="label">Observações:</td>
-            <td colspan="3">{{ pedido.observacoes }}</td>
-        </tr>
-        {% endif %}
-    </table>
+<button class="print-button" id="gerarPDF">Gerar PDF</button>
 
-    {% for fornecedor_id, dados in materiais_por_fornecedor.items() %}
-        <div class="fornecedor-header keep-together">
-            <strong>Fornecedor:</strong> {{ dados.info.nome }} | 
-            <strong>CNPJ:</strong> {{ dados.info.cnpj }}<br>
-            <strong>Contato:</strong> {{ dados.info.telefone }} | {{ dados.info.email }}<br>
-            <strong>Endereço:</strong> {{ dados.info.endereco }}
+<div class="header">
+    <h1>PEDIDO DE COMPRA Nº {{ pedido.numero_pedido }}</h1>
+    <p>Data de Emissão: {{ pedido.data_criacao.strftime('%d/%m/%Y às %H:%M') }}</p>
+</div>
+
+<div class="main-container">
+    <!-- Coluna esquerda -->
+    <div class="left-column">
+        <div>
+            <h2>INFORMAÇÕES DO PEDIDO</h2>
+            <table class="info-pedido">
+                <tr><td class="label">ID:</td><td>{{ pedido.numero_pedido }}</td></tr>
+                <tr><td class="label">Data/Hora:</td><td>{{ pedido.data_criacao.strftime('%d/%m/%Y às %H:%M') }}</td></tr>
+                <tr><td class="label">Comprador:</td><td>{{ usuario }}</td></tr>
+                <tr><td class="label">Empresa:</td><td>{{ pedido.empresa or 'Não informado' }}</td></tr>
+                <tr><td class="label">Status:</td><td>{{ pedido.status }}</td></tr>
+                <tr><td class="label">Pagamento:</td><td>{{ pedido.forma_pagamento }}</td></tr>
+                <tr><td class="label">Total Itens:</td><td>{{ total_itens }}</td></tr>
+            </table>
+
+            <table class="mini-table">
+                <thead>
+                    <tr>
+                        <th class="qtd">Qtd</th>
+                        <th>Descrição</th>
+                        <th class="ativo">Ativo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for fornecedor_id, dados in materiais_por_fornecedor.items() %}
+                        {% for item in dados.itens %}
+                        <tr>
+                            <td class="qtd">{{ item.quantidade }} {{ item.unidade|default('un', true) }}</td>
+                            <td class="desc" title="{{ item.material }}{% if item.marca and item.marca != 'sem marca' %} ({{ item.marca }}){% endif %}">
+                                {{ item.material|truncate(38, true, '...') }}
+                                {% if item.marca and item.marca != 'sem marca' %} ({{ item.marca|truncate(12, true, '...') }}){% endif %}
+                            </td>
+                            <td class="ativo"><input type="checkbox"></td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr><td colspan="3" style="text-align:center; color:#aaa; font-size:7.5px;">Nenhum item</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
 
-        <table class="tabela-itens keep-together">
-            <thead>
-                <tr>
-                    <th width="5%">Item</th>
-                    <th width="20%">Material</th>
-                    <th width="15%">Marca</th>
-                    <th width="20%">Especificação</th>
-                    <th width="10%" class="text-center">Quantidade</th>
-                    <th width="10%" class="text-right">Unitário</th>
-                    <th width="10%" class="text-right">Total</th>
-                    <th width="10%">Entrega</th>
-                    <th width="10%">Prioridade</th>
-                </tr>
-            </thead>
-            <tbody>
+        <!-- SEÇÃO DESTAQUE (TUDO DESMARCADO) -->
+        <div class="destaque-section">
+            <h2>DESTAQUE</h2>
+            <table class="destaque-table">
+                <thead><tr><th>Quant.</th><th>Produto</th><th>Ativo</th></tr></thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            <div class="checkbox-duo">
+                                <div class="checkbox-item"><input type="checkbox">Programado</div>
+                                <div class="checkbox-item"><input type="checkbox">Urgente</div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="checkbox-duo">
+                                <div class="checkbox-item"><input type="checkbox">Nota fiscal</div>
+                                <div class="checkbox-item"><input type="checkbox">Sem nota</div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="entrega-group">
+                                <span>Entrega do produto</span>
+                                <div class="entrega-options">
+                                    <div><input type="radio" name="entrega">Sim</div>
+                                    <div><input type="radio" name="entrega">Não</div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="forma-pagamento">
+                <strong>Forma de pagamento</strong>
+                <div class="pagamento-options">
+                    {% for fp in ['PA','Boleto','PIX','Dinheiro'] %}
+                    <div class="pagamento-item">
+                        <input type="radio" name="pagamento"> {{ fp }}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="justificativa">
+                <strong>Justificativa</strong>
+                <textarea readonly>{{ pedido.observacoes or ' ' }}</textarea>
+            </div>
+        </div>
+    </div>
+
+    <!-- Coluna direita -->
+    <div class="right-column">
+        {% for fornecedor_id, dados in materiais_por_fornecedor.items() %}
+        <div class="fornecedor-card">
+            <div class="fornecedor-info">
+                <div><strong>Nome:</strong> {{ dados.info.nome }}</div>
+                <div><strong>CNPJ:</strong> {{ dados.info.cnpj }}</div>
+                <div><strong>Telefone:</strong> {{ dados.info.telefone }}</div>
+                <div><strong>Endereço:</strong> {{ dados.info.endereco }}</div>
+            </div>
+
+            <div class="produtos-lista">
                 {% for item in dados.itens %}
-                <tr>
-                    <td class="text-center">{{ loop.index }}</td>
-                    <td>{{ item.material|truncate(30) }}</td>
-                    <td>{{ item.marca|default('N/A', true)|truncate(15) }}</td>
-                    <td>{{ item.especificacao|default('N/A', true)|truncate(30) }}</td>
-                    <td class="text-center nowrap">{{ item.quantidade }} {{ item.unidade|default('un', true) }}</td>
-                    <td class="text-right nowrap">R$ {{ "%0.2f"|format(item.valor_unitario|default(0)) }}</td>
-                    <td class="text-right nowrap">R$ {{ "%0.2f"|format(item.valor_total|default(0)) }}</td>
-                    <td>{{ item.prazo_entrega|default('N/A', true) }}</td>
-                    <td class="text-center">{{ item.prioridade|default('N/A', true) }}</td>
-                </tr>
+                <div class="produto-item">
+                    <div class="produto-header">Produto {{ loop.index }}</div>
+                    
+                    <!-- 3 COLUNAS: Descrição | Marca | Qtd -->
+                    <div class="produto-detalhes">
+                        <div><strong>Descrição:</strong> {{ item.material }}</div>
+                        <div><strong>Marca:</strong> {{ item.marca|default('sem marca', true) }}</div>
+                        <div><strong>Qtd:</strong> {{ item.quantidade }} {{ item.unidade|default('un', true) }}</div>
+                    </div>
+
+                    <div class="produto-valores">
+                        <div class="valor-item"><span>Unitário:</span><span>R$ {{ "%.2f"|format(item.valor_unitario|default(0)|float) }}</span></div>
+                        <div class="valor-item"><span>Total:</span><span class="item-total">R$ {{ "%.2f"|format(item.valor_total|default(0)|float) }}</span></div>
+                    </div>
+                </div>
                 {% endfor %}
-            </tbody>
-        </table>
-    {% endfor %}
+            </div>
 
-    <div class="total keep-together">
-        <p>Valor Total dos Itens: R$ {{ "%0.2f"|format(pedido.valor_liquido|default(0)) }}</p>
-        {% if pedido.valor_frete %}
-        <p>Frete: R$ {{ "%0.2f"|format(pedido.valor_frete) }}</p>
-        {% endif %}
-        <p>VALOR TOTAL DO PEDIDO: R$ {{ "%0.2f"|format(pedido.valor_total|default(0)) }}</p>
+            <div class="total-fornecedor">
+                <div class="total-line"><span>Total Produtos:</span><span class="total-produtos">R$ 0,00</span></div>
+                <div class="total-line frete-line" style="display:none;"><span>Frete:</span><span class="total-frete">R$ 0,00</span></div>
+                <div class="total-geral-fornecedor">Total Geral: R$ 0,00</div>
+            </div>
+        </div>
+        {% endfor %}
     </div>
+</div>
 
-    <div class="footer">
-        <p>Pedido gerado pelo Sistema de Compras em {{ pedido.data_criacao.strftime('%d/%m/%Y às %H:%M') }}</p>
-        <p>Página 1 de 1</p>
+
+<div class="footer">
+    <div>Assinaturas:</div>
+    <div class="assinaturas">
+        <div class="assinatura">
+            <div class="linha-assinatura">____________________________</div>
+            <p>Gerente Compras</p>
+        </div>
+        <div class="assinatura">
+            <div class="linha-assinatura">____________________________</div>
+            <p>Ednalva</p>
+        </div>
     </div>
+</div>
+
+<!-- Scripts -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<script>
+// Cálculo de totais
+document.addEventListener('DOMContentLoaded', function () {
+    function formatarMoeda(valor) {
+        return valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    document.querySelectorAll('.fornecedor-card').forEach(card => {
+        let totalProdutos = 0;
+        card.querySelectorAll('.item-total').forEach(el => {
+            const value = parseFloat(el.textContent.replace('R$', '').trim().replace(/\./g, '').replace(',', '.')) || 0;
+            totalProdutos += value;
+        });
+
+        const freteEl = card.querySelector('.frete-line');
+        let totalFrete = 0;
+        if (freteEl) {
+            totalFrete = parseFloat(freteEl.querySelector('.total-frete').textContent.replace('R$', '').trim().replace(/\./g, '').replace(',', '.')) || 0;
+            if (totalFrete > 0) freteEl.style.display = 'flex';
+        }
+
+        const totalGeral = totalProdutos + totalFrete;
+        card.querySelector('.total-produtos').textContent = `R$ ${formatarMoeda(totalProdutos)}`;
+        card.querySelector('.total-geral-fornecedor').textContent = `Total Geral: R$ ${formatarMoeda(totalGeral)}`;
+    });
+
+    let totalPedido = 0;
+    document.querySelectorAll('.total-geral-fornecedor').forEach(el => {
+        const match = el.textContent.match(/R\$\s*([\d.,]+)/);
+        if (match) totalPedido += parseFloat(match[1].replace(/\./g, '').replace(',', '.'));
+    });
+    document.querySelector('.pedido-total').textContent = `R$ ${formatarMoeda(totalPedido)}`;
+});
+</script>
+
+<script>
+// Geração do PDF
+document.getElementById('gerarPDF').addEventListener('click', async () => {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const canvas = await html2canvas(document.body, { scale: 2 });
+    const imgData = canvas.toDataURL('image/png');
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    doc.addImage(imgData, 'PNG', 0, 0, pageWidth, pageHeight);
+    doc.save('pedido_{{ pedido.numero_pedido }}.pdf');
+});
+</script>
+
 </body>
 </html>
