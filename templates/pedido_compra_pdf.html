@@ -36,7 +36,88 @@ body {
     z-index: 1000;
 }
 .print-button:hover { background-color: #0345a0; }
-@media print { .print-button { display: none; } body { margin: 0; } }
+
+/* ESTILOS PARA IMPRESSÃO - ECONOMIA DE TINTA */
+@media print {
+    .print-button { display: none; }
+    body { margin: 0; }
+    
+    /* Remove todas as cores de fundo azuis */
+    .header,
+    .left-column,
+    .left-column h2,
+    .info-pedido .label,
+    .mini-table,
+    .mini-table th,
+    .mini-table td,
+    .destaque-section,
+    .destaque-table th,
+    .destaque-table td,
+    .forma-pagamento strong,
+    .justificativa strong,
+    .total-geral-fornecedor,
+    .total-geral {
+        background-color: white !important;
+        color: black !important;
+        border-color: #333 !important;
+    }
+    
+    /* Remove gradientes e sombras */
+    .total-fornecedor {
+        background: white !important;
+        border: 1px solid #333 !important;
+    }
+    
+    /* Mantém o contraste para legibilidade */
+    .header,
+    .total-geral-fornecedor,
+    .total-geral {
+        border: 2px solid #333 !important;
+    }
+    
+    /* Ajusta cores do texto para preto */
+    .left-column,
+    .info-pedido td,
+    .mini-table,
+    .destaque-section,
+    .checkbox-item,
+    .entrega-group,
+    .pagamento-item,
+    .assinatura {
+        color: black !important;
+    }
+    
+    /* Ajusta cores específicas de labels */
+    .left-column h2,
+    .info-pedido .label,
+    .destaque-section h2,
+    .forma-pagamento strong,
+    .justificativa strong {
+        color: #333 !important;
+        font-weight: bold;
+    }
+    
+    /* Remove efeitos hover na impressão */
+    .fornecedor-card:hover {
+        transform: none !important;
+        box-shadow: none !important;
+    }
+
+    /* Ajusta bordas das tabelas para impressão */
+    .mini-table,
+    .mini-table th,
+    .mini-table td,
+    .destaque-table,
+    .destaque-table th,
+    .destaque-table td {
+        border: 1px solid #333 !important;
+    }
+
+    /* Ajusta a coluna esquerda para impressão */
+    .left-column {
+        border: 1px solid #333 !important;
+    }
+}
 
 /* Cabeçalho */
 .header {
@@ -72,7 +153,6 @@ body {
 }
 .left-column h2 { color: #FFD700; font-size: 13px; margin-bottom: 6px; }
 
-/* Informações do pedido */
 .info-pedido {
     width: 100%;
     border-collapse: collapse;
@@ -82,7 +162,6 @@ body {
 .info-pedido td { padding: 4px; vertical-align: top; }
 .info-pedido .label { font-weight: bold; width: 45%; color: #FFD700; }
 
-/* Tabela mini */
 .mini-table {
     width: 100%;
     border-collapse: collapse;
@@ -119,18 +198,17 @@ body {
 .mini-table .ativo { text-align: center; width: 18%; }
 .mini-table .ativo input { transform: scale(1.3); }
 
-/* Destaque */
 .destaque-section { background-color: #0A2C5C; padding: 7px; border-radius: 8px; }
 .destaque-section h2 { color: #FFD700; text-align: center; font-size: 12px; margin-bottom: 6px; }
 .destaque-table { width: 100%; border-collapse: collapse; font-size: 8.5px; margin-bottom: 8px; }
 .destaque-table th { background-color: #144288; color: white; padding: 3px; text-align: center; }
 .destaque-table td { background-color: #0A2C5C; padding: 3px; text-align: center; color: white; }
+
 .checkbox-duo { display: flex; flex-direction: column; gap: 2px; }
 .checkbox-item { display: flex; align-items: center; gap: 3px; font-size: 8.5px; color: white; }
 .entrega-group { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 8.5px; }
 .entrega-options { display: flex; gap: 6px; justify-content: center; }
 
-/* Checkboxes e radios MAIORES (para caneta) */
 .checkbox-item input[type="checkbox"],
 .entrega-options input[type="radio"],
 .pagamento-item input[type="radio"] {
@@ -138,7 +216,6 @@ body {
     margin-right: 6px;
 }
 
-/* Pagamento e Justificativa */
 .forma-pagamento strong, .justificativa strong {
     display: block; margin-bottom: 3px; font-size: 10px; color: #FFD700;
 }
@@ -186,7 +263,6 @@ body {
     letter-spacing: 0.5px;
 }
 
-/* Informações do fornecedor */
 .fornecedor-info {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -198,7 +274,6 @@ body {
 }
 .fornecedor-info strong { color: #022855; font-weight: 600; }
 
-/* Produto */
 .produto-item {
     background: #f8f9fc;
     padding: 9px;
@@ -223,7 +298,6 @@ body {
     font-weight: bold;
 }
 
-/* DETALHES DO PRODUTO: 3 COLUNAS */
 .produto-detalhes {
     display: grid;
     grid-template-columns: 2fr 1fr 1fr;
@@ -234,7 +308,6 @@ body {
 }
 .produto-detalhes strong { color: #022855; }
 
-/* Valores */
 .produto-valores {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -272,7 +345,6 @@ body {
 }
 .total-line.frete-line { color: #d94600; font-weight: 600; }
 
-/* Total geral */
 .total-geral-fornecedor {
     font-weight: 700 !important;
     color: white !important;
@@ -298,7 +370,6 @@ body {
     border-radius: 6px;
 }
 
-/* Rodapé */
 .footer { margin: 15px; text-align: center; font-size: 9px; color: #333; }
 .assinaturas { display: flex; justify-content: center; gap: 80px; margin-top: 25px; }
 .assinatura { text-align: center; font-size: 10px; color: #022855; }
@@ -357,7 +428,6 @@ body {
             </table>
         </div>
 
-        <!-- SEÇÃO DESTAQUE (TUDO DESMARCADO) -->
         <div class="destaque-section">
             <h2>DESTAQUE</h2>
             <table class="destaque-table">
@@ -422,14 +492,11 @@ body {
                 {% for item in dados.itens %}
                 <div class="produto-item">
                     <div class="produto-header">Produto {{ loop.index }}</div>
-                    
-                    <!-- 3 COLUNAS: Descrição | Marca | Qtd -->
                     <div class="produto-detalhes">
                         <div><strong>Descrição:</strong> {{ item.material }}</div>
                         <div><strong>Marca:</strong> {{ item.marca|default('sem marca', true) }}</div>
                         <div><strong>Qtd:</strong> {{ item.quantidade }} {{ item.unidade|default('un', true) }}</div>
                     </div>
-
                     <div class="produto-valores">
                         <div class="valor-item"><span>Unitário:</span><span>R$ {{ "%.2f"|format(item.valor_unitario|default(0)|float) }}</span></div>
                         <div class="valor-item"><span>Total:</span><span class="item-total">R$ {{ "%.2f"|format(item.valor_total|default(0)|float) }}</span></div>
@@ -448,6 +515,7 @@ body {
     </div>
 </div>
 
+<!--<div class="total-geral">Total Geral: R$ 0,00</div>-->
 
 <div class="footer">
     <div>Assinaturas:</div>
@@ -468,23 +536,36 @@ body {
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <script>
-// Cálculo de totais
 document.addEventListener('DOMContentLoaded', function () {
     function formatarMoeda(valor) {
         return valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
+    // Corrige leitura de valores monetários no formato brasileiro
+    function parseValorBRL(texto) {
+        if (!texto) return 0;
+        texto = texto.replace('R$', '').trim();
+
+        if (texto.includes('.') && texto.includes(',')) {
+            texto = texto.replace(/\./g, '').replace(',', '.');
+        } else if (texto.includes(',')) {
+            texto = texto.replace(',', '.');
+        }
+
+        const numero = parseFloat(texto);
+        return isNaN(numero) ? 0 : numero;
+    }
+
     document.querySelectorAll('.fornecedor-card').forEach(card => {
         let totalProdutos = 0;
         card.querySelectorAll('.item-total').forEach(el => {
-            const value = parseFloat(el.textContent.replace('R$', '').trim().replace(/\./g, '').replace(',', '.')) || 0;
-            totalProdutos += value;
+            totalProdutos += parseValorBRL(el.textContent);
         });
 
         const freteEl = card.querySelector('.frete-line');
         let totalFrete = 0;
         if (freteEl) {
-            totalFrete = parseFloat(freteEl.querySelector('.total-frete').textContent.replace('R$', '').trim().replace(/\./g, '').replace(',', '.')) || 0;
+            totalFrete = parseValorBRL(freteEl.querySelector('.total-frete').textContent);
             if (totalFrete > 0) freteEl.style.display = 'flex';
         }
 
@@ -496,14 +577,16 @@ document.addEventListener('DOMContentLoaded', function () {
     let totalPedido = 0;
     document.querySelectorAll('.total-geral-fornecedor').forEach(el => {
         const match = el.textContent.match(/R\$\s*([\d.,]+)/);
-        if (match) totalPedido += parseFloat(match[1].replace(/\./g, '').replace(',', '.'));
+        if (match) totalPedido += parseValorBRL(match[1]);
     });
-    document.querySelector('.pedido-total').textContent = `R$ ${formatarMoeda(totalPedido)}`;
+
+    const totalGeralPedido = document.querySelector('.total-geral');
+    if (totalGeralPedido)
+        totalGeralPedido.textContent = `Total Geral: R$ ${formatarMoeda(totalPedido)}`;
 });
 </script>
 
 <script>
-// Geração do PDF
 document.getElementById('gerarPDF').addEventListener('click', async () => {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
