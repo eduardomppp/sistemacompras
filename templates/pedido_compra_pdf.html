@@ -21,6 +21,60 @@ body {
     counter-reset: fornecedor;
 }
 
+/* Estilos específicos para geração de PDF */
+body.printing-pdf {
+    background-color: white !important;
+}
+
+body.printing-pdf * {
+    background-color: white !important;
+    color: black !important;
+    border-color: #333 !important;
+}
+
+/* Forçar cores específicas durante a geração do PDF */
+body.printing-pdf .header,
+body.printing-pdf .left-column,
+body.printing-pdf .mini-table,
+body.printing-pdf .mini-table th,
+body.printing-pdf .mini-table td,
+body.printing-pdf .destaque-section,
+body.printing-pdf .destaque-table th,
+body.printing-pdf .destaque-table td,
+body.printing-pdf .total-geral-fornecedor,
+body.printing-pdf .total-geral {
+    background: white !important;
+    color: black !important;
+    border: 1px solid #333 !important;
+}
+
+body.printing-pdf .fornecedor-card::before {
+    background: white !important;
+    color: black !important;
+    border: 1px solid #333 !important;
+}
+
+body.printing-pdf .left-column h2,
+body.printing-pdf .info-pedido .label,
+body.printing-pdf .destaque-section h2,
+body.printing-pdf .forma-pagamento strong,
+body.printing-pdf .justificativa strong {
+    color: #333 !important;
+    font-weight: bold;
+}
+
+body.printing-pdf .fornecedor-info strong,
+body.printing-pdf .produto-header,
+body.printing-pdf .produto-detalhes strong,
+body.printing-pdf .valor-item span:last-child {
+    color: #333 !important;
+}
+
+body.printing-pdf .total-fornecedor {
+    background: white !important;
+    border: 1px solid #333 !important;
+}
+
 /* Botão de PDF */
 .print-button {
     position: fixed;
@@ -515,8 +569,6 @@ body {
     </div>
 </div>
 
-<!--<div class="total-geral">Total Geral: R$ 0,00</div>-->
-
 <div class="footer">
     <div>Assinaturas:</div>
     <div class="assinaturas">
@@ -541,7 +593,6 @@ document.addEventListener('DOMContentLoaded', function () {
         return valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
-    // Corrige leitura de valores monetários no formato brasileiro
     function parseValorBRL(texto) {
         if (!texto) return 0;
         texto = texto.replace('R$', '').trim();
@@ -584,18 +635,52 @@ document.addEventListener('DOMContentLoaded', function () {
     if (totalGeralPedido)
         totalGeralPedido.textContent = `Total Geral: R$ ${formatarMoeda(totalPedido)}`;
 });
-</script>
 
-<script>
-document.getElementById('gerarPDF').addEventListener('click', async () => {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-    const canvas = await html2canvas(document.body, { scale: 2 });
-    const imgData = canvas.toDataURL('image/png');
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const pageHeight = doc.internal.pageSize.getHeight();
-    doc.addImage(imgData, 'PNG', 0, 0, pageWidth, pageHeight);
-    doc.save('pedido_{{ pedido.numero_pedido }}.pdf');
+document.getElementById('gerarPDF').addEventListener('click', function() {
+    const button = this;
+    const originalText = button.textContent;
+    
+    // Mostrar loading
+    button.textContent = 'Gerando PDF...';
+    button.disabled = true;
+    
+    // Aplicar estilos de economia de tinta
+    document.body.classList.add('printing-pdf');
+    
+    // Dar tempo para os estilos serem aplicados
+    setTimeout(async function() {
+        try {
+            const { jsPDF } = window.jspdf;
+            
+            const canvas = await html2canvas(document.body, {
+                scale: 2,
+                useCORS: true,
+                logging: false,
+                backgroundColor: '#FFFFFF'
+            });
+            
+            const pdf = new jsPDF({
+                orientation: 'landscape',
+                unit: 'mm',
+                format: 'a4'
+            });
+            
+            const imgWidth = pdf.internal.pageSize.getWidth();
+            const imgHeight = pdf.internal.pageSize.getHeight();
+            
+            pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, imgWidth, imgHeight);
+            pdf.save('pedido_{{ pedido.numero_pedido }}.pdf');
+            
+        } catch (error) {
+            console.error('Erro:', error);
+            alert('Erro ao gerar PDF: ' + error.message);
+        } finally {
+            // Restaurar estilos normais
+            document.body.classList.remove('printing-pdf');
+            button.textContent = originalText;
+            button.disabled = false;
+        }
+    }, 800); // Delay maior para garantir
 });
 </script>
 
