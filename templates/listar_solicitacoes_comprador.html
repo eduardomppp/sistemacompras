@@ -473,9 +473,22 @@
                                 </td>
                                 <td>{{ solicitacao.usuario }}</td>
                                 <td>
-                                    <span class="status-badge status-{{ solicitacao.status_aprovacao|lower }}">
-                                        {{ solicitacao.status_aprovacao }}
-                                    </span>
+                                {% set raw_status = solicitacao.status_aprovacao %}
+                                {% set status = (raw_status | default('Pendente') | trim) %}
+                                {% set status_upper = status.upper() %}
+
+                                <span class="status-badge 
+                                    {% if status_upper == 'APROVADO' %}
+                                        status-aprovado
+                                    {% elif status_upper == 'REPROVADO' %}
+                                        status-reprovado
+                                    {% else %}
+                                        status-pendente
+                                    {% endif %}
+                                ">
+                                    {{ status }}
+                                </span>
+
                                 </td>
                                 <td>
                                     {% if solicitacao.comprador_atribuido %}

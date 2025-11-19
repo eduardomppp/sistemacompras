@@ -207,14 +207,30 @@ body.printing-pdf .total-fornecedor {
 }
 .left-column h2 { color: #FFD700; font-size: 13px; margin-bottom: 6px; }
 
+/* ESTILOS AJUSTADOS PARA INFO-PEDIDO - SEM CORTE DE TEXTO */
 .info-pedido {
     width: 100%;
     border-collapse: collapse;
     font-size: 11px;
     margin-bottom: 15px;
+    table-layout: fixed;
 }
-.info-pedido td { padding: 4px; vertical-align: top; }
-.info-pedido .label { font-weight: bold; width: 45%; color: #FFD700; }
+.info-pedido td { 
+    padding: 4px; 
+    vertical-align: top; 
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+.info-pedido .label { 
+    font-weight: bold; 
+    width: 45%; 
+    color: #FFD700; 
+    white-space: nowrap;
+}
+.info-pedido .value {
+    width: 55%;
+    min-height: 14px;
+}
 
 .mini-table {
     width: 100%;
@@ -446,13 +462,13 @@ body.printing-pdf .total-fornecedor {
         <div>
             <h2>INFORMAÇÕES DO PEDIDO</h2>
             <table class="info-pedido">
-                <tr><td class="label">ID:</td><td>{{ pedido.numero_pedido }}</td></tr>
-                <tr><td class="label">Data/Hora:</td><td>{{ pedido.data_criacao.strftime('%d/%m/%Y às %H:%M') }}</td></tr>
-                <tr><td class="label">Comprador:</td><td>{{ usuario }}</td></tr>
-                <tr><td class="label">Empresa:</td><td>{{ pedido.empresa or 'Não informado' }}</td></tr>
-                <tr><td class="label">Status:</td><td>{{ pedido.status }}</td></tr>
-                <tr><td class="label">Pagamento:</td><td>{{ pedido.forma_pagamento }}</td></tr>
-                <tr><td class="label">Total Itens:</td><td>{{ total_itens }}</td></tr>
+                <tr><td class="label">ID:</td><td class="value">{{ pedido.numero_pedido }}</td></tr>
+                <tr><td class="label">Data/Hora:</td><td class="value">{{ pedido.data_criacao.strftime('%d/%m/%Y às %H:%M') }}</td></tr>
+                <tr><td class="label">Comprador:</td><td class="value">{{ usuario }}</td></tr>
+                <tr><td class="label">Empresa:</td><td class="value">{{ pedido.preenchimentos[0].solicitacao.empresa if pedido.preenchimentos else 'Não informado' }}</td></tr>
+                <tr><td class="label">Status:</td><td class="value">{{ pedido.status }}</td></tr>
+                <tr><td class="label">Pagamento:</td><td class="value">{{ pedido.forma_pagamento }}</td></tr>
+                <tr><td class="label">Total Itens:</td><td class="value">{{ total_itens }}</td></tr>
             </table>
 
             <table class="mini-table">
