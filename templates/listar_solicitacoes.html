@@ -115,6 +115,7 @@
             border-collapse: collapse;
             margin-bottom: 30px;
             font-size: 13px;
+            table-layout: fixed;
         }
 
         th,
@@ -135,6 +136,17 @@
 
         tr:nth-child(even) {
             background-color: #f9fbfd;
+        }
+
+        /* Estilos específicos para a coluna de Especificação */
+        .col-especificacao {
+            width: 200px; /* Largura fixa para a coluna */
+            max-width: 200px;
+            word-wrap: break-word;
+            word-break: break-word;
+            overflow-wrap: break-word;
+            white-space: normal;
+            line-height: 1.4;
         }
 
         .status-badge {
@@ -213,6 +225,11 @@
             tr {
                 page-break-inside: avoid;
                 page-break-after: auto;
+            }
+            
+            .col-especificacao {
+                width: 180px;
+                max-width: 180px;
             }
         }
 
@@ -322,7 +339,7 @@
                     <tr>
                         <th>ID</th>
                         <th>Material</th>
-                        <th>Especificação</th>
+                        <th class="col-especificacao">Especificação</th>
                         <th>Quantidade</th>
                         <th>Empresa</th>
                         <th>Aplicação</th>
@@ -338,7 +355,7 @@
                     <tr data-id="{{ solicitacao.id }}">
                         <td>{{ solicitacao.id }}</td>
                         <td>{{ solicitacao.material.DescricaoMaterial }}</td>
-                        <td>{{ solicitacao.especificacao or '-' }}</td>
+                        <td class="col-especificacao">{{ solicitacao.especificacao or '-' }}</td>
                         <td>{{ solicitacao.quantidade }}</td>
                         <td>{{ solicitacao.empresa }}</td>
                         <td>{{ solicitacao.aplicacao }}</td>
