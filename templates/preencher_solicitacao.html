@@ -606,7 +606,9 @@ Grupo de {{ solicitacoes_grupo|length }} solicitações para {{ solicitacoes_gru
             <!-- Coluna direita - Cotações -->
             <div class="right-column cotacoes-container">
                 {% if cotacoes_salvas %}
-              
+                <div class="alert alert-info mb-3" style="font-size: 11px;">
+                    <i class="bi bi-info-circle"></i> Você tem {{ cotacoes_salvas|length }} cotação(ões) salva(s) como rascunho.
+                </div>
                 {% endif %}
 
                 <div class="cotacoes-row">
@@ -752,7 +754,7 @@ Grupo de {{ solicitacoes_grupo|length }} solicitações para {{ solicitacoes_gru
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-<script>
+ <script>
     // Dados dos materiais da solicitação
     const materiaisSolicitacao = [
         {% if modo_grupo %}
@@ -783,39 +785,39 @@ Grupo de {{ solicitacoes_grupo|length }} solicitações para {{ solicitacoes_gru
     function adicionarTodosMateriais(cotacaoId) {
         $(`#materiais-body-${cotacaoId}`).empty();
         materialCounters[cotacaoId] = 0;
-       
+        
         materiaisSolicitacao.forEach((material, index) => {
             materialCounters[cotacaoId]++;
             const materialId = materialCounters[cotacaoId];
-           
+            
             const materialHTML = `
                 <tr id="material-${cotacaoId}-${materialId}">
                     <td class="descricao">
-                        <input type="text" class="material-descricao"
-                               name="material_descricao_${cotacaoId}[]"
+                        <input type="text" class="material-descricao" 
+                               name="material_descricao_${cotacaoId}[]" 
                                value="${material.descricao}" required>
                         <input type="hidden" name="solicitacao_id[]" value="${material.id}">
                     </td>
                     <td class="quantidade">
-                        <input type="number" class="material-quantidade"
+                        <input type="number" class="material-quantidade" 
                                name="quantidade[]"
                                value="${material.quantidade}" min="0" step="0.001" required
                                oninput="calcularTotalMaterial(${cotacaoId}, ${materialId})">
                     </td>
                     <td class="unidade">
-                        <input type="text" class="material-unidade"
-                               name="material_unidade_${cotacaoId}[]"
+                        <input type="text" class="material-unidade" 
+                               name="material_unidade_${cotacaoId}[]" 
                                value="${material.unidade}">
                     </td>
                     <td class="unitario">
-                        <input type="text" class="material-unitario"
+                        <input type="text" class="material-unitario" 
                                name="valor_unitario[]"
-                               placeholder="0,00" required
+                               placeholder="0,00" required 
                                oninput="calcularTotalMaterial(${cotacaoId}, ${materialId})">
                     </td>
                     <td class="total">
-                        <input type="text" class="material-total-display"
-                               id="material-total-${cotacaoId}-${materialId}"
+                        <input type="text" class="material-total-display" 
+                               id="material-total-${cotacaoId}-${materialId}" 
                                value="R$ 0,00" readonly>
                     </td>
                     <td class="acoes">
@@ -823,10 +825,10 @@ Grupo de {{ solicitacoes_grupo|length }} solicitações para {{ solicitacoes_gru
                     </td>
                 </tr>
             `;
-           
+            
             $(`#materiais-body-${cotacaoId}`).append(materialHTML);
         });
-       
+        
         calcularTotalCotacao(cotacaoId);
     }
 
@@ -835,7 +837,7 @@ Grupo de {{ solicitacoes_grupo|length }} solicitações para {{ solicitacoes_gru
         const quantidade = parseFloat($(`#material-${cotacaoId}-${materialId} .material-quantidade`).val()) || 0;
         const unitario = parseCurrency($(`#material-${cotacaoId}-${materialId} .material-unitario`).val()) || 0;
         const total = quantidade * unitario;
-       
+        
         $(`#material-total-${cotacaoId}-${materialId}`).val(`R$ ${formatCurrency(total)}`);
         calcularTotalCotacao(cotacaoId);
     }
@@ -843,80 +845,22 @@ Grupo de {{ solicitacoes_grupo|length }} solicitações para {{ solicitacoes_gru
     // Função para calcular total da cotação
     function calcularTotalCotacao(cotacaoId) {
         let totalProdutos = 0;
-       
+        
         $(`#materiais-body-${cotacaoId} tr`).each(function() {
             const totalText = $(this).find('.material-total-display').val();
             const total = parseCurrency(totalText);
             totalProdutos += total;
         });
-       
+        
         const frete = parseCurrency($(`#valor_frete_${cotacaoId}`).val()) || 0;
         const totalGeral = totalProdutos + frete;
-       
+        
         $(`#total-produtos-${cotacaoId}`).text(`R$ ${formatCurrency(totalProdutos)}`);
         $(`#total-frete-display-${cotacaoId}`).text(`R$ ${formatCurrency(frete)}`);
         $(`#total-geral-fornecedor-${cotacaoId}`).text(`Total Geral: R$ ${formatCurrency(totalGeral)}`);
     }
 
-    // *** FUNÇÃO CORRIGIDA PARA CARREGAR TELEFONE E ENDEREÇO ***
-    function carregarDadosFornecedorCompleto(fornecedorId, index) {
-        $.ajax({
-            url: '{{ url_for("routes_bp.api_fornecedores") }}',
-            method: 'GET',
-            data: { id: fornecedorId },
-            success: function(response) {
-                console.log(`🔍 Dados do fornecedor ${fornecedorId} carregados:`, response);
-                
-                if (response.success && response.fornecedores && response.fornecedores.length > 0) {
-                    const fornecedor = response.fornecedores[0];
-                    
-                    // ✅ PREENCHER TODOS OS CAMPOS DO FORNECEDOR
-                    $(`#fornecedor-nome-display-${index}`).text(fornecedor.nome_fantasia || '');
-                    $(`#fornecedor-cnpj-display-${index}`).text(formatCNPJ(fornecedor.cnpj) || '');
-                    $(`#fornecedor-telefone-display-${index}`).text(fornecedor.telefone || '');
-                    
-                    // ✅ CONSTRUIR ENDEREÇO COMPLETO
-                    const enderecoCompleto = [
-                        fornecedor.endereco || '',
-                        fornecedor.bairro ? fornecedor.bairro : '',
-                        fornecedor.cidade ? fornecedor.cidade : '',
-                        fornecedor.estado ? fornecedor.estado : ''
-                    ].filter(part => part).join(', ');
-                    
-                    $(`#fornecedor-endereco-display-${index}`).text(enderecoCompleto);
-                    
-                    console.log(`✅ Fornecedor ${index} carregado completamente!`);
-                } else {
-                    console.warn(`⚠️ Fornecedor ${fornecedorId} não encontrado na API`);
-                }
-            },
-            error: function(xhr, status, error) {
-                console.error(`❌ Erro ao carregar fornecedor ${fornecedorId}:`, error);
-                
-                // Fallback: tentar buscar por nome/CNPJ
-                $.ajax({
-                    url: '{{ url_for("routes_bp.search_fornecedores") }}',
-                    method: 'GET',
-                    data: { q: fornecedorId },
-                    success: function(data) {
-                        if (data && data.length > 0) {
-                            const fornecedor = data[0];
-                            $(`#fornecedor-telefone-display-${index}`).text(fornecedor.telefone || '');
-                            const enderecoCompleto = [
-                                fornecedor.endereco || '',
-                                fornecedor.bairro ? fornecedor.bairro : '',
-                                fornecedor.cidade ? fornecedor.cidade : '',
-                                fornecedor.estado ? fornecedor.estado : ''
-                            ].filter(part => part).join(', ');
-                            $(`#fornecedor-endereco-display-${index}`).text(enderecoCompleto);
-                        }
-                    }
-                });
-            }
-        });
-    }
-
-    // Função para inicializar Select2 - COM CORREÇÃO
+    // Função para inicializar Select2
     function initializeSelect2(selector, idInputSelector, index, preSelectedId = null, preSelectedText = null) {
         const select = $(selector).select2({
             placeholder: 'Digite nome ou CNPJ do fornecedor',
@@ -952,75 +896,59 @@ Grupo de {{ solicitacoes_grupo|length }} solicitações para {{ solicitacoes_gru
         }).on('select2:select', function (e) {
             const data = e.params.data;
             $(idInputSelector).val(data.id);
-           
-            // ✅ PREENCHER CAMPOS QUANDO SELECIONA NOVO FORNECEDOR
+            
             $(`#fornecedor-nome-display-${index}`).text(data.nome_fantasia);
             $(`#fornecedor-cnpj-display-${index}`).text(formatCNPJ(data.cnpj));
             $(`#fornecedor-telefone-display-${index}`).text(data.telefone);
-           
-            const enderecoCompleto = [
-                data.endereco || '',
-                data.bairro ? data.bairro : '',
-                data.cidade ? data.cidade : '',
-                data.estado ? data.estado : ''
-            ].filter(part => part).join(', ');
             
+            const enderecoCompleto = `${data.endereco || ''}${data.bairro ? ', ' + data.bairro : ''}${data.cidade ? ' - ' + data.cidade : ''}${data.estado ? '/' + data.estado : ''}`;
             $(`#fornecedor-endereco-display-${index}`).text(enderecoCompleto);
-           
+            
             $(`#materiais-container-${index}`).show();
             $(`#botoes-materiais-${index}`).show();
-           
+            
             adicionarTodosMateriais(index);
-           
+            
         }).on('select2:clear', function () {
             $(idInputSelector).val('');
-           
+            
             $(`#fornecedor-nome-display-${index}`).text('');
             $(`#fornecedor-cnpj-display-${index}`).text('');
             $(`#fornecedor-telefone-display-${index}`).text('');
             $(`#fornecedor-endereco-display-${index}`).text('');
-           
+            
             $(`#materiais-container-${index}`).hide();
             $(`#botoes-materiais-${index}`).hide();
-           
+            
             $(`#materiais-body-${index}`).empty();
             materialCounters[index] = 0;
             calcularTotalCotacao(index);
         });
 
-        // *** ✅ CORREÇÃO PRINCIPAL PARA COTAÇÕES SALVAS ***
         if (preSelectedId && preSelectedText) {
-            console.log(`🔄 Carregando cotação salva ${index} com fornecedor: ${preSelectedId}`);
-            
-            // 1. Criar a opção no Select2
             const option = new Option(preSelectedText, preSelectedId, true, true);
             select.append(option).trigger('change');
             $(idInputSelector).val(preSelectedId);
             
-            // 2. MOSTRAR a seção de materiais IMEDIATAMENTE
+            // MOSTRAR IMEDIATAMENTE a tabela para cotações salvas
             $(`#materiais-container-${index}`).show();
             $(`#botoes-materiais-${index}`).show();
             
-            // 3. CARREGAR os materiais IMEDIATAMENTE
+            // CARREGAR IMEDIATAMENTE os materiais
             adicionarTodosMateriais(index);
-            
-            // 4. *** NOVA FUNCIONALIDADE: Buscar TELEFONE e ENDEREÇO ***
-            setTimeout(() => {
-                carregarDadosFornecedorCompleto(preSelectedId, index);
-            }, 200); // Pequeno delay para garantir que o DOM esteja pronto
         }
     }
 
     // Função para preencher valores salvos
     function preencherValoresSalvos(cotacaoId, itensSalvos) {
         console.log(`Preenchendo valores para cotação ${cotacaoId}:`, itensSalvos);
-       
+        
         itensSalvos.forEach((item, index) => {
             const materialRow = $(`#materiais-body-${cotacaoId} tr`).eq(index);
             if (materialRow.length) {
                 materialRow.find('.material-unitario').val(item.valor_unitario.toFixed(2).replace('.', ','));
                 materialRow.find('.material-quantidade').val(item.quantidade);
-               
+                
                 // Calcular total
                 const materialId = index + 1;
                 setTimeout(() => {
@@ -1031,31 +959,29 @@ Grupo de {{ solicitacoes_grupo|length }} solicitações para {{ solicitacoes_gru
     }
 
     $(document).ready(function () {
-        console.log('🚀 === INICIANDO CARREGAMENTO DAS COTAÇÕES ===');
-       
+        console.log('=== INICIANDO CARREGAMENTO ===');
+        
         // Inicializar as 3 cotações
         {% for i in range(3) %}
         {% set cotacao = cotacoes_salvas[i] if cotacoes_salvas and i < cotacoes_salvas|length else None %}
-       
-        console.log(`📋 Inicializando cotação {{ i+1 }}...`);
-       
+        
         initializeSelect2(
-            '#fornecedor_{{ i+1 }}',
-            '#fornecedor_id_{{ i+1 }}',
+            '#fornecedor_{{ i+1 }}', 
+            '#fornecedor_id_{{ i+1 }}', 
             {{ i+1 }},
             {% if cotacao and cotacao.fornecedor_id %}'{{ cotacao.fornecedor_id }}'{% else %}null{% endif %},
             {% if cotacao and cotacao.fornecedor_nome_fantasia %}'{{ cotacao.fornecedor_nome_fantasia }} - CNPJ: {{ cotacao.fornecedor_cnpj }}'{% else %}null{% endif %}
         );
-        
+
         // Configurar evento de frete
         $(`#valor_frete_{{ i+1 }}`).on('input', function() {
             calcularTotalCotacao({{ i+1 }});
         });
-        
+
         // Se é cotação salva, preencher valores IMEDIATAMENTE
         {% if cotacao and cotacao.fornecedor_id and cotacao.itens %}
-        console.log(`💾 Cotação {{ i+1 }} tem itens salvos:`, {{ cotacao.itens|tojson }});
-       
+        console.log(`Cotação {{ i+1 }} tem itens salvos:`, {{ cotacao.itens|tojson }});
+        
         const itensSalvos{{ i+1 }} = [
             {% for item in cotacao.itens %}
             {
@@ -1064,15 +990,13 @@ Grupo de {{ solicitacoes_grupo|length }} solicitações para {{ solicitacoes_gru
             }{% if not loop.last %},{% endif %}
             {% endfor %}
         ];
-       
-        // Delay aumentado para garantir que carregarDadosFornecedorCompleto termine
+        
+        // Pequeno delay para garantir que os materiais foram renderizados
         setTimeout(() => {
             preencherValoresSalvos({{ i+1 }}, itensSalvos{{ i+1 }});
-        }, 800);
+        }, 500);
         {% endif %}
         {% endfor %}
-        
-        console.log('✅ === TODAS AS COTAÇÕES INICIALIZADAS ===');
     });
 
     // Funções auxiliares
@@ -1104,34 +1028,34 @@ Grupo de {{ solicitacoes_grupo|length }} solicitações para {{ solicitacoes_gru
     $('#cotacoes-form').on('submit', function (e) {
         let isValid = true;
         let hasValidCotacao = false;
-       
+        
         for (let i = 1; i <= 3; i++) {
             const fornecedor = $(`#fornecedor_id_${i}`).val();
             const hasMateriais = $(`#materiais-body-${i} tr`).length > 0;
-           
+            
             if (fornecedor) {
                 hasValidCotacao = true;
-               
+                
                 if (!hasMateriais) {
                     isValid = false;
                     alert(`Cotação ${i}: É necessário adicionar materiais quando um fornecedor é selecionado.`);
                     break;
                 }
-               
+                
                 $(`#materiais-body-${i} tr`).each(function() {
                     const descricao = $(this).find('.material-descricao').val();
                     const unitario = $(this).find('.material-unitario').val();
                     const quantidade = $(this).find('.material-quantidade').val();
-                   
+                    
                     if (!descricao || !unitario || !quantidade) {
                         isValid = false;
                         $(this).addClass('border border-danger');
                     }
                 });
-               
+                
                 const prazoEntrega = $(`#prazo_entrega_${i}`).val();
                 const condicaoPagamento = $(`#condicao_pagamento_${i}`).val();
-               
+                
                 if (!prazoEntrega || !condicaoPagamento) {
                     isValid = false;
                     alert(`Cotação ${i}: Preencha o prazo de entrega e condição de pagamento.`);
@@ -1139,28 +1063,28 @@ Grupo de {{ solicitacoes_grupo|length }} solicitações para {{ solicitacoes_gru
                 }
             }
         }
-       
+        
         if (!hasValidCotacao) {
             e.preventDefault();
             alert('É necessário preencher pelo menos UMA cotação com fornecedor e materiais.');
             return;
         }
-       
+        
         if (!isValid) {
             e.preventDefault();
             alert('Por favor, preencha todos os campos obrigatórios das cotações com fornecedor selecionado.');
             return;
         }
-        
+
         const action = $(document.activeElement).val();
         let confirmMessage = '';
-       
+        
         if (action === 'salvar_rascunho') {
             confirmMessage = 'Tem certeza de que deseja salvar como rascunho?';
         } else if (action === 'salvar_finalizar') {
             confirmMessage = 'Tem certeza de que deseja finalizar e enviar para aprovação?';
         }
-        
+
         if (confirmMessage && !confirm(confirmMessage)) {
             e.preventDefault();
         }
