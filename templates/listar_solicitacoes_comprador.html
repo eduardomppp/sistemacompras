@@ -82,6 +82,9 @@
         h4 {
             margin-top: 20px;
             color: var(--primary-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         .table-responsive {
@@ -149,6 +152,17 @@
             background-color: #6c757d;
             cursor: not-allowed;
             opacity: 0.6;
+        }
+
+        .btn-preencher-grupo {
+            background-color: #28a745;
+            margin-left: 10px;
+        }
+
+        .btn-preencher-grupo:hover {
+            background-color: #218838;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
 
         .status-badge {
@@ -297,6 +311,28 @@
             color: var(--primary-color);
         }
 
+        .group-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 6px;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .group-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .group-info {
+            font-size: 14px;
+            color: #6c757d;
+            margin-left: 10px;
+        }
+
         @media (max-width: 1200px) {
             .container {
                 padding: 15px;
@@ -320,7 +356,7 @@
                 align-items: flex-start;
                 gap: 15px;
             }
-            
+
             .filter-row {
                 flex-direction: column;
             }
@@ -341,6 +377,12 @@
             th,
             td {
                 padding: 8px 10px;
+            }
+
+            .group-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
             }
         }
     </style>
@@ -427,21 +469,31 @@
             </div>
         </div>
 
-        <!-- O resto do template permanece igual -->
         {% if solicitacoes %}
         <div id="tablesContainer">
             {% set grouped = {} %}
             {% for s in solicitacoes if s.status_aprovacao and s.status_aprovacao != 'Pendente' %}
-                {% set key = s.aplicacao or s.material.Aplicacao or 'Sem Aplicação' %}
-                {% if key not in grouped %}
-                    {% set _ = grouped.update({key: []}) %}
-                {% endif %}
-                {% set _ = grouped[key].append(s) %}
+            {% set key = s.aplicacao or s.material.Aplicacao or 'Sem Aplicação' %}
+            {% if key not in grouped %}
+            {% set _ = grouped.update({key: []}) %}
+            {% endif %}
+            {% set _ = grouped[key].append(s) %}
             {% endfor %}
 
             {% for aplicacao, items in grouped.items() %}
             <div class="application-group" data-aplicacao="{{ aplicacao }}">
-                <h4>{{ aplicacao }}</h4>
+                <div class="group-header">
+                    <div>
+                        <h4 style="margin: 0;">{{ aplicacao }}</h4>
+                        <span class="group-info">{{ items|length }} solicitação(ões) aprovada(s)</span>
+                    </div>
+                    <div class="group-actions">
+                        <a href="{{ url_for('routes_bp.preencher_solicitacao', id=items[0].id) }}?grupo_ids={{ items|map(attribute='id')|join(',') }}"
+                            class="btn btn-preencher-grupo">
+                            <i class="fas fa-edit"></i> Preencher Grupo ({{ items|length }} itens)
+                        </a>
+                    </div>
+                </div>
                 <div class="table-responsive">
                     <table class="table table-bordered">
                         <thead>
@@ -456,12 +508,11 @@
                                 <th>Usuário</th>
                                 <th>Status</th>
                                 <th>Comprador Atribuído</th>
-                                <th>Ações</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for solicitacao in items | sort(attribute='data_solicitacao', reverse=true) %}
-                            <tr data-id="{{ solicitacao.id }}">
+                            <tr data-id="{{ solicitacao.id }}" data-aplicacao="{{ aplicacao }}">
                                 <td>{{ solicitacao.id }}</td>
                                 <td>{{ solicitacao.material.DescricaoMaterial }}</td>
                                 <td>{{ solicitacao.especificacao or '-' }}</td>
@@ -473,11 +524,11 @@
                                 </td>
                                 <td>{{ solicitacao.usuario }}</td>
                                 <td>
-                                {% set raw_status = solicitacao.status_aprovacao %}
-                                {% set status = (raw_status | default('Pendente') | trim) %}
-                                {% set status_upper = status.upper() %}
+                                    {% set raw_status = solicitacao.status_aprovacao %}
+                                    {% set status = (raw_status | default('Pendente') | trim) %}
+                                    {% set status_upper = status.upper() %}
 
-                                <span class="status-badge 
+                                    <span class="status-badge 
                                     {% if status_upper == 'APROVADO' %}
                                         status-aprovado
                                     {% elif status_upper == 'REPROVADO' %}
@@ -486,8 +537,8 @@
                                         status-pendente
                                     {% endif %}
                                 ">
-                                    {{ status }}
-                                </span>
+                                        {{ status }}
+                                    </span>
 
                                 </td>
                                 <td>
@@ -496,14 +547,6 @@
                                     {% else %}
                                     <span class="badge bg-secondary">Não atribuído</span>
                                     {% endif %}
-                                </td>
-                                <td>
-                                    <a href="{{ url_for('routes_bp.preencher_solicitacao', id=solicitacao.id) }}"
-                                        class="btn btn-preencher {% if solicitacao.status_aprovacao == 'Reprovado' %}disabled-link{% endif %}"
-                                        {% if solicitacao.status_aprovacao=='Reprovado' %}onclick="return false;"
-                                        style="pointer-events: none; opacity: 0.6;" {% endif %}>
-                                        <i class="fas fa-edit"></i> Preencher
-                                    </a>
                                 </td>
                             </tr>
                             {% endfor %}
@@ -524,7 +567,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // O JavaScript permanece igual
         document.addEventListener('DOMContentLoaded', function () {
             const thirtyDaysAgo = new Date();
             thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
