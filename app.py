@@ -2156,7 +2156,26 @@ def preencher_solicitacao(id):
         flash('Acesso não autorizado', 'error')
         return redirect(url_for('routes_bp.login'))
     
+    # Verificar se há IDs de grupo passados como parâmetro
+    grupo_ids_param = request.args.get('grupo_ids', '')
+    grupo_ids = []
+    solicitacoes_grupo = []
+    
+    if grupo_ids_param:
+        grupo_ids = [int(i) for i in grupo_ids_param.split(',') if i.strip()]
+        # Buscar todas as solicitações do grupo
+        solicitacoes_grupo = SolicitacoesCompra.query.filter(
+            SolicitacoesCompra.id.in_(grupo_ids)
+        ).all()
+    
     solicitacao = SolicitacoesCompra.query.get_or_404(id)
+    
+    # Adicionar a solicitação principal ao grupo se não estiver incluída
+    if grupo_ids and id not in grupo_ids:
+        solicitacoes_grupo.append(solicitacao)
+        grupo_ids.append(id)
+    
+    modo_grupo = len(solicitacoes_grupo) > 1
     
     if request.method == 'POST':
         try:
@@ -2168,11 +2187,13 @@ def preencher_solicitacao(id):
             condicoes_pagamento = request.form.getlist('condicao_pagamento[]')
             observacoes = request.form.getlist('observacao[]')
             preenchimento_ids = request.form.getlist('preenchimento_id[]')
+            solicitacao_ids = request.form.getlist('solicitacao_id[]')  # Novo campo para grupos
             
             if not fornecedores or len(fornecedores) == 0:
                 flash('É necessário adicionar pelo menos uma cotação.', 'error')
-                return redirect(url_for('routes_bp.preencher_solicitacao', id=id))
+                return redirect(url_for('routes_bp.preencher_solicitacao', id=id, grupo_ids=grupo_ids_param))
             
+            # Processar cotações para cada solicitação
             for i in range(len(fornecedores)):
                 fornecedor_id = fornecedores[i]
                 valor_unitario_str = valores_unitarios[i].replace(',', '.') if valores_unitarios[i] else '0'
@@ -2181,24 +2202,24 @@ def preencher_solicitacao(id):
                 condicao_pagamento = condicoes_pagamento[i]
                 observacao = observacoes[i] if i < len(observacoes) else ''
                 
+                # Determinar para qual solicitação esta cotação pertence
+                solicitacao_id = id  # padrão
+                if i < len(solicitacao_ids) and solicitacao_ids[i]:
+                    solicitacao_id = int(solicitacao_ids[i])
+                
+                solicitacao_atual = SolicitacoesCompra.query.get(solicitacao_id)
+                if not solicitacao_atual:
+                    continue
+                
                 try:
-                    # Usar Decimal para manter PRECISÃO ABSOLUTA de todas as casas decimais
                     valor_unitario = Decimal(valor_unitario_str)
                     valor_frete = Decimal(valor_frete_str) if valor_frete_str != '0' else None
-                    
-                    # SEM VALIDAÇÃO de casas decimais - mantém todas as digitadas
-                    # O Decimal não tem limitação prática de casas decimais
-                    
-                    # Se precisar converter para float no final (para o banco):
-                    # valor_unitario = float(valor_unitario)
-                    # valor_frete = float(valor_frete) if valor_frete else None
-                        
                 except (ValueError, InvalidOperation):
                     flash('Valores unitário ou de frete inválidos. Use o formato correto.', 'error')
-                    return redirect(url_for('routes_bp.preencher_solicitacao', id=id))
-                    
+                    return redirect(url_for('routes_bp.preencher_solicitacao', id=id, grupo_ids=grupo_ids_param))
+                
                 # Calcular valor total
-                valor_total = (valor_unitario * solicitacao.quantidade) + (valor_frete or 0)
+                valor_total = (valor_unitario * solicitacao_atual.quantidade) + (valor_frete or 0)
                 
                 # Verificar se é uma cotação existente (rascunho) ou nova
                 if i < len(preenchimento_ids) and preenchimento_ids[i]:
@@ -2233,7 +2254,7 @@ def preencher_solicitacao(id):
                 else:
                     # Criar nova cotação
                     preenchimento = SolicitacoesPreenchidas(
-                        solicitacao_id=id,
+                        solicitacao_id=solicitacao_id,
                         fornecedor_id=fornecedor_id,
                         valor_unitario=valor_unitario,
                         valor_frete=valor_frete,
@@ -2259,9 +2280,12 @@ def preencher_solicitacao(id):
                         pdf_file.save(pdf_path)
                         preenchimento.pdf_path = unique_filename
             
-            # Atualizar status da solicitação se for finalizar
+            # Atualizar status das solicitações se for finalizar
             if action == 'salvar_finalizar':
                 solicitacao.status_aprovacao = 'Aguardando Aprovacao'
+                # Atualizar status de todas as solicitações do grupo
+                for sol in solicitacoes_grupo:
+                    sol.status_aprovacao = 'Aguardando Aprovacao'
             
             db.session.commit()
             flash('Cotações salvas com sucesso!' if action == 'salvar_rascunho' else 'Cotações enviadas para aprovação!', 'success')
@@ -2271,13 +2295,21 @@ def preencher_solicitacao(id):
             db.session.rollback()
             flash(f'Erro ao salvar cotações: {str(e)}', 'error')
             logging.error(f"Erro ao salvar cotações: {str(e)}")
-            return redirect(url_for('routes_bp.preencher_solicitacao', id=id))
+            return redirect(url_for('routes_bp.preencher_solicitacao', id=id, grupo_ids=grupo_ids_param))
     
     # Parte GET: Carregar cotações salvas (rascunhos)
-    cotacoes_salvas = SolicitacoesPreenchidas.query.filter_by(
-        solicitacao_id=id, 
-        status='Rascunho'
-    ).order_by(SolicitacoesPreenchidas.id).all()
+    if modo_grupo:
+        # Carregar cotações de todas as solicitações do grupo
+        cotacoes_salvas = SolicitacoesPreenchidas.query.filter(
+            SolicitacoesPreenchidas.solicitacao_id.in_(grupo_ids),
+            SolicitacoesPreenchidas.status == 'Rascunho'
+        ).order_by(SolicitacoesPreenchidas.id).all()
+    else:
+        # Carregar apenas da solicitação atual
+        cotacoes_salvas = SolicitacoesPreenchidas.query.filter_by(
+            solicitacao_id=id, 
+            status='Rascunho'
+        ).order_by(SolicitacoesPreenchidas.id).all()
     
     # Enriquecer cada cotação com detalhes do fornecedor
     for cotacao in cotacoes_salvas:
@@ -2293,7 +2325,10 @@ def preencher_solicitacao(id):
     return render_template(
         'preencher_solicitacao.html',
         solicitacao=solicitacao,
-        cotacoes_salvas=cotacoes_salvas
+        solicitacoes_grupo=solicitacoes_grupo,
+        cotacoes_salvas=cotacoes_salvas,
+        modo_grupo=modo_grupo,
+        grupo_ids=grupo_ids_param
     )
     
 @routes_bp.route('/listar_solicitacoes_preenchidas', methods=['GET'])
@@ -3978,27 +4013,43 @@ def search_fornecedores():
         query = request.args.get('q', '').strip()
         if not query:
             return jsonify([]), 400
+        
         conn = get_db_connection(DB_PATH_FORNECEDORES)
         if not conn:
             app.logger.error('Falha ao conectar ao banco de fornecedores')
             return jsonify([]), 500
+        
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
+        
         cursor.execute('''
-            SELECT id, nome_fantasia, cnpj
+            SELECT id, nome_fantasia, cnpj, telefone, email, endereco, 
+                   bairro, cidade, estado, contato, materiais
             FROM fornecedores
             WHERE nome_fantasia LIKE ? OR cnpj LIKE ?
             ORDER BY nome_fantasia
         ''', (f'%{query}%', f'%{query}%'))
-        fornecedores = [
-            {
+        
+        fornecedores = []
+        for row in cursor.fetchall():
+            fornecedor = {
                 'id': row['id'],
                 'nome_fantasia': row['nome_fantasia'],
-                'cnpj': format_cnpj(row['cnpj'])
-            } for row in cursor.fetchall()
-        ]
+                'cnpj': row['cnpj'],
+                'telefone': row['telefone'],
+                'email': row['email'],
+                'endereco': row['endereco'],
+                'bairro': row['bairro'],
+                'cidade': row['cidade'],
+                'estado': row['estado'],
+                'contato': row['contato'],
+                'materiais': row['materiais']
+            }
+            fornecedores.append(fornecedor)
+        
         conn.close()
         return jsonify(fornecedores)
+        
     except sqlite3.Error as e:
         app.logger.error(f'Erro ao buscar fornecedores: {str(e)}')
         return jsonify([]), 500
