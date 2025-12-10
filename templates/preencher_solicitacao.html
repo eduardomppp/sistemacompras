@@ -9,1084 +9,1807 @@
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <style>
-        :root {
-            --primary-color: #022855;
-            --primary-light: #2c4d8a;
-            --secondary-color: #6c757d;
-            --success-color: #198754;
-            --danger-color: #dc3545;
-            --warning-color: #ffc107;
-            --light-bg: #f8f9fa;
-            --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-            --border-radius: 8px;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            height: 100%;
+            font-family: Arial, sans-serif;
         }
 
         body {
-            background-color: var(--light-bg);
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            padding: 20px 0;
+            background-color: #f8f9fa;
+            padding: 15px;
             color: #333;
         }
 
-        .form-container {
-            max-width: 100%;
-            margin: 0 auto;
-            background: white;
-            padding: 25px;
-            border-radius: var(--border-radius);
-            box-shadow: var(--card-shadow);
-            border: none;
-        }
-
         .header {
-            border-bottom: 2px solid var(--primary-color);
-            padding-bottom: 15px;
-            margin-bottom: 25px;
+            background-color: #022855;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin: 0 0 15px 0;
         }
 
-        h1,
-        h2,
-        h3,
-        h4 {
-            color: var(--primary-color);
-            font-weight: 700;
+        .header h1 {
+            margin: 0;
+            font-size: 18px;
+            text-transform: uppercase;
         }
 
-        .btn-primary {
-            background-color: var(--primary-color);
-            border-color: var(--primary-color);
-            padding: 10px 20px;
+        .header p {
+            margin: 5px 0;
+            font-size: 11px;
+        }
+
+        .main-container {
+            display: flex;
+            gap: 12px;
+            align-items: stretch;
+            margin: 0;
+            min-height: calc(100vh - 150px);
+        }
+
+        .left-column {
+            flex: 0.25;
+            max-width: 13%;
+            background-color: #022855;
+            color: white;
+            padding: 10px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .left-column h2 {
+            color: #FFD700;
+            font-size: 13px;
+            margin-bottom: 6px;
+        }
+
+        .info-pedido {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+            margin-bottom: 15px;
+            table-layout: fixed;
+        }
+
+        .info-pedido td {
+            padding: 4px;
+            vertical-align: top;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .info-pedido .label {
+            font-weight: bold;
+            width: 45%;
+            color: #FFD700;
+            white-space: nowrap;
+        }
+
+        .info-pedido .value {
+            width: 55%;
+            min-height: 14px;
+        }
+
+        .mini-table-container {
+            max-height: 200px;
+            overflow-y: auto;
+            margin: 8px 0 12px 0;
+        }
+
+        .mini-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 7.8px;
+            background-color: #0A2C5C;
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid #fff;
+        }
+
+        .mini-table th {
+            background-color: #144288;
+            color: white;
+            padding: 4px;
+            text-align: center;
+            font-weight: bold;
+            border: 1px solid #fff;
+            position: sticky;
+            top: 0;
+        }
+
+        .mini-table td {
+            background-color: #0A2C5C;
+            color: white;
+            padding: 3px 4px;
+            border: 1px solid #fff;
+        }
+
+        .mini-table .qtd {
+            text-align: center;
+            width: 18%;
+        }
+
+        .mini-table .desc {
+            text-align: left;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 130px;
+            font-size: 7.6px;
+        }
+
+        .mini-table .ativo {
+            text-align: center;
+            width: 18%;
+        }
+
+        .destaque-section {
+            background-color: #0A2C5C;
+            padding: 7px;
+            border-radius: 8px;
+        }
+
+        .destaque-section h2 {
+            color: #FFD700;
+            text-align: center;
+            font-size: 12px;
+            margin-bottom: 6px;
+        }
+
+        .destaque-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 8.5px;
+            margin-bottom: 8px;
+        }
+
+        .destaque-table th {
+            background-color: #144288;
+            color: white;
+            padding: 3px;
+            text-align: center;
+        }
+
+        .destaque-table td {
+            background-color: #0A2C5C;
+            padding: 3px;
+            text-align: center;
+            color: white;
+        }
+
+        .checkbox-duo {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            font-size: 8.5px;
+            color: white;
+        }
+
+        .entrega-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+            font-size: 8.5px;
+        }
+
+        .entrega-options {
+            display: flex;
+            gap: 6px;
+            justify-content: center;
+        }
+
+        .checkbox-item input[type="checkbox"],
+        .entrega-options input[type="radio"],
+        .pagamento-item input[type="radio"] {
+            transform: scale(1.3);
+            margin-right: 6px;
+        }
+
+        .forma-pagamento strong,
+        .justificativa strong {
+            display: block;
+            margin-bottom: 3px;
+            font-size: 10px;
+            color: #FFD700;
+        }
+
+        .pagamento-options {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .pagamento-item {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            font-size: 8.5px;
+        }
+
+        .justificativa textarea {
+            width: 100%;
+            height: 45px;
+            padding: 5px;
+            font-size: 8.5px;
+            border-radius: 4px;
+            border: none;
+            resize: none;
+        }
+
+        .right-column {
+            flex: 3;
+            max-width: 87%;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .cotacoes-dinamicas {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        .cotacao-card {
+            background: white;
+            border: 2px solid #022855;
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 4px 12px rgba(2, 40, 85, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cotacao-card::before {
+            content: "COTAÇÃO " counter(cotacao);
+            counter-increment: cotacao;
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            background: #022855;
+            color: white;
+            font-size: 9px;
+            font-weight: bold;
+            padding: 4px 10px;
+            border-radius: 0 0 8px 0;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-remove-cotacao {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        .fornecedor-info {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 6px;
+            font-size: 9.5px;
+            margin-bottom: 12px;
+            color: #1e40af;
+            line-height: 1.4;
+        }
+
+        .fornecedor-info strong {
+            color: #022855;
             font-weight: 600;
-            border-radius: var(--border-radius);
-            transition: all 0.3s ease;
         }
 
-        .btn-primary:hover {
-            background-color: var(--primary-light);
-            border-color: var(--primary-light);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        .cotacao-form {
+            font-size: 9.5px;
         }
 
-        .btn-outline-primary {
-            color: var(--primary-color);
-            border-color: var(--primary-color);
+        .form-group {
+            margin-bottom: 8px;
+        }
+
+        .form-label {
+            font-weight: bold;
+            color: #022855;
+            font-size: 9px;
+            margin-bottom: 2px;
+            display: block;
+        }
+
+        .form-control,
+        .form-select {
+            font-size: 9px;
+            padding: 4px 6px;
+            height: 28px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            width: 100%;
+        }
+
+        .input-group {
+            display: flex;
+            align-items: center;
+        }
+
+        .input-group-text {
+            background-color: #e9ecef;
+            border: 1px solid #ccc;
+            padding: 4px 6px;
+            font-size: 9px;
+            border-right: none;
+            border-radius: 4px 0 0 4px;
+        }
+
+        .input-group .form-control {
+            border-left: none;
+            border-radius: 0 4px 4px 0;
+        }
+
+        .materiais-container {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+
+        .materiais-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 9px;
+        }
+
+        .materiais-table th {
+            background-color: #022855;
+            color: white;
+            padding: 6px 4px;
+            text-align: center;
+            font-weight: bold;
+            border: 1px solid #ccc;
+            position: sticky;
+            top: 0;
+        }
+
+        .materiais-table td {
+            padding: 4px;
+            border: 1px solid #ccc;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        .materiais-table .descricao {
+            text-align: left;
+            width: 35%;
+        }
+
+        .materiais-table .quantidade,
+        .materiais-table .unidade,
+        .materiais-table .unitario,
+        .materiais-table .total {
+            width: 15%;
+        }
+
+        .materiais-table .acoes {
+            width: 5%;
+        }
+
+        .materiais-table input {
+            width: 100%;
+            border: none;
+            background: transparent;
+            text-align: center;
+            font-size: 9px;
+            padding: 2px;
+        }
+
+        .materiais-table .descricao input {
+            text-align: left;
+        }
+
+        .materiais-table .unitario input,
+        .materiais-table .total input {
+            text-align: right;
+            direction: rtl;
+        }
+
+        .btn-remove-material {
+            background: #dc3545;
+            color: white;
+            border: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 8px;
+            cursor: pointer;
+        }
+
+        .btn-add-material {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 9px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 5px;
+            margin-right: 5px;
+        }
+
+        .btn-add-all {
+            background: #17a2b8;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 9px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 5px;
+        }
+
+        .btn-add-cotacao {
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.3s;
+        }
+
+        .btn-add-cotacao:hover {
+            background-color: #5a6268;
+            transform: translateY(-1px);
+        }
+
+        .add-cotacao-container {
+            margin-top: 10px;
+            text-align: right;
+        }
+
+        .total-fornecedor {
+            background: linear-gradient(135deg, #e6f0ff 0%, #f8f9fc 100%);
+            border: 1px solid #022855;
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 10px;
+            margin-top: 10px;
             font-weight: 500;
         }
 
-        .btn-outline-primary:hover {
-            background-color: var(--primary-color);
-            color: white;
+        .total-line {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+            color: #333;
+        }
+
+        .total-line.frete-line {
+            color: #d94600;
+            font-weight: 600;
+        }
+
+        .total-geral-fornecedor {
+            font-weight: 700 !important;
+            color: white !important;
+            background: #022855 !important;
+            padding: 7px 10px;
+            border-radius: 6px;
+            text-align: center;
+            font-size: 11px !important;
+            margin-top: 8px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .action-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            padding: 15px 0;
+            border-top: 2px solid #022855;
+        }
+
+        .btn {
+            font-size: 11px;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-weight: 600;
+        }
+
+        .btn-primary {
+            background-color: #022855;
+            border-color: #022855;
+        }
+
+        .btn-primary:hover {
+            background-color: #0345a0;
+            border-color: #0345a0;
+        }
+
+        .btn-success {
+            background-color: #198754;
+            border-color: #198754;
         }
 
         .btn-warning {
             background-color: #ffc107;
             border-color: #ffc107;
             color: #000;
-            font-weight: 600;
-        }
-
-        .btn-warning:hover {
-            background-color: #e0a800;
-            border-color: #d39e00;
-            color: #000;
-        }
-
-        .alert-info {
-            background-color: #d1ecf1;
-            border-color: #bee5eb;
-            color: #0c5460;
-        }
-
-        .detail-card {
-            background-color: white;
-            border-radius: var(--border-radius);
-            padding: 25px;
-            margin: 0 auto 30px;
-            box-shadow: var(--card-shadow);
-            border: none;
-            max-width: 800px;
-            position: relative;
-        }
-
-        .detail-card h4 {
-            text-align: center;
-            margin-bottom: 25px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid #eee;
-            color: var(--primary-color);
-        }
-
-        .detail-item {
-            display: flex;
-            margin-bottom: 15px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid #f5f5f5;
-            flex-wrap: wrap;
-            align-items: flex-start;
-        }
-
-        .detail-label {
-            font-weight: 600;
-            color: var(--primary-color);
-            width: 200px;
-            margin-bottom: 5px;
-            text-align: right;
-            padding-right: 20px;
-        }
-
-        .detail-value {
-            color: #495057;
-            flex: 1;
-            min-width: 250px;
-            max-width: 500px;
-            line-height: 1.5;
-        }
-
-        .badge-status {
-            font-size: 0.85em;
-            padding: 5px 10px;
-            border-radius: 20px;
-            font-weight: 500;
-        }
-
-        .cotacoes-wrapper {
-            overflow-x: auto;
-            white-space: nowrap;
-            padding-bottom: 15px;
-            margin-bottom: 20px;
-            -webkit-overflow-scrolling: touch;
-            scrollbar-width: thin;
-            scrollbar-color: var(--primary-color) #e0e0e0;
-        }
-
-        .cotacoes-wrapper::-webkit-scrollbar {
-            height: 8px;
-        }
-
-        .cotacoes-wrapper::-webkit-scrollbar-track {
-            background: #e0e0e0;
-            border-radius: 4px;
-        }
-
-        .cotacoes-wrapper::-webkit-scrollbar-thumb {
-            background: var(--primary-color);
-            border-radius: 4px;
-        }
-
-        .cotacoes-wrapper::-webkit-scrollbar-thumb:hover {
-            background: var(--primary-light);
-        }
-
-        .cotacao-container {
-            border: 1px solid #e0e0e0;
-            padding: 20px;
-            border-radius: var(--border-radius);
-            background-color: #fff;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
-            width: 400px;
-            min-width: 400px;
-            margin-right: 20px;
-            display: inline-block;
-            vertical-align: top;
-        }
-
-        .cotacao-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #eee;
-        }
-
-        .remove-cotacao {
-            background-color: var(--danger-color);
-            border: none;
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 12px;
-            transition: all 0.2s;
-        }
-
-        .remove-cotacao:hover {
-            transform: scale(1.1);
-        }
-
-        .foto-preview {
-            max-width: 100%;
-            max-height: 150px;
-            margin-top: 10px;
-            border-radius: 5px;
-            border: 1px solid #ddd;
-            padding: 5px;
-            background: white;
         }
 
         .select2-container {
             width: 100% !important;
+            font-size: 9px;
         }
 
         .select2-selection__rendered {
-            line-height: 38px !important;
+            line-height: 20px !important;
+            font-size: 9px;
         }
 
         .select2-container .select2-selection--single {
-            height: 38px !important;
+            height: 28px !important;
             border: 1px solid #ced4da !important;
-            border-radius: var(--border-radius) !important;
+            border-radius: 4px !important;
         }
 
         .select2-selection__arrow {
-            height: 38px !important;
+            height: 26px !important;
         }
 
-        .calculated-field {
-            background-color: #f8f9fa;
-            cursor: not-allowed;
+        .cotacoes-container {
+            counter-reset: cotacao;
         }
 
         .error-message {
-            color: var(--danger-color);
-            font-size: 0.85em;
-            margin-top: 0.25rem;
+            color: #dc3545;
+            font-size: 8px;
+            margin-top: 2px;
         }
 
-        .form-section {
-            margin-bottom: 30px;
+        .border-danger {
+            border: 2px solid #dc3545 !important;
+            box-shadow: 0 0 5px rgba(220, 53, 69, 0.5);
         }
 
-        .form-section-title {
-            font-size: 1.2rem;
-            color: var(--primary-color);
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #eee;
-            font-weight: 600;
+        .footer {
+            margin: 15px 0;
+            text-align: center;
+            font-size: 9px;
+            color: #333;
         }
 
-        .alert-flash {
-            border-radius: var(--border-radius);
-            border: none;
+        .assinaturas {
+            display: flex;
+            justify-content: center;
+            gap: 80px;
+            margin-top: 25px;
         }
 
-        .priority-display {
-            display: inline-block;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-weight: 600;
-            font-size: 0.95rem;
-            margin-bottom: 20px;
+        .assinatura {
+            text-align: center;
+            font-size: 10px;
+            color: #022855;
         }
 
-        .priority-urgent-display {
-            background-color: #fff8e1;
-            color: #e65100;
-            border: 1px solid #ffd54f;
+        .assinatura p {
+            margin: 3px 0;
         }
 
-        .priority-normal-display {
-            background-color: #e8f5e9;
-            color: #2e7d32;
-            border: 1px solid #a5d6a7;
+        .linha-assinatura {
+            margin-bottom: 5px;
         }
 
-        .detail-item:hover {
-            background-color: #f9f9f9;
-            transition: background-color 0.2s ease;
+        /* Adicionado: Estilo para campos monetários */
+        .material-unitario,
+        .valor-frete {
+            text-align: right !important;
+            direction: rtl;
         }
 
-        .bi {
-            margin-right: 5px;
-            vertical-align: middle;
+        .material-unitario::placeholder,
+        .valor-frete::placeholder {
+            text-align: right;
+            direction: ltr;
         }
 
-        .fornecedor-selecionado {
-            background-color: #e8f5e9;
-            border: 1px solid #c3e6cb;
-            border-radius: var(--border-radius);
-            padding: 10px 15px;
-            margin-bottom: 10px;
+        .input-group .valor-frete {
+            direction: ltr;
+            text-align: left;
+        }
+
+        /* Melhorias para a máscara de valores */
+        .valor-input {
+            position: relative;
+        }
+
+        .valor-input input {
+            padding-right: 25px !important;
+        }
+
+        .valor-simbolo {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #666;
+            font-size: 9px;
+            pointer-events: none;
+        }
+
+        @media (max-width: 1200px) {
+            .cotacoes-dinamicas {
+                grid-template-columns: repeat(2, 1fr);
+            }
         }
 
         @media (max-width: 768px) {
-            .form-container {
-                padding: 15px;
+            .main-container {
+                flex-direction: column;
             }
 
-            .header {
-                padding-bottom: 10px;
+            .left-column {
+                max-width: 100%;
                 margin-bottom: 15px;
             }
 
-            h1 {
-                font-size: 1.5rem;
-            }
-
-            .detail-card {
-                padding: 15px;
+            .right-column {
                 max-width: 100%;
             }
 
-            .detail-label {
-                width: 100%;
-                text-align: left;
-                padding-right: 0;
-                margin-bottom: 5px;
-            }
-
-            .detail-value {
-                width: 100%;
-                padding-left: 0;
-                max-width: 100%;
-            }
-
-            .cotacao-container {
-                padding: 15px;
-                width: 300px;
-                min-width: 300px;
-            }
-
-            .btn {
-                padding: 8px 15px;
-                font-size: 0.9rem;
-            }
-
-            .form-control,
-            .form-select,
-            .select2-container .select2-selection--single {
-                font-size: 0.9rem;
-                height: 36px !important;
-            }
-
-            .select2-selection__rendered {
-                line-height: 36px !important;
-            }
-
-            .select2-selection__arrow {
-                height: 36px !important;
+            .cotacoes-dinamicas {
+                grid-template-columns: 1fr;
             }
         }
     </style>
 </head>
 
 <body>
-    <div class="container form-container">
-        <div class="header">
-            <div class="d-flex justify-content-between align-items-center flex-wrap">
-                <h1 class="mb-2 mb-md-0">
-                    <i class="bi bi-file-text"></i> Preencher Solicitação
+    <div class="header">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1>
+                    {% if modo_grupo %}
+                    PREENCHER COTAÇÃO - GRUPO ({{ solicitacoes_grupo|length }} SOLICITAÇÕES)
+                    {% else %}
+                    PREENCHER COTAÇÃO - SOLICITAÇÃO #{{ solicitacao.id }}
+                    {% endif %}
                 </h1>
-                <a href="{{ url_for('routes_bp.listar_solicitacoes') }}" class="btn btn-outline-primary">
-                    <i class="bi bi-arrow-left"></i> Voltar
-                </a>
-            </div>
-        </div>
-
-        <div class="mb-4 text-center">
-            <h5 class="form-section-title"><i class="bi bi-flag"></i> Prioridade da Solicitação</h5>
-            <div
-                class="priority-display {{ 'priority-urgent-display' if solicitacao.prioridade == 'Urgente' else 'priority-normal-display' }}">
-                <i
-                    class="bi {{ 'bi-exclamation-triangle-fill' if solicitacao.prioridade == 'Urgente' else 'bi-calendar-check-fill' }}"></i>
-                {{ solicitacao.prioridade | upper }}
-            </div>
-            <input type="hidden" name="prioridade" value="{{ solicitacao.prioridade }}">
-        </div>
-
-        <div class="detail-card">
-            <h4><i class="bi bi-card-checklist"></i> Detalhes da Solicitação</h4>
-            <div class="detail-item">
-                <span class="detail-label">Material:</span>
-                <span class="detail-value">{{ solicitacao.material.DescricaoMaterial }}</span>
-            </div>
-            <div class="detail-item">
-                <span class="detail-label">Quantidade:</span>
-                <span class="detail-value" id="quantidade-material">{{ solicitacao.quantidade }}</span>
-            </div>
-            <div class="detail-item">
-                <span class="detail-label">Unidade de Medida:</span>
-                <span class="detail-value">{{ solicitacao.unidade_medida | default('Unidade') }}</span>
-            </div>
-            <div class="detail-item">
-                <span class="detail-label">Especificação:</span>
-                <span class="detail-value">{{ solicitacao.especificacao }}</span>
-            </div>
-            <div class="detail-item">
-                <span class="detail-label">Aplicação:</span>
-                <span class="detail-value">{{ solicitacao.aplicacao | default('N/A') }}</span>
-            </div>
-            <div class="detail-item">
-                <span class="detail-label">Empresa:</span>
-                <span class="detail-value">{{ solicitacao.empresa }}</span>
-            </div>
-            <div class="detail-item">
-                <span class="detail-label">Marca:</span>
-                <span class="detail-value">{{ solicitacao.marca | default('N/A') }}</span>
-            </div>
-            <div class="detail-item">
-                <span class="detail-label">Material é ativo?:</span>
-                <span class="detail-value">
-                    <span class="badge-status bg-{{ 'success' if solicitacao.ativo == 'Sim' else 'secondary' }}">
-                        {{ solicitacao.ativo }}
-                    </span>
-                </span>
-            </div>
-            {% if solicitacao.ativo == 'Sim' and solicitacao.nome_ativo %}
-            <div class="detail-item">
-                <span class="detail-label">Nome do Ativo:</span>
-                <span class="detail-value">{{ solicitacao.nome_ativo }}</span>
-            </div>
-            {% endif %}
-            <div class="detail-item">
-                <span class="detail-label">Foto:</span>
-                <span class="detail-value">
-                    {% if solicitacao.foto_path %}
-                    {% set extension = solicitacao.foto_path.rsplit('.', 1)[1].lower() if '.' in solicitacao.foto_path
-                    else '' %}
-                    {% if extension in ['jpg', 'jpeg', 'png'] %}
-                    <img src="{{ url_for('routes_bp.uploads', filename=solicitacao.foto_path | basename) }}"
-                        alt="Foto do material" class="foto-preview img-fluid">
-                    {% elif extension == 'pdf' %}
-                    <a href="{{ url_for('routes_bp.uploads', filename=solicitacao.foto_path | basename) }}"
-                        target="_blank" class="btn btn-sm btn-outline-primary">
-                        <i class="bi bi-file-earmark-pdf"></i> Visualizar PDF
-                    </a>
+                <p>
+                    {% if modo_grupo %}
+                    Agrupamento por aplicação: {{ solicitacoes_grupo[0].aplicacao or
+                    solicitacoes_grupo[0].material.Aplicacao or 'Sem Aplicação' }}
                     {% else %}
-                    <span class="text-muted">Sem foto válida</span>
+                    Adicione múltiplos materiais em cada cotação de fornecedor
                     {% endif %}
-                    {% else %}
-                    <span class="text-muted">Sem foto</span>
-                    {% endif %}
-                </span>
+                </p>
             </div>
+            <a href="{{ url_for('routes_bp.listar_solicitacoes_comprador') }}" class="btn btn-light btn-sm">
+                <i class="bi bi-arrow-left"></i> Voltar
+            </a>
         </div>
+    </div>
 
-        <form method="POST" action="{{ url_for('routes_bp.preencher_solicitacao', id=solicitacao.id) }}"
-            enctype="multipart/form-data" id="cotacoes-form">
-            <input type="hidden" name="prioridade" value="{{ solicitacao.prioridade }}">
+    <form method="POST"
+        action="{{ url_for('routes_bp.preencher_solicitacao', id=solicitacao.id) }}{% if grupo_ids %}?grupo_ids={{ grupo_ids }}{% endif %}"
+        enctype="multipart/form-data" id="cotacoes-form">
+        {% if grupo_ids %}
+        <input type="hidden" name="grupo_ids" value="{{ grupo_ids }}">
+        {% endif %}
 
-            {% if cotacoes_salvas %}
-            <div class="form-section">
-                <h4 class="form-section-title"><i class="bi bi-save"></i> Cotações Salvas Anteriormente (Rascunhos)</h4>
-                <div class="alert alert-info">
-                    <i class="bi bi-info-circle"></i> Você tem {{ cotacoes_salvas|length }} cotação(ões) salva(s) como
-                    rascunho. Elas serão carregadas e podem ser editadas.
+        <!-- Campo oculto para JSON de materiais -->
+        <input type="hidden" name="materiais_json" id="materiais_json">
+
+        <div class="main-container">
+            <!-- Coluna esquerda -->
+            <div class="left-column">
+                <div>
+                    <h2>INFORMAÇÕES DO GRUPO</h2>
+                    <table class="info-pedido">
+                        <tr>
+                            <td class="label">Total Solicitações:</td>
+                            <td class="value">{{ solicitacoes_grupo|length if modo_grupo else 1 }}</td>
+                        </tr>
+                        <tr>
+                            <td class="label">Aplicação:</td>
+                            <td class="value">{{ solicitacoes_grupo[0].aplicacao or
+                                solicitacoes_grupo[0].material.Aplicacao or 'Sem Aplicação' if modo_grupo else
+                                solicitacao.aplicacao or solicitacao.material.Aplicacao or '-' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="label">Empresa:</td>
+                            <td class="value">{{ solicitacoes_grupo[0].empresa if modo_grupo else solicitacao.empresa }}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="label">Prioridade:</td>
+                            <td class="value">{{ solicitacoes_grupo[0].prioridade if modo_grupo else
+                                solicitacao.prioridade }}</td>
+                        </tr>
+                    </table>
+
+                    <h2 style="margin-top: 15px;">MATERIAIS DO GRUPO</h2>
+                    <div class="mini-table-container">
+                        <table class="mini-table">
+                            <thead>
+                                <tr>
+                                    <th class="qtd">Qtd</th>
+                                    <th>Descrição</th>
+                                    <th class="ativo">ID</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for sol in (solicitacoes_grupo if modo_grupo else [solicitacao]) %}
+                                <tr>
+                                    <td class="qtd">{{ sol.quantidade }} {{ sol.unidade_medida | default('un', true) }}
+                                    </td>
+                                    <td class="desc" title="{{ sol.material.DescricaoMaterial }}">
+                                        {{ sol.material.DescricaoMaterial|truncate(38, true, '...') }}
+                                    </td>
+                                    <td class="ativo">#{{ sol.id }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-            </div>
-            {% endif %}
 
-            <div class="form-section">
-                <h4 class="form-section-title"><i class="bi bi-clipboard2-check"></i> Cotações de Fornecedores</h4>
-                <div class="cotacoes-wrapper" id="cotacoes-container">
-                    {% for cotacao in cotacoes_salvas %}
-                    {% set index = loop.index %}
-                    <div class="cotacao-container" id="cotacao-{{ index }}">
-                        <div class="cotacao-header">
-                            <h5 class="mb-0"><i class="bi bi-shop"></i> Cotação {{ index }} (Rascunho)</h5>
-                            <button type="button" class="remove-cotacao" title="Remover cotação">
-                                <i class="bi bi-x-lg"></i>
-                            </button>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Fornecedor *</label>
-                            <div class="fornecedor-selecionado" id="fornecedor-selecionado-{{ index }}"
-                                style="{% if not cotacao.fornecedor_nome_fantasia %}display: none;{% endif %}">
-                                <div class="d-flex align-items-center">
-                                    <i class="bi bi-building text-success me-2"></i>
-                                    <div>
-                                        <strong class="d-block" id="fornecedor-nome-{{ index }}">{{
-                                            cotacao.fornecedor_nome_fantasia | default('') }}</strong>
-                                        <small class="text-muted" id="fornecedor-cnpj-{{ index }}">CNPJ: {{
-                                            cotacao.fornecedor_cnpj | default('') }}</small>
+                <div class="destaque-section">
+                    <h2>DESTAQUE</h2>
+                    <table class="destaque-table">
+                        <thead>
+                            <tr>
+                                <th>Quant.</th>
+                                <th>Produto</th>
+                                <th>Ativo</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <div class="checkbox-duo">
+                                        <div class="checkbox-item"><input type="checkbox">Programado</div>
+                                        <div class="checkbox-item"><input type="checkbox" {{ 'checked' if
+                                                solicitacao.prioridade=='Urgente' else '' }}>Urgente</div>
                                     </div>
-                                </div>
-                            </div>
-                            <select class="form-select fornecedor-select" id="fornecedor_{{ index }}"
-                                name="fornecedor[]" required>
-                                <option value="">Selecione um fornecedor</option>
-                            </select>
-                            <input type="hidden" id="fornecedor_id_{{ index }}" name="fornecedor_id[]"
-                                value="{{ cotacao.fornecedor_id | default('') }}">
-                            <input type="hidden" name="preenchimento_id[]" value="{{ cotacao.id }}">
-                            <div class="form-text mt-2">
-                                <i class="bi bi-info-circle"></i> Selecione um fornecedor ou digite para buscar por nome
-                                fantasia ou CNPJ.
-                            </div>
-                        </div>
+                                </td>
+                                <td>
+                                    <div class="checkbox-duo">
+                                        <div class="checkbox-item"><input type="checkbox">Nota fiscal</div>
+                                        <div class="checkbox-item"><input type="checkbox">Sem nota</div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="entrega-group">
+                                        <span>Entrega do produto</span>
+                                        <div class="entrega-options">
+                                            <div><input type="radio" name="entrega">Sim</div>
+                                            <div><input type="radio" name="entrega">Não</div>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
 
-                        <div class="row g-3">
-                            <div class="col-12">
-                                <label for="valor_unitario_{{ index }}" class="form-label">Valor Unitário (R$) *</label>
-                                <div class="input-group">
-                                    <span class="input-group-text">R$</span>
-                                    <input type="text" class="form-control valor-unitario"
-                                        id="valor_unitario_{{ index }}" name="valor_unitario[]" placeholder="0,00"
-                                        required
-                                        value="{{ '{:.10f}'.format(cotacao.valor_unitario) | replace('.', ',') if cotacao.valor_unitario else '' }}">
-                                </div>
-                                <div class="error-message" id="unitario-error-{{ index }}"></div>
+                    <div class="forma-pagamento">
+                        <strong>Forma de pagamento</strong>
+                        <div class="pagamento-options">
+                            {% for fp in ['PA','Boleto','PIX','Dinheiro'] %}
+                            <div class="pagamento-item">
+                                <input type="radio" name="pagamento"> {{ fp }}
                             </div>
-
-                            <div class="col-12">
-                                <label for="valor_frete_{{ index }}" class="form-label">Valor do Frete (R$)</label>
-                                <div class="input-group">
-                                    <span class="input-group-text">R$</span>
-                                    <input type="text" class="form-control valor-frete" id="valor_frete_{{ index }}"
-                                        name="valor_frete[]" placeholder="0,00"
-                                        value="{{ '{:.10f}'.format(cotacao.valor_frete) | replace('.', ',') if cotacao.valor_frete else '' }}">
-                                </div>
-                                <div class="error-message" id="frete-error-{{ index }}"></div>
-                            </div>
-
-                            <div class="col-12">
-                                <label for="valor_total_{{ index }}" class="form-label">Valor Total (R$)</label>
-                                <div class="input-group">
-                                    <span class="input-group-text">R$</span>
-                                    <input type="text" class="form-control calculated-field"
-                                        id="valor_total_{{ index }}" name="valor_total[]" readonly
-                                        value="{{ '{:.10f}'.format(cotacao.valor_total) | replace('.', ',') if cotacao.valor_total else '' }}">
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row g-3 mt-2">
-                            <div class="col-12">
-                                <label for="prazo_entrega_{{ index }}" class="form-label">Prazo de Entrega *</label>
-                                <input type="text" class="form-control" id="prazo_entrega_{{ index }}"
-                                    name="prazo_entrega[]" placeholder="Ex.: 10 dias úteis" required
-                                    value="{{ cotacao.prazo_entrega }}">
-                            </div>
-
-                            <div class="col-12">
-                                <label for="condicao_pagamento_{{ index }}" class="form-label">Condição de Pagamento
-                                    *</label>
-                                <input type="text" class="form-control" id="condicao_pagamento_{{ index }}"
-                                    name="condicao_pagamento[]" placeholder="Ex.: 30 dias" required
-                                    value="{{ cotacao.condicao_pagamento }}">
-                            </div>
-                        </div>
-
-                        <div class="mt-3">
-                            <label for="pdf_file_{{ index }}" class="form-label">Anexar PDF da Cotação</label>
-                            <input type="file" class="form-control" id="pdf_file_{{ index }}"
-                                name="pdf_file_{{ index }}" accept=".pdf">
-                            <div class="form-text">Anexe o arquivo PDF com a cotação formal do fornecedor</div>
-                            {% if cotacao.pdf_path %}
-                            <div class="mt-2">
-                                <a href="{{ url_for('routes_bp.uploads', filename=cotacao.pdf_path | basename) }}"
-                                    target="_blank" class="btn btn-sm btn-outline-primary">
-                                    <i class="bi bi-file-earmark-pdf"></i> Visualizar PDF Salvo
-                                </a>
-                            </div>
-                            {% endif %}
-                        </div>
-
-                        <div class="mt-3">
-                            <label for="observacao_{{ index }}" class="form-label">Observações</label>
-                            <textarea class="form-control" id="observacao_{{ index }}" name="observacao[]" rows="3"
-                                placeholder="Protocolo, Links, informações adicionais, observações sobre a cotação...">{{ cotacao.observacoes | default('') }}</textarea>
-                            <div class="form-text">Informações adicionais sobre esta cotação (links, observações,
-                                etc.)</div>
+                            {% endfor %}
                         </div>
                     </div>
-                    {% else %}
-                    <div class="cotacao-container" id="cotacao-1">
-                        <div class="cotacao-header">
-                            <h5 class="mb-0"><i class="bi bi-shop"></i> Cotação 1</h5>
-                            <button type="button" class="remove-cotacao" title="Remover cotação">
-                                <i class="bi bi-x-lg"></i>
+
+                    <div class="justificativa">
+                        <strong>Justificativa</strong>
+                        <textarea readonly>
+{%- if modo_grupo -%}
+Grupo de {{ solicitacoes_grupo|length }} solicitações para {{ solicitacoes_grupo[0].aplicacao or solicitacoes_grupo[0].material.Aplicacao or 'aplicação' }}
+{%- else -%}
+{{ solicitacao.especificacao or 'Sem especificações adicionais' }}
+{%- endif -%}
+                        </textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Coluna direita - Cotações -->
+            <div class="right-column cotacoes-container">
+                <!-- Container das cotações dinâmicas -->
+                <div id="cotacoes-dinamicas" class="cotacoes-dinamicas">
+                    <!-- Cotações salvas + primeira vazia -->
+                    {% set total_cotacoes = cotacoes_salvas|length if cotacoes_salvas else 1 %}
+                    {% for i in range(total_cotacoes) %}
+                    {% set cotacao_num = loop.index %}
+                    {% set cotacao = cotacoes_salvas[i] if cotacoes_salvas and i < cotacoes_salvas|length else None %}
+                    
+                    <div class="cotacao-card" id="cotacao-{{ cotacao_num }}">
+                        <button type="button" class="btn-remove-cotacao" onclick="removerCotacao({{ cotacao_num }})" 
+                                id="btn-remove-{{ cotacao_num }}"
+                                style="display: {% if cotacao_num == 1 and total_cotacoes <= 1 %}none{% else %}block{% endif %};">
+                            <i class="bi bi-x"></i>
+                        </button>
+
+                        <div class="fornecedor-info">
+                            <div><strong>Nome:</strong> <span id="fornecedor-nome-display-{{ cotacao_num }}">
+                                {{ cotacao.fornecedor_nome_fantasia if cotacao else '' }}</span></div>
+                            <div><strong>CNPJ:</strong> <span id="fornecedor-cnpj-display-{{ cotacao_num }}">
+                                {{ cotacao.fornecedor_cnpj if cotacao else '' }}</span></div>
+                            <div><strong>Telefone:</strong> <span id="fornecedor-telefone-display-{{ cotacao_num }}">
+                                {{ cotacao.fornecedor_telefone if cotacao else '' }}</span></div>
+                            <div><strong>Endereço:</strong> <span id="fornecedor-endereco-display-{{ cotacao_num }}">
+                                {{ cotacao.fornecedor_endereco if cotacao else '' }}</span></div>
+                        </div>
+
+                        <!-- Seleção de Fornecedor -->
+                        <div class="cotacao-form">
+                            <div class="form-group">
+                                <label class="form-label">Fornecedor *</label>
+                                <select class="form-select fornecedor-select" id="fornecedor_{{ cotacao_num }}" name="fornecedor[]">
+                                    <option value="">Selecione um fornecedor</option>
+                                </select>
+                                <input type="hidden" id="fornecedor_id_{{ cotacao_num }}" name="fornecedor_id[]"
+                                    value="{{ cotacao.fornecedor_id if cotacao else '' }}">
+                                <input type="hidden" name="preenchimento_id[]" value="{{ cotacao.id if cotacao else '' }}">
+                            </div>
+                        </div>
+
+                        <!-- Tabela de Materiais -->
+                        <div class="materiais-container" id="materiais-container-{{ cotacao_num }}" 
+                             style="display: {% if cotacao %}block{% else %}none{% endif %};">
+                            <table class="materiais-table" id="materiais-table-{{ cotacao_num }}">
+                                <thead>
+                                    <tr>
+                                        <th class="descricao">Descrição</th>
+                                        <th class="quantidade">Qtd</th>
+                                        <th class="unidade">Unidade</th>
+                                        <th class="unitario">Unitário (R$)</th>
+                                        <th class="total">Total (R$)</th>
+                                        <th class="acoes">ID</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="materiais-body-{{ cotacao_num }}">
+                                    <!-- Linhas de materiais serão adicionadas aqui via JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Botões de Materiais -->
+                        {% if not modo_grupo %}
+                        <div id="botoes-materiais-{{ cotacao_num }}" 
+                             style="display: {% if cotacao %}block{% else %}none{% endif %};">
+                            <button type="button" class="btn-add-all" onclick="adicionarTodosMateriais({{ cotacao_num }})">
+                                <i class="bi bi-list-check"></i> Adicionar Todos os Materiais
                             </button>
                         </div>
+                        {% endif %}
 
-                        <div class="mb-3">
-                            <label for="fornecedor_1" class="form-label">Fornecedor *</label>
-                            <div class="fornecedor-selecionado" id="fornecedor-selecionado-1" style="display: none;">
-                                <div class="d-flex align-items-center">
-                                    <i class="bi bi-building text-success me-2"></i>
-                                    <div>
-                                        <strong class="d-block" id="fornecedor-nome-1"></strong>
-                                        <small class="text-muted" id="fornecedor-cnpj-1">CNPJ: </small>
-                                    </div>
-                                </div>
-                            </div>
-                            <select class="form-select fornecedor-select" id="fornecedor_1" name="fornecedor[]"
-                                required>
-                                <option value="">Selecione um fornecedor</option>
-                            </select>
-                            <input type="hidden" id="fornecedor_id_1" name="fornecedor_id[]">
-                            <div class="form-text mt-2">
-                                <i class="bi bi-info-circle"></i> Selecione um fornecedor ou digite para buscar por nome
-                                fantasia ou CNPJ.
-                            </div>
-                        </div>
-
-                        <div class="row g-3">
-                            <div class="col-12">
-                                <label for="valor_unitario_1" class="form-label">Valor Unitário (R$) *</label>
-                                <div class="input-group">
+                        <!-- Informações Gerais da Cotação -->
+                        <div class="cotacao-form mt-3">
+                            <div class="form-group">
+                                <label class="form-label">Valor do Frete (R$)</label>
+                                <div class="input-group valor-input">
                                     <span class="input-group-text">R$</span>
-                                    <input type="text" class="form-control valor-unitario" id="valor_unitario_1"
-                                        name="valor_unitario[]" placeholder="0,00" required>
-                                </div>
-                                <div class="error-message" id="unitario-error-1"></div>
-                            </div>
-
-                            <div class="col-12">
-                                <label for="valor_frete_1" class="form-label">Valor do Frete (R$)</label>
-                                <div class="input-group">
-                                    <span class="input-group-text">R$</span>
-                                    <input type="text" class="form-control valor-frete" id="valor_frete_1"
-                                        name="valor_frete[]" placeholder="0,00">
-                                </div>
-                                <div class="error-message" id="frete-error-1"></div>
-                            </div>
-
-                            <div class="col-12">
-                                <label for="valor_total_1" class="form-label">Valor Total (R$)</label>
-                                <div class="input-group">
-                                    <span class="input-group-text">R$</span>
-                                    <input type="text" class="form-control calculated-field" id="valor_total_1"
-                                        name="valor_total[]" readonly>
+                                    <input type="text" class="form-control valor-frete" id="valor_frete_{{ cotacao_num }}"
+                                        name="valor_frete[]" placeholder="0,00"
+                                        value="{{ '{:.2f}'.format(cotacao.valor_frete) | replace('.', ',') if cotacao and cotacao.valor_frete else '' }}">
                                 </div>
                             </div>
-                        </div>
 
-                        <div class="row g-3 mt-2">
-                            <div class="col-12">
-                                <label for="prazo_entrega_1" class="form-label">Prazo de Entrega *</label>
-                                <input type="text" class="form-control" id="prazo_entrega_1" name="prazo_entrega[]"
-                                    placeholder="Ex.: 10 dias úteis" required>
+                            <div class="form-group">
+                                <label class="form-label">Prazo de Entrega</label>
+                                <input type="text" class="form-control" id="prazo_entrega_{{ cotacao_num }}" 
+                                       name="prazo_entrega[]" placeholder="Ex.: 10 dias úteis"
+                                       value="{{ cotacao.prazo_entrega if cotacao else '' }}">
                             </div>
 
-                            <div class="col-12">
-                                <label for="condicao_pagamento_1" class="form-label">Condição de Pagamento *</label>
-                                <input type="text" class="form-control" id="condicao_pagamento_1"
-                                    name="condicao_pagamento[]" placeholder="Ex.: 30 dias" required>
+                            <div class="form-group">
+                                <label class="form-label">Condição de Pagamento</label>
+                                <input type="text" class="form-control" id="condicao_pagamento_{{ cotacao_num }}"
+                                    name="condicao_pagamento[]" placeholder="Ex.: 30 dias"
+                                    value="{{ cotacao.condicao_pagamento if cotacao else '' }}">
+                            </div>
+
+                            <!-- PDF -->
+                            <div class="form-group">
+                                <label class="form-label">Anexar PDF da Cotação</label>
+                                <input type="file" class="form-control" id="pdf_file_{{ cotacao_num }}" 
+                                       name="pdf_file[]" accept=".pdf">
+                                {% if cotacao and cotacao.pdf_path %}
+                                <div class="mt-1">
+                                    <a href="{{ url_for('routes_bp.uploads', filename=cotacao.pdf_path | basename) }}"
+                                        target="_blank" class="btn btn-sm btn-outline-primary" style="font-size: 8px;">
+                                        <i class="bi bi-file-earmark-pdf"></i> PDF Salvo
+                                    </a>
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Observações -->
+                            <div class="form-group">
+                                <label class="form-label">Observações</label>
+                                <textarea class="form-control" id="observacao_{{ cotacao_num }}" name="observacao[]" 
+                                          rows="2" placeholder="Informações adicionais...">{{ cotacao.observacoes if cotacao else '' }}</textarea>
                             </div>
                         </div>
 
-                        <div class="mt-3">
-                            <label for="pdf_file_1" class="form-label">Anexar PDF da Cotação</label>
-                            <input type="file" class="form-control" id="pdf_file_1" name="pdf_file_1" accept=".pdf">
-                            <div class="form-text">Anexe o arquivo PDF com a cotação formal do fornecedor</div>
+                        <!-- Total da Cotação -->
+                        <div class="total-fornecedor">
+                            <div class="total-line"><span>Total Produtos:</span><span class="total-produtos"
+                                    id="total-produtos-{{ cotacao_num }}">R$ 0,00</span></div>
+                            <div class="total-line frete-line"><span>Frete:</span><span class="total-frete"
+                                    id="total-frete-display-{{ cotacao_num }}">R$ 0,00</span></div>
+                            <div class="total-geral-fornecedor" id="total-geral-fornecedor-{{ cotacao_num }}">Total Geral: R$ 0,00</div>
                         </div>
 
-                        <div class="mt-3">
-                            <label for="observacao_1" class="form-label">Observações</label>
-                            <textarea class="form-control" id="observacao_1" name="observacao[]" rows="3"
-                                placeholder="Protocolo, Links, informações adicionais, observações sobre a cotação..."></textarea>
-                            <div class="form-text">Informações adicionais sobre esta cotação (links, observações,
-                                etc.)</div>
-                        </div>
+                        <!-- Campo oculto para dados dos materiais salvos -->
+                        <input type="hidden" id="materiais_salvos_{{ cotacao_num }}" 
+                               value="{{ cotacao.materiais | tojson | safe }}">
                     </div>
                     {% endfor %}
                 </div>
-            </div>
 
-            <div class="d-flex justify-content-between flex-wrap gap-2">
-                <button type="button" class="btn btn-outline-primary" id="add-cotacao">
-                    <i class="bi bi-plus-circle"></i> Adicionar Cotação
-                </button>
+                <!-- Botão para adicionar nova cotação -->
+                <div class="add-cotacao-container">
+                    <button type="button" class="btn-add-cotacao" onclick="adicionarNovaCotacao()">
+                        <i class="bi bi-plus-circle"></i> Adicionar Nova Cotação
+                    </button>
+                </div>
 
-                <div class="d-flex gap-2">
-                    <button type="submit" name="action" value="salvar_rascunho" class="btn btn-warning">
+                <!-- Botões de ação -->
+                <div class="action-buttons">
+                    <button type="submit" name="salvar_rascunho" value="salvar_rascunho" class="btn btn-warning">
                         <i class="bi bi-save"></i> Salvar Rascunho
                     </button>
-                    <button type="submit" name="action" value="salvar_finalizar" class="btn btn-success">
+                    <button type="submit" name="salvar_finalizar" value="salvar_finalizar" class="btn btn-success">
                         <i class="bi bi-check-circle"></i> Finalizar e Enviar para Aprovação
                     </button>
                 </div>
             </div>
-        </form>
-
-        {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-        {% for category, message in messages %}
-        <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show mt-4 alert-flash"
-            role="alert">
-            <i class="bi bi-{{ 'check-circle' if category == 'success' else 'exclamation-triangle' }}"></i>
-            {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
-        {% endfor %}
-        {% endif %}
-        {% endwith %}
+    </form>
+
+    <div class="footer">
+        <div>Assinaturas:</div>
+        <div class="assinaturas">
+            <div class="assinatura">
+                <div class="linha-assinatura">____________________________</div>
+                <p>Comprador</p>
+            </div>
+            <div class="assinatura">
+                <div class="linha-assinatura">____________________________</div>
+                <p>Aprovação</p>
+            </div>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+    <!-- JavaScript COMPLETO E CORRIGIDO -->
     <script>
-        $(document).ready(function () {
-            function initializeSelect2(selector, idInputSelector, preSelectedId = null, preSelectedText = null, index, preSelectedNome = null, preSelectedCNPJ = null) {
-                const select = $(selector).select2({
-                    placeholder: 'Digite o nome fantasia ou CNPJ do fornecedor',
-                    allowClear: true,
-                    minimumInputLength: 3,
-                    ajax: {
-                        url: '{{ url_for("routes_bp.search_fornecedores") }}',
-                        dataType: 'json',
-                        delay: 250,
-                        data: function (params) {
-                            return { q: params.term };
-                        },
-                        processResults: function (data) {
-                            return {
-                                results: data.map(function (fornecedor) {
-                                    return {
-                                        id: fornecedor.id,
-                                        text: `${fornecedor.nome_fantasia} - CNPJ: ${formatCNPJ(fornecedor.cnpj)}`,
-                                        nome_fantasia: fornecedor.nome_fantasia,
-                                        cnpj: fornecedor.cnpj
-                                    };
-                                })
-                            };
-                        },
-                        cache: true
-                    }
-                }).on('select2:select', function (e) {
-                    $(idInputSelector).val(e.params.data.id);
-                    $(`#fornecedor-selecionado-${index}`).show();
-                    $(`#fornecedor-nome-${index}`).text(e.params.data.nome_fantasia);
-                    $(`#fornecedor-cnpj-${index}`).text(`CNPJ: ${formatCNPJ(e.params.data.cnpj)}`);
-                }).on('select2:clear', function () {
-                    $(idInputSelector).val('');
-                    $(`#fornecedor-selecionado-${index}`).hide();
-                    $(`#fornecedor-nome-${index}`).text('');
-                    $(`#fornecedor-cnpj-${index}`).text('CNPJ: ');
-                });
+        // Variável global para contar cotações
+        let contadorCotacoes = {{ cotacoes_salvas|length if cotacoes_salvas else 1 }};
+        const MAX_COTACOES = 5;
 
-                // Inicializar fornecedor pré-selecionado para cotações salvas
-                if (preSelectedId && preSelectedText && preSelectedNome && preSelectedCNPJ) {
-                    const newOption = new Option(preSelectedText, preSelectedId, true, true);
-                    select.append(newOption).trigger('change');
-                    $(`#fornecedor-selecionado-${index}`).show();
-                    $(`#fornecedor-nome-${index}`).text(preSelectedNome);
-                    $(`#fornecedor-cnpj-${index}`).text(`CNPJ: ${formatCNPJ(preSelectedCNPJ)}`);
-                }
+        // Dados dos materiais - CORRIGIDO com escape de aspas
+        const materiaisSolicitacao = [
+            {% if modo_grupo %}
+            {% for sol in solicitacoes_grupo %}
+            {
+                id: {{ sol.id }},
+                descricao: `{{ sol.material.DescricaoMaterial | replace("'", "\\'") | replace('"', '\\"') }}`,
+                quantidade: {{ sol.quantidade }},
+                unidade: "{{ sol.unidade_medida | default('un') }}",
+                especificacao: `{{ sol.especificacao or '' | replace("'", "\\'") | replace('"', '\\"') }}`
+            }{% if not loop.last %},{% endif %}
+            {% endfor %}
+            {% else %}
+            {
+                id: {{ solicitacao.id }},
+                descricao: `{{ solicitacao.material.DescricaoMaterial | replace("'", "\\'") | replace('"', '\\"') }}`,
+                quantidade: {{ solicitacao.quantidade }},
+                unidade: "{{ solicitacao.unidade_medida | default('un') }}",
+                especificacao: `{{ solicitacao.especificacao or '' | replace("'", "\\'") | replace('"', '\\"') }}`
             }
+            {% endif %}
+        ];
 
-            function formatCNPJ(cnpj) {
-                if (!cnpj) return '';
-                return cnpj.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5");
-            }
-
-            function formatCurrency(value, decimalPlaces = 10) {
-                if (!value || isNaN(value)) return '0,00';
-
-                // Usar toLocaleString para formatação correta
-                return value.toLocaleString('pt-BR', {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: decimalPlaces
-                });
-            }
-
-            function parseCurrency(value) {
-                if (!value) return 0;
-
-                // Remove todos os pontos de milhar e substitui vírgula por ponto
-                const cleanValue = value.toString().replace(/\./g, '').replace(',', '.');
-                const parsed = parseFloat(cleanValue);
-
-                console.log('Valor original:', value, 'Valor limpo:', cleanValue, 'Parsed:', parsed);
-
-                return isNaN(parsed) ? 0 : parsed;
-            }
-
-            function validateCurrency(value) {
-                if (!value) return true;
-
-                // Permite números com QUALQUER quantidade de casas decimais
-                // Formato: 1.234,567890123456789 (qualquer número de casas decimais)
-                return /^\d{1,3}(\.\d{3})*,\d+$|^\d+,\d+$/.test(value) ||
-                    /^\d{1,3}(\.\d{3})*$|^\d+$/.test(value); // Também permite números sem decimais
-            }
-
-            function calculateTotal(cotacaoId) {
-                const quantidadeText = $('#quantidade-material').text();
-
-                // Parse correto da quantidade (remove pontos de milhar se houver)
-                const quantidade = parseFloat(quantidadeText.replace(/\./g, '').replace(',', '.'));
-
-                // Parse correto dos valores monetários
-                const unitario = parseCurrency($(`#valor_unitario_${cotacaoId}`).val()) || 0;
-                const frete = parseCurrency($(`#valor_frete_${cotacaoId}`).val()) || 0;
-
-                console.log('Quantidade:', quantidade);
-                console.log('Unitário:', unitario);
-                console.log('Frete:', frete);
-
-                // Cálculo correto
-                const total = (unitario * quantidade) + frete;
-
-                console.log('Total calculado:', total);
-
-                // Formatar o total
-                $(`#valor_total_${cotacaoId}`).val(formatCurrency(total, 10));
-            }
-
-            function setupCurrencyInput(input, errorElementId) {
-                input.on('blur', function () {
-                    let value = $(this).val().replace(/[^\d,]/g, '');
-
-                    // Se não tem vírgula, adiciona ,00 para manter consistência
-                    if (value && !value.includes(',')) {
-                        value += ',00';
-                    }
-
-                    // Se tem vírgula mas nada depois, adiciona 00
-                    if (value.endsWith(',')) {
-                        value += '00';
-                    }
-
-                    // Formata milhares apenas se necessário
-                    if (value.includes(',')) {
-                        const parts = value.split(',');
-                        const integerPart = parts[0];
-                        const decimalPart = parts[1];
-
-                        // Formata a parte inteira com separadores de milhar
-                        if (integerPart.length > 3) {
-                            const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-                            value = formattedInteger + ',' + decimalPart;
-                        }
-
-                        $(this).val(value);
-
-                        // Validação mais permissiva
-                        if (!validateCurrency(value)) {
-                            $(`#${errorElementId}`).text('Formato inválido. Use: 1.234,567890 (qualquer número de casas decimais)');
-                            $(this).addClass('is-invalid');
-                        } else {
-                            $(`#${errorElementId}`).text('');
-                            $(this).removeClass('is-invalid');
-                        }
-                    }
-                });
-
-                input.on('keypress', function (e) {
-                    const char = String.fromCharCode(e.which);
-                    const currentValue = $(this).val();
-
-                    // Permite números, vírgula e ponto (para separação de milhares)
-                    if (!/[0-9,.]/.test(char)) {
-                        e.preventDefault();
-                        return;
-                    }
-
-                    // Permite apenas uma vírgula para decimais
-                    if (char === ',' && currentValue.indexOf(',') > -1) {
-                        e.preventDefault();
-                        return;
-                    }
-
-                    // Permite ponto apenas antes da vírgula (para milhares)
-                    if (char === '.' && currentValue.indexOf(',') > -1) {
-                        e.preventDefault();
-                    }
-                });
-
-                // Permite backspace, delete, tab, etc.
-                input.on('keydown', function (e) {
-                    if ([8, 9, 13, 27, 46].indexOf(e.keyCode) !== -1 ||
-                        (e.keyCode === 65 && e.ctrlKey === true) ||
-                        (e.keyCode >= 35 && e.keyCode <= 39)) {
-                        return;
-                    }
-                });
-
-                // Também valida em tempo real durante a digitação
-                input.on('input', function () {
-                    const value = $(this).val();
-                    if (value && !validateCurrency(value)) {
-                        $(`#${errorElementId}`).text('Formato inválido. Use: 1.234,567890 (qualquer número de casas decimais)');
-                        $(this).addClass('is-invalid');
-                    } else {
-                        $(`#${errorElementId}`).text('');
-                        $(this).removeClass('is-invalid');
-                    }
-                });
-            }
-
-            {% for cotacao in cotacoes_salvas %}
-            {% set index = loop.index %}
-            {% if cotacao.fornecedor_id and cotacao.fornecedor_nome_fantasia %}
-            initializeSelect2('#fornecedor_{{ index }}', '#fornecedor_id_{{ index }}', {{ cotacao.fornecedor_id }},
-            '{{ cotacao.fornecedor_nome_fantasia }} - CNPJ: {{ cotacao.fornecedor_cnpj }}', {{ index }},
-            '{{ cotacao.fornecedor_nome_fantasia }}', '{{ cotacao.fornecedor_cnpj }}');
-        {% else %}
-        initializeSelect2('#fornecedor_{{ index }}', '#fornecedor_id_{{ index }}', null, null, {{ index }}, null, null);
-        {% endif %}
-        setupCurrencyInput($('#valor_unitario_{{ index }}'), 'unitario-error-{{ index }}');
-        setupCurrencyInput($('#valor_frete_{{ index }}'), 'frete-error-{{ index }}');
-        $('#valor_unitario_{{ index }}, #valor_frete_{{ index }}').on('blur', function () {
-            calculateTotal({{ index }});
+        // FUNÇÃO para formatar número para exibição (Brasil: 1.234,56)
+        function formatarNumero(numero) {
+            if (isNaN(numero)) numero = 0;
+            return numero.toLocaleString('pt-BR', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
             });
-        {% endfor %}
+        }
 
-        {% if not cotacoes_salvas %}
-        initializeSelect2('#fornecedor_1', '#fornecedor_id_1', null, null, 1, null, null);
-        setupCurrencyInput($('#valor_unitario_1'), 'unitario-error-1');
-        setupCurrencyInput($('#valor_frete_1'), 'frete-error-1');
-        $('#valor_unitario_1, #valor_frete_1').on('blur', function () {
-            calculateTotal(1);
-        });
-        {% endif %}
+        // FUNÇÃO para formatar número para envio (Python: 1234.56)
+        function formatarNumeroParaEnvio(numero) {
+            // Se for string, converte para número
+            if (typeof numero === 'string') {
+                // Remove símbolos e espaços
+                let limpo = numero.toString().replace(/[^\d,.-]/g, '');
 
-        let cotacaoCount = {{ cotacoes_salvas| length or 1 }};
-        const maxCotações = 9;
+                // Se tiver vírgula como separador decimal
+                if (limpo.includes(',')) {
+                    // Remove pontos (separadores de milhar)
+                    limpo = limpo.replace(/\./g, '');
+                    // Substitui vírgula por ponto
+                    limpo = limpo.replace(',', '.');
+                }
 
-        $('#add-cotacao').click(function () {
-            if (cotacaoCount >= maxCotações) {
-                alert('Limite de 9 cotações atingido.');
+                // Converte para número
+                const resultado = parseFloat(limpo);
+                return isNaN(resultado) ? 0 : resultado;
+            }
+
+            // Se já for número, retorna como está
+            return numero;
+        }
+
+        // FUNÇÃO para aplicar máscara monetária em um input
+        function aplicarMascaraMonetaria(input) {
+            let valor = input.val();
+
+            // Remove tudo que não é número
+            valor = valor.replace(/\D/g, '');
+
+            // Se estiver vazio, define como 0
+            if (valor === '') {
+                input.val('');
+                return '0';
+            }
+
+            // Converte para número (considerando centavos)
+            const numero = parseInt(valor) / 100;
+
+            // Formata para exibição
+            const formatado = formatarNumero(numero);
+            input.val(formatado);
+
+            return numero.toString();
+        }
+
+        // FUNÇÃO para gerar JSON de materiais por cotação
+        function gerarJsonMateriais() {
+            const materiaisPorCotacao = {};
+
+            // Para cada cotação
+            $('.cotacao-card').each(function () {
+                const cotacaoId = $(this).attr('id').replace('cotacao-', '');
+                const fornecedorId = $('#fornecedor_id_' + cotacaoId).val();
+
+                if (!fornecedorId) return; // Ignora cotações sem fornecedor
+
+                materiaisPorCotacao[cotacaoId] = [];
+
+                // Para cada material na cotação
+                $('#materiais-body-' + cotacaoId + ' tr').each(function (index) {
+                    const solicitacaoId = $(this).find('input[name^="solicitacao_id"]').val();
+                    const unitario = $(this).find('.material-unitario').val();
+                    const totalText = $(this).find('.material-total-display').val();
+
+                    if (solicitacaoId && unitario) {
+                        materiaisPorCotacao[cotacaoId].push({
+                            solicitacao_id: parseInt(solicitacaoId),
+                            unitario: formatarNumeroParaEnvio(unitario),
+                            total: formatarNumeroParaEnvio(totalText)
+                        });
+                    }
+                });
+            });
+
+            return JSON.stringify(materiaisPorCotacao);
+        }
+
+        // Função para adicionar nova cotação
+        function adicionarNovaCotacao() {
+            console.log('Clicou no botão para adicionar nova cotação!');
+
+            // Contar cotações atuais
+            const cotacoesAtuais = $('.cotacao-card').length;
+            console.log('Cotações atuais:', cotacoesAtuais);
+
+            if (cotacoesAtuais >= MAX_COTACOES) {
+                alert(`Limite máximo de ${MAX_COTACOES} cotações atingido.`);
                 return;
             }
 
-            cotacaoCount++;
-            const container = document.getElementById('cotacoes-container');
-            const newCotacao = document.createElement('div');
-            newCotacao.className = 'cotacao-container';
-            newCotacao.id = `cotacao-${cotacaoCount}`;
-            newCotacao.innerHTML = `
-                    <div class="cotacao-header">
-                        <h5 class="mb-0"><i class="bi bi-shop"></i> Cotação ${cotacaoCount}</h5>
-                        <button type="button" class="remove-cotacao" title="Remover cotação">
-                            <i class="bi bi-x-lg"></i>
+            // Calcular próximo ID
+            const novoId = cotacoesAtuais + 1;
+            console.log('Novo ID da cotação:', novoId);
+
+            // Criar HTML da nova cotação
+            const novaCotacaoHTML = `
+                <div class="cotacao-card" id="cotacao-${novoId}">
+                    <button type="button" class="btn-remove-cotacao" onclick="removerCotacao(${novoId})">
+                        <i class="bi bi-x"></i>
+                    </button>
+                    
+                    <div class="fornecedor-info">
+                        <div><strong>Nome:</strong> <span id="fornecedor-nome-display-${novoId}"></span></div>
+                        <div><strong>CNPJ:</strong> <span id="fornecedor-cnpj-display-${novoId}"></span></div>
+                        <div><strong>Telefone:</strong> <span id="fornecedor-telefone-display-${novoId}"></span></div>
+                        <div><strong>Endereço:</strong> <span id="fornecedor-endereco-display-${novoId}"></span></div>
+                    </div>
+
+                    <div class="cotacao-form">
+                        <div class="form-group">
+                            <label class="form-label">Fornecedor *</label>
+                            <select class="form-select fornecedor-select" id="fornecedor_${novoId}" name="fornecedor[]">
+                                <option value="">Selecione um fornecedor</option>
+                            </select>
+                            <input type="hidden" id="fornecedor_id_${novoId}" name="fornecedor_id[]" value="">
+                            <input type="hidden" name="preenchimento_id[]" value="">
+                        </div>
+                    </div>
+
+                    <div class="materiais-container" id="materiais-container-${novoId}" style="display: none;">
+                        <table class="materiais-table" id="materiais-table-${novoId}">
+                            <thead>
+                                <tr>
+                                    <th class="descricao">Descrição</th>
+                                    <th class="quantidade">Qtd</th>
+                                    <th class="unidade">Unidade</th>
+                                    <th class="unitario">Unitário (R$)</th>
+                                    <th class="total">Total (R$)</th>
+                                    <th class="acoes">ID</th>
+                                </tr>
+                            </thead>
+                            <tbody id="materiais-body-${novoId}"></tbody>
+                        </table>
+                    </div>
+
+                    <div id="botoes-materiais-${novoId}" style="display: none;">
+                        <button type="button" class="btn-add-all" onclick="adicionarTodosMateriais(${novoId})">
+                            <i class="bi bi-list-check"></i> Adicionar Todos os Materiais
                         </button>
                     </div>
-                    <div class="mb-3">
-                        <label for="fornecedor_${cotacaoCount}" class="form-label">Fornecedor *</label>
-                        <div class="fornecedor-selecionado" id="fornecedor-selecionado-${cotacaoCount}" style="display: none;">
-                            <div class="d-flex align-items-center">
-                                <i class="bi bi-building text-success me-2"></i>
-                                <div>
-                                    <strong class="d-block" id="fornecedor-nome-${cotacaoCount}"></strong>
-                                    <small class="text-muted" id="fornecedor-cnpj-${cotacaoCount}">CNPJ: </small>
-                                </div>
-                            </div>
-                        </div>
-                        <select class="form-select fornecedor-select" id="fornecedor_${cotacaoCount}" name="fornecedor[]" required>
-                            <option value="">Selecione um fornecedor</option>
-                        </select>
-                        <input type="hidden" id="fornecedor_id_${cotacaoCount}" name="fornecedor_id[]">
-                        <div class="form-text mt-2">
-                            <i class="bi bi-info-circle"></i> Selecione um fornecedor ou digite para buscar por nome fantasia ou CNPJ.
-                        </div>
-                    </div>
-                    <div class="row g-3">
-                        <div class="col-12">
-                            <label for="valor_unitario_${cotacaoCount}" class="form-label">Valor Unitário (R$) *</label>
-                            <div class="input-group">
-                                <span class="input-group-text">R$</span>
-                                <input type="text" class="form-control valor-unitario" id="valor_unitario_${cotacaoCount}" 
-                                       name="valor_unitario[]" placeholder="0,00" required>
-                            </div>
-                            <div class="error-message" id="unitario-error-${cotacaoCount}"></div>
-                        </div>
-                        <div class="col-12">
-                            <label for="valor_frete_${cotacaoCount}" class="form-label">Valor do Frete (R$)</label>
-                            <div class="input-group">
-                                <span class="input-group-text">R$</span>
-                                <input type="text" class="form-control valor-frete" id="valor_frete_${cotacaoCount}" 
-                                       name="valor_frete[]" placeholder="0,00">
-                            </div>
-                            <div class="error-message" id="frete-error-${cotacaoCount}"></div>
-                        </div>
-                        <div class="col-12">
-                            <label for="valor_total_${cotacaoCount}" class="form-label">Valor Total (R$)</label>
-                            <div class="input-group">
-                                <span class="input-group-text">R$</span>
-                                <input type="text" class="form-control calculated-field" id="valor_total_${cotacaoCount}" 
-                                       name="valor_total[]" readonly>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row g-3 mt-2">
-                        <div class="col-12">
-                            <label for="prazo_entrega_${cotacaoCount}" class="form-label">Prazo de Entrega *</label>
-                            <input type="text" class="form-control" id="prazo_entrega_${cotacaoCount}" 
-                                   name="prazo_entrega[]" placeholder="Ex.: 10 dias úteis" required>
-                        </div>
-                        <div class="col-12">
-                            <label for="condicao_pagamento_${cotacaoCount}" class="form-label">Condição de Pagamento *</label>
-                            <input type="text" class="form-control" id="condicao_pagamento_${cotacaoCount}" 
-                                   name="condicao_pagamento[]" placeholder="Ex.: 30 dias" required>
-                        </div>
-                    </div>
-                    <div class="mt-3">
-                        <label for="pdf_file_${cotacaoCount}" class="form-label">Anexar PDF da Cotação</label>
-                        <input type="file" class="form-control" id="pdf_file_${cotacaoCount}" name="pdf_file_${cotacaoCount}" accept=".pdf">
-                        <div class="form-text">Anexe o arquivo PDF com a cotação formal do fornecedor</div>
-                    </div>
-                    <div class="mt-3">
-                        <label for="observacao_${cotacaoCount}" class="form-label">Observações</label>
-                        <textarea class="form-control" id="observacao_${cotacaoCount}" name="observacao[]" rows="3" 
-                                  placeholder="Protocolo, Links, informações adicionais, observações sobre a cotação..."></textarea>
-                        <div class="form-text">Informações adicionais sobre esta cotação (links, observações, etc.)</div>
-                    </div>
-                `;
-            container.appendChild(newCotacao);
 
-            initializeSelect2(`#fornecedor_${cotacaoCount}`, `#fornecedor_id_${cotacaoCount}`, null, null, cotacaoCount, null, null);
-            setupCurrencyInput($(`#valor_unitario_${cotacaoCount}`), `unitario-error-${cotacaoCount}`);
-            setupCurrencyInput($(`#valor_frete_${cotacaoCount}`), `frete-error-${cotacaoCount}`);
-            $(`#valor_unitario_${cotacaoCount}, #valor_frete_${cotacaoCount}`).on('blur', function () {
-                calculateTotal(cotacaoCount);
-            });
-        });
+                    <div class="cotacao-form mt-3">
+                        <div class="form-group">
+                            <label class="form-label">Valor do Frete (R$)</label>
+                            <div class="input-group valor-input">
+                                <span class="input-group-text">R$</span>
+                                <input type="text" class="form-control valor-frete" id="valor_frete_${novoId}" name="valor_frete[]" placeholder="0,00">
+                            </div>
+                        </div>
 
-        $('#cotacoes-container').on('click', '.remove-cotacao', function () {
-            if (cotacaoCount > 1) {
-                $(this).closest('.cotacao-container').remove();
-                cotacaoCount--;
+                        <div class="form-group">
+                            <label class="form-label">Prazo de Entrega</label>
+                            <input type="text" class="form-control" id="prazo_entrega_${novoId}" name="prazo_entrega[]" placeholder="Ex.: 10 dias úteis">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Condição de Pagamento</label>
+                            <input type="text" class="form-control" id="condicao_pagamento_${novoId}" name="condicao_pagamento[]" placeholder="Ex.: 30 dias">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Anexar PDF da Cotação</label>
+                            <input type="file" class="form-control" id="pdf_file_${novoId}" name="pdf_file[]" accept=".pdf">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Observações</label>
+                            <textarea class="form-control" id="observacao_${novoId}" name="observacao[]" rows="2" placeholder="Informações adicionais..."></textarea>
+                        </div>
+                    </div>
+
+                    <div class="total-fornecedor">
+                        <div class="total-line"><span>Total Produtos:</span><span class="total-produtos" id="total-produtos-${novoId}">R$ 0,00</span></div>
+                        <div class="total-line frete-line"><span>Frete:</span><span class="total-frete" id="total-frete-display-${novoId}">R$ 0,00</span></div>
+                        <div class="total-geral-fornecedor" id="total-geral-fornecedor-${novoId}">Total Geral: R$ 0,00</div>
+                    </div>
+                </div>
+            `;
+
+            // Adicionar ao container
+            $('#cotacoes-dinamicas').append(novaCotacaoHTML);
+            console.log('Cotação ' + novoId + ' adicionada ao DOM');
+
+            // Atualizar contador
+            contadorCotacoes = novoId;
+
+            // Mostrar botão de remover na primeira cotação se tiver mais de uma
+            if (novoId > 1) {
+                $('#btn-remove-1').show();
             }
-        });
 
-        $('#cotacoes-form').on('submit', function (e) {
-            let isValid = true;
-            $('.valor-unitario').each(function () {
-                const value = $(this).val();
-                if (!value || !validateCurrency(value)) {
-                    $(this).addClass('is-invalid');
-                    isValid = false;
+            // Inicializar Select2 para a nova cotação
+            setTimeout(function () {
+                initSelect2ForCotacao(novoId);
+            }, 100);
+
+            // Rolar para nova cotação
+            setTimeout(function () {
+                const elemento = document.getElementById('cotacao-' + novoId);
+                if (elemento) {
+                    elemento.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                 }
-            });
-            $('.valor-frete').each(function () {
-                const value = $(this).val();
-                if (value && !validateCurrency(value)) {
-                    $(this).addClass('is-invalid');
-                    isValid = false;
-                }
-            });
-            if (!isValid) {
-                e.preventDefault();
-                alert('Por favor, corrija os campos destacados em vermelho antes de enviar.');
+            }, 200);
+        }
+
+        // Função para remover cotação
+        function removerCotacao(id) {
+            if ($('.cotacao-card').length <= 1) {
+                alert('Não é possível remover a única cotação.');
                 return;
             }
 
-            // Obter o valor do botão que disparou o submit
-            const action = $(document.activeElement).val();
-            let confirmMessage = '';
-            if (action === 'salvar_rascunho') {
-                confirmMessage = 'Tem certeza de que deseja salvar como rascunho?';
-            } else if (action === 'salvar_finalizar') {
-                confirmMessage = 'Tem certeza de que deseja finalizar e enviar para aprovação?';
+            if (confirm('Tem certeza que deseja remover esta cotação?')) {
+                $('#cotacao-' + id).remove();
+
+                // Atualizar contador
+                contadorCotacoes = $('.cotacao-card').length;
+
+                // Esconder botão de remover da primeira se só tiver uma
+                if (contadorCotacoes === 1) {
+                    $('#btn-remove-1').hide();
+                }
+
+                console.log('Cotação ' + id + ' removida. Total: ' + contadorCotacoes);
+            }
+        }
+
+        // Função para inicializar Select2 de uma cotação
+        function initSelect2ForCotacao(id) {
+            console.log('Inicializando Select2 para cotação', id);
+
+            $('#fornecedor_' + id).select2({
+                placeholder: 'Digite nome ou CNPJ do fornecedor',
+                allowClear: true,
+                minimumInputLength: 2,
+                width: '100%',
+                ajax: {
+                    url: '{{ url_for("routes_bp.search_fornecedores") }}',
+                    dataType: 'json',
+                    delay: 250,
+                    data: function (params) {
+                        return { q: params.term };
+                    },
+                    processResults: function (data) {
+                        return {
+                            results: data.map(function (fornecedor) {
+                                return {
+                                    id: fornecedor.id,
+                                    text: fornecedor.nome_fantasia + ' - CNPJ: ' + formatCNPJ(fornecedor.cnpj),
+                                    nome_fantasia: fornecedor.nome_fantasia,
+                                    cnpj: fornecedor.cnpj,
+                                    telefone: fornecedor.telefone || '',
+                                    endereco: fornecedor.endereco || '',
+                                    bairro: fornecedor.bairro || '',
+                                    cidade: fornecedor.cidade || '',
+                                    estado: fornecedor.estado || ''
+                                };
+                            })
+                        };
+                    },
+                    cache: true
+                }
+            }).on('select2:select', function (e) {
+                const data = e.params.data;
+                $('#fornecedor_id_' + id).val(data.id);
+
+                // Atualizar informações do fornecedor
+                $('#fornecedor-nome-display-' + id).text(data.nome_fantasia || '');
+                $('#fornecedor-cnpj-display-' + id).text(formatCNPJ(data.cnpj) || '');
+                $('#fornecedor-telefone-display-' + id).text(data.telefone || '');
+
+                const enderecoCompleto = [
+                    data.endereco || '',
+                    data.bairro ? data.bairro : '',
+                    data.cidade ? data.cidade : '',
+                    data.estado ? data.estado : ''
+                ].filter(part => part).join(', ');
+
+                $('#fornecedor-endereco-display-' + id).text(enderecoCompleto);
+
+                console.log('Fornecedor selecionado na cotação ' + id + ':', data.text);
+
+                // Mostrar materiais
+                $('#materiais-container-' + id).show();
+                $('#botoes-materiais-' + id).show();
+
+                // Adicionar materiais
+                console.log('Adicionando materiais para cotação ' + id + '...');
+                adicionarTodosMateriais(id);
+            }).on('select2:clear', function () {
+                $('#fornecedor_id_' + id).val('');
+                $('#materiais-container-' + id).hide();
+                $('#botoes-materiais-' + id).hide();
+                $('#materiais-body-' + id).empty();
+                calcularTotalCotacao(id);
+
+                // Limpar informações do fornecedor
+                $('#fornecedor-nome-display-' + id).text('');
+                $('#fornecedor-cnpj-display-' + id).text('');
+                $('#fornecedor-telefone-display-' + id).text('');
+                $('#fornecedor-endereco-display-' + id).text('');
+            });
+
+            // Configurar máscara para campos de valor
+            $('#valor_frete_' + id).on('input', function () {
+                aplicarMascaraMonetaria($(this));
+                calcularTotalCotacao(id);
+            });
+        }
+
+        // FUNÇÃO para adicionar todos os materiais
+        function adicionarTodosMateriais(cotacaoId) {
+            console.log('Adicionando materiais para cotação ' + cotacaoId + '...');
+            console.log('Dados dos materiais:', materiaisSolicitacao);
+
+            // Verificar se há materiais
+            if (!materiaisSolicitacao || materiaisSolicitacao.length === 0) {
+                console.error('Nenhum material encontrado!');
+                alert('Erro: Nenhum material encontrado para esta solicitação.');
+                return;
             }
 
-            // Mostrar o alerta de confirmação
-            if (!confirm(confirmMessage)) {
-                e.preventDefault(); // Cancela o envio do formulário se o usuário clicar em "Cancelar"
+            // Limpar tabela
+            $('#materiais-body-' + cotacaoId).empty();
+
+            // Adicionar cada material
+            materiaisSolicitacao.forEach(function (material, index) {
+                const materialId = index + 1;
+
+                // Usar template literals para evitar problemas com aspas
+                const descricaoSegura = material.descricao;
+
+                const rowHTML = `
+                    <tr id="material-${cotacaoId}-${materialId}">
+                        <td class="descricao">
+                            <input type="text" class="material-descricao"
+                                   name="material_descricao_${cotacaoId}[]"
+                                   value="${descricaoSegura}" readonly>
+                            <input type="hidden" name="solicitacao_id[]" value="${material.id}">
+                        </td>
+                        <td class="quantidade">
+                            <input type="number" class="material-quantidade"
+                                   name="quantidade[]"
+                                   value="${material.quantidade}" 
+                                   min="0" step="0.001" readonly>
+                        </td>
+                        <td class="unidade">
+                            <input type="text" class="material-unidade"
+                                   name="material_unidade_${cotacaoId}[]"
+                                   value="${material.unidade}" readonly>
+                        </td>
+                        <td class="unitario">
+                            <div class="valor-input" style="position: relative;">
+                                <input type="text" class="material-unitario"
+                                       name="valor_unitario[]"
+                                       placeholder="0,00" required
+                                       oninput="calcularTotalLinha(this, ${cotacaoId})">
+                                <span class="valor-simbolo">R$</span>
+                            </div>
+                        </td>
+                        <td class="total">
+                            <input type="text" class="material-total-display" 
+                                   id="material-total-${cotacaoId}-${materialId}"
+                                   value="R$ 0,00" readonly>
+                        </td>
+                        <td class="acoes">
+                            #${material.id}
+                        </td>
+                    </tr>
+                `;
+
+                $('#materiais-body-' + cotacaoId).append(rowHTML);
+
+                // Adicionar máscara monetária ao campo unitário
+                $(`#material-${cotacaoId}-${materialId} .material-unitario`).on('input', function () {
+                    aplicarMascaraMonetaria($(this));
+                    calcularTotalLinha(this, cotacaoId);
+                });
+            });
+
+            console.log('Materiais adicionados: ' + materiaisSolicitacao.length + ' linhas');
+
+            // Recalcular totais
+            calcularTotalCotacao(cotacaoId);
+        }
+
+        // Função para adicionar materiais com valores salvos
+        function adicionarMateriaisComValores(cotacaoId, materiaisSalvos) {
+            console.log('Adicionando materiais com valores para cotação ' + cotacaoId + ':', materiaisSalvos);
+            
+            // Limpar tabela
+            $('#materiais-body-' + cotacaoId).empty();
+            
+            // Criar um mapa de materiais salvos por ID de solicitação
+            const materiaisPorSolicitacao = {};
+            materiaisSalvos.forEach(material => {
+                materiaisPorSolicitacao[material.solicitacao_id] = material;
+            });
+            
+            // Adicionar cada material da solicitação (modo_grupo ou não)
+            materiaisSolicitacao.forEach(function (material, index) {
+                const materialId = index + 1;
+                
+                // Verificar se temos valor salvo para este material
+                const materialSalvo = materiaisPorSolicitacao[material.id];
+                const valorUnitarioSalvo = materialSalvo ? materialSalvo.valor_unitario : 0;
+                const valorUnitarioFormatado = valorUnitarioSalvo > 0 ? formatarNumero(valorUnitarioSalvo) : '';
+                const valorTotal = valorUnitarioSalvo > 0 ? valorUnitarioSalvo * material.quantidade : 0;
+                
+                // Usar template literals para evitar problemas com aspas
+                const descricaoSegura = material.descricao;
+
+                const rowHTML = `
+                    <tr id="material-${cotacaoId}-${materialId}">
+                        <td class="descricao">
+                            <input type="text" class="material-descricao"
+                                   name="material_descricao_${cotacaoId}[]"
+                                   value="${descricaoSegura}" readonly>
+                            <input type="hidden" name="solicitacao_id[]" value="${material.id}">
+                        </td>
+                        <td class="quantidade">
+                            <input type="number" class="material-quantidade"
+                                   name="quantidade[]"
+                                   value="${material.quantidade}" 
+                                   min="0" step="0.001" readonly>
+                        </td>
+                        <td class="unidade">
+                            <input type="text" class="material-unidade"
+                                   name="material_unidade_${cotacaoId}[]"
+                                   value="${material.unidade}" readonly>
+                        </td>
+                        <td class="unitario">
+                            <div class="valor-input" style="position: relative;">
+                                <input type="text" class="material-unitario"
+                                       name="valor_unitario[]"
+                                       placeholder="0,00" 
+                                       value="${valorUnitarioFormatado}"
+                                       required
+                                       oninput="calcularTotalLinha(this, ${cotacaoId})">
+                                <span class="valor-simbolo">R$</span>
+                            </div>
+                        </td>
+                        <td class="total">
+                            <input type="text" class="material-total-display" 
+                                   id="material-total-${cotacaoId}-${materialId}"
+                                   value="${valorUnitarioSalvo > 0 ? 'R$ ' + formatarNumero(valorTotal) : 'R$ 0,00'}" 
+                                   readonly>
+                        </td>
+                        <td class="acoes">
+                            #${material.id}
+                        </td>
+                    </tr>
+                `;
+
+                $('#materiais-body-' + cotacaoId).append(rowHTML);
+
+                // Adicionar máscara monetária ao campo unitário
+                $(`#material-${cotacaoId}-${materialId} .material-unitario`).on('input', function () {
+                    aplicarMascaraMonetaria($(this));
+                    calcularTotalLinha(this, cotacaoId);
+                });
+                
+                // Se tiver valor salvo, calcular total da linha
+                if (valorUnitarioSalvo > 0) {
+                    setTimeout(function() {
+                        const input = $(`#material-${cotacaoId}-${materialId} .material-unitario`)[0];
+                        if (input) {
+                            calcularTotalLinha(input, cotacaoId);
+                        }
+                    }, 50);
+                }
+            });
+
+            console.log('Materiais adicionados com valores: ' + materiaisSolicitacao.length + ' linhas');
+        }
+
+        // Função para calcular total de uma linha
+        function calcularTotalLinha(input, cotacaoId) {
+            const row = $(input).closest('tr');
+            const quantidade = parseFloat(row.find('.material-quantidade').val()) || 0;
+            const unitarioStr = $(input).val();
+            const unitario = formatarNumeroParaEnvio(unitarioStr);
+            const total = quantidade * unitario;
+
+            const totalFormatado = 'R$ ' + formatarNumero(total);
+            row.find('.material-total-display').val(totalFormatado);
+
+            calcularTotalCotacao(cotacaoId);
+        }
+
+        // Função para calcular total da cotação
+        function calcularTotalCotacao(cotacaoId) {
+            let totalProdutos = 0;
+
+            $('#materiais-body-' + cotacaoId + ' tr').each(function () {
+                const totalText = $(this).find('.material-total-display').val();
+                if (totalText) {
+                    const total = formatarNumeroParaEnvio(totalText);
+                    totalProdutos += total;
+                }
+            });
+
+            const freteStr = $('#valor_frete_' + cotacaoId).val() || '0';
+            const frete = formatarNumeroParaEnvio(freteStr);
+            const totalGeral = totalProdutos + frete;
+
+            $('#total-produtos-' + cotacaoId).text('R$ ' + formatarNumero(totalProdutos));
+            $('#total-frete-display-' + cotacaoId).text('R$ ' + formatarNumero(frete));
+            $('#total-geral-fornecedor-' + cotacaoId).text('Total Geral: R$ ' + formatarNumero(totalGeral));
+        }
+
+        // Funções auxiliares
+        function formatCNPJ(cnpj) {
+            if (!cnpj) return '';
+            const apenasNumeros = cnpj.replace(/\D/g, '');
+            if (apenasNumeros.length !== 14) return cnpj;
+            return apenasNumeros.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5");
+        }
+
+        // Função para preencher cotação com dados salvos
+        function preencherCotacaoSalva(cotacaoId, dados) {
+            console.log('Preenchendo cotação ' + cotacaoId + ' com dados salvos:', dados);
+            
+            if (!dados.fornecedor_id) return;
+            
+            // Adicionar opção ao Select2
+            const option = new Option(dados.fornecedor_nome_fantasia + ' - CNPJ: ' + formatCNPJ(dados.fornecedor_cnpj), dados.fornecedor_id, true, true);
+            $('#fornecedor_' + cotacaoId).append(option).trigger('change');
+            $('#fornecedor_id_' + cotacaoId).val(dados.fornecedor_id);
+            
+            // Atualizar informações do fornecedor
+            $('#fornecedor-nome-display-' + cotacaoId).text(dados.fornecedor_nome_fantasia || '');
+            $('#fornecedor-cnpj-display-' + cotacaoId).text(formatCNPJ(dados.fornecedor_cnpj) || '');
+            $('#fornecedor-telefone-display-' + cotacaoId).text(dados.fornecedor_telefone || '');
+            $('#fornecedor-endereco-display-' + cotacaoId).text(dados.fornecedor_endereco || '');
+            
+            // Mostrar materiais
+            $('#materiais-container-' + cotacaoId).show();
+            $('#botoes-materiais-' + cotacaoId).show();
+            
+            // Adicionar materiais COM VALORES SALVOS
+            setTimeout(function() {
+                adicionarMateriaisComValores(cotacaoId, dados.materiais || []);
+                
+                // Preencher outros campos
+                if (dados.valor_frete && dados.valor_frete > 0) {
+                    $('#valor_frete_' + cotacaoId).val(formatarNumero(dados.valor_frete));
+                }
+                
+                if (dados.prazo_entrega) {
+                    $('#prazo_entrega_' + cotacaoId).val(dados.prazo_entrega);
+                }
+                
+                if (dados.condicao_pagamento) {
+                    $('#condicao_pagamento_' + cotacaoId).val(dados.condicao_pagamento);
+                }
+                
+                if (dados.observacoes) {
+                    $('#observacao_' + cotacaoId).val(dados.observacoes);
+                }
+                
+                calcularTotalCotacao(cotacaoId);
+            }, 200);
+        }
+
+        // Inicializar quando a página carregar
+        $(document).ready(function () {
+            console.log('Página carregada!');
+            console.log('Materiais disponíveis:', materiaisSolicitacao);
+            
+            // Dados salvos para cada cotação (agora com estrutura completa)
+            const cotacoesSalvasData = [
+                {% for cotacao in cotacoes_salvas %}
+                {
+                    id: {{ cotacao.id if cotacao.id else 'null' }},
+                    fornecedor_id: {{ cotacao.fornecedor_id if cotacao.fornecedor_id else 'null' }},
+                    fornecedor_nome_fantasia: '{{ cotacao.fornecedor_nome_fantasia | replace("'", "\\'") if cotacao.fornecedor_nome_fantasia else '' }}',
+                    fornecedor_cnpj: '{{ cotacao.fornecedor_cnpj if cotacao.fornecedor_cnpj else '' }}',
+                    fornecedor_telefone: '{{ cotacao.fornecedor_telefone or "" }}',
+                    fornecedor_endereco: '{{ cotacao.fornecedor_endereco or "" }}',
+                    valor_frete: {{ cotacao.valor_frete if cotacao.valor_frete else 0 }},
+                    prazo_entrega: '{{ cotacao.prazo_entrega or "" }}',
+                    condicao_pagamento: '{{ cotacao.condicao_pagamento or "" }}',
+                    observacoes: '{{ cotacao.observacoes or "" }}',
+                    materiais: {{ cotacao.materiais | tojson | safe if cotacao.materiais else '[]' }}
+                }{% if not loop.last %},{% endif %}
+                {% endfor %}
+            ];
+            
+            console.log('Dados das cotações carregadas:', cotacoesSalvasData);
+            
+            // Inicializar Select2 para TODAS as cotações existentes
+            const totalCotacoes = {{ cotacoes_salvas|length if cotacoes_salvas else 1 }};
+            console.log('Total de cotações a inicializar:', totalCotacoes);
+            
+            for (let i = 1; i <= totalCotacoes; i++) {
+                initSelect2ForCotacao(i);
+                
+                // Se tiver dados salvos para esta cotação, preencher
+                const cotacaoIndex = i - 1;
+                if (cotacoesSalvasData[cotacaoIndex] && cotacoesSalvasData[cotacaoIndex].fornecedor_id) {
+                    setTimeout(function() {
+                        preencherCotacaoSalva(i, cotacoesSalvasData[cotacaoIndex]);
+                    }, i * 200);
+                }
             }
+            
+            // Atualizar contador global
+            contadorCotacoes = totalCotacoes;
+            
+            // Aplicar máscara monetária aos campos existentes
+            $('.valor-frete').each(function () {
+                const valorAtual = $(this).val();
+                if (valorAtual) {
+                    const numero = formatarNumeroParaEnvio(valorAtual);
+                    $(this).val(formatarNumero(numero));
+                }
+            });
+
+            // Configurar evento para máscara de valores ao digitar
+            $(document).on('input', '.material-unitario, .valor-frete', function () {
+                aplicarMascaraMonetaria($(this));
+            });
         });
+
+        // Validação do formulário
+        $('#cotacoes-form').on('submit', function (e) {
+            e.preventDefault();
+
+            // Gerar JSON de materiais
+            const materiaisJson = gerarJsonMateriais();
+            $('#materiais_json').val(materiaisJson);
+            console.log('JSON gerado:', materiaisJson);
+
+            // Formatar todos os valores para o padrão de envio
+            $('.material-unitario').each(function () {
+                const valor = $(this).val();
+                if (valor) {
+                    const valorParaEnvio = formatarNumeroParaEnvio(valor);
+                    $(this).val(valorParaEnvio);
+                }
+            });
+
+            $('.valor-frete').each(function () {
+                const valor = $(this).val();
+                if (valor) {
+                    const valorParaEnvio = formatarNumeroParaEnvio(valor);
+                    $(this).val(valorParaEnvio);
+                }
+            });
+
+            // Validação dos campos
+            let isValid = true;
+            let hasValidCotacao = false;
+
+            // Verificar todas as cotações existentes
+            $('.cotacao-card').each(function () {
+                const cotacaoId = $(this).attr('id').replace('cotacao-', '');
+                const fornecedor = $('#fornecedor_id_' + cotacaoId).val();
+                const hasMateriais = $('#materiais-body-' + cotacaoId + ' tr').length > 0;
+
+                if (fornecedor) {
+                    hasValidCotacao = true;
+
+                    if (!hasMateriais) {
+                        isValid = false;
+                        alert('Cotação ' + cotacaoId + ': É necessário adicionar materiais quando um fornecedor é selecionado.');
+                        return false;
+                    }
+
+                    $('#materiais-body-' + cotacaoId + ' tr').each(function () {
+                        const unitario = $(this).find('.material-unitario').val();
+
+                        if (!unitario || unitario === '0') {
+                            isValid = false;
+                            $(this).addClass('border border-danger');
+                            alert('Cotação ' + cotacaoId + ': Preencha todos os valores unitários.');
+                            return false;
+                        }
+                    });
+
+                    const prazoEntrega = $('#prazo_entrega_' + cotacaoId).val();
+                    const condicaoPagamento = $('#condicao_pagamento_' + cotacaoId).val();
+
+                    if (!prazoEntrega || !condicaoPagamento) {
+                        isValid = false;
+                        alert('Cotação ' + cotacaoId + ': Preencha o prazo de entrega e condição de pagamento.');
+                        return false;
+                    }
+                }
+            });
+
+            if (!hasValidCotacao) {
+                alert('É necessário preencher pelo menos UMA cotação com fornecedor e materiais.');
+                return;
+            }
+
+            if (!isValid) {
+                alert('Por favor, preencha todos os campos obrigatórios das cotações com fornecedor selecionado.');
+                return;
+            }
+
+            // Determinar qual botão foi clicado
+            const clickedButton = $(document.activeElement);
+            const actionValue = clickedButton.val();
+            let confirmMessage = '';
+
+            if (actionValue === 'salvar_rascunho') {
+                confirmMessage = 'Tem certeza de que deseja salvar como rascunho?';
+            } else if (actionValue === 'salvar_finalizar') {
+                confirmMessage = 'Tem certeza de que deseja finalizar e enviar para aprovação?';
+            } else {
+                // Se não conseguiu determinar, perguntar
+                const userChoice = confirm('Deseja salvar como rascunho ou finalizar?\n\nClique OK para finalizar e enviar para aprovação.\nClique Cancelar para salvar como rascunho.');
+                if (userChoice) {
+                    // Simular clique no botão de finalizar
+                    $('button[value="salvar_finalizar"]').trigger('click');
+                    return;
+                } else {
+                    // Simular clique no botão de rascunho
+                    $('button[value="salvar_rascunho"]').trigger('click');
+                    return;
+                }
+            }
+
+            if (confirmMessage && !confirm(confirmMessage)) {
+                return;
+            }
+
+            // Adicionar o action ao formulário
+            $('<input>').attr({
+                type: 'hidden',
+                name: 'action',
+                value: actionValue
+            }).appendTo('#cotacoes-form');
+
+            // Se tudo ok, enviar formulário
+            console.log('Enviando formulário com action:', actionValue);
+            $(this).off('submit').submit();
         });
     </script>
 </body>
-
 </html>

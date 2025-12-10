@@ -140,7 +140,7 @@
 
         /* Estilos específicos para a coluna de Especificação */
         .col-especificacao {
-            width: 200px; /* Largura fixa para a coluna */
+            width: 200px;
             max-width: 200px;
             word-wrap: break-word;
             word-break: break-word;
@@ -226,7 +226,7 @@
                 page-break-inside: avoid;
                 page-break-after: auto;
             }
-            
+
             .col-especificacao {
                 width: 180px;
                 max-width: 180px;
@@ -323,14 +323,24 @@
         </div>
 
         {% if solicitacoes %}
-        {% set aplicacoes_ordenadas = [] %}
+        {# Primeiro, criamos um dicionário para armazenar a data mais recente de cada aplicação #}
+        {% set aplicacoes_com_data = {} %}
         {% for solicitacao in solicitacoes %}
-        {% if solicitacao.aplicacao and solicitacao.aplicacao not in aplicacoes_ordenadas %}
-        {% set _ = aplicacoes_ordenadas.append(solicitacao.aplicacao) %}
-        {% endif %}
+            {% if solicitacao.aplicacao %}
+                {% if solicitacao.aplicacao not in aplicacoes_com_data %}
+                    {% set _ = aplicacoes_com_data.update({solicitacao.aplicacao: solicitacao.data_solicitacao}) %}
+                {% else %}
+                    {% if solicitacao.data_solicitacao > aplicacoes_com_data[solicitacao.aplicacao] %}
+                        {% set _ = aplicacoes_com_data.update({solicitacao.aplicacao: solicitacao.data_solicitacao}) %}
+                    {% endif %}
+                {% endif %}
+            {% endif %}
         {% endfor %}
-        {% set aplicacoes_ordenadas = aplicacoes_ordenadas|sort %}
+        
+        {# Ordenamos as aplicações pela data mais recente (do mais novo para o mais antigo) #}
+        {% set aplicacoes_ordenadas = aplicacoes_com_data.items()|sort(attribute='1', reverse=true)|map(attribute='0') %}
 
+        {# Agora percorremos as aplicações ordenadas #}
         {% for aplicacao in aplicacoes_ordenadas %}
         <div class="aplicacao-section">
             <div class="aplicacao-title">{{ aplicacao }}</div>
@@ -351,7 +361,8 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for solicitacao in solicitacoes if solicitacao.aplicacao == aplicacao %}
+                    {# Ordenamos as solicitações dentro de cada aplicação pela data (do mais novo para o mais antigo) #}
+                    {% for solicitacao in solicitacoes_por_aplicacao[aplicacao]|sort(attribute='data_solicitacao', reverse=true) %}
                     <tr data-id="{{ solicitacao.id }}">
                         <td>{{ solicitacao.id }}</td>
                         <td>{{ solicitacao.material.DescricaoMaterial }}</td>
@@ -395,15 +406,20 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // Define datas padrão (últimos 30 dias)
             const start = new Date();
             start.setDate(start.getDate() - 30);
             document.getElementById('dataInicio').valueAsDate = start;
             document.getElementById('dataFim').valueAsDate = new Date();
+            
+            // Aplica filtros iniciais
             applyFilters();
 
+            // Event listeners
             document.getElementById('applyFilters').addEventListener('click', applyFilters);
             document.getElementById('clearFilters').addEventListener('click', () => location.reload());
 
+            // Atribuição de comprador
             document.querySelectorAll('.btn-atribuir').forEach(btn => {
                 btn.addEventListener('click', async () => {
                     const id = btn.dataset.id;
@@ -412,16 +428,24 @@
                     if (!comprador) return alert('Selecione um comprador.');
 
                     if (!confirm(`Atribuir esta solicitação a ${comprador}?`)) return;
-                    const resp = await fetch(`/api/solicitacoes/${id}/atribuir_comprador`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ comprador })
-                    });
-                    const data = await resp.json();
-                    alert(data.message || 'Atualizado!');
-                    location.reload();
+                    
+                    try {
+                        const resp = await fetch(`/api/solicitacoes/${id}/atribuir_comprador`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ comprador })
+                        });
+                        const data = await resp.json();
+                        alert(data.message || 'Comprador atribuído com sucesso!');
+                        location.reload();
+                    } catch (error) {
+                        alert('Erro ao atribuir comprador. Tente novamente.');
+                    }
                 });
             });
+
+            // Destaque para solicitações antigas
+            highlightOldRequests();
         });
 
         function applyFilters() {
@@ -433,7 +457,7 @@
             const inicio = document.getElementById('dataInicio').value;
             const fim = document.getElementById('dataFim').value;
 
-            // percorre todas as seções de aplicação
+            // Percorre todas as seções de aplicação
             document.querySelectorAll('.aplicacao-section').forEach(section => {
                 const rows = section.querySelectorAll('tbody tr');
                 let visibleCount = 0;
@@ -466,32 +490,14 @@
                     }
                 });
 
-                // se nenhuma linha visível, esconde a seção inteira
+                // Se nenhuma linha visível, esconde a seção inteira
                 section.style.display = visibleCount > 0 ? '' : 'none';
             });
         }
 
-        // Destaque suave para solicitações com mais de 7 dias
-        document.addEventListener('DOMContentLoaded', () => {
+        function highlightOldRequests() {
             const hoje = new Date();
-
-            document.querySelectorAll('td[data-order]').forEach(cellData => {
-                const dataTexto = cellData.getAttribute('data-order');
-                if (!dataTexto) return;
-
-                const dataSolicitacao = new Date(dataTexto);
-                const diffDias = Math.floor((hoje - dataSolicitacao) / (1000 * 60 * 60 * 24));
-
-                if (diffDias > 7) {
-                    cellData.classList.add('highlight-old');
-                }
-            });
-        });
-
-        // Destaque suave para solicitações com mais de 7 dias
-        document.addEventListener('DOMContentLoaded', () => {
             const rows = document.querySelectorAll('tbody tr');
-            const hoje = new Date();
 
             rows.forEach(row => {
                 const cellData = row.querySelector('td[data-order]');
@@ -507,8 +513,7 @@
                     cellData.classList.add('highlight-old');
                 }
             });
-        });
-
+        }
     </script>
 </body>
 

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,58 +15,76 @@
             font-size: 0.8rem;
             font-weight: 500;
         }
+
         .status-aberta {
             background-color: #ffc107;
             color: #000;
         }
+
+        .status-pendente {
+            background-color: #ff9800;
+            color: #fff;
+        }
+
         .status-preenchida {
             background-color: #17a2b8;
             color: #fff;
         }
+
         .status-aprovada {
             background-color: #28a745;
             color: #fff;
         }
+
         .status-reprovada {
             background-color: #dc3545;
             color: #fff;
         }
+
         .status-processamento {
             background-color: #6c757d;
             color: #fff;
         }
+
         .status-entregue {
             background-color: #007bff;
             color: #fff;
         }
+
         .status-rascunho {
             background-color: #6f42c1;
             color: #fff;
         }
+
         .card-header {
             background-color: #f8f9fa;
             font-weight: 600;
         }
+
         .filter-section {
             background-color: #f8f9fa;
             border-radius: 5px;
             padding: 15px;
             margin-bottom: 20px;
         }
+
         .table-responsive {
             max-height: 600px;
             overflow-y: auto;
         }
+
         .material-details {
             background-color: #f8f9fa;
             border-radius: 5px;
             padding: 10px;
             margin-bottom: 10px;
         }
+
         .timeline {
             position: relative;
             padding-left: 40px;
         }
+
         .timeline:before {
             content: '';
             position: absolute;
@@ -75,10 +94,12 @@
             width: 2px;
             background-color: #dee2e6;
         }
+
         .timeline-item {
             position: relative;
             margin-bottom: 15px;
         }
+
         .timeline-item:before {
             content: '';
             position: absolute;
@@ -89,12 +110,15 @@
             border-radius: 50%;
             background-color: #6c757d;
         }
+
         .timeline-item.completed:before {
             background-color: #28a745;
         }
+
         .timeline-item.current:before {
             background-color: #007bff;
         }
+
         .timeline-item i {
             position: absolute;
             left: -30px;
@@ -102,35 +126,43 @@
             font-size: 1.2rem;
             color: #6c757d;
         }
+
         .timeline-item.completed i {
             color: #28a745;
         }
+
         .timeline-item.current i {
             color: #007bff;
         }
+
         .toast-container {
             position: fixed;
             top: 20px;
             right: 20px;
             z-index: 1055;
         }
+
         .badge-secondary {
             background-color: #6c757d;
         }
+
         .table th {
             background-color: #f8f9fa;
         }
+
         .priority-badge {
             font-size: 0.7rem;
             padding: 3px 8px;
             border-radius: 12px;
             font-weight: 500;
         }
+
         .priority-urgente {
             background-color: #fff8e1;
             color: #e65100;
             border: 1px solid #ffd54f;
         }
+
         .priority-programado {
             background-color: #e8f5e9;
             color: #2e7d32;
@@ -180,13 +212,20 @@
             color: white;
         }
 
-        .table > tbody > tr:hover {
+        .table>tbody>tr:hover {
             transform: translateY(-1px);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
             transition: all 0.2s ease;
+        }
+        
+        /* Estilo para a opção "Eu" no select */
+        .usuario-eu {
+            font-weight: bold;
+            color: #0d6efd;
         }
     </style>
 </head>
+
 <body>
     <div class="container-fluid py-4">
         <h2 class="mb-4"><i class="fas fa-search me-2"></i>Auditoria de Solicitações</h2>
@@ -212,7 +251,8 @@
                     <select id="empresa" name="empresa" class="form-select">
                         <option value="">Todas</option>
                         {% for empresa in empresas %}
-                            <option value="{{ empresa }}" {% if filtros.empresa == empresa %}selected{% endif %}>{{ empresa }}</option>
+                        <option value="{{ empresa }}" {% if filtros.empresa==empresa %}selected{% endif %}>{{ empresa }}
+                        </option>
                         {% endfor %}
                     </select>
                 </div>
@@ -220,8 +260,15 @@
                     <label for="usuario" class="form-label">Usuário</label>
                     <select id="usuario" name="usuario" class="form-select">
                         <option value="">Todos</option>
+                        <option value="{{ usuario_logado }}" class="usuario-eu" 
+                            {% if not filtros.usuario %}selected{% elif filtros.usuario==usuario_logado %}selected{% endif %}>
+                            Olá ({{ usuario_logado }})
+                        </option>
                         {% for usuario in usuarios %}
-                            <option value="{{ usuario }}" {% if filtros.usuario == usuario %}selected{% endif %}>{{ usuario }}</option>
+                            {% if usuario != usuario_logado %}
+                            <option value="{{ usuario }}" {% if filtros.usuario==usuario %}selected{% endif %}>{{ usuario }}
+                            </option>
+                            {% endif %}
                         {% endfor %}
                     </select>
                 </div>
@@ -229,16 +276,18 @@
                     <label for="ativo" class="form-label">Material Ativo?</label>
                     <select id="ativo" name="ativo" class="form-select">
                         <option value="">Todos</option>
-                        <option value="Sim" {% if filtros.ativo == 'Sim' %}selected{% endif %}>Sim</option>
-                        <option value="Não" {% if filtros.ativo == 'Não' %}selected{% endif %}>Não</option>
+                        <option value="Sim" {% if filtros.ativo=='Sim' %}selected{% endif %}>Sim</option>
+                        <option value="Não" {% if filtros.ativo=='Não' %}selected{% endif %}>Não</option>
                     </select>
                 </div>
                 <div class="col-md-3">
                     <label for="nome_ativo" class="form-label">Nome do Ativo</label>
-                    <select id="nome_ativo" name="nome_ativo" class="form-select" {% if not filtros.ativo == 'Sim' %}disabled{% endif %}>
+                    <select id="nome_ativo" name="nome_ativo" class="form-select" {% if not filtros.ativo=='Sim'
+                        %}disabled{% endif %}>
                         <option value="">Todos</option>
                         {% for nome in nomes_ativos %}
-                            <option value="{{ nome }}" {% if filtros.nome_ativo == nome %}selected{% endif %}>{{ nome }}</option>
+                        <option value="{{ nome }}" {% if filtros.nome_ativo==nome %}selected{% endif %}>{{ nome }}
+                        </option>
                         {% endfor %}
                     </select>
                 </div>
@@ -246,39 +295,52 @@
                     <label for="status" class="form-label">Status</label>
                     <select id="status" name="status" class="form-select">
                         <option value="">Todos</option>
-                        <option value="Aberta" {% if filtros.status == 'Aberta' %}selected{% endif %}>Aberta</option>
-                        <option value="Aguardando Aprovação" {% if filtros.status == 'Aguardando Aprovação' %}selected{% endif %}>Aguardando Aprovação</option>
-                        <option value="Aprovado" {% if filtros.status == 'Aprovado' %}selected{% endif %}>Aprovado</option>
-                        <option value="Reprovado" {% if filtros.status == 'Reprovado' %}selected{% endif %}>Reprovado</option>
-                        <option value="Em Processamento" {% if filtros.status == 'Em Processamento' %}selected{% endif %}>Em Processamento</option>
-                        <option value="Entregue" {% if filtros.status == 'Entregue' %}selected{% endif %}>Entregue</option>
+                        <option value="Pendente" {% if filtros.status=='Pendente' %}selected{% endif %}>Pendente</option>
+                        <option value="Aberta" {% if filtros.status=='Aberta' %}selected{% endif %}>Aberta</option>
+                        <option value="Aguardando Aprovação" {% if filtros.status=='Aguardando Aprovação' %}selected{% endif %}>Aguardando Aprovação</option>
+                        <option value="Aprovado" {% if filtros.status=='Aprovado' %}selected{% endif %}>Aprovado
+                        </option>
+                        <option value="Reprovado" {% if filtros.status=='Reprovado' %}selected{% endif %}>Reprovado
+                        </option>
+                        <option value="Em Processamento" {% if filtros.status=='Em Processamento' %}selected{% endif %}>
+                            Em Processamento</option>
+                        <option value="Entregue" {% if filtros.status=='Entregue' %}selected{% endif %}>Entregue
+                        </option>
                     </select>
                 </div>
                 <div class="col-md-3">
                     <label for="prioridade" class="form-label">Prioridade</label>
                     <select id="prioridade" name="prioridade" class="form-select">
                         <option value="">Todas</option>
-                        <option value="3" {% if filtros.prioridade == '3' %}selected{% endif %}>Máxima (Entregues)</option>
-                        <option value="2" {% if filtros.prioridade == '2' %}selected{% endif %}>Alta (Aprovadas + Pedido)</option>
-                        <option value="1" {% if filtros.prioridade == '1' %}selected{% endif %}>Média (Aprovadas)</option>
-                        <option value="0" {% if filtros.prioridade == '0' %}selected{% endif %}>Baixa (Outras)</option>
+                        <option value="3" {% if filtros.prioridade=='3' %}selected{% endif %}>Máxima (Entregues)
+                        </option>
+                        <option value="2" {% if filtros.prioridade=='2' %}selected{% endif %}>Alta (Aprovadas + Pedido)
+                        </option>
+                        <option value="1" {% if filtros.prioridade=='1' %}selected{% endif %}>Média (Aprovadas)</option>
+                        <option value="0" {% if filtros.prioridade=='0' %}selected{% endif %}>Baixa (Outras)</option>
                     </select>
                 </div>
                 <div class="col-md-3">
                     <label for="data_inicio" class="form-label">Data Inicial</label>
-                    <input type="date" id="data_inicio" name="data_inicio" class="form-control" value="{{ filtros.data_inicio }}">
+                    <input type="date" id="data_inicio" name="data_inicio" class="form-control"
+                        value="{{ filtros.data_inicio }}">
                 </div>
                 <div class="col-md-3">
                     <label for="data_fim" class="form-label">Data Final</label>
-                    <input type="date" id="data_fim" name="data_fim" class="form-control" value="{{ filtros.data_fim }}">
+                    <input type="date" id="data_fim" name="data_fim" class="form-control"
+                        value="{{ filtros.data_fim }}">
                 </div>
+
                 <div class="col-md-12 mt-3">
                     <button type="submit" class="btn btn-primary me-2">
                         <i class="fas fa-filter me-1"></i> Filtrar
                     </button>
-                    <a href="{{ url_for('routes_bp.auditoria_solicitacoes') }}" class="btn btn-outline-secondary">
+                    <a href="{{ url_for('routes_bp.auditoria_solicitacoes') }}" class="btn btn-outline-secondary me-2">
                         <i class="fas fa-undo me-1"></i> Limpar Filtros
                     </a>
+                    <button type="button" id="exportXlsxBtn" class="btn btn-success">
+                        <i class="fas fa-file-excel me-1"></i> Exportar XLSX
+                    </button>
                 </div>
             </form>
         </div>
@@ -291,426 +353,451 @@
             </div>
             <div class="card-body">
                 {% if not auditoria %}
-                    <div class="alert alert-info">Nenhum resultado encontrado com os filtros aplicados.</div>
+                <div class="alert alert-info">Nenhum resultado encontrado com os filtros aplicados.</div>
                 {% else %}
-                    <div class="table-responsive">
-                        <table id="auditoriaTable" class="table table-hover table-striped">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Material</th>
-                                    <th>Solicitante</th>
-                                    <th>Empresa</th>
-                                    <th>Ativo</th>
-                                    <th>Quantidade</th>
-                                    <th>Prioridade</th>
-                                    <th>Data</th>
-                                    <th>Status</th>
-                                    <th>Pedido</th>
-                                    <th>Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for item in auditoria %}
-                                    <tr class="{% if item.prioridade == 3 %}prioridade-alta{% elif item.prioridade == 2 %}prioridade-media{% elif item.prioridade == 1 %}prioridade-baixa{% endif %}">
-                                        <td>
-                                            <strong>SOL#{{ item.solicitacao.id }}</strong>
-                                            {% if item.preenchimento %}
-                                                <br><small class="text-muted">COT#{{ item.preenchimento.id }}</small>
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            <strong>{{ item.material.DescricaoMaterial if item.material else 'Material não encontrado' }}</strong><br>
-                                            <small class="text-muted">{{ item.solicitacao.especificacao }}</small>
-                                            {% if item.solicitacao.marca %}
-                                                <br><small class="text-muted">Marca: {{ item.solicitacao.marca }}</small>
-                                            {% endif %}
-                                            <!-- Badge de Prioridade -->
-                                            <div class="mt-1">
-                                                {% if item.prioridade == 3 %}
-                                                    <span class="badge badge-prioridade prioridade-3">
-                                                        <i class="fas fa-star"></i> Prioridade Máxima
-                                                    </span>
-                                                {% elif item.prioridade == 2 %}
-                                                    <span class="badge badge-prioridade prioridade-2">
-                                                        <i class="fas fa-exclamation-circle"></i> Alta Prioridade
-                                                    </span>
-                                                {% elif item.prioridade == 1 %}
-                                                    <span class="badge badge-prioridade prioridade-1">
-                                                        <i class="fas fa-info-circle"></i> Média Prioridade
-                                                    </span>
-                                                {% else %}
-                                                    <span class="badge badge-prioridade prioridade-0">
-                                                        <i class="fas fa-clock"></i> Baixa Prioridade
-                                                    </span>
-                                                {% endif %}
-                                            </div>
-                                        </td>
-                                        <td>{{ item.solicitacao.usuario }}</td>
-                                        <td>{{ item.solicitacao.empresa }}</td>
-                                        <td>
-                                            {% if item.solicitacao.ativo == 'Sim' %}
-                                                <span class="badge bg-success">Sim</span><br>
-                                                <small>{{ item.solicitacao.nome_ativo }}</small>
-                                            {% else %}
-                                                <span class="badge bg-secondary">Não</span>
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            {{ item.solicitacao.quantidade }} {{ item.solicitacao.unidade_medida }}
-                                        </td>
-                                        <td>
-                                            <span class="priority-badge {{ 'priority-urgente' if item.solicitacao.prioridade == 'Urgente' else 'priority-programado' }}">
-                                                {{ item.solicitacao.prioridade }}
-                                            </span>
-                                        </td>
-                                        <td>{{ item.solicitacao.data_solicitacao.strftime('%d/%m/%Y') }}</td>
-                                        <td>
-                                            {% if not item.preenchimento %}
-                                                <span class="status-badge status-aberta">Aberta</span>
-                                            {% else %}
-                                                {% if item.preenchimento.status == 'Rascunho' %}
-                                                    <span class="status-badge status-rascunho">Rascunho</span>
-                                                {% elif item.preenchimento.status == 'Aguardando Aprovação' %}
-                                                    <span class="status-badge status-preenchida">Aguardando Aprovação</span>
-                                                {% elif item.preenchimento.status == 'Aprovado' %}
-                                                    <span class="status-badge status-aprovada">Aprovado</span>
-                                                {% elif item.preenchimento.status == 'Reprovado' %}
-                                                    <span class="status-badge status-reprovada">Reprovado</span>
-                                                {% elif item.preenchimento.status == 'Em Processamento' %}
-                                                    <span class="status-badge status-processamento">Em Processamento</span>
-                                                {% elif item.preenchimento.status == 'Entregue' %}
-                                                    <span class="status-badge status-entregue">Entregue</span>
-                                                {% else %}
-                                                    <span class="status-badge status-aberta">{{ item.preenchimento.status }}</span>
-                                                {% endif %}
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            {% if item.pedido %}
-                                                <span class="badge bg-success">
-                                                    <i class="fas fa-check"></i> {{ item.pedido.numero_pedido }}
-                                                </span>
-                                            {% else %}
-                                                <span class="badge bg-secondary">Sem pedido</span>
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#detalhesModal{{ item.solicitacao.id }}_{{ item.preenchimento.id if item.preenchimento else '0' }}">
-                                                <i class="fas fa-eye"></i> Detalhes
-                                            </button>
-                                        </td>
-                                    </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
+                <div class="table-responsive">
+                    <table id="auditoriaTable" class="table table-hover table-striped">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Material</th>
+                                <th>Solicitante</th>
+                                <th>Empresa</th>
+                                <th>Ativo</th>
+                                <th>Quantidade</th>
+                                <th>Prioridade</th>
+                                <th>Data</th>
+                                <th>Status</th>
+                                <th>Pedido</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in auditoria %}
+                            <tr
+                                class="{% if item.prioridade == 3 %}prioridade-alta{% elif item.prioridade == 2 %}prioridade-media{% elif item.prioridade == 1 %}prioridade-baixa{% endif %}">
+                                <td>
+                                    <strong>SOL#{{ item.solicitacao.id }}</strong>
+                                    {% if item.preenchimento %}
+                                    <br><small class="text-muted">COT#{{ item.preenchimento.id }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <strong>{{ item.material.DescricaoMaterial if item.material else 'Material não encontrado' }}</strong><br>
+                                    <small class="text-muted">{{ item.solicitacao.especificacao }}</small>
+                                    {% if item.solicitacao.marca %}
+                                    <br><small class="text-muted">Marca: {{ item.solicitacao.marca }}</small>
+                                    {% endif %}
+                                    <!-- Badge de Prioridade -->
+                                    <div class="mt-1">
+                                        {% if item.prioridade == 3 %}
+                                        <span class="badge badge-prioridade prioridade-3">
+                                            <i class="fas fa-star"></i> Prioridade Máxima
+                                        </span>
+                                        {% elif item.prioridade == 2 %}
+                                        <span class="badge badge-prioridade prioridade-2">
+                                            <i class="fas fa-exclamation-circle"></i> Alta Prioridade
+                                        </span>
+                                        {% elif item.prioridade == 1 %}
+                                        <span class="badge badge-prioridade prioridade-1">
+                                            <i class="fas fa-info-circle"></i> Média Prioridade
+                                        </span>
+                                        {% else %}
+                                        <span class="badge badge-prioridade prioridade-0">
+                                            <i class="fas fa-clock"></i> Baixa Prioridade
+                                        </span>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td>{{ item.solicitacao.usuario }}</td>
+                                <td>{{ item.solicitacao.empresa }}</td>
+                                <td>
+                                    {% if item.solicitacao.ativo == 'Sim' %}
+                                    <span class="badge bg-success">Sim</span><br>
+                                    <small>{{ item.solicitacao.nome_ativo }}</small>
+                                    {% else %}
+                                    <span class="badge bg-secondary">Não</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {{ item.solicitacao.quantidade }} {{ item.solicitacao.unidade_medida }}
+                                </td>
+                                <td>
+                                    <span
+                                        class="priority-badge {{ 'priority-urgente' if item.solicitacao.prioridade == 'Urgente' else 'priority-programado' }}">
+                                        {{ item.solicitacao.prioridade }}
+                                    </span>
+                                </td>
+                                <td>{{ item.solicitacao.data_solicitacao.strftime('%d/%m/%Y') }}</td>
+                                <td>
+                                    {% if not item.preenchimento %}
+                                        {% if item.solicitacao.status == 'Pendente' %}
+                                        <span class="status-badge status-pendente">Pendente</span>
+                                        {% else %}
+                                        <span class="status-badge status-aberta">Aberta</span>
+                                        {% endif %}
+                                    {% else %}
+                                        {% if item.preenchimento.status == 'Rascunho' %}
+                                        <span class="status-badge status-rascunho">Rascunho</span>
+                                        {% elif item.preenchimento.status == 'Pendente' %}
+                                        <span class="status-badge status-pendente">Pendente</span>
+                                        {% elif item.preenchimento.status == 'Aguardando Aprovação' %}
+                                        <span class="status-badge status-preenchida">Aguardando Aprovação</span>
+                                        {% elif item.preenchimento.status == 'Aprovado' %}
+                                        <span class="status-badge status-aprovada">Aprovado</span>
+                                        {% elif item.preenchimento.status == 'Reprovado' %}
+                                        <span class="status-badge status-reprovada">Reprovado</span>
+                                        {% elif item.preenchimento.status == 'Em Processamento' %}
+                                        <span class="status-badge status-processamento">Em Processamento</span>
+                                        {% elif item.preenchimento.status == 'Entregue' %}
+                                        <span class="status-badge status-entregue">Entregue</span>
+                                        {% else %}
+                                        <span class="status-badge status-aberta">{{ item.preenchimento.status }}</span>
+                                        {% endif %}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if item.pedido %}
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-check"></i> {{ item.pedido.numero_pedido }}
+                                    </span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">Sem pedido</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"
+                                        data-bs-target="#detalhesModal{{ item.solicitacao.id }}_{{ item.preenchimento.id if item.preenchimento else '0' }}">
+                                        <i class="fas fa-eye"></i> Detalhes
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
                 {% endif %}
             </div>
         </div>
 
         <!-- Modais de Detalhes -->
         {% for item in auditoria %}
-            <div class="modal fade" id="detalhesModal{{ item.solicitacao.id }}_{{ item.preenchimento.id if item.preenchimento else '0' }}" tabindex="-1" aria-labelledby="detalhesModalLabel{{ item.solicitacao.id }}_{{ item.preenchimento.id if item.preenchimento else '0' }}" aria-hidden="true">
-                <div class="modal-dialog modal-xl">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="detalhesModalLabel{{ item.solicitacao.id }}_{{ item.preenchimento.id if item.preenchimento else '0' }}">
-                                Detalhes da Solicitação #{{ item.solicitacao.id }}
-                                {% if item.preenchimento %}
-                                    - Cotação #{{ item.preenchimento.id }}
-                                {% endif %}
-                            </h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body">
-                            <div class="row mb-4">
-                                <div class="col-md-6">
-                                    <div class="card h-100">
-                                        <div class="card-header">
-                                            <i class="fas fa-box me-2"></i>Informações do Material
+        <div class="modal fade"
+            id="detalhesModal{{ item.solicitacao.id }}_{{ item.preenchimento.id if item.preenchimento else '0' }}"
+            tabindex="-1"
+            aria-labelledby="detalhesModalLabel{{ item.solicitacao.id }}_{{ item.preenchimento.id if item.preenchimento else '0' }}"
+            aria-hidden="true">
+            <div class="modal-dialog modal-xl">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title"
+                            id="detalhesModalLabel{{ item.solicitacao.id }}_{{ item.preenchimento.id if item.preenchimento else '0' }}">
+                            Detalhes da Solicitação #{{ item.solicitacao.id }}
+                            {% if item.preenchimento %}
+                            - Cotação #{{ item.preenchimento.id }}
+                            {% endif %}
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="card h-100">
+                                    <div class="card-header">
+                                        <i class="fas fa-box me-2"></i>Informações do Material
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="mb-3">
+                                            <h6>{{ item.material.DescricaoMaterial if item.material else 'Material não encontrado' }}</h6>
+                                            <p class="mb-1"><strong>Código:</strong> {{ item.material.CodMaterial if item.material else 'N/A' }}</p>
+                                            <p class="mb-1"><strong>Aplicação:</strong> {{ item.material.Aplicacao if item.material else 'N/A' }}</p>
+                                            <p class="mb-1"><strong>Estoque Atual:</strong> {{ item.material.QuantidadeEstoque if item.material else 'N/A' }}</p>
+                                            <p class="mb-1"><strong>Fator Consumo:</strong> {{ item.material.FatorConsumo if item.material else 'N/A' }}</p>
                                         </div>
-                                        <div class="card-body">
-                                            <div class="mb-3">
-                                                <h6>{{ item.material.DescricaoMaterial if item.material else 'Material não encontrado' }}</h6>
-                                                <p class="mb-1"><strong>Código:</strong> {{ item.material.CodMaterial if item.material else 'N/A' }}</p>
-                                                <p class="mb-1"><strong>Aplicação:</strong> {{ item.material.Aplicacao if item.material else 'N/A' }}</p>
-                                                <p class="mb-1"><strong>Estoque Atual:</strong> {{ item.material.QuantidadeEstoque if item.material else 'N/A' }}</p>
-                                                <p class="mb-1"><strong>Fator Consumo:</strong> {{ item.material.FatorConsumo if item.material else 'N/A' }}</p>
-                                            </div>
-                                            <hr>
-                                            <div>
-                                                <h6>Especificação da Solicitação</h6>
-                                                <p>{{ item.solicitacao.especificacao }}</p>
-                                                <p class="mb-1"><strong>Marca:</strong> {{ item.solicitacao.marca or 'Não especificada' }}</p>
-                                                <p class="mb-1"><strong>Quantidade:</strong> {{ item.solicitacao.quantidade }} {{ item.solicitacao.unidade_medida }}</p>
-                                                <p class="mb-1"><strong>Prioridade:</strong> 
-                                                    <span class="priority-badge {{ 'priority-urgente' if item.solicitacao.prioridade == 'Urgente' else 'priority-programado' }}">
-                                                        {{ item.solicitacao.prioridade }}
-                                                    </span>
-                                                </p>
-                                                <p class="mb-1"><strong>Aprovação:</strong> 
-                                                    {% if item.solicitacao.status_aprovacao %}
-                                                        <span class="badge bg-{{ 'success' if item.solicitacao.status_aprovacao == 'Aprovado' else 'danger' }}">
-                                                            {{ item.solicitacao.status_aprovacao }}
-                                                        </span>
-                                                    {% else %}
-                                                        <span class="badge bg-secondary">Pendente</span>
-                                                    {% endif %}
-                                                </p>
-                                            </div>
+                                        <hr>
+                                        <div>
+                                            <h6>Especificação da Solicitação</h6>
+                                            <p>{{ item.solicitacao.especificacao }}</p>
+                                            <p class="mb-1"><strong>Marca:</strong> {{ item.solicitacao.marca or 'Não especificada' }}</p>
+                                            <p class="mb-1"><strong>Quantidade:</strong> {{ item.solicitacao.quantidade }} {{ item.solicitacao.unidade_medida }}</p>
+                                            <p class="mb-1"><strong>Prioridade:</strong>
+                                                <span
+                                                    class="priority-badge {{ 'priority-urgente' if item.solicitacao.prioridade == 'Urgente' else 'priority-programado' }}">
+                                                    {{ item.solicitacao.prioridade }}
+                                                </span>
+                                            </p>
+                                            <p class="mb-1"><strong>Aprovação:</strong>
+                                                {% if item.solicitacao.status_aprovacao %}
+                                                <span
+                                                    class="badge bg-{{ 'success' if item.solicitacao.status_aprovacao == 'Aprovado' else 'danger' }}">
+                                                    {{ item.solicitacao.status_aprovacao }}
+                                                </span>
+                                                {% else %}
+                                                <span class="badge bg-secondary">Pendente</span>
+                                                {% endif %}
+                                            </p>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-md-6">
-                                    <div class="card h-100">
-                                        <div class="card-header">
-                                            <i class="fas fa-user me-2"></i>Informações da Solicitação
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card h-100">
+                                    <div class="card-header">
+                                        <i class="fas fa-user me-2"></i>Informações da Solicitação
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="mb-3">
+                                            <p class="mb-1"><strong>Solicitante:</strong> {{ item.solicitacao.usuario }}</p>
+                                            <p class="mb-1"><strong>Empresa:</strong> {{ item.solicitacao.empresa }}</p>
+                                            <p class="mb-1"><strong>Data:</strong> {{ item.solicitacao.data_solicitacao.strftime('%d/%m/%Y %H:%M') }}</p>
+                                            <p class="mb-1"><strong>Ativo:</strong>
+                                                {% if item.solicitacao.ativo == 'Sim' %}
+                                                <span class="badge bg-success">Sim</span> - {{ item.solicitacao.nome_ativo }}
+                                                {% else %}
+                                                <span class="badge bg-secondary">Não</span>
+                                                {% endif %}
+                                            </p>
+                                            <p class="mb-1"><strong>Aplicação:</strong> {{ item.solicitacao.aplicacao or 'Não especificada' }}</p>
                                         </div>
-                                        <div class="card-body">
-                                            <div class="mb-3">
-                                                <p class="mb-1"><strong>Solicitante:</strong> {{ item.solicitacao.usuario }}</p>
-                                                <p class="mb-1"><strong>Empresa:</strong> {{ item.solicitacao.empresa }}</p>
-                                                <p class="mb-1"><strong>Data:</strong> {{ item.solicitacao.data_solicitacao.strftime('%d/%m/%Y %H:%M') }}</p>
-                                                <p class="mb-1"><strong>Ativo:</strong> 
-                                                    {% if item.solicitacao.ativo == 'Sim' %}
-                                                        <span class="badge bg-success">Sim</span> - {{ item.solicitacao.nome_ativo }}
-                                                    {% else %}
-                                                        <span class="badge bg-secondary">Não</span>
-                                                    {% endif %}
-                                                </p>
-                                                <p class="mb-1"><strong>Aplicação:</strong> {{ item.solicitacao.aplicacao or 'Não especificada' }}</p>
-                                            </div>
-                                            <hr>
-                                            <div>
-                                                <h6>Fluxo da Solicitação</h6>
-                                                <div class="timeline">
-                                                    <div class="timeline-item completed">
-                                                        <i class="fas fa-file-alt"></i>
-                                                        <strong>Solicitação Criada</strong><br>
-                                                        <small>{{ item.solicitacao.data_solicitacao.strftime('%d/%m/%Y %H:%M') }}</small>
-                                                    </div>
-                                                    {% if item.preenchimento %}
-                                                        <div class="timeline-item completed">
-                                                            <i class="fas fa-file-invoice-dollar"></i>
-                                                            <strong>Cotação Preenchida</strong><br>
-                                                            <small>{{ item.preenchimento.data_preenchimento.strftime('%d/%m/%Y %H:%M') }}</small><br>
-                                                            <small>Por: {{ item.preenchimento.usuario }}</small>
-                                                        </div>
-                                                        {% if item.preenchimento.status in ['Aprovado', 'Reprovado'] %}
-                                                            <div class="timeline-item completed">
-                                                                <i class="fas {% if item.preenchimento.status == 'Aprovado' %}fa-check-circle{% else %}fa-times-circle{% endif %}"></i>
-                                                                <strong>{{ item.preenchimento.status }}</strong><br>
-                                                                <small>Valor: R$ {{ "%.2f"|format(item.preenchimento.valor_total) }}</small>
-                                                            </div>
-                                                        {% endif %}
-                                                        {% if item.pedido %}
-                                                            <div class="timeline-item completed">
-                                                                <i class="fas fa-shopping-cart"></i>
-                                                                <strong>Pedido Gerado</strong><br>
-                                                                <small>{{ item.pedido.numero_pedido }}</small><br>
-                                                                <small>Status: {{ item.pedido.status }}</small>
-                                                            </div>
-                                                        {% endif %}
-                                                        {% if item.estoque %}
-                                                            <div class="timeline-item completed">
-                                                                <i class="fas fa-warehouse"></i>
-                                                                <strong>Entrada no Estoque</strong><br>
-                                                                <small>{{ item.estoque.data_entrada.strftime('%d/%m/%Y %H:%M') }}</small><br>
-                                                                <small>NF: {{ item.estoque.numero_nf }}</small>
-                                                            </div>
-                                                        {% endif %}
-                                                        {% if item.requisicoes %}
-                                                            <div class="timeline-item completed">
-                                                                <i class="fas fa-clipboard-list"></i>
-                                                                <strong>Requisições</strong><br>
-                                                                <small>Total: {{ item.requisicoes|length }}</small>
-                                                            </div>
-                                                        {% endif %}
-                                                    {% endif %}
-                                                    <div class="timeline-item {% if item.preenchimento and item.preenchimento.status == 'Entregue' %}completed{% else %}current{% endif %}">
-                                                        <i class="fas fa-info-circle"></i>
-                                                        <strong>Status Atual</strong><br>
-                                                        {% if not item.preenchimento %}
-                                                            <span class="badge bg-warning text-dark">Aberta</span>
+                                        <hr>
+                                        <div>
+                                            <h6>Fluxo da Solicitação</h6>
+                                            <div class="timeline">
+                                                <div class="timeline-item completed">
+                                                    <i class="fas fa-file-alt"></i>
+                                                    <strong>Solicitação Criada</strong><br>
+                                                    <small>{{ item.solicitacao.data_solicitacao.strftime('%d/%m/%Y %H:%M') }}</small>
+                                                </div>
+                                                {% if item.preenchimento %}
+                                                <div class="timeline-item completed">
+                                                    <i class="fas fa-file-invoice-dollar"></i>
+                                                    <strong>Cotação Preenchida</strong><br>
+                                                    <small>{{ item.preenchimento.data_preenchimento.strftime('%d/%m/%Y %H:%M') }}</small><br>
+                                                    <small>Por: {{ item.preenchimento.usuario }}</small>
+                                                </div>
+                                                {% if item.preenchimento.status in ['Aprovado', 'Reprovado'] %}
+                                                <div class="timeline-item completed">
+                                                    <i class="fas {% if item.preenchimento.status == 'Aprovado' %}fa-check-circle{% else %}fa-times-circle{% endif %}"></i>
+                                                    <strong>{{ item.preenchimento.status }}</strong><br>
+                                                    <small>Valor: R$ {{ "%.2f"|format(item.preenchimento.valor_total) }}</small>
+                                                </div>
+                                                {% endif %}
+                                                {% if item.pedido %}
+                                                <div class="timeline-item completed">
+                                                    <i class="fas fa-shopping-cart"></i>
+                                                    <strong>Pedido Gerado</strong><br>
+                                                    <small>{{ item.pedido.numero_pedido }}</small><br>
+                                                    <small>Status: {{ item.pedido.status }}</small>
+                                                </div>
+                                                {% endif %}
+                                                {% if item.estoque %}
+                                                <div class="timeline-item completed">
+                                                    <i class="fas fa-warehouse"></i>
+                                                    <strong>Entrada no Estoque</strong><br>
+                                                    <small>{{ item.estoque.data_entrada.strftime('%d/%m/%Y %H:%M') }}</small><br>
+                                                    <small>NF: {{ item.estoque.numero_nf }}</small>
+                                                </div>
+                                                {% endif %}
+                                                {% if item.requisicoes %}
+                                                <div class="timeline-item completed">
+                                                    <i class="fas fa-clipboard-list"></i>
+                                                    <strong>Requisições</strong><br>
+                                                    <small>Total: {{ item.requisicoes|length }}</small>
+                                                </div>
+                                                {% endif %}
+                                                {% endif %}
+                                                <div
+                                                    class="timeline-item {% if item.preenchimento and item.preenchimento.status == 'Entregue' %}completed{% else %}current{% endif %}">
+                                                    <i class="fas fa-info-circle"></i>
+                                                    <strong>Status Atual</strong><br>
+                                                    {% if not item.preenchimento %}
+                                                        {% if item.solicitacao.status == 'Pendente' %}
+                                                        <span class="badge bg-warning">Pendente</span>
                                                         {% else %}
-                                                            {% if item.preenchimento.status == 'Rascunho' %}
-                                                                <span class="badge bg-secondary">Rascunho</span>
-                                                            {% elif item.preenchimento.status == 'Aguardando Aprovação' %}
-                                                                <span class="badge bg-info">Aguardando Aprovação</span>
-                                                            {% elif item.preenchimento.status == 'Aprovado' %}
-                                                                <span class="badge bg-success">Aprovado</span>
-                                                            {% elif item.preenchimento.status == 'Reprovado' %}
-                                                                <span class="badge bg-danger">Reprovado</span>
-                                                            {% elif item.preenchimento.status == 'Em Processamento' %}
-                                                                <span class="badge bg-secondary">Em Processamento</span>
-                                                            {% elif item.preenchimento.status == 'Entregue' %}
-                                                                <span class="badge bg-primary">Entregue</span>
-                                                            {% endif %}
+                                                        <span class="badge bg-warning text-dark">Aberta</span>
                                                         {% endif %}
-                                                    </div>
+                                                    {% else %}
+                                                        {% if item.preenchimento.status == 'Rascunho' %}
+                                                        <span class="badge bg-secondary">Rascunho</span>
+                                                        {% elif item.preenchimento.status == 'Pendente' %}
+                                                        <span class="badge bg-warning">Pendente</span>
+                                                        {% elif item.preenchimento.status == 'Aguardando Aprovação' %}
+                                                        <span class="badge bg-info">Aguardando Aprovação</span>
+                                                        {% elif item.preenchimento.status == 'Aprovado' %}
+                                                        <span class="badge bg-success">Aprovado</span>
+                                                        {% elif item.preenchimento.status == 'Reprovado' %}
+                                                        <span class="badge bg-danger">Reprovado</span>
+                                                        {% elif item.preenchimento.status == 'Em Processamento' %}
+                                                        <span class="badge bg-secondary">Em Processamento</span>
+                                                        {% elif item.preenchimento.status == 'Entregue' %}
+                                                        <span class="badge bg-primary">Entregue</span>
+                                                        {% endif %}
+                                                    {% endif %}
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                            
-                            {% if item.preenchimento %}
-                                <div class="card mb-4">
-                                    <div class="card-header">
-                                        <i class="fas fa-file-invoice-dollar me-2"></i>Detalhes da Cotação
+                        </div>
+
+                        {% if item.preenchimento %}
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <i class="fas fa-file-invoice-dollar me-2"></i>Detalhes da Cotação
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <p><strong>Fornecedor:</strong> {{ item.fornecedor.nome_fantasia or 'Não informado' }}</p>
+                                        <p><strong>CNPJ:</strong> {{ item.fornecedor.cnpj or 'N/A' }}</p>
+                                        <p><strong>Valor Unitário:</strong> R$ {{ "%.2f"|format(item.preenchimento.valor_unitario) }}</p>
+                                        <p><strong>Valor Total:</strong> R$ {{ "%.2f"|format(item.preenchimento.valor_total) }}</p>
                                     </div>
-                                    <div class="card-body">
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <p><strong>Fornecedor:</strong> {{ item.fornecedor.nome_fantasia or 'Não informado' }}</p>
-                                                <p><strong>CNPJ:</strong> {{ item.fornecedor.cnpj or 'N/A' }}</p>
-                                                <p><strong>Valor Unitário:</strong> R$ {{ "%.2f"|format(item.preenchimento.valor_unitario) }}</p>
-                                                <p><strong>Valor Total:</strong> R$ {{ "%.2f"|format(item.preenchimento.valor_total) }}</p>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <p><strong>Prazo de Entrega:</strong> {{ item.preenchimento.prazo_entrega }}</p>
-                                                <p><strong>Condição de Pagamento:</strong> {{ item.preenchimento.condicao_pagamento }}</p>
-                                                <p><strong>Status:</strong> 
-                                                    {% if item.preenchimento.status == 'Rascunho' %}
-                                                        <span class="badge bg-secondary">Rascunho</span>
-                                                    {% elif item.preenchimento.status == 'Aguardando Aprovação' %}
-                                                        <span class="badge bg-info">Aguardando Aprovação</span>
-                                                    {% elif item.preenchimento.status == 'Aprovado' %}
-                                                        <span class="badge bg-success">Aprovado</span>
-                                                    {% elif item.preenchimento.status == 'Reprovado' %}
-                                                        <span class="badge bg-danger">Reprovado</span>
-                                                    {% elif item.preenchimento.status == 'Em Processamento' %}
-                                                        <span class="badge bg-secondary">Em Processamento</span>
-                                                    {% elif item.preenchimento.status == 'Entregue' %}
-                                                        <span class="badge bg-primary">Entregue</span>
-                                                    {% endif %}
-                                                </p>
-                                                {% if item.preenchimento.observacoes %}
-                                                    <p><strong>Observações:</strong> {{ item.preenchimento.observacoes }}</p>
-                                                {% endif %}
-                                            </div>
-                                        </div>
-                                        {% if item.preenchimento.pdf_path %}
-                                            <div class="mt-3">
-                                                <a href="{{ url_for('routes_bp.download_pdf', preenchimento_id=item.preenchimento.id) }}" 
-                                                   class="btn btn-sm btn-outline-secondary">
-                                                    <i class="fas fa-file-pdf me-1"></i> Baixar PDF da Cotação
-                                                </a>
-                                            </div>
+                                    <div class="col-md-6">
+                                        <p><strong>Prazo de Entrega:</strong> {{ item.preenchimento.prazo_entrega }}</p>
+                                        <p><strong>Condição de Pagamento:</strong> {{ item.preenchimento.condicao_pagamento }}</p>
+                                        <p><strong>Status:</strong>
+                                            {% if item.preenchimento.status == 'Rascunho' %}
+                                            <span class="badge bg-secondary">Rascunho</span>
+                                            {% elif item.preenchimento.status == 'Pendente' %}
+                                            <span class="badge bg-warning">Pendente</span>
+                                            {% elif item.preenchimento.status == 'Aguardando Aprovação' %}
+                                            <span class="badge bg-info">Aguardando Aprovação</span>
+                                            {% elif item.preenchimento.status == 'Aprovado' %}
+                                            <span class="badge bg-success">Aprovado</span>
+                                            {% elif item.preenchimento.status == 'Reprovado' %}
+                                            <span class="badge bg-danger">Reprovado</span>
+                                            {% elif item.preenchimento.status == 'Em Processamento' %}
+                                            <span class="badge bg-secondary">Em Processamento</span>
+                                            {% elif item.preenchimento.status == 'Entregue' %}
+                                            <span class="badge bg-primary">Entregue</span>
+                                            {% endif %}
+                                        </p>
+                                        {% if item.preenchimento.observacoes %}
+                                        <p><strong>Observações:</strong> {{ item.preenchimento.observacoes }}</p>
                                         {% endif %}
                                     </div>
                                 </div>
-                            {% endif %}
-                            
-                            {% if item.pedido %}
-                                <div class="card mb-4">
-                                    <div class="card-header">
-                                        <i class="fas fa-shopping-cart me-2"></i>Detalhes do Pedido
+                                {% if item.preenchimento.pdf_path %}
+                                <div class="mt-3">
+                                    <a href="{{ url_for('routes_bp.download_pdf', preenchimento_id=item.preenchimento.id) }}"
+                                        class="btn btn-sm btn-outline-secondary">
+                                        <i class="fas fa-file-pdf me-1"></i> Baixar PDF da Cotação
+                                    </a>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if item.pedido %}
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <i class="fas fa-shopping-cart me-2"></i>Detalhes do Pedido
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <p><strong>Número do Pedido:</strong> {{ item.pedido.numero_pedido }}</p>
+                                        <p><strong>Data:</strong> {{ item.pedido.data_criacao.strftime('%d/%m/%Y %H:%M') }}</p>
+                                        <p><strong>Valor Total:</strong> R$ {{ "%.2f"|format(item.pedido.valor_total) }}</p>
+                                        {% if item.pedido.valor_frete %}
+                                        <p><strong>Valor Frete:</strong> R$ {{ "%.2f"|format(item.pedido.valor_frete) }}</p>
+                                        {% endif %}
+                                        <p><strong>Valor Líquido:</strong> R$ {{ "%.2f"|format(item.pedido.valor_liquido) }}</p>
                                     </div>
-                                    <div class="card-body">
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <p><strong>Número do Pedido:</strong> {{ item.pedido.numero_pedido }}</p>
-                                                <p><strong>Data:</strong> {{ item.pedido.data_criacao.strftime('%d/%m/%Y %H:%M') }}</p>
-                                                <p><strong>Valor Total:</strong> R$ {{ "%.2f"|format(item.pedido.valor_total) }}</p>
-                                                {% if item.pedido.valor_frete %}
-                                                    <p><strong>Valor Frete:</strong> R$ {{ "%.2f"|format(item.pedido.valor_frete) }}</p>
-                                                {% endif %}
-                                                <p><strong>Valor Líquido:</strong> R$ {{ "%.2f"|format(item.pedido.valor_liquido) }}</p>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <p><strong>Status:</strong> 
-                                                    {% if item.pedido.status == 'Gerado' %}
-                                                        <span class="badge bg-secondary">Gerado</span>
-                                                    {% elif item.pedido.status == 'Aprovado' %}
-                                                        <span class="badge bg-success">Aprovado</span>
-                                                    {% elif item.pedido.status == 'AgPagamento' %}
-                                                        <span class="badge bg-warning">Aguardando Pagamento</span>
-                                                    {% elif item.pedido.status == 'AgEntrega' %}
-                                                        <span class="badge bg-info">Aguardando Entrega</span>
-                                                    {% elif item.pedido.status == 'Entregue' %}
-                                                        <span class="badge bg-primary">Entregue</span>
-                                                    {% elif item.pedido.status == 'Reprovado' %}
-                                                        <span class="badge bg-danger">Reprovado</span>
-                                                    {% endif %}
-                                                </p>
-                                                <p><strong>Forma de Pagamento:</strong> {{ item.pedido.forma_pagamento }}</p>
-                                                {% if item.pedido.observacoes %}
-                                                    <p><strong>Observações:</strong> {{ item.pedido.observacoes }}</p>
-                                                {% endif %}
-                                            </div>
-                                        </div>
-                                        {% if item.pedido.pdf_path %}
-                                            <div class="mt-3">
-                                                <a href="{{ url_for('routes_bp.download_pedido_pdf', pedido_id=item.pedido.id) }}" 
-                                                   class="btn btn-sm btn-outline-secondary">
-                                                    <i class="fas fa-file-pdf me-1"></i> Baixar PDF do Pedido
-                                                </a>
-                                            </div>
+                                    <div class="col-md-6">
+                                        <p><strong>Status:</strong>
+                                            {% if item.pedido.status == 'Gerado' %}
+                                            <span class="badge bg-secondary">Gerado</span>
+                                            {% elif item.pedido.status == 'Aprovado' %}
+                                            <span class="badge bg-success">Aprovado</span>
+                                            {% elif item.pedido.status == 'AgPagamento' %}
+                                            <span class="badge bg-warning">Aguardando Pagamento</span>
+                                            {% elif item.pedido.status == 'AgEntrega' %}
+                                            <span class="badge bg-info">Aguardando Entrega</span>
+                                            {% elif item.pedido.status == 'Entregue' %}
+                                            <span class="badge bg-primary">Entregue</span>
+                                            {% elif item.pedido.status == 'Reprovado' %}
+                                            <span class="badge bg-danger">Reprovado</span>
+                                            {% endif %}
+                                        </p>
+                                        <p><strong>Forma de Pagamento:</strong> {{ item.pedido.forma_pagamento }}</p>
+                                        {% if item.pedido.observacoes %}
+                                        <p><strong>Observações:</strong> {{ item.pedido.observacoes }}</p>
                                         {% endif %}
                                     </div>
                                 </div>
-                            {% endif %}
-                            
-                            {% if item.estoque %}
-                                <div class="card mb-4">
-                                    <div class="card-header">
-                                        <i class="fas fa-warehouse me-2"></i>Entrada no Estoque
+                                {% if item.pedido.pdf_path %}
+                                <div class="mt-3">
+                                    <a href="{{ url_for('routes_bp.download_pedido_pdf', pedido_id=item.pedido.id) }}"
+                                        class="btn btn-sm btn-outline-secondary">
+                                        <i class="fas fa-file-pdf me-1"></i> Baixar PDF do Pedido
+                                    </a>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if item.estoque %}
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <i class="fas fa-warehouse me-2"></i>Entrada no Estoque
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <p><strong>Quantidade:</strong> {{ item.estoque.quantidade }}</p>
+                                        <p><strong>Fornecedor:</strong> {{ item.estoque.fornecedor }}</p>
                                     </div>
-                                    <div class="card-body">
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <p><strong>Quantidade:</strong> {{ item.estoque.quantidade }}</p>
-                                                <p><strong>Fornecedor:</strong> {{ item.estoque.fornecedor }}</p>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <p><strong>Número da NF:</strong> {{ item.estoque.numero_nf }}</p>
-                                                <p><strong>Data de Entrada:</strong> {{ item.estoque.data_entrada.strftime('%d/%m/%Y %H:%M') }}</p>
-                                                <p><strong>Usuário:</strong> {{ item.estoque.usuario }}</p>
-                                            </div>
-                                        </div>
+                                    <div class="col-md-6">
+                                        <p><strong>Número da NF:</strong> {{ item.estoque.numero_nf }}</p>
+                                        <p><strong>Data de Entrada:</strong> {{ item.estoque.data_entrada.strftime('%d/%m/%Y %H:%M') }}</p>
+                                        <p><strong>Usuário:</strong> {{ item.estoque.usuario }}</p>
                                     </div>
                                 </div>
-                            {% endif %}
-                            
-                            {% if item.requisicoes %}
-                                <div class="card">
-                                    <div class="card-header">
-                                        <i class="fas fa-clipboard-list me-2"></i>Requisições
-                                    </div>
-                                    <div class="card-body">
-                                        <table class="table table-sm">
-                                            <thead>
-                                                <tr>
-                                                    <th>Ticket</th>
-                                                    <th>Quantidade</th>
-                                                    <th>Data</th>
-                                                    <th>Usuário</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {% for requisicao in item.requisicoes %}
-                                                    <tr>
-                                                        <td>{{ requisicao.ticket }}</td>
-                                                        <td>{{ requisicao.quantidade }}</td>
-                                                        <td>{{ requisicao.data_requisicao.strftime('%d/%m/%Y %H:%M') }}</td>
-                                                        <td>{{ requisicao.usuario }}</td>
-                                                    </tr>
-                                                {% endfor %}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            {% endif %}
+                            </div>
                         </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                        {% endif %}
+
+                        {% if item.requisicoes %}
+                        <div class="card">
+                            <div class="card-header">
+                                <i class="fas fa-clipboard-list me-2"></i>Requisições
+                            </div>
+                            <div class="card-body">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Ticket</th>
+                                            <th>Quantidade</th>
+                                            <th>Data</th>
+                                            <th>Usuário</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for requisicao in item.requisicoes %}
+                                        <tr>
+                                            <td>{{ requisicao.ticket }}</td>
+                                            <td>{{ requisicao.quantidade }}</td>
+                                            <td>{{ requisicao.data_requisicao.strftime('%d/%m/%Y %H:%M') }}</td>
+                                            <td>{{ requisicao.usuario }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
+                        {% endif %}
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
                     </div>
                 </div>
             </div>
+        </div>
         {% endfor %}
     </div>
 
@@ -720,7 +807,7 @@
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
     <script>
         // Inicializar DataTables
-        $(document).ready(function() {
+        $(document).ready(function () {
             $('#auditoriaTable').DataTable({
                 "pageLength": 25,
                 "language": {
@@ -732,10 +819,25 @@
                 "order": [[0, "desc"]], // Ordenar por ID decrescente
                 "dom": '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rt<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>'
             });
+            
+            // Configurar automaticamente o filtro de usuário para "Eu" se não houver filtro
+            const usuarioSelect = document.getElementById('usuario');
+            const urlParams = new URLSearchParams(window.location.search);
+            const hasUsuarioFilter = urlParams.has('usuario') && urlParams.get('usuario') !== '';
+            
+            if (!hasUsuarioFilter && usuarioSelect) {
+                // Encontrar a opção "Eu" e selecioná-la
+                for (let option of usuarioSelect.options) {
+                    if (option.text.includes('Eu') || option.value === "{{ usuario_logado }}") {
+                        option.selected = true;
+                        break;
+                    }
+                }
+            }
         });
 
         // Ativar/desativar campo nome_ativo baseado no campo ativo
-        document.getElementById('ativo').addEventListener('change', function() {
+        document.getElementById('ativo').addEventListener('change', function () {
             const nomeAtivoSelect = document.getElementById('nome_ativo');
             nomeAtivoSelect.disabled = this.value !== 'Sim';
             if (this.value !== 'Sim') {
@@ -744,10 +846,10 @@
         });
 
         // Validação de datas nos filtros
-        document.getElementById('filterForm').addEventListener('submit', function(event) {
+        document.getElementById('filterForm').addEventListener('submit', function (event) {
             const dataInicio = document.getElementById('data_inicio').value;
             const dataFim = document.getElementById('data_fim').value;
-            
+
             if (dataInicio && dataFim && new Date(dataFim) < new Date(dataInicio)) {
                 event.preventDefault();
                 const toast = new bootstrap.Toast(document.getElementById('filterToast'), {
@@ -767,13 +869,77 @@
         });
 
         // Inicialização - verifica se o campo ativo está como 'Sim' para habilitar nome_ativo
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const ativoSelect = document.getElementById('ativo');
             const nomeAtivoSelect = document.getElementById('nome_ativo');
             if (ativoSelect.value === 'Sim') {
                 nomeAtivoSelect.disabled = false;
             }
         });
+
+        // Exportar para XLSX
+        document.getElementById('exportXlsxBtn').addEventListener('click', function () {
+            // Obter todos os parâmetros do filtro
+            const empresa = document.getElementById('empresa').value;
+            const usuario = document.getElementById('usuario').value;
+            const ativo = document.getElementById('ativo').value;
+            const nome_ativo = document.getElementById('nome_ativo').value;
+            const status = document.getElementById('status').value;
+            const prioridade = document.getElementById('prioridade').value;
+            const data_inicio = document.getElementById('data_inicio').value;
+            const data_fim = document.getElementById('data_fim').value;
+
+            // Construir URL com parâmetros
+            let url = "{{ url_for('routes_bp.exportar_auditoria_xlsx') }}";
+            url += `?empresa=${encodeURIComponent(empresa)}`;
+            url += `&usuario=${encodeURIComponent(usuario)}`;
+            url += `&ativo=${encodeURIComponent(ativo)}`;
+            url += `&nome_ativo=${encodeURIComponent(nome_ativo)}`;
+            url += `&status=${encodeURIComponent(status)}`;
+            url += `&prioridade=${encodeURIComponent(prioridade)}`;
+            url += `&data_inicio=${encodeURIComponent(data_inicio)}`;
+            url += `&data_fim=${encodeURIComponent(data_fim)}`;
+
+            // Mostrar indicador de carregamento
+            const originalText = this.innerHTML;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Exportando...';
+            this.disabled = true;
+
+            // Baixar arquivo
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'auditoria_solicitacoes.xlsx';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            // Restaurar botão
+            setTimeout(() => {
+                this.innerHTML = originalText;
+                this.disabled = false;
+
+                // Mostrar toast de sucesso
+                const toast = new bootstrap.Toast(document.getElementById('filterToast'), {
+                    autohide: true,
+                    delay: 3000
+                });
+                document.querySelector('#filterToast .toast-body').textContent = 'Relatório exportado com sucesso!';
+                toast.show();
+            }, 1000);
+        });
+        
+        // Configurar comportamento do botão Limpar Filtros
+        document.querySelector('a[href*="auditoria_solicitacoes"]').addEventListener('click', function(e) {
+            // Não é necessário prevenir o comportamento padrão, pois o href já redireciona
+            // Mas podemos adicionar um feedback visual
+            const toast = new bootstrap.Toast(document.getElementById('filterToast'), {
+                autohide: true,
+                delay: 2000
+            });
+            document.querySelector('#filterToast .toast-body').textContent = 'Filtros limpos! Mostrando todas as solicitações.';
+            toast.show();
+        });
     </script>
 </body>
+
 </html>

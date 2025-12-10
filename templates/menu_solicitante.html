@@ -534,15 +534,18 @@
             </div>
             
             <ul>
+                <li><a href="{{ url_for('routes_bp.auditoria_solicitacoes') }}" target="content-frame" data-tooltip="Auditoria de Compra"><i
+                            class="fas fa-search"></i><span>Acompanhar Solicitação</span></a></li>
+                
+                 <li><a href="{{ url_for('routes_bp.solicitar_compra', cod=None) }}"target="content-frame"data-tooltip="Solicitar Compra"><i 
+                                            class="fas fa-shopping-cart"></i><span>Abrir Solicitação</span></a></li>
                 
                 <li><a href="{{ url_for('routes_bp.buscar_material') }}" target="content-frame" data-tooltip="Buscar Material"><i
                             class="fas fa-search"></i><span>Buscar Material</span></a></li>
 
-                <li><a href="{{ url_for('routes_bp.solicitar_compra', cod=None) }}"target="content-frame"data-tooltip="Solicitar Compra"><i 
-                                            class="fas fa-shopping-cart"></i><span>Abrir Solicitação</span></a></li>
+               
 
-                <li><a href="{{ url_for('routes_bp.auditoria_solicitacoes') }}" target="content-frame" data-tooltip="Auditoria de Compra"><i
-                            class="fas fa-search"></i><span>Status Solicitação</span></a></li>
+                
           
             </ul>
             
@@ -566,7 +569,7 @@
             const contentFrame = document.getElementById('contentFrame');
             
             // Carrega o iframe inicial
-            contentFrame.src = "{{ url_for('routes_bp.buscar_material') }}";
+            contentFrame.src = "{{ url_for('routes_bp.auditoria_solicitacoes') }}";
 
             // Verifica o estado do menu no localStorage
             const menuState = localStorage.getItem('menuCollapsed');
