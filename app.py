@@ -6367,6 +6367,155 @@ def api_fornecedores():
         logging.error(f"Erro na API de fornecedores: {str(e)}")
         return jsonify({'error': str(e)}), 500
     
+@routes_bp.route('/api/excluir_grupo_aplicacao', methods=['POST'])
+def excluir_grupo_aplicacao():
+    """Exclui todas as solicitações de um grupo (aplicação) e seus relacionamentos"""
+    if 'usuario' not in session:
+        return jsonify({'success': False, 'error': 'Usuário não autenticado'}), 401
+    
+    try:
+        data = request.get_json()
+        aplicacao = data.get('aplicacao')
+        
+        if not aplicacao:
+            return jsonify({'success': False, 'error': 'Aplicação não especificada'}), 400
+        
+        usuario = session['usuario']
+        print(f"🚨 Usuário {usuario} solicitando exclusão do grupo: {aplicacao}")
+        
+        # 1. Buscar todas as solicitações APROVADAS desta aplicação
+        solicitacoes = SolicitacoesCompra.query.filter_by(
+            aplicacao=aplicacao,
+            status_aprovacao='Aprovado'
+        ).all()
+        
+        if not solicitacoes:
+            return jsonify({'success': False, 'error': f'Nenhuma solicitação APROVADA encontrada para "{aplicacao}"'}), 404
+        
+        ids_solicitacoes = [s.id for s in solicitacoes]
+        count_solicitacoes = len(ids_solicitacoes)
+        
+        print(f"📋 Encontradas {count_solicitacoes} solicitações para exclusão")
+        
+        # 2. Buscar todos os preenchimentos relacionados
+        preenchimentos = SolicitacoesPreenchidas.query.filter(
+            SolicitacoesPreenchidas.solicitacao_id.in_(ids_solicitacoes)
+        ).all()
+        
+        ids_preenchimentos = [p.id for p in preenchimentos]
+        count_preenchimentos = len(ids_preenchimentos)
+        
+        print(f"📋 Encontrados {count_preenchimentos} preenchimentos para exclusão")
+        
+        # 3. Buscar e excluir histórico de descontos
+        historicos = HistoricoDescontos.query.filter(
+            HistoricoDescontos.preenchimento_id.in_(ids_preenchimentos)
+        ).all()
+        
+        for historico in historicos:
+            db.session.delete(historico)
+        
+        count_historicos = len(historicos)
+        print(f"📋 Encontrados {count_historicos} históricos de desconto para exclusão")
+        
+        # 4. Verificar se há pedidos de compra associados
+        pedidos_associados = []
+        if ids_preenchimentos:
+            # Buscar pedidos que têm esses preenchimentos
+            pedidos = PedidosCompra.query.join(
+                pedido_preenchimento_associacao,
+                PedidosCompra.id == pedido_preenchimento_associacao.c.pedido_id
+            ).filter(
+                pedido_preenchimento_associacao.c.preenchimento_id.in_(ids_preenchimentos)
+            ).distinct().all()
+            
+            pedidos_associados = [p.numero_pedido for p in pedidos]
+        
+        if pedidos_associados:
+            return jsonify({
+                'success': False,
+                'error': f'Não é possível excluir: existem pedidos de compra associados ({len(pedidos_associados)} pedidos)',
+                'pedidos': pedidos_associados
+            }), 400
+        
+        # 5. Verificar se há registros em outras tabelas
+        # Estoque
+        estoques = Estoque.query.filter(
+            Estoque.preenchimento_id.in_(ids_preenchimentos)
+        ).all()
+        
+        if estoques:
+            for estoque in estoques:
+                db.session.delete(estoque)
+            print(f"📋 Excluídos {len(estoques)} registros de estoque")
+        
+        # Requisições
+        requisicoes = Requisicoes.query.filter(
+            Requisicoes.preenchimento_id.in_(ids_preenchimentos)
+        ).all()
+        
+        if requisicoes:
+            for requisicao in requisicoes:
+                db.session.delete(requisicao)
+            print(f"📋 Excluídos {len(requisicoes)} registros de requisições")
+        
+        # Auditoria
+        auditorias = Auditoria.query.filter(
+            Auditoria.solicitacao_id.in_(ids_solicitacoes)
+        ).all()
+        
+        if auditorias:
+            for auditoria in auditorias:
+                db.session.delete(auditoria)
+            print(f"📋 Excluídos {len(auditorias)} registros de auditoria")
+        
+        # 6. Excluir preenchimentos
+        for preenchimento in preenchimentos:
+            db.session.delete(preenchimento)
+        
+        # 7. Excluir solicitações
+        for solicitacao in solicitacoes:
+            db.session.delete(solicitacao)
+        
+        # 8. Commit da transação
+        db.session.commit()
+        
+        # 9. Log detalhado
+        logging.info(f"""
+        ✅ GRUPO EXCLUÍDO COM SUCESSO
+        Aplicação: {aplicacao}
+        Usuário: {usuario}
+        Data/Hora: {get_local_time()}
+        Estatísticas:
+          - Solicitações: {count_solicitacoes}
+          - Preenchimentos: {count_preenchimentos}
+          - Históricos: {count_historicos}
+          - Estoques: {len(estoques) if estoques else 0}
+          - Requisições: {len(requisicoes) if requisicoes else 0}
+          - Auditorias: {len(auditorias) if auditorias else 0}
+        """)
+        
+        return jsonify({
+            'success': True,
+            'message': f'✅ Grupo "{aplicacao}" excluído com sucesso!',
+            'details': {
+                'solicitacoes_excluidas': count_solicitacoes,
+                'preenchimentos_excluidas': count_preenchimentos,
+                'historicos_excluidos': count_historicos,
+                'estoques_excluidos': len(estoques) if estoques else 0,
+                'requisicoes_excluidas': len(requisicoes) if requisicoes else 0,
+                'auditorias_excluidas': len(auditorias) if auditorias else 0
+            }
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"❌ ERRO AO EXCLUIR GRUPO {aplicacao}: {str(e)}", exc_info=True)
+        return jsonify({
+            'success': False,
+            'error': f'Erro ao excluir grupo: {str(e)}'
+        }), 500
+    
   # Registro do Blueprint (apenas uma vez)
 app.register_blueprint(routes_bp)  
 
