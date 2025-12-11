@@ -8,700 +8,996 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
 
-        html,
-        body {
-            height: 100%;
-            font-family: Arial, sans-serif;
-        }
+    html,
+    body {
+        height: 100%;
+        font-family: Arial, sans-serif;
+    }
 
-        body {
-            background-color: #f8f9fa;
-            padding: 15px;
-            color: #333;
-        }
+    body {
+        background-color: #f8f9fa;
+        padding: 15px;
+        color: #333;
+    }
 
-        .header {
-            background-color: #022855;
-            color: white;
-            padding: 12px 20px;
-            border-radius: 8px;
-            margin: 0 0 15px 0;
-        }
+    .header {
+        background-color: #022855;
+        color: white;
+        padding: 15px 25px;
+        border-radius: 8px;
+        margin: 0 0 15px 0;
+    }
 
-        .header h1 {
-            margin: 0;
-            font-size: 18px;
-            text-transform: uppercase;
-        }
+    .header h1 {
+        margin: 0;
+        font-size: 20px;
+        text-transform: uppercase;
+    }
 
-        .header p {
-            margin: 5px 0;
-            font-size: 11px;
-        }
+    .header p {
+        margin: 5px 0;
+        font-size: 12px;
+    }
 
-        .main-container {
-            display: flex;
+    .main-container {
+        display: flex;
+        gap: 15px;
+        align-items: stretch;
+        margin: 0;
+        min-height: calc(100vh - 150px);
+    }
+
+    .left-column {
+        flex: 0.35;
+        max-width: 18%;
+        background-color: #022855;
+        color: white;
+        padding: 15px;
+        border-radius: 8px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+
+    .left-column h2 {
+        color: #FFD700;
+        font-size: 14px;
+        margin-bottom: 8px;
+    }
+
+    .info-pedido {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+        margin-bottom: 20px;
+        table-layout: fixed;
+    }
+
+    .info-pedido td {
+        padding: 6px 4px;
+        vertical-align: top;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        min-height: 18px;
+    }
+
+    .info-pedido .label {
+        font-weight: bold;
+        width: 45%;
+        color: #FFD700;
+        white-space: nowrap;
+    }
+
+    .info-pedido .value {
+        width: 55%;
+        min-height: 18px;
+    }
+
+    .mini-table-container {
+        max-height: 220px;
+        overflow-y: auto;
+        margin: 10px 0 15px 0;
+    }
+
+    .mini-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 9.5px;
+        background-color: #0A2C5C;
+        border-radius: 6px;
+        overflow: hidden;
+        border: 1px solid #fff;
+    }
+
+    .mini-table th {
+        background-color: #144288;
+        color: white;
+        padding: 5px 6px;
+        text-align: center;
+        font-weight: bold;
+        border: 1px solid #fff;
+        position: sticky;
+        top: 0;
+    }
+
+    .mini-table td {
+        background-color: #0A2C5C;
+        color: white;
+        padding: 5px 6px;
+        border: 1px solid #fff;
+    }
+
+    .mini-table .qtd {
+        text-align: center;
+        width: 20%;
+    }
+
+    .mini-table .desc {
+        text-align: left;
+        white-space: normal;
+        word-break: break-word;
+        max-width: 160px;
+        font-size: 9.2px;
+    }
+
+    .mini-table .ativo {
+        text-align: center;
+        width: 20%;
+    }
+
+    .destaque-section {
+        background-color: #0A2C5C;
+        padding: 10px;
+        border-radius: 8px;
+    }
+
+    .destaque-section h2 {
+        color: #FFD700;
+        text-align: center;
+        font-size: 13px;
+        margin-bottom: 8px;
+    }
+
+    .destaque-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 10px;
+        margin-bottom: 10px;
+    }
+
+    .destaque-table th {
+        background-color: #144288;
+        color: white;
+        padding: 4px;
+        text-align: center;
+    }
+
+    .destaque-table td {
+        background-color: #0A2C5C;
+        padding: 4px;
+        text-align: center;
+        color: white;
+    }
+
+    .checkbox-duo {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .checkbox-item {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 10px;
+        color: white;
+    }
+
+    .entrega-group {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        font-size: 10px;
+    }
+
+    .entrega-options {
+        display: flex;
+        gap: 8px;
+        justify-content: center;
+    }
+
+    .checkbox-item input[type="checkbox"],
+    .entrega-options input[type="radio"],
+    .pagamento-item input[type="radio"] {
+        transform: scale(1.3);
+        margin-right: 6px;
+    }
+
+    .forma-pagamento strong,
+    .justificativa strong {
+        display: block;
+        margin-bottom: 4px;
+        font-size: 11px;
+        color: #FFD700;
+    }
+
+    .pagamento-options {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .pagamento-item {
+        display: flex;
+        align-items: center;
+        gap: 3px;
+        font-size: 10px;
+    }
+
+    .justificativa textarea {
+        width: 100%;
+        height: 60px;
+        padding: 6px;
+        font-size: 10px;
+        border-radius: 4px;
+        border: none;
+        resize: none;
+    }
+
+    .right-column {
+        flex: 2.7;
+        max-width: 82%;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    /* VOLTEI PARA 3 COLUNAS COM GAP MENOR */
+    .cotacoes-dinamicas {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr); /* 3 colunas novamente */
+        gap: 12px; /* Diminui o gap de 20px para 12px */
+        margin-bottom: 15px;
+    }
+
+    /* AJUSTEI A COTAÇÃO PARA SER MAIS COMPACTA */
+    .cotacao-card {
+        background: white;
+        border: 2px solid #022855;
+        border-radius: 12px;
+        padding: 15px; /* Diminui de 20px para 15px */
+        box-shadow: 0 4px 12px rgba(2, 40, 85, 0.1);
+        position: relative;
+        overflow: hidden;
+        width: 100%;
+    }
+
+    .cotacao-card::before {
+        content: "COTAÇÃO " counter(cotacao);
+        counter-increment: cotacao;
+        position: absolute;
+        top: -2px;
+        left: -2px;
+        background: #022855;
+        color: white;
+        font-size: 9px; /* Diminui de 10px para 9px */
+        font-weight: bold;
+        padding: 3px 8px; /* Diminui o padding */
+        border-radius: 0 0 8px 0;
+        letter-spacing: 0.5px;
+    }
+
+    .btn-remove-cotacao {
+        position: absolute;
+        top: 10px; /* Ajustei a posição */
+        right: 10px; /* Ajustei a posição */
+        background: #dc3545;
+        color: white;
+        border: none;
+        width: 20px; /* Diminui de 22px para 20px */
+        height: 20px; /* Diminui de 22px para 20px */
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10px; /* Diminui de 11px para 10px */
+        cursor: pointer;
+        z-index: 10;
+    }
+
+    .fornecedor-info {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 6px; /* Diminui de 8px para 6px */
+        font-size: 10px; /* Diminui de 11px para 10px */
+        margin-bottom: 12px; /* Diminui de 15px para 12px */
+        color: #1e40af;
+        line-height: 1.3; /* Diminui de 1.4 para 1.3 */
+    }
+
+    .fornecedor-info strong {
+        color: #022855;
+        font-weight: 600;
+    }
+
+    .cotacao-form {
+        font-size: 10px; /* Diminui de 11px para 10px */
+    }
+
+    .form-group {
+        margin-bottom: 8px; /* Diminui de 10px para 8px */
+    }
+
+    .form-label {
+        font-weight: bold;
+        color: #022855;
+        font-size: 10px; /* Diminui de 10.5px para 10px */
+        margin-bottom: 2px; /* Diminui de 3px para 2px */
+        display: block;
+    }
+
+    .form-control,
+    .form-select {
+        font-size: 10px; /* Diminui de 10.5px para 10px */
+        padding: 4px 6px; /* Diminui de 5px 8px para 4px 6px */
+        height: 30px; /* Diminui de 32px para 30px */
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        width: 100%;
+    }
+
+    .input-group {
+        display: flex;
+        align-items: center;
+    }
+
+    .input-group-text {
+        background-color: #e9ecef;
+        border: 1px solid #ccc;
+        padding: 4px 6px; /* Diminui de 5px 8px para 4px 6px */
+        font-size: 10px; /* Diminui de 10.5px para 10px */
+        border-right: none;
+        border-radius: 4px 0 0 4px;
+    }
+
+    .input-group .form-control {
+        border-left: none;
+        border-radius: 0 4px 4px 0;
+    }
+
+    .materiais-container {
+        max-height: 300px; /* Diminui de 350px para 300px */
+        overflow-y: auto;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        margin: 10px 0; /* Diminui de 12px 0 para 10px 0 */
+        width: 100%;
+    }
+
+    /* TABELA MAIS COMPACTA MAS COM ESPAÇO PARA VALORES */
+    .materiais-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 10px; /* Diminui de 11px para 10px */
+        table-layout: fixed; /* Voltei para fixed para melhor controle */
+    }
+
+    .materiais-table th {
+        background-color: #022855;
+        color: white;
+        padding: 6px 4px; /* Diminui de 8px 6px para 6px 4px */
+        text-align: center;
+        font-weight: bold;
+        border: 1px solid #ccc;
+        position: sticky;
+        top: 0;
+        white-space: nowrap;
+        font-size: 9.5px; /* Fonte menor para cabeçalhos */
+    }
+
+    .materiais-table td {
+        padding: 6px 4px; /* Diminui de 8px 6px para 6px 4px */
+        border: 1px solid #ccc;
+        text-align: center;
+        vertical-align: middle;
+        white-space: nowrap;
+    }
+
+    /* LARGURAS OTIMIZADAS PARA 3 COLUNAS */
+    .materiais-table .descricao {
+        text-align: left;
+        width: 28%; /* Reduzi de 30% para 28% */
+        min-width: 0;
+        white-space: normal;
+        word-break: break-word;
+        font-size: 9.5px; /* Fonte menor para descrição */
+    }
+
+    .materiais-table .quantidade {
+        width: 9%; /* Reduzi de 10% para 9% */
+        min-width: 50px;
+        font-size: 9.5px;
+    }
+
+    .materiais-table .unidade {
+        width: 8%; /* Mantive 8% */
+        min-width: 45px;
+        font-size: 9.5px;
+    }
+
+    .materiais-table .unitario {
+        width: 20%; /* Diminui de 22% para 20% (ainda bom espaço) */
+        min-width: 90px;
+    }
+
+    .materiais-table .total {
+        width: 18%; /* Diminui de 20% para 18% */
+        min-width: 85px;
+    }
+
+    .materiais-table .acoes {
+        width: 5%;
+        min-width: 40px;
+        font-size: 9px;
+    }
+
+    .materiais-table input {
+        width: 100%;
+        border: none;
+        background: transparent;
+        text-align: center;
+        font-size: 10px; /* Diminui de 11px para 10px */
+        padding: 4px 6px; /* Diminui de 5px 8px para 4px 6px */
+        box-sizing: border-box;
+    }
+
+    .materiais-table .descricao input {
+        text-align: left;
+        padding-left: 6px; /* Diminui de 8px para 6px */
+        white-space: normal;
+        word-break: break-word;
+        font-size: 9.5px;
+    }
+
+    /* INPUTS DE VALORES OTIMIZADOS */
+    .materiais-table .unitario input,
+    .materiais-table .total input {
+        text-align: right;
+        direction: rtl;
+        padding-right: 30px; /* Diminui de 35px para 30px */
+        padding-left: 6px; /* Diminui de 8px para 6px */
+        font-weight: 600;
+        font-size: 10.5px; /* Mantém fonte razoável para valores */
+    }
+
+    .btn-remove-material {
+        background: #dc3545;
+        color: white;
+        border: none;
+        width: 16px; /* Diminui de 18px para 16px */
+        height: 16px; /* Diminui de 18px para 16px */
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 8px; /* Diminui de 9px para 8px */
+        cursor: pointer;
+    }
+
+    .btn-add-material {
+        background: #28a745;
+        color: white;
+        border: none;
+        padding: 4px 8px; /* Diminui de 5px 10px para 4px 8px */
+        border-radius: 4px;
+        font-size: 9.5px; /* Diminui de 10.5px para 9.5px */
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 4px; /* Diminui de 5px para 4px */
+        margin-top: 6px; /* Diminui de 8px para 6px */
+        margin-right: 6px; /* Diminui de 8px para 6px */
+    }
+
+    .btn-add-all {
+        background: #17a2b8;
+        color: white;
+        border: none;
+        padding: 4px 8px; /* Diminui de 5px 10px para 4px 8px */
+        border-radius: 4px;
+        font-size: 9.5px; /* Diminui de 10.5px para 9.5px */
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 4px; /* Diminui de 5px para 4px */
+        margin-top: 6px; /* Diminui de 8px para 6px */
+    }
+
+    .btn-add-cotacao {
+        background-color: #6c757d;
+        color: white;
+        border: none;
+        padding: 6px 12px; /* Diminui de 8px 15px para 6px 12px */
+        border-radius: 6px;
+        font-size: 11px; /* Diminui de 12px para 11px */
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px; /* Diminui de 8px para 6px */
+        transition: all 0.3s;
+    }
+
+    .btn-add-cotacao:hover {
+        background-color: #5a6268;
+        transform: translateY(-1px);
+    }
+
+    .add-cotacao-container {
+        margin-top: 10px; /* Diminui de 12px para 10px */
+        text-align: right;
+    }
+
+    .total-fornecedor {
+        background: linear-gradient(135deg, #e6f0ff 0%, #f8f9fc 100%);
+        border: 1px solid #022855;
+        border-radius: 8px;
+        padding: 10px; /* Diminui de 12px para 10px */
+        font-size: 10px; /* Diminui de 11px para 10px */
+        margin-top: 10px; /* Diminui de 12px para 10px */
+        font-weight: 500;
+    }
+
+    .total-line {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 4px; /* Diminui de 5px para 4px */
+        color: #333;
+        font-size: 10px;
+    }
+
+    .total-line.frete-line {
+        color: #d94600;
+        font-weight: 600;
+    }
+
+    .total-geral-fornecedor {
+        font-weight: 700 !important;
+        color: white !important;
+        background: #022855 !important;
+        padding: 8px 10px; /* Diminui de 9px 12px para 8px 10px */
+        border-radius: 6px;
+        text-align: center;
+        font-size: 11px !important; /* Diminui de 12px para 11px */
+        margin-top: 8px; /* Diminui de 10px para 8px */
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+    }
+
+    .action-buttons {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 20px; /* Diminui de 25px para 20px */
+        padding: 12px 0; /* Diminui de 15px 0 para 12px 0 */
+        border-top: 2px solid #022855;
+    }
+
+    .btn {
+        font-size: 11px; /* Diminui de 12px para 11px */
+        padding: 6px 12px; /* Diminui de 8px 16px para 6px 12px */
+        border-radius: 6px;
+        font-weight: 600;
+    }
+
+    .btn-primary {
+        background-color: #022855;
+        border-color: #022855;
+    }
+
+    .btn-primary:hover {
+        background-color: #0345a0;
+        border-color: #0345a0;
+    }
+
+    .btn-success {
+        background-color: #198754;
+        border-color: #198754;
+    }
+
+    .btn-warning {
+        background-color: #ffc107;
+        border-color: #ffc107;
+        color: #000;
+    }
+
+    .select2-container {
+        width: 100% !important;
+        font-size: 10px; /* Diminui de 10.5px para 10px */
+    }
+
+    .select2-selection__rendered {
+        line-height: 20px !important; /* Diminui de 22px para 20px */
+        font-size: 10px; /* Diminui de 10.5px para 10px */
+    }
+
+    .select2-container .select2-selection--single {
+        height: 30px !important; /* Diminui de 32px para 30px */
+        border: 1px solid #ced4da !important;
+        border-radius: 4px !important;
+    }
+
+    .select2-selection__arrow {
+        height: 28px !important; /* Diminui de 30px para 28px */
+    }
+
+    .cotacoes-container {
+        counter-reset: cotacao;
+    }
+
+    .error-message {
+        color: #dc3545;
+        font-size: 8px; /* Diminui de 9px para 8px */
+        margin-top: 2px; /* Diminui de 3px para 2px */
+    }
+
+    .border-danger {
+        border: 2px solid #dc3545 !important;
+        box-shadow: 0 0 5px rgba(220, 53, 69, 0.5);
+    }
+
+    .footer {
+        margin: 12px 0; /* Diminui de 15px 0 para 12px 0 */
+        text-align: center;
+        font-size: 9px; /* Diminui de 10px para 9px */
+        color: #333;
+    }
+
+    .assinaturas {
+        display: flex;
+        justify-content: center;
+        gap: 60px; /* Diminui de 80px para 60px */
+        margin-top: 20px; /* Diminui de 25px para 20px */
+    }
+
+    .assinatura {
+        text-align: center;
+        font-size: 10px; /* Diminui de 11px para 10px */
+        color: #022855;
+    }
+
+    .assinatura p {
+        margin: 3px 0; /* Diminui de 4px 0 para 3px 0 */
+    }
+
+    .linha-assinatura {
+        margin-bottom: 4px; /* Diminui de 6px para 4px */
+    }
+
+    /* CAMPOS MONETÁRIOS OTIMIZADOS */
+    .material-unitario,
+    .valor-frete {
+        text-align: right !important;
+        direction: rtl;
+    }
+
+    .material-unitario::placeholder,
+    .valor-frete::placeholder {
+        text-align: right;
+        direction: ltr;
+    }
+
+    .input-group .valor-frete {
+        direction: ltr;
+        text-align: left;
+    }
+
+    /* MÁSCARA DE VALORES OTIMIZADA */
+    .valor-input {
+        position: relative;
+        width: 100%;
+    }
+
+    .valor-input input {
+        padding-right: 35px !important; /* Diminui de 40px para 35px */
+        font-size: 10.5px !important; /* Diminui de 11.5px para 10.5px */
+    }
+
+    .valor-simbolo {
+        position: absolute;
+        right: 10px; /* Diminui de 12px para 10px */
+        top: 50%;
+        transform: translateY(-50%);
+        color: #444;
+        font-size: 10.5px; /* Diminui de 11.5px para 10.5px */
+        font-weight: 700;
+        pointer-events: none;
+        background: rgba(255, 255, 255, 0.9);
+        padding: 1px 4px; /* Diminui de 2px 6px para 1px 4px */
+        border-radius: 2px; /* Diminui de 3px para 2px */
+        border: 1px solid #e0e0e0;
+    }
+
+    /* ESTILOS DE FOCO */
+    .materiais-table .unitario input:focus,
+    .materiais-table .total input:focus {
+        background-color: #f8fbff;
+        outline: none;
+        border: 2px solid #022855 !important;
+        border-radius: 4px;
+    }
+
+    /* ESTILOS PARA GERAÇÃO DE PDF (ECONOMIA DE TINTA) */
+    body.printing-pdf {
+        background-color: #FFFFFF !important;
+    }
+
+    body.printing-pdf .header {
+        background-color: #022855 !important;
+        color: #000000 !important;
+        border: 1px solid #000000 !important;
+        box-shadow: none !important;
+    }
+
+    body.printing-pdf .left-column {
+        background-color: #FFFFFF !important;
+        color: #000000 !important;
+        border: 1px solid #000000 !important;
+    }
+
+    body.printing-pdf .left-column h2,
+    body.printing-pdf .info-pedido .label {
+        color: #000000 !important;
+        font-weight: bold !important;
+    }
+
+    body.printing-pdf .mini-table,
+    body.printing-pdf .destaque-section {
+        background-color: #FFFFFF !important;
+        border: 1px solid #000000 !important;
+        color: #000000 !important;
+    }
+
+    body.printing-pdf .mini-table th,
+    body.printing-pdf .destaque-table th {
+        background-color: #F0F0F0 !important;
+        color: #000000 !important;
+        border: 1px solid #000000 !important;
+    }
+
+    body.printing-pdf .mini-table td,
+    body.printing-pdf .destaque-table td {
+        background-color: #FFFFFF !important;
+        color: #000000 !important;
+        border: 1px solid #000000 !important;
+    }
+
+    body.printing-pdf .cotacao-card {
+        background-color: #FFFFFF !important;
+        border: 2px solid #000000 !important;
+        box-shadow: none !important;
+    }
+
+    body.printing-pdf .cotacao-card::before {
+        background-color: #000000 !important;
+        color: #FFFFFF !important;
+    }
+
+    body.printing-pdf .materiais-table th {
+        background-color: #022855 !important;
+        color: #FFFFFF !important;
+        border: 1px solid #000000 !important;
+    }
+
+    body.printing-pdf .materiais-table td {
+        background-color: #FFFFFF !important;
+        color: #000000 !important;
+        border: 1px solid #000000 !important;
+    }
+
+    body.printing-pdf .total-fornecedor {
+        background: #FFFFFF !important;
+        border: 1px solid #000000 !important;
+    }
+
+    body.printing-pdf .total-geral-fornecedor {
+        background: #000000 !important;
+        color: #FFFFFF !important;
+    }
+
+    body.printing-pdf .btn-remove-cotacao,
+    body.printing-pdf .btn-add-material,
+    body.printing-pdf .btn-add-all,
+    body.printing-pdf .btn-add-cotacao,
+    body.printing-pdf .action-buttons,
+    body.printing-pdf .footer .assinaturas {
+        display: none !important;
+    }
+
+    body.printing-pdf input,
+    body.printing-pdf textarea,
+    body.printing-pdf select {
+        background-color: #FFFFFF !important;
+        color: #000000 !important;
+        border: 1px solid #000000 !important;
+        box-shadow: none !important;
+    }
+
+    body.printing-pdf .valor-simbolo {
+        background-color: #FFFFFF !important;
+        border: 1px solid #000000 !important;
+        color: #000000 !important;
+    }
+
+    /* Ajuste para inputs readonly */
+    body.printing-pdf input[readonly],
+    body.printing-pdf textarea[readonly] {
+        background-color: #F8F8F8 !important;
+    }
+
+    /* Melhorar contraste para impressão */
+    body.printing-pdf * {
+        text-shadow: none !important;
+        box-shadow: none !important;
+        -webkit-print-color-adjust: exact !important;
+        color-adjust: exact !important;
+    }
+
+    @media (max-width: 1400px) {
+        .cotacoes-dinamicas {
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px; /* Gap ainda menor para telas grandes */
+        }
+        
+        .materiais-table .unitario {
+            width: 21%; /* Um pouco mais em telas grandes */
+        }
+        
+        .materiais-table .total {
+            width: 19%;
+        }
+    }
+
+    @media (max-width: 1200px) {
+        .cotacoes-dinamicas {
+            grid-template-columns: repeat(2, 1fr); /* 2 colunas em telas médias */
             gap: 12px;
-            align-items: stretch;
-            margin: 0;
-            min-height: calc(100vh - 150px);
+        }
+        
+        .left-column {
+            flex: 0.4;
+            max-width: 20%;
+        }
+        
+        .right-column {
+            flex: 2.6;
+            max-width: 80%;
+        }
+        
+        /* Pequenos ajustes para telas médias */
+        .materiais-table {
+            font-size: 9.5px;
+        }
+        
+        .materiais-table th,
+        .materiais-table td {
+            padding: 5px 3px;
+        }
+        
+        .materiais-table input {
+            font-size: 9.5px;
+        }
+        
+        .valor-simbolo {
+            font-size: 10px;
+            right: 8px;
+        }
+    }
+
+    @media (max-width: 992px) {
+        .cotacoes-dinamicas {
+            grid-template-columns: 1fr; /* 1 coluna em tablets */
+            gap: 15px;
+        }
+        
+        .cotacao-card {
+            padding: 18px; /* Um pouco mais de padding em tablets */
+        }
+        
+        .materiais-table .unitario {
+            width: 22%; /* Mais espaço em tablets */
+        }
+        
+        .materiais-table .total {
+            width: 20%;
+        }
+        
+        .materiais-table .descricao {
+            width: 30%;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .main-container {
+            flex-direction: column;
         }
 
         .left-column {
-            flex: 0.25;
-            max-width: 13%;
-            background-color: #022855;
-            color: white;
-            padding: 10px;
-            border-radius: 8px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
-
-        .left-column h2 {
-            color: #FFD700;
-            font-size: 13px;
-            margin-bottom: 6px;
-        }
-
-        .info-pedido {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 11px;
+            max-width: 100%;
             margin-bottom: 15px;
-            table-layout: fixed;
-        }
-
-        .info-pedido td {
-            padding: 4px;
-            vertical-align: top;
-            word-wrap: break-word;
-            overflow-wrap: break-word;
-        }
-
-        .info-pedido .label {
-            font-weight: bold;
-            width: 45%;
-            color: #FFD700;
-            white-space: nowrap;
-        }
-
-        .info-pedido .value {
-            width: 55%;
-            min-height: 14px;
-        }
-
-        .mini-table-container {
-            max-height: 200px;
-            overflow-y: auto;
-            margin: 8px 0 12px 0;
-        }
-
-        .mini-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 7.8px;
-            background-color: #0A2C5C;
-            border-radius: 6px;
-            overflow: hidden;
-            border: 1px solid #fff;
-        }
-
-        .mini-table th {
-            background-color: #144288;
-            color: white;
-            padding: 4px;
-            text-align: center;
-            font-weight: bold;
-            border: 1px solid #fff;
-            position: sticky;
-            top: 0;
-        }
-
-        .mini-table td {
-            background-color: #0A2C5C;
-            color: white;
-            padding: 3px 4px;
-            border: 1px solid #fff;
-        }
-
-        .mini-table .qtd {
-            text-align: center;
-            width: 18%;
-        }
-
-        .mini-table .desc {
-            text-align: left;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 130px;
-            font-size: 7.6px;
-        }
-
-        .mini-table .ativo {
-            text-align: center;
-            width: 18%;
-        }
-
-        .destaque-section {
-            background-color: #0A2C5C;
-            padding: 7px;
-            border-radius: 8px;
-        }
-
-        .destaque-section h2 {
-            color: #FFD700;
-            text-align: center;
-            font-size: 12px;
-            margin-bottom: 6px;
-        }
-
-        .destaque-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 8.5px;
-            margin-bottom: 8px;
-        }
-
-        .destaque-table th {
-            background-color: #144288;
-            color: white;
-            padding: 3px;
-            text-align: center;
-        }
-
-        .destaque-table td {
-            background-color: #0A2C5C;
-            padding: 3px;
-            text-align: center;
-            color: white;
-        }
-
-        .checkbox-duo {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
-
-        .checkbox-item {
-            display: flex;
-            align-items: center;
-            gap: 3px;
-            font-size: 8.5px;
-            color: white;
-        }
-
-        .entrega-group {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 3px;
-            font-size: 8.5px;
-        }
-
-        .entrega-options {
-            display: flex;
-            gap: 6px;
-            justify-content: center;
-        }
-
-        .checkbox-item input[type="checkbox"],
-        .entrega-options input[type="radio"],
-        .pagamento-item input[type="radio"] {
-            transform: scale(1.3);
-            margin-right: 6px;
-        }
-
-        .forma-pagamento strong,
-        .justificativa strong {
-            display: block;
-            margin-bottom: 3px;
-            font-size: 10px;
-            color: #FFD700;
-        }
-
-        .pagamento-options {
-            display: flex;
-            gap: 6px;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-
-        .pagamento-item {
-            display: flex;
-            align-items: center;
-            gap: 2px;
-            font-size: 8.5px;
-        }
-
-        .justificativa textarea {
-            width: 100%;
-            height: 45px;
-            padding: 5px;
-            font-size: 8.5px;
-            border-radius: 4px;
-            border: none;
-            resize: none;
         }
 
         .right-column {
-            flex: 3;
-            max-width: 87%;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
+            max-width: 100%;
         }
 
         .cotacoes-dinamicas {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
-            margin-bottom: 15px;
-        }
-
-        .cotacao-card {
-            background: white;
-            border: 2px solid #022855;
-            border-radius: 12px;
-            padding: 16px;
-            box-shadow: 0 4px 12px rgba(2, 40, 85, 0.1);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .cotacao-card::before {
-            content: "COTAÇÃO " counter(cotacao);
-            counter-increment: cotacao;
-            position: absolute;
-            top: -2px;
-            left: -2px;
-            background: #022855;
-            color: white;
-            font-size: 9px;
-            font-weight: bold;
-            padding: 4px 10px;
-            border-radius: 0 0 8px 0;
-            letter-spacing: 0.5px;
-        }
-
-        .btn-remove-cotacao {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: #dc3545;
-            color: white;
-            border: none;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 10px;
-            cursor: pointer;
-            z-index: 10;
-        }
-
-        .fornecedor-info {
-            display: grid;
             grid-template-columns: 1fr;
-            gap: 6px;
-            font-size: 9.5px;
-            margin-bottom: 12px;
-            color: #1e40af;
-            line-height: 1.4;
+            gap: 15px;
         }
-
-        .fornecedor-info strong {
-            color: #022855;
-            font-weight: 600;
+        
+        /* Ajustes para mobile */
+        .info-pedido {
+            font-size: 13px;
         }
-
-        .cotacao-form {
-            font-size: 9.5px;
+        
+        .mini-table {
+            font-size: 10px;
         }
-
-        .form-group {
-            margin-bottom: 8px;
-        }
-
-        .form-label {
-            font-weight: bold;
-            color: #022855;
-            font-size: 9px;
-            margin-bottom: 2px;
-            display: block;
-        }
-
-        .form-control,
-        .form-select {
-            font-size: 9px;
-            padding: 4px 6px;
-            height: 28px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            width: 100%;
-        }
-
-        .input-group {
-            display: flex;
-            align-items: center;
-        }
-
-        .input-group-text {
-            background-color: #e9ecef;
-            border: 1px solid #ccc;
-            padding: 4px 6px;
-            font-size: 9px;
-            border-right: none;
-            border-radius: 4px 0 0 4px;
-        }
-
-        .input-group .form-control {
-            border-left: none;
-            border-radius: 0 4px 4px 0;
-        }
-
-        .materiais-container {
-            max-height: 300px;
-            overflow-y: auto;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            margin: 10px 0;
-        }
-
+        
         .materiais-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 9px;
+            font-size: 10px;
         }
-
-        .materiais-table th {
-            background-color: #022855;
-            color: white;
-            padding: 6px 4px;
-            text-align: center;
-            font-weight: bold;
-            border: 1px solid #ccc;
-            position: sticky;
-            top: 0;
+        
+        .materiais-table .unitario {
+            width: 24%; /* Máximo espaço em mobile */
         }
-
-        .materiais-table td {
-            padding: 4px;
-            border: 1px solid #ccc;
-            text-align: center;
-            vertical-align: middle;
-        }
-
-        .materiais-table .descricao {
-            text-align: left;
-            width: 35%;
-        }
-
-        .materiais-table .quantidade,
-        .materiais-table .unidade,
-        .materiais-table .unitario,
+        
         .materiais-table .total {
-            width: 15%;
+            width: 22%;
         }
-
-        .materiais-table .acoes {
-            width: 5%;
+        
+        .materiais-table .descricao {
+            width: 26%;
         }
-
-        .materiais-table input {
-            width: 100%;
-            border: none;
-            background: transparent;
-            text-align: center;
-            font-size: 9px;
-            padding: 2px;
-        }
-
-        .materiais-table .descricao input {
-            text-align: left;
-        }
-
-        .materiais-table .unitario input,
-        .materiais-table .total input {
-            text-align: right;
-            direction: rtl;
-        }
-
-        .btn-remove-material {
-            background: #dc3545;
-            color: white;
-            border: none;
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 8px;
-            cursor: pointer;
-        }
-
-        .btn-add-material {
-            background: #28a745;
-            color: white;
-            border: none;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 9px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            margin-top: 5px;
-            margin-right: 5px;
-        }
-
-        .btn-add-all {
-            background: #17a2b8;
-            color: white;
-            border: none;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 9px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            margin-top: 5px;
-        }
-
-        .btn-add-cotacao {
-            background-color: #6c757d;
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-size: 11px;
-            font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            transition: all 0.3s;
-        }
-
-        .btn-add-cotacao:hover {
-            background-color: #5a6268;
-            transform: translateY(-1px);
-        }
-
-        .add-cotacao-container {
-            margin-top: 10px;
-            text-align: right;
-        }
-
-        .total-fornecedor {
-            background: linear-gradient(135deg, #e6f0ff 0%, #f8f9fc 100%);
-            border: 1px solid #022855;
-            border-radius: 8px;
-            padding: 10px;
-            font-size: 10px;
-            margin-top: 10px;
-            font-weight: 500;
-        }
-
-        .total-line {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 4px;
-            color: #333;
-        }
-
-        .total-line.frete-line {
-            color: #d94600;
-            font-weight: 600;
-        }
-
-        .total-geral-fornecedor {
-            font-weight: 700 !important;
-            color: white !important;
-            background: #022855 !important;
-            padding: 7px 10px;
-            border-radius: 6px;
-            text-align: center;
-            font-size: 11px !important;
-            margin-top: 8px;
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
-        }
-
-        .action-buttons {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 20px;
-            padding: 15px 0;
-            border-top: 2px solid #022855;
-        }
-
-        .btn {
-            font-size: 11px;
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-weight: 600;
-        }
-
-        .btn-primary {
-            background-color: #022855;
-            border-color: #022855;
-        }
-
-        .btn-primary:hover {
-            background-color: #0345a0;
-            border-color: #0345a0;
-        }
-
-        .btn-success {
-            background-color: #198754;
-            border-color: #198754;
-        }
-
-        .btn-warning {
-            background-color: #ffc107;
-            border-color: #ffc107;
-            color: #000;
-        }
-
-        .select2-container {
-            width: 100% !important;
-            font-size: 9px;
-        }
-
-        .select2-selection__rendered {
-            line-height: 20px !important;
-            font-size: 9px;
-        }
-
-        .select2-container .select2-selection--single {
-            height: 28px !important;
-            border: 1px solid #ced4da !important;
-            border-radius: 4px !important;
-        }
-
-        .select2-selection__arrow {
-            height: 26px !important;
-        }
-
-        .cotacoes-container {
-            counter-reset: cotacao;
-        }
-
-        .error-message {
-            color: #dc3545;
-            font-size: 8px;
-            margin-top: 2px;
-        }
-
-        .border-danger {
-            border: 2px solid #dc3545 !important;
-            box-shadow: 0 0 5px rgba(220, 53, 69, 0.5);
-        }
-
-        .footer {
-            margin: 15px 0;
-            text-align: center;
-            font-size: 9px;
-            color: #333;
-        }
-
-        .assinaturas {
-            display: flex;
-            justify-content: center;
-            gap: 80px;
-            margin-top: 25px;
-        }
-
-        .assinatura {
-            text-align: center;
-            font-size: 10px;
-            color: #022855;
-        }
-
-        .assinatura p {
-            margin: 3px 0;
-        }
-
-        .linha-assinatura {
-            margin-bottom: 5px;
-        }
-
-        /* Adicionado: Estilo para campos monetários */
-        .material-unitario,
-        .valor-frete {
-            text-align: right !important;
-            direction: rtl;
-        }
-
-        .material-unitario::placeholder,
-        .valor-frete::placeholder {
-            text-align: right;
-            direction: ltr;
-        }
-
-        .input-group .valor-frete {
-            direction: ltr;
-            text-align: left;
-        }
-
-        /* Melhorias para a máscara de valores */
-        .valor-input {
-            position: relative;
-        }
-
+        
         .valor-input input {
-            padding-right: 25px !important;
+            padding-right: 40px !important; /* Mais espaço em mobile */
         }
-
+        
         .valor-simbolo {
-            position: absolute;
-            right: 8px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #666;
-            font-size: 9px;
-            pointer-events: none;
+            right: 12px;
+            font-size: 11px;
         }
+    }
 
-        @media (max-width: 1200px) {
-            .cotacoes-dinamicas {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-
-        @media (max-width: 768px) {
-            .main-container {
-                flex-direction: column;
-            }
-
-            .left-column {
-                max-width: 100%;
-                margin-bottom: 15px;
-            }
-
-            .right-column {
-                max-width: 100%;
-            }
-
-            .cotacoes-dinamicas {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
+    /* SCROLLBAR VERTICAL SUAVE */
+    .materiais-container::-webkit-scrollbar {
+        width: 6px; /* Scroll vertical fino */
+    }
+    
+    .materiais-container::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 3px;
+    }
+    
+    .materiais-container::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 3px;
+    }
+    
+    .materiais-container::-webkit-scrollbar-thumb:hover {
+        background: #a8a8a8;
+    }
+</style>
 </head>
 
 <body>
@@ -724,9 +1020,16 @@
                     {% endif %}
                 </p>
             </div>
-            <a href="{{ url_for('routes_bp.listar_solicitacoes_comprador') }}" class="btn btn-light btn-sm">
-                <i class="bi bi-arrow-left"></i> Voltar
-            </a>
+            <div class="d-flex gap-2">
+                <!-- Botão Gerar PDF -->
+                <button type="button" class="btn btn-light btn-sm" id="gerarPDF">
+                    <i class="bi bi-file-earmark-pdf"></i> Gerar PDF
+                </button>
+                <!-- Botão Voltar -->
+                <a href="{{ url_for('routes_bp.listar_solicitacoes_comprador') }}" class="btn btn-light btn-sm">
+                    <i class="bi bi-arrow-left"></i> Voltar
+                </a>
+            </div>
         </div>
     </div>
 
@@ -1029,6 +1332,10 @@ Grupo de {{ solicitacoes_grupo|length }} solicitações para {{ solicitacoes_gru
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    
+    <!-- Bibliotecas para gerar PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <!-- JavaScript COMPLETO E CORRIGIDO -->
     <script>
@@ -1635,6 +1942,134 @@ Grupo de {{ solicitacoes_grupo|length }} solicitações para {{ solicitacoes_gru
             }, 200);
         }
 
+        // FUNÇÃO PARA GERAR PDF
+        function gerarPDF() {
+            const button = document.getElementById('gerarPDF');
+            if (!button) return;
+            
+            const originalText = button.textContent;
+            const originalHTML = button.innerHTML;
+            
+            // Mostrar loading
+            button.innerHTML = '<i class="bi bi-hourglass"></i> Gerando PDF...';
+            button.disabled = true;
+            
+            // Aplicar estilos de economia de tinta
+            document.body.classList.add('printing-pdf');
+            
+            // Esconder os botões de ação para evitar que apareçam no PDF
+            const actionButtons = document.querySelector('.action-buttons');
+            const originalDisplayAction = actionButtons ? actionButtons.style.display : '';
+            if (actionButtons) actionButtons.style.display = 'none';
+            
+            // Esconder botões de remover e adicionar
+            document.querySelectorAll('.btn-remove-cotacao, .btn-add-material, .btn-add-all, .btn-add-cotacao').forEach(btn => {
+                btn.style.display = 'none';
+            });
+            
+            // Dar tempo para os estilos serem aplicados
+            setTimeout(async function() {
+                try {
+                    const { jsPDF } = window.jspdf;
+                    
+                    // Capturar o conteúdo principal
+                    const element = document.querySelector('.main-container');
+                    const headerElement = document.querySelector('.header');
+                    
+                    // Criar um container temporário para captura
+                    const tempContainer = document.createElement('div');
+                    tempContainer.style.position = 'absolute';
+                    tempContainer.style.left = '-9999px';
+                    tempContainer.style.width = '1200px'; // Largura fixa para melhor qualidade
+                    tempContainer.style.backgroundColor = '#FFFFFF';
+                    
+                    // Clonar o header e o main-container
+                    if (headerElement) {
+                        const headerClone = headerElement.cloneNode(true);
+                        // Remover botões do header no clone
+                        const buttons = headerClone.querySelectorAll('button, .btn');
+                        buttons.forEach(btn => btn.style.display = 'none');
+                        tempContainer.appendChild(headerClone);
+                    }
+                    
+                    if (element) {
+                        const elementClone = element.cloneNode(true);
+                        tempContainer.appendChild(elementClone);
+                    } else {
+                        // Se não encontrar o main-container, capturar o corpo inteiro
+                        tempContainer.innerHTML = document.body.innerHTML;
+                    }
+                    
+                    document.body.appendChild(tempContainer);
+                    
+                    // Capturar como imagem
+                    const canvas = await html2canvas(tempContainer, {
+                        scale: 2, // Maior escala para melhor qualidade
+                        useCORS: true,
+                        logging: false,
+                        backgroundColor: '#FFFFFF',
+                        width: tempContainer.offsetWidth,
+                        height: tempContainer.offsetHeight,
+                        scrollX: 0,
+                        scrollY: 0
+                    });
+                    
+                    // Remover container temporário
+                    document.body.removeChild(tempContainer);
+                    
+                    // Criar PDF
+                    const pdf = new jsPDF({
+                        orientation: 'landscape',
+                        unit: 'mm',
+                        format: 'a4'
+                    });
+                    
+                    const imgWidth = pdf.internal.pageSize.getWidth() - 10; // Margem
+                    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                    
+                    // Adicionar imagem ao PDF
+                    pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 5, 5, imgWidth, imgHeight);
+                    
+                    // Gerar nome do arquivo
+                    let fileName = 'cotacao_';
+                    if ({{ 'true' if modo_grupo else 'false' }}) {
+                        fileName += 'grupo_' + new Date().toISOString().split('T')[0];
+                    } else {
+                        fileName += 'solicitacao_{{ solicitacao.id }}';
+                    }
+                    fileName += '.pdf';
+                    
+                    // Salvar PDF
+                    pdf.save(fileName);
+                    
+                } catch (error) {
+                    console.error('Erro ao gerar PDF:', error);
+                    alert('Erro ao gerar PDF: ' + error.message);
+                } finally {
+                    // Restaurar estilos normais
+                    document.body.classList.remove('printing-pdf');
+                    
+                    // Restaurar visibilidade dos elementos
+                    if (actionButtons) actionButtons.style.display = originalDisplayAction;
+                    
+                    document.querySelectorAll('.btn-remove-cotacao').forEach(btn => {
+                        if (btn.id !== 'btn-remove-1' || $('.cotacao-card').length > 1) {
+                            btn.style.display = 'block';
+                        }
+                    });
+                    
+                    document.querySelectorAll('.btn-add-material, .btn-add-all, .btn-add-cotacao').forEach(btn => {
+                        btn.style.display = 'flex';
+                    });
+                    
+                    // Restaurar botão
+                    button.innerHTML = originalHTML;
+                    button.textContent = originalText;
+                    button.disabled = false;
+                }
+            }, 1000); // Delay maior para garantir que todos os estilos sejam aplicados
+        }
+
         // Inicializar quando a página carregar
         $(document).ready(function () {
             console.log('Página carregada!');
@@ -1693,6 +2128,12 @@ Grupo de {{ solicitacoes_grupo|length }} solicitações para {{ solicitacoes_gru
             $(document).on('input', '.material-unitario, .valor-frete', function () {
                 aplicarMascaraMonetaria($(this));
             });
+            
+            // Adicionar evento ao botão de gerar PDF
+            const gerarPDFBtn = document.getElementById('gerarPDF');
+            if (gerarPDFBtn) {
+                gerarPDFBtn.addEventListener('click', gerarPDF);
+            }
         });
 
         // Validação do formulário
