@@ -376,6 +376,7 @@ def add_comprovante_pagamento_column():
 def init_db():
     with app.app_context():
         db.create_all()
+        create_historico_descontos_table()
 
 def create_database():
     try:
@@ -2373,20 +2374,51 @@ def preencher_solicitacao(id):
                             status='Rascunho'
                         ).first()
                     
+                    # 🔹 CORREÇÃO: Salvar histórico de descontos mesmo para rascunhos
+                    valor_unitario_anterior = None
+                    valor_frete_anterior = None
+                    
                     if preenchimento:
-                        # Histórico se mudou valor
-                        if (abs(preenchimento.valor_unitario - valor_unitario) > 0.01 or
-                            ((preenchimento.valor_frete or 0) != valor_frete)):
+                        # Salvar valores anteriores para comparação
+                        valor_unitario_anterior = float(preenchimento.valor_unitario) if preenchimento.valor_unitario else 0.0
+                        valor_frete_anterior = float(preenchimento.valor_frete) if preenchimento.valor_frete else 0.0
+                        
+                        print(f"DEBUG - Comparando valores para preenchimento {preenchimento.id}:")
+                        print(f"  Valor unitário anterior: {valor_unitario_anterior}")
+                        print(f"  Valor unitário novo: {valor_unitario}")
+                        print(f"  Valor frete anterior: {valor_frete_anterior}")
+                        print(f"  Valor frete novo: {valor_frete}")
+                        
+                        # Comparar valores (com margem de 0.01 para evitar problemas de ponto flutuante)
+                        valor_unitario_mudou = abs(valor_unitario_anterior - valor_unitario) > 0.01
+                        
+                        # Verificar se o frete mudou (tratando casos de None)
+                        valor_frete_mudou = False
+                        if valor_frete > 0:
+                            if valor_frete_anterior is None or abs(valor_frete_anterior - valor_frete) > 0.01:
+                                valor_frete_mudou = True
+                        else:
+                            if valor_frete_anterior is not None and valor_frete_anterior > 0:
+                                valor_frete_mudou = True
+                        
+                        print(f"  Valor unitário mudou: {valor_unitario_mudou}")
+                        print(f"  Valor frete mudou: {valor_frete_mudou}")
+                        
+                        # Se algum valor mudou, registrar no histórico
+                        if valor_unitario_mudou or valor_frete_mudou:
                             historico = HistoricoDescontos(
                                 preenchimento_id=preenchimento.id,
-                                valor_unitario_anterior=preenchimento.valor_unitario,
+                                valor_unitario_anterior=valor_unitario_anterior,
                                 valor_unitario_novo=valor_unitario,
-                                valor_frete_anterior=preenchimento.valor_frete,
+                                valor_frete_anterior=valor_frete_anterior if valor_frete_anterior != 0 else None,
                                 valor_frete_novo=valor_frete if valor_frete > 0 else None,
                                 data_alteracao=get_local_time(),
                                 usuario=usuario
                             )
                             db.session.add(historico)
+                            print(f"📝 Histórico de desconto registrado para preenchimento {preenchimento.id}")
+                            print(f"   Valor unitário: {valor_unitario_anterior} → {valor_unitario}")
+                            print(f"   Valor frete: {valor_frete_anterior} → {valor_frete}")
                     else:
                         # Criar novo preenchimento
                         preenchimento = SolicitacoesPreenchidas(
@@ -2404,7 +2436,7 @@ def preencher_solicitacao(id):
                         )
                         db.session.add(preenchimento)
                     
-                    # Atualizar dados
+                    # Atualizar dados do preenchimento
                     preenchimento.valor_unitario = valor_unitario
                     preenchimento.valor_total = valor_total
                     preenchimento.valor_frete = valor_frete if valor_frete > 0 else None
@@ -2537,13 +2569,33 @@ def preencher_solicitacao(id):
             solicitacao_match = next((s for s in todas_solicitacoes if s.id == cotacao.solicitacao_id), None)
             
             if solicitacao_match:
+                # Buscar histórico de descontos para esta cotação
+                historico_descontos = []
+                try:
+                    historico_query = HistoricoDescontos.query.filter_by(
+                        preenchimento_id=cotacao.id
+                    ).order_by(HistoricoDescontos.data_alteracao.desc()).all()
+                    
+                    for historico in historico_query:
+                        historico_descontos.append({
+                            'valor_unitario_anterior': historico.valor_unitario_anterior,
+                            'valor_unitario_novo': historico.valor_unitario_novo,
+                            'valor_frete_anterior': historico.valor_frete_anterior,
+                            'valor_frete_novo': historico.valor_frete_novo,
+                            'data_alteracao': historico.data_alteracao.strftime('%d/%m/%Y %H:%M:%S'),
+                            'usuario': historico.usuario
+                        })
+                except Exception as e:
+                    print(f"DEBUG - Erro ao buscar histórico de descontos: {str(e)}")
+                
                 material_info = {
                     'solicitacao_id': cotacao.solicitacao_id,
                     'valor_unitario': float(cotacao.valor_unitario) if cotacao.valor_unitario else 0.0,
                     'valor_total': float(cotacao.valor_total) if cotacao.valor_total else 0.0,
                     'descricao': solicitacao_match.material.DescricaoMaterial if solicitacao_match.material else '',
                     'quantidade': float(solicitacao_match.quantidade) if solicitacao_match.quantidade else 0.0,
-                    'unidade': solicitacao_match.unidade_medida or 'un'
+                    'unidade': solicitacao_match.unidade_medida or 'un',
+                    'historico_descontos': historico_descontos  # Adicionar histórico ao material
                 }
                 cotacao_estruturada['materiais'].append(material_info)
         
@@ -5909,6 +5961,7 @@ def create_historico_descontos_table():
     except sqlite3.Error as e:
         print(f"Erro ao criar a tabela HistoricoDescontos: {str(e)}")
         return False
+    
 
 @routes_bp.route('/historico_descontos', methods=['GET'])
 def listar_historico_descontos():
