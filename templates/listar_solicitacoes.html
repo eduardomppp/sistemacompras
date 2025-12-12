@@ -529,10 +529,10 @@
             
             <div class="mb-3">
                 <label for="confirmationInput" class="form-label">
-                    Digite <code><strong>EXCLUIR GRUPO</strong></code> para confirmar:
+                    Digite <code><strong>a senha administrativa</strong></code> para confirmar:
                 </label>
                 <input type="text" id="confirmationInput" class="form-control" 
-                       placeholder="Digite EXCLUIR GRUPO aqui...">
+                       placeholder="Digite aqui...">
             </div>
             
             <div class="modal-actions">
@@ -621,7 +621,7 @@
             // Validação do input de confirmação
             document.getElementById('confirmationInput').addEventListener('input', function() {
                 const confirmBtn = document.getElementById('confirmDelete');
-                confirmBtn.disabled = this.value.trim().toUpperCase() !== 'EXCLUIR GRUPO';
+                confirmBtn.disabled = this.value.trim().toUpperCase() !== '122004';
             });
 
             // Destaque para solicitações antigas
