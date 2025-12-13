@@ -2633,6 +2633,436 @@ def preencher_solicitacao(id):
         grupo_ids=grupo_ids_param
     )
 
+#Imprimir -------------------------------------------------------------------------
+@routes_bp.route('/cotacao_imprimir/<int:id>', methods=['GET', 'POST'])
+def cotacao_imprimir(id):
+    if 'usuario' not in session:
+        flash('Acesso não autorizado', 'error')
+        return redirect(url_for('routes_bp.login'))
+
+    # === MODO GRUPO ===
+    grupo_ids_param = request.args.get('grupo_ids', '')
+    grupo_ids = []
+    modo_grupo = False
+    solicitacoes_grupo = []
+
+    if grupo_ids_param:
+        try:
+            grupo_ids = [int(x) for x in grupo_ids_param.split(',') if x.strip().isdigit()]
+            if grupo_ids:
+                solicitacoes_grupo = SolicitacoesCompra.query.filter(SolicitacoesCompra.id.in_(grupo_ids)).all()
+                modo_grupo = len(solicitacoes_grupo) > 1
+        except:
+            flash('IDs de grupo inválidos.', 'error')
+            return redirect(url_for('routes_bp.listar_solicitacoes_comprador'))
+
+    solicitacao = SolicitacoesCompra.query.get_or_404(id)
+    if modo_grupo and id not in grupo_ids:
+        if solicitacao not in solicitacoes_grupo:
+            solicitacoes_grupo.append(solicitacao)
+        grupo_ids.append(id)
+
+    todas_solicitacoes = solicitacoes_grupo if modo_grupo else [solicitacao]
+
+    if request.method == 'POST':
+        action = request.form.get('action')
+        print(f"DEBUG - Action recebido: {action}")  # Para debug
+        
+        if not action:
+            # Tentar capturar de outra forma
+            action = request.form.get('action[]')
+            print(f"DEBUG - Action[] recebido: {action}")  # Para debug
+            
+        if not action:
+            # Verificar qual botão foi clicado
+            if 'salvar_rascunho' in request.form:
+                action = 'salvar_rascunho'
+            elif 'salvar_finalizar' in request.form:
+                action = 'salvar_finalizar'
+            else:
+                # Verificar se veio em outro formato
+                for key in request.form.keys():
+                    print(f"DEBUG - Chave no form: {key}")
+                    if 'salvar' in key.lower():
+                        action = key
+                        break
+        
+        print(f"DEBUG - Action final: {action}")
+        
+        is_rascunho = action == 'salvar_rascunho'
+        is_finalizar = action == 'salvar_finalizar'
+
+        if not (is_rascunho or is_finalizar):
+            flash('Ação inválida. Selecione "Salvar Rascunho" ou "Finalizar".', 'error')
+            return redirect(request.url)
+
+        try:
+            usuario = session['usuario']
+            
+            # === Captura de dados em listas ===
+            fornecedores_ids = request.form.getlist('fornecedor_id[]')
+            valores_frete = request.form.getlist('valor_frete[]')
+            prazos = request.form.getlist('prazo_entrega[]')
+            condicoes = request.form.getlist('condicao_pagamento[]')
+            observacoes = request.form.getlist('observacao[]')
+            preenchimento_ids = request.form.getlist('preenchimento_id[]')
+            pdf_files = request.files.getlist('pdf_file[]')
+            
+            print(f"DEBUG - Fornecedores IDs recebidos: {fornecedores_ids}")
+            print(f"DEBUG - Qtde fornecedores: {len(fornecedores_ids)}")
+            print(f"DEBUG - Prazos: {prazos}")
+            print(f"DEBUG - Condições: {condicoes}")
+            
+            # === Captura de dados dos materiais ===
+            todos_valores_unitarios = request.form.getlist('valor_unitario[]')
+            todos_ids_solicitacao = request.form.getlist('solicitacao_id[]')
+            
+            print(f"DEBUG - Todos valores unitários: {todos_valores_unitarios}")
+            print(f"DEBUG - Todos IDs solicitação: {todos_ids_solicitacao}")
+            
+            # === Processar cada cotação ===
+            cotacoes_salvas = 0
+            total_cotacoes = 0
+            erros_validacao = []
+            
+            for idx, fornecedor_id in enumerate(fornecedores_ids):
+                fornecedor_id = fornecedor_id.strip()
+                if not fornecedor_id:
+                    continue  # Ignora cotação vazia
+                
+                total_cotacoes += 1
+                
+                # === Campos da cotação atual ===
+                vf_str = valores_frete[idx].strip() if idx < len(valores_frete) else '0'
+                prazo = prazos[idx].strip() if idx < len(prazos) else ''
+                condicao = condicoes[idx].strip() if idx < len(condicoes) else ''
+                obs = observacoes[idx].strip() if idx < len(observacoes) else ''
+                preenchimento_id = preenchimento_ids[idx] if idx < len(preenchimento_ids) and preenchimento_ids[idx] else None
+                
+                # === VALIDAÇÃO EXTRA PARA FINALIZAR ===
+                if is_finalizar:
+                    if not prazo:
+                        erros_validacao.append(f'Cotação {idx+1}: Prazo de entrega é obrigatório.')
+                    if not condicao:
+                        erros_validacao.append(f'Cotação {idx+1}: Condição de pagamento é obrigatória.')
+                
+                # === Conversão segura de valor frete ===
+                try:
+                    vf_clean = vf_str.replace('.', '').replace(',', '.')
+                    valor_frete = float(vf_clean) if vf_clean and float(vf_clean) > 0 else 0.0
+                except:
+                    valor_frete = 0.0
+                
+                # === Processar cada material desta cotação ===
+                # Assumir que cada cotação tem todos os materiais em sequência
+                num_materiais_por_cotacao = len(todas_solicitacoes)
+                inicio_idx = idx * num_materiais_por_cotacao
+                
+                # Verificar se há dados suficientes
+                if inicio_idx >= len(todos_valores_unitarios):
+                    erros_validacao.append(f'Cotação {idx+1}: Dados dos materiais incompletos.')
+                    continue
+                
+                for i, sol in enumerate(todas_solicitacoes):
+                    material_idx = inicio_idx + i
+                    
+                    if material_idx >= len(todos_valores_unitarios):
+                        erros_validacao.append(f'Cotação {idx+1}, Material {i+1}: Valor unitário faltando.')
+                        continue
+                    
+                    valor_unitario_str = todos_valores_unitarios[material_idx].strip()
+                    
+                    # Validar valor unitário
+                    if not valor_unitario_str or valor_unitario_str in ['0', '0.00', '0,00']:
+                        erros_validacao.append(f'Cotação {idx+1}, Material {i+1}: Valor unitário é obrigatório.')
+                        continue
+                    
+                    try:
+                        vu_clean = valor_unitario_str.replace('.', '').replace(',', '.')
+                        valor_unitario = float(vu_clean) if vu_clean else 0.0
+                        if valor_unitario <= 0:
+                            erros_validacao.append(f'Cotação {idx+1}, Material {i+1}: Valor unitário deve ser maior que zero.')
+                            continue
+                    except ValueError:
+                        erros_validacao.append(f'Cotação {idx+1}, Material {i+1}: Valor unitário inválido.')
+                        continue
+                    
+                    # Calcular valor total
+                    valor_total = valor_unitario * sol.quantidade
+                    
+                    # Buscar ou criar preenchimento
+                    preenchimento = None
+                    if preenchimento_id and i == 0:  # Usar o ID apenas para o primeiro material
+                        preenchimento = SolicitacoesPreenchidas.query.get(preenchimento_id)
+                    
+                    if not preenchimento:
+                        # Verificar se já existe um registro para esta combinação
+                        preenchimento = SolicitacoesPreenchidas.query.filter_by(
+                            solicitacao_id=sol.id,
+                            fornecedor_id=int(fornecedor_id),
+                            status='Rascunho'
+                        ).first()
+                    
+                    # 🔹 CORREÇÃO: Salvar histórico de descontos mesmo para rascunhos
+                    valor_unitario_anterior = None
+                    valor_frete_anterior = None
+                    
+                    if preenchimento:
+                        # Salvar valores anteriores para comparação
+                        valor_unitario_anterior = float(preenchimento.valor_unitario) if preenchimento.valor_unitario else 0.0
+                        valor_frete_anterior = float(preenchimento.valor_frete) if preenchimento.valor_frete else 0.0
+                        
+                        print(f"DEBUG - Comparando valores para preenchimento {preenchimento.id}:")
+                        print(f"  Valor unitário anterior: {valor_unitario_anterior}")
+                        print(f"  Valor unitário novo: {valor_unitario}")
+                        print(f"  Valor frete anterior: {valor_frete_anterior}")
+                        print(f"  Valor frete novo: {valor_frete}")
+                        
+                        # Comparar valores (com margem de 0.01 para evitar problemas de ponto flutuante)
+                        valor_unitario_mudou = abs(valor_unitario_anterior - valor_unitario) > 0.01
+                        
+                        # Verificar se o frete mudou (tratando casos de None)
+                        valor_frete_mudou = False
+                        if valor_frete > 0:
+                            if valor_frete_anterior is None or abs(valor_frete_anterior - valor_frete) > 0.01:
+                                valor_frete_mudou = True
+                        else:
+                            if valor_frete_anterior is not None and valor_frete_anterior > 0:
+                                valor_frete_mudou = True
+                        
+                        print(f"  Valor unitário mudou: {valor_unitario_mudou}")
+                        print(f"  Valor frete mudou: {valor_frete_mudou}")
+                        
+                        # Se algum valor mudou, registrar no histórico
+                        if valor_unitario_mudou or valor_frete_mudou:
+                            historico = HistoricoDescontos(
+                                preenchimento_id=preenchimento.id,
+                                valor_unitario_anterior=valor_unitario_anterior,
+                                valor_unitario_novo=valor_unitario,
+                                valor_frete_anterior=valor_frete_anterior if valor_frete_anterior != 0 else None,
+                                valor_frete_novo=valor_frete if valor_frete > 0 else None,
+                                data_alteracao=get_local_time(),
+                                usuario=usuario
+                            )
+                            db.session.add(historico)
+                            print(f"📝 Histórico de desconto registrado para preenchimento {preenchimento.id}")
+                            print(f"   Valor unitário: {valor_unitario_anterior} → {valor_unitario}")
+                            print(f"   Valor frete: {valor_frete_anterior} → {valor_frete}")
+                    else:
+                        # Criar novo preenchimento
+                        preenchimento = SolicitacoesPreenchidas(
+                            solicitacao_id=sol.id,
+                            fornecedor_id=int(fornecedor_id),
+                            valor_unitario=valor_unitario,
+                            valor_total=valor_total,
+                            valor_frete=valor_frete if valor_frete > 0 else None,
+                            prazo_entrega=prazo,
+                            condicao_pagamento=condicao,
+                            observacoes=obs,
+                            data_preenchimento=get_local_time(),
+                            usuario=usuario,
+                            status='Rascunho' if is_rascunho else 'Aguardando Aprovacao'
+                        )
+                        db.session.add(preenchimento)
+                    
+                    # Atualizar dados do preenchimento
+                    preenchimento.valor_unitario = valor_unitario
+                    preenchimento.valor_total = valor_total
+                    preenchimento.valor_frete = valor_frete if valor_frete > 0 else None
+                    preenchimento.prazo_entrega = prazo
+                    preenchimento.condicao_pagamento = condicao
+                    preenchimento.observacoes = obs
+                    preenchimento.status = 'Rascunho' if is_rascunho else 'Aguardando Aprovacao'
+                    preenchimento.data_preenchimento = get_local_time()
+                    preenchimento.usuario = usuario
+                    
+                    # PDF apenas para o primeiro material da cotação
+                    if idx < len(pdf_files) and i == 0 and pdf_files[idx] and pdf_files[idx].filename:
+                        pdf_file = pdf_files[idx]
+                        if allowed_file(pdf_file.filename, {'pdf'}):
+                            timestamp = get_local_time().strftime('%Y%m%d_%H%M%S')
+                            safe_name = secure_filename(pdf_file.filename)
+                            unique_name = f"cotacao_{preenchimento.id}_{timestamp}_{safe_name}"
+                            path = os.path.join(app.config['UPLOAD_FOLDER'], unique_name)
+                            pdf_file.save(path)
+                            preenchimento.pdf_path = unique_name
+                    
+                    cotacoes_salvas += 1
+            
+            if erros_validacao:
+                for erro in erros_validacao:
+                    flash(erro, 'error')
+                return redirect(request.url)
+            
+            if total_cotacoes == 0:
+                flash('É necessário preencher pelo menos uma cotação.', 'error')
+                return redirect(request.url)
+            
+            # === Commit final ===
+            db.session.commit()
+            if is_rascunho:
+                flash(f'{cotacoes_salvas} material(is) em {total_cotacoes} cotação(ões) salvo(s) como rascunho!', 'success')
+            else:
+                flash(f'{cotacoes_salvas} material(is) em {total_cotacoes} cotação(ões) finalizado(s) e enviado(s) para aprovação!', 'success')
+            return redirect(url_for('routes_bp.listar_solicitacoes_comprador'))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Erro ao salvar: {str(e)}', 'error')
+            import traceback
+            print(f"DEBUG - Erro completo: {traceback.format_exc()}")
+            return redirect(request.url)
+
+    # === GET: Carregar rascunhos ===
+    if modo_grupo:
+        # Buscar todas as cotações para o grupo
+        cotacoes_raw = SolicitacoesPreenchidas.query.filter(
+            SolicitacoesPreenchidas.solicitacao_id.in_(grupo_ids),
+            SolicitacoesPreenchidas.status == 'Rascunho'
+        ).order_by(SolicitacoesPreenchidas.fornecedor_id, SolicitacoesPreenchidas.solicitacao_id).all()
+    else:
+        # Buscar cotações para esta solicitação específica
+        cotacoes_raw = SolicitacoesPreenchidas.query.filter_by(
+            solicitacao_id=id,
+            status='Rascunho'
+        ).order_by(SolicitacoesPreenchidas.fornecedor_id).all()
+
+    # Organizar cotações por fornecedor
+    cotacoes_por_fornecedor = {}
+    for c in cotacoes_raw:
+        if c.fornecedor_id not in cotacoes_por_fornecedor:
+            cotacoes_por_fornecedor[c.fornecedor_id] = []
+        cotacoes_por_fornecedor[c.fornecedor_id].append(c)
+
+    # Criar estrutura para o template
+    cotacoes_estruturadas = []
+    
+    for fornecedor_id, cotacoes_fornecedor in cotacoes_por_fornecedor.items():
+        if not cotacoes_fornecedor:
+            continue
+            
+        # Pegar a primeira cotação como referência para dados gerais
+        cotacao_ref = cotacoes_fornecedor[0]
+        
+        # Buscar dados do fornecedor
+        fornecedor_info = {
+            'nome_fantasia': '',
+            'cnpj': '',
+            'telefone': '',
+            'endereco': ''
+        }
+        
+        conn = get_db_connection(DB_PATH_FORNECEDORES)
+        if conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT nome_fantasia, cnpj, telefone, endereco, bairro, cidade, estado 
+                FROM fornecedores 
+                WHERE id = ?
+            """, (fornecedor_id,))
+            row = cursor.fetchone()
+            conn.close()
+            
+            if row:
+                fornecedor_info['nome_fantasia'] = row[0] or ''
+                fornecedor_info['cnpj'] = format_cnpj(row[1]) if row[1] else ''
+                fornecedor_info['telefone'] = row[2] or ''
+                endereco_parts = []
+                if row[3]:
+                    endereco_parts.append(row[3])
+                if row[4]:
+                    endereco_parts.append(row[4])
+                if row[5] and row[6]:
+                    endereco_parts.append(f"{row[5]}/{row[6]}")
+                fornecedor_info['endereco'] = ', '.join(endereco_parts) if endereco_parts else 'Não informado'
+        
+        # Criar estrutura da cotação
+        cotacao_estruturada = {
+            'id': cotacao_ref.id,
+            'fornecedor_id': fornecedor_id,
+            'fornecedor_nome_fantasia': fornecedor_info['nome_fantasia'],
+            'fornecedor_cnpj': fornecedor_info['cnpj'],
+            'fornecedor_telefone': fornecedor_info['telefone'],
+            'fornecedor_endereco': fornecedor_info['endereco'],
+            'valor_frete': cotacao_ref.valor_frete,
+            'prazo_entrega': cotacao_ref.prazo_entrega or '',
+            'condicao_pagamento': cotacao_ref.condicao_pagamento or '',
+            'observacoes': cotacao_ref.observacoes or '',
+            'pdf_path': cotacao_ref.pdf_path,
+            'materiais': []
+        }
+        
+        # Adicionar materiais com seus valores
+        for cotacao in cotacoes_fornecedor:
+            # Encontrar a solicitação correspondente
+            solicitacao_match = next((s for s in todas_solicitacoes if s.id == cotacao.solicitacao_id), None)
+            
+            if solicitacao_match:
+                # Buscar histórico de descontos para esta cotação
+                historico_descontos = []
+                try:
+                    historico_query = HistoricoDescontos.query.filter_by(
+                        preenchimento_id=cotacao.id
+                    ).order_by(HistoricoDescontos.data_alteracao.desc()).all()
+                    
+                    for historico in historico_query:
+                        historico_descontos.append({
+                            'valor_unitario_anterior': historico.valor_unitario_anterior,
+                            'valor_unitario_novo': historico.valor_unitario_novo,
+                            'valor_frete_anterior': historico.valor_frete_anterior,
+                            'valor_frete_novo': historico.valor_frete_novo,
+                            'data_alteracao': historico.data_alteracao.strftime('%d/%m/%Y %H:%M:%S'),
+                            'usuario': historico.usuario
+                        })
+                except Exception as e:
+                    print(f"DEBUG - Erro ao buscar histórico de descontos: {str(e)}")
+                
+                material_info = {
+                    'solicitacao_id': cotacao.solicitacao_id,
+                    'valor_unitario': float(cotacao.valor_unitario) if cotacao.valor_unitario else 0.0,
+                    'valor_total': float(cotacao.valor_total) if cotacao.valor_total else 0.0,
+                    'descricao': solicitacao_match.material.DescricaoMaterial if solicitacao_match.material else '',
+                    'quantidade': float(solicitacao_match.quantidade) if solicitacao_match.quantidade else 0.0,
+                    'unidade': solicitacao_match.unidade_medida or 'un',
+                    'historico_descontos': historico_descontos  # Adicionar histórico ao material
+                }
+                cotacao_estruturada['materiais'].append(material_info)
+        
+        cotacoes_estruturadas.append(cotacao_estruturada)
+    
+    # Se não houver cotações salvas, criar uma estrutura vazia para o template
+    if not cotacoes_estruturadas:
+        cotacoes_estruturadas = [{
+            'id': None,
+            'fornecedor_id': None,
+            'fornecedor_nome_fantasia': '',
+            'fornecedor_cnpj': '',
+            'fornecedor_telefone': '',
+            'fornecedor_endereco': '',
+            'valor_frete': None,
+            'prazo_entrega': '',
+            'condicao_pagamento': '',
+            'observacoes': '',
+            'pdf_path': None,
+            'materiais': []
+        }]
+    
+    print(f"DEBUG - Cotações estruturadas para template: {len(cotacoes_estruturadas)}")
+    for i, cotacao in enumerate(cotacoes_estruturadas):
+        print(f"DEBUG - Cotação {i+1}: Fornecedor {cotacao.get('fornecedor_id')}, {len(cotacao.get('materiais', []))} materiais")
+        for j, material in enumerate(cotacao.get('materiais', [])):
+            print(f"DEBUG -   Material {j+1}: ID {material.get('solicitacao_id')}, Valor R$ {material.get('valor_unitario')}")
+
+    return render_template(
+        'cotacao_imprimir.html',
+        solicitacao=solicitacao,
+        solicitacoes_grupo=todas_solicitacoes,
+        cotacoes_salvas=cotacoes_estruturadas,
+        modo_grupo=modo_grupo,
+        grupo_ids=grupo_ids_param
+    )
+#------------------------------------------------------------------
+
 @routes_bp.route('/listar_solicitacoes_preenchidas', methods=['GET'])
 def listar_solicitacoes_preenchidas():
     if 'usuario' not in session:
@@ -2998,7 +3428,7 @@ def gerar_pedido_compra():
                 db.session.commit()
 
                 flash(f'Pedido {numero_pedido} gerado com sucesso!', 'success')
-                return redirect(url_for('routes_bp.listar_pedidos_compra'))
+                return redirect(url_for('routes_bp.auditoria_solicitacoes'))
 
             except Exception as e:
                 logging.error(f"Erro ao gerar PDF: {str(e)}", exc_info=True)
@@ -3013,7 +3443,7 @@ def gerar_pedido_compra():
                     logging.error(f"Erro ao salvar HTML: {str(debug_error)}")
 
                 flash('Pedido criado, mas ocorreu um erro ao gerar o PDF. Consulte os logs.', 'warning')
-                return redirect(url_for('routes_bp.listar_pedidos_compra'))
+                return redirect(url_for('routes_bp.auditoria_solicitacoes'))
 
         # Método GET - mostrar formulário
         preenchimentos = SolicitacoesPreenchidas.query.filter_by(status='Aprovado')\
