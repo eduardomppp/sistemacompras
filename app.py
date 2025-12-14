@@ -5645,97 +5645,568 @@ def dashboard():
         return redirect(url_for('routes_bp.login'))
     
     try:
-        # Dados básicos
-        total_materiais = Materiais.query.count()
+        # Obter parâmetros de filtro
+        empresa = request.args.get('empresa', 'Todas')
+        periodo = request.args.get('periodo', 'Últimos 30 dias')
+        status_filtro = request.args.get('status', 'Todos')
+        comprador_filtro = request.args.get('comprador', 'Todos')
         
-        # Materiais com estoque crítico (menos de 5 dias de consumo)
-        materiais_criticos = Materiais.query.filter(
-            Materiais.FatorConsumo > 0,
-            (Materiais.QuantidadeEstoque / Materiais.FatorConsumo) < 5
+        # Calcular datas com base no período
+        data_atual = get_local_time()
+        data_inicio = None
+        
+        if periodo == 'Últimos 30 dias':
+            data_inicio = data_atual - timedelta(days=30)
+        elif periodo == 'Últimos 6 meses':
+            data_inicio = data_atual - timedelta(days=180)
+        elif periodo == '2025':
+            data_inicio = datetime(2025, 1, 1)
+        elif periodo == '2024':
+            data_inicio = datetime(2024, 1, 1)
+        
+        # CONSULTA BASE OTIMIZADA
+        query = SolicitacoesCompra.query
+        
+        # Aplicar filtros
+        if data_inicio:
+            query = query.filter(SolicitacoesCompra.data_solicitacao >= data_inicio)
+        
+        if empresa and empresa != 'Todas':
+            query = query.filter(SolicitacoesCompra.empresa == empresa)
+        
+        if status_filtro and status_filtro != 'Todos':
+            if status_filtro == 'Pendente':
+                query = query.filter(SolicitacoesCompra.status_aprovacao.in_([None, '', 'Pendente']))
+            elif status_filtro == 'Aprovado':
+                query = query.filter(SolicitacoesCompra.status_aprovacao == 'Aprovado')
+            elif status_filtro == 'Reprovado':
+                query = query.filter(SolicitacoesCompra.status_aprovacao == 'Reprovado')
+        
+        if comprador_filtro and comprador_filtro != 'Todos':
+            query = query.filter(SolicitacoesCompra.comprador_atribuido == comprador_filtro)
+        
+        # Executar consulta
+        solicitacoes = query.all()
+        total_solicitacoes = len(solicitacoes)
+        
+        # DADOS BÁSICOS
+        aprovadas = sum(1 for s in solicitacoes if s.status_aprovacao == 'Aprovado')
+        pendentes = sum(1 for s in solicitacoes if s.status_aprovacao in [None, '', 'Pendente'])
+        rejeitadas = sum(1 for s in solicitacoes if s.status_aprovacao == 'Reprovado')
+        
+        # 1. PRODUTIVIDADE DOS COMPRADORES
+        compradores_metrics = {}
+        
+        for solicitacao in solicitacoes:
+            comprador = solicitacao.comprador_atribuido or 'Não Atribuído'
+            
+            if comprador not in compradores_metrics:
+                compradores_metrics[comprador] = {
+                    'pendentes': 0,
+                    'aprovadas': 0,
+                    'rejeitadas': 0,
+                    'valor_total': 0,
+                    'tempo_medio': 0,
+                    'contador_tempo': 0
+                }
+            
+            status = solicitacao.status_aprovacao
+            if status == 'Aprovado':
+                compradores_metrics[comprador]['aprovadas'] += 1
+            elif status in [None, '', 'Pendente']:
+                compradores_metrics[comprador]['pendentes'] += 1
+            elif status == 'Reprovado':
+                compradores_metrics[comprador]['rejeitadas'] += 1
+            
+            # Buscar preenchimentos para calcular valor
+            preenchimentos = SolicitacoesPreenchidas.query.filter_by(
+                solicitacao_id=solicitacao.id
+            ).filter(
+                SolicitacoesPreenchidas.status != 'Rascunho'
+            ).all()
+            
+            valor_solicitacao = sum(p.valor_total for p in preenchimentos if p and p.valor_total)
+            compradores_metrics[comprador]['valor_total'] += valor_solicitacao
+            
+            # Calcular tempo médio para solicitações aprovadas
+            if status == 'Aprovado' and solicitacao.data_solicitacao:
+                dias = (data_atual - solicitacao.data_solicitacao).days
+                compradores_metrics[comprador]['tempo_medio'] += dias
+                compradores_metrics[comprador]['contador_tempo'] += 1
+        
+        # Converter para lista
+        compradores_lista = []
+        for nome, dados in compradores_metrics.items():
+            tempo_medio = dados['tempo_medio'] / dados['contador_tempo'] if dados['contador_tempo'] > 0 else 0
+            total = dados['pendentes'] + dados['aprovadas'] + dados['rejeitadas']
+            taxa_aprovacao = (dados['aprovadas'] / total * 100) if total > 0 else 0
+            
+            compradores_lista.append({
+                'nome': nome,
+                'pendentes': dados['pendentes'],
+                'aprovadas': dados['aprovadas'],
+                'rejeitadas': dados['rejeitadas'],
+                'valor_total': dados['valor_total'],
+                'tempo_medio_dias': round(tempo_medio, 1),
+                'taxa_aprovacao': round(taxa_aprovacao, 1),
+                'total': total
+            })
+        
+        compradores_lista.sort(key=lambda x: x['total'], reverse=True)
+        
+        # 2. PRODUTOS PENDENTES
+        produtos_pendentes = {}
+        
+        for solicitacao in solicitacoes:
+            if solicitacao.status_aprovacao in [None, '', 'Pendente']:
+                material = db.session.get(Materiais, solicitacao.cod_material)
+                if material:
+                    # Truncar nome do produto se muito longo
+                    produto_nome = material.DescricaoMaterial
+                    if len(produto_nome) > 40:
+                        produto_nome = produto_nome[:40] + '...'
+                    
+                    chave = f"{material.CodMaterial}|{solicitacao.empresa}"
+                    
+                    if chave not in produtos_pendentes:
+                        produtos_pendentes[chave] = {
+                            'produto': produto_nome,
+                            'quantidade': 0,
+                            'valor_total': 0,
+                            'empresa': solicitacao.empresa,
+                            'dias_pendente': (data_atual - solicitacao.data_solicitacao).days if solicitacao.data_solicitacao else 0
+                        }
+                    
+                    produtos_pendentes[chave]['quantidade'] += solicitacao.quantidade
+                    
+                    # Calcular valor estimado
+                    preenchimentos = SolicitacoesPreenchidas.query.filter_by(
+                        solicitacao_id=solicitacao.id
+                    ).filter(
+                        SolicitacoesPreenchidas.status != 'Rascunho'
+                    ).all()
+                    
+                    if preenchimentos:
+                        valor_medio = sum(p.valor_unitario for p in preenchimentos if p and p.valor_unitario) / len(preenchimentos)
+                        produtos_pendentes[chave]['valor_total'] += valor_medio * solicitacao.quantidade
+        
+        produtos_pendentes_lista = sorted(
+            produtos_pendentes.values(),
+            key=lambda x: x['dias_pendente'],
+            reverse=True
+        )[:8]  # Top 8
+        
+        # 3. VOLUME DE COMPRAS POR EMPRESA
+        volume_por_empresa = {}
+        for solicitacao in solicitacoes:
+            empresa_nome = solicitacao.empresa
+            if empresa_nome not in volume_por_empresa:
+                volume_por_empresa[empresa_nome] = {
+                    'total': 0,
+                    'valor_total': 0
+                }
+            
+            volume_por_empresa[empresa_nome]['total'] += 1
+            
+            # Calcular valor
+            preenchimentos = SolicitacoesPreenchidas.query.filter_by(
+                solicitacao_id=solicitacao.id
+            ).filter(
+                SolicitacoesPreenchidas.status != 'Rascunho'
+            ).all()
+            
+            valor = sum(p.valor_total for p in preenchimentos if p and p.valor_total)
+            volume_por_empresa[empresa_nome]['valor_total'] += valor
+        
+        # Calcular porcentagens e crescimento simplificado
+        volume_total = sum(dados['total'] for dados in volume_por_empresa.values())
+        volume_empresa_data = []
+        
+        for empresa_nome, dados in volume_por_empresa.items():
+            porcentagem = round((dados['total'] / volume_total) * 100, 1) if volume_total > 0 else 0
+            volume_empresa_data.append({
+                'empresa': empresa_nome,
+                'volume': dados['total'],
+                'valor_total': dados['valor_total'],
+                'crescimento': 0,  # Simplificado para demo
+                'porcentagem': porcentagem
+            })
+        
+        volume_empresa_data.sort(key=lambda x: x['volume'], reverse=True)
+        
+        # 4. PENDÊNCIAS POR EMPRESA
+        pendencias_por_empresa = {}
+        for solicitacao in solicitacoes:
+            if solicitacao.status_aprovacao in [None, '', 'Pendente']:
+                empresa_nome = solicitacao.empresa
+                
+                if empresa_nome not in pendencias_por_empresa:
+                    pendencias_por_empresa[empresa_nome] = {
+                        'quantidade': 0,
+                        'dias_total': 0,
+                        'valor_pendente': 0
+                    }
+                
+                pendencias_por_empresa[empresa_nome]['quantidade'] += 1
+                
+                # Calcular dias pendente
+                dias = (data_atual - solicitacao.data_solicitacao).days if solicitacao.data_solicitacao else 0
+                pendencias_por_empresa[empresa_nome]['dias_total'] += dias
+                
+                # Calcular valor pendente
+                preenchimentos = SolicitacoesPreenchidas.query.filter_by(
+                    solicitacao_id=solicitacao.id
+                ).filter(
+                    SolicitacoesPreenchidas.status != 'Rascunho'
+                ).all()
+                
+                valor = sum(p.valor_total for p in preenchimentos if p and p.valor_total)
+                pendencias_por_empresa[empresa_nome]['valor_pendente'] += valor
+        
+        pendencias_lista = []
+        for empresa_nome, dados in pendencias_por_empresa.items():
+            tempo_medio = dados['dias_total'] / dados['quantidade'] if dados['quantidade'] > 0 else 0
+            pendencias_lista.append({
+                'empresa': empresa_nome,
+                'pendencias': dados['quantidade'],
+                'tempo_medio_dias': round(tempo_medio, 1),
+                'valor_pendente': dados['valor_pendente']
+            })
+        
+        pendencias_lista.sort(key=lambda x: x['pendencias'], reverse=True)
+        
+        # 5. MAIOR VOLUME DE GASTOS POR VEÍCULO
+        gastos_por_veiculo = {}
+        for solicitacao in solicitacoes:
+            if solicitacao.ativo == 'Sim' and solicitacao.nome_ativo:
+                veiculo = solicitacao.nome_ativo
+                
+                if veiculo not in gastos_por_veiculo:
+                    gastos_por_veiculo[veiculo] = {
+                        'valor_total': 0,
+                        'solicitacoes': 0,
+                        'itens_total': 0
+                    }
+                
+                # Buscar preenchimentos
+                preenchimentos = SolicitacoesPreenchidas.query.filter_by(
+                    solicitacao_id=solicitacao.id
+                ).filter(
+                    SolicitacoesPreenchidas.status != 'Rascunho'
+                ).all()
+                
+                valor = sum(p.valor_total for p in preenchimentos if p and p.valor_total)
+                gastos_por_veiculo[veiculo]['valor_total'] += valor
+                gastos_por_veiculo[veiculo]['solicitacoes'] += 1
+                gastos_por_veiculo[veiculo]['itens_total'] += solicitacao.quantidade
+        
+        gastos_veiculo_lista = [
+            {
+                'veiculo': veiculo,
+                'valor_total': dados['valor_total'],
+                'solicitacoes': dados['solicitacoes'],
+                'itens_total': dados['itens_total'],
+                'valor_medio_por_item': dados['valor_total'] / dados['itens_total'] if dados['itens_total'] > 0 else 0
+            }
+            for veiculo, dados in gastos_por_veiculo.items()
+        ]
+        gastos_veiculo_lista.sort(key=lambda x: x['valor_total'], reverse=True)
+        
+        # 6. MAIOR VOLUME DE COMPRAS POR VEÍCULO (simplificado)
+        compras_por_veiculo = {}
+        for solicitacao in solicitacoes:
+            if solicitacao.ativo == 'Sim' and solicitacao.nome_ativo:
+                veiculo = solicitacao.nome_ativo
+                if veiculo not in compras_por_veiculo:
+                    compras_por_veiculo[veiculo] = 0
+                compras_por_veiculo[veiculo] += solicitacao.quantidade
+        
+        compras_veiculo_lista = [
+            {
+                'veiculo': veiculo,
+                'quantidade_total': quantidade,
+                'solicitacoes': sum(1 for s in solicitacoes if s.nome_ativo == veiculo)
+            }
+            for veiculo, quantidade in compras_por_veiculo.items()
+        ]
+        compras_veiculo_lista.sort(key=lambda x: x['quantidade_total'], reverse=True)
+        
+        # 7. SOLICITAÇÕES COM MAIOR TEMPO EM ABERTO
+        tempo_aberto_lista = []
+        for solicitacao in solicitacoes:
+            if solicitacao.status_aprovacao in [None, '', 'Pendente']:
+                dias_aberto = (data_atual - solicitacao.data_solicitacao).days if solicitacao.data_solicitacao else 0
+                
+                if dias_aberto > 0:
+                    material = db.session.get(Materiais, solicitacao.cod_material)
+                    material_nome = material.DescricaoMaterial[:30] + '...' if material and len(material.DescricaoMaterial) > 30 else material.DescricaoMaterial if material else ''
+                    
+                    # Calcular prioridade simplificada
+                    preenchimentos = SolicitacoesPreenchidas.query.filter_by(
+                        solicitacao_id=solicitacao.id
+                    ).filter(
+                        SolicitacoesPreenchidas.status != 'Rascunho'
+                    ).all()
+                    
+                    valor_pendente = sum(p.valor_total for p in preenchimentos if p and p.valor_total)
+                    prioridade = dias_aberto * (1 + (valor_pendente / 10000))
+                    
+                    tempo_aberto_lista.append({
+                        'id': solicitacao.id,
+                        'dias_aberto': dias_aberto,
+                        'empresa': solicitacao.empresa,
+                        'material': material_nome,
+                        'valor_pendente': valor_pendente,
+                        'prioridade': round(prioridade, 2),
+                        'comprador': solicitacao.comprador_atribuido or 'Não Atribuído'
+                    })
+        
+        tempo_aberto_lista.sort(key=lambda x: x['prioridade'], reverse=True)
+        tempo_aberto_lista = tempo_aberto_lista[:10]
+        
+        # 8. COMPARAÇÃO DE GASTOS POR EMPRESA (simplificado)
+        gastos_por_empresa = {}
+        for solicitacao in solicitacoes:
+            empresa_nome = solicitacao.empresa
+            if empresa_nome not in gastos_por_empresa:
+                gastos_por_empresa[empresa_nome] = 0
+            
+            # Buscar preenchimentos
+            preenchimentos = SolicitacoesPreenchidas.query.filter_by(
+                solicitacao_id=solicitacao.id
+            ).filter(
+                SolicitacoesPreenchidas.status != 'Rascunho'
+            ).all()
+            
+            valor = sum(p.valor_total for p in preenchimentos if p and p.valor_total)
+            gastos_por_empresa[empresa_nome] += valor
+        
+        gastos_empresa_lista = []
+        for empresa_nome, gastos in gastos_por_empresa.items():
+            # Determinar tendência simplificada
+            if gastos > 100000:
+                tendencia = 'alta'
+                simbolo = '↗'
+            elif gastos > 50000:
+                tendencia = 'estável'
+                simbolo = '→'
+            else:
+                tendencia = 'baixa'
+                simbolo = '↘'
+            
+            gastos_empresa_lista.append({
+                'empresa': empresa_nome,
+                'gastos_total': gastos,
+                'variacao': 0,  # Simplificado para demo
+                'tendencia': tendencia,
+                'simbolo': simbolo
+            })
+        
+        gastos_empresa_lista.sort(key=lambda x: x['gastos_total'], reverse=True)
+        
+        # 9. EVOLUÇÃO DE COMPPRAS NOS ÚLTIMOS MESES (dados de exemplo)
+        meses_nomes = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
+        
+        # Gerar dados de exemplo baseados nas empresas existentes
+        empresas_existentes = list(set(s.empresa for s in solicitacoes))
+        evolucao_compras = {}
+        
+        for empresa in empresas_existentes[:3]:  # Máximo 3 empresas
+            # Gerar dados aleatórios para demonstração
+            import random
+            dados = [random.randint(50, 200) for _ in range(6)]  # 6 meses
+            evolucao_compras[empresa] = dados
+        
+        # Nomes dos últimos 6 meses
+        mes_atual = data_atual.month
+        meses_labels = []
+        for i in range(6):
+            mes_num = mes_atual - (5 - i)
+            ano = data_atual.year
+            if mes_num <= 0:
+                mes_num += 12
+                ano -= 1
+            meses_labels.append(f"{meses_nomes[mes_num - 1]}/{str(ano)[-2:]}")
+        
+        # 10. PRODUTIVIDADE GERAL POR EMPRESA
+        produtividade_por_empresa = {}
+        
+        for solicitacao in solicitacoes:
+            empresa_nome = solicitacao.empresa
+            
+            if empresa_nome not in produtividade_por_empresa:
+                produtividade_por_empresa[empresa_nome] = {
+                    'compradores': set(),
+                    'solicitacoes': 0,
+                    'aprovadas': 0,
+                    'valor_total': 0
+                }
+            
+            produtividade_por_empresa[empresa_nome]['solicitacoes'] += 1
+            
+            if solicitacao.comprador_atribuido:
+                produtividade_por_empresa[empresa_nome]['compradores'].add(solicitacao.comprador_atribuido)
+            
+            if solicitacao.status_aprovacao == 'Aprovado':
+                produtividade_por_empresa[empresa_nome]['aprovadas'] += 1
+            
+            # Calcular valor
+            preenchimentos = SolicitacoesPreenchidas.query.filter_by(
+                solicitacao_id=solicitacao.id
+            ).filter(
+                SolicitacoesPreenchidas.status != 'Rascunho'
+            ).all()
+            
+            valor = sum(p.valor_total for p in preenchimentos if p and p.valor_total)
+            produtividade_por_empresa[empresa_nome]['valor_total'] += valor
+        
+        produtividade_lista = []
+        for empresa_nome, dados in produtividade_por_empresa.items():
+            taxa_aprovacao = (dados['aprovadas'] / dados['solicitacoes'] * 100) if dados['solicitacoes'] > 0 else 0
+            
+            produtividade_lista.append({
+                'empresa': empresa_nome,
+                'compradores': len(dados['compradores']),
+                'solicitacoes': dados['solicitacoes'],
+                'aprovadas': dados['aprovadas'],
+                'taxa_aprovacao': round(taxa_aprovacao, 1),
+                'valor_total': dados['valor_total']
+            })
+        
+        produtividade_lista.sort(key=lambda x: x['taxa_aprovacao'], reverse=True)
+        
+        # OBTER LISTAS PARA FILTROS
+        empresas_disponiveis = db.session.query(
+            SolicitacoesCompra.empresa
+        ).distinct().order_by(
+            SolicitacoesCompra.empresa
         ).all()
         
-        # Total em estoque
-        total_estoque = db.session.query(
-            db.func.sum(Materiais.QuantidadeEstoque)
-        ).scalar() or 0
-        
-        # Requisições
-        requisicoes_abertas = Requisicoes.query.count()
-        
-        # Últimas requisições com mais informações
-        ultimas_requisicoes = db.session.query(
-            Requisicoes,
-            Materiais,
-            SolicitacoesPreenchidas
-        ).join(
-            Materiais,
-            Requisicoes.cod_material == Materiais.CodMaterial
-        ).join(
-            SolicitacoesPreenchidas,
-            Requisicoes.preenchimento_id == SolicitacoesPreenchidas.id
-        ).order_by(
-            Requisicoes.data_requisicao.desc()
-        ).limit(5).all()
-        
-        # Top materiais em estoque
-        materiais_estoque = Materiais.query.order_by(
-            Materiais.QuantidadeEstoque.desc()
-        ).limit(5).all()
-        
-        # Status das requisições
-        requisicoes_concluidas = Requisicoes.query.join(
-            SolicitacoesPreenchidas,
-            Requisicoes.preenchimento_id == SolicitacoesPreenchidas.id
+        compradores_disponiveis = db.session.query(
+            SolicitacoesCompra.comprador_atribuido
         ).filter(
-            SolicitacoesPreenchidas.status == 'Entregue'
-        ).count()
+            SolicitacoesCompra.comprador_atribuido.isnot(None),
+            SolicitacoesCompra.comprador_atribuido != ''
+        ).distinct().order_by(
+            SolicitacoesCompra.comprador_atribuido
+        ).all()
         
-        requisicoes_pendentes = requisicoes_abertas - requisicoes_concluidas
+        empresas_filtro = ['Todas'] + [e[0] for e in empresas_disponiveis if e[0]]
+        compradores_filtro = ['Todos'] + [c[0] for c in compradores_disponiveis if c[0]]
         
-        # Preparar dados para os gráficos
-        estoque_grafico = {
-            'labels': [m.DescricaoMaterial for m in materiais_estoque],
-            'data': [m.QuantidadeEstoque for m in materiais_estoque]
-        }
+        # FORMATAR VALORES
+        def formatar_valor(valor):
+            try:
+                valor = float(valor)
+                if valor >= 1000000:
+                    return f"R$ {valor/1000000:.1f}M"
+                elif valor >= 1000:
+                    return f"R$ {valor/1000:.1f}K"
+                else:
+                    return f"R$ {valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+            except:
+                return "R$ 0,00"
         
-        requisicoes_grafico = {
-            'data': [requisicoes_concluidas, requisicoes_pendentes]
-        }
+        # Calcular tempo médio de aprovação
+        tempo_medio_aprovacao = 0
+        contador_tempo = 0
+        for solicitacao in solicitacoes:
+            if solicitacao.status_aprovacao == 'Aprovado' and solicitacao.data_solicitacao:
+                dias = (data_atual - solicitacao.data_solicitacao).days
+                tempo_medio_aprovacao += dias
+                contador_tempo += 1
         
-        # Consumo mensal (dados fictícios para exemplo)
-        consumo_mensal = {
-            'labels': ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'],
-            'data': [120, 190, 170, 210, 200, 230, 250, 240, 260, 280, 300, 320]
-        }
+        tempo_medio_aprovacao = tempo_medio_aprovacao / contador_tempo if contador_tempo > 0 else 0
+        
+        # Calcular valor total e médio
+        valor_total = 0
+        for solicitacao in solicitacoes:
+            preenchimentos = SolicitacoesPreenchidas.query.filter_by(
+                solicitacao_id=solicitacao.id
+            ).filter(
+                SolicitacoesPreenchidas.status != 'Rascunho'
+            ).all()
+            
+            for preenchimento in preenchimentos:
+                if preenchimento and preenchimento.valor_total:
+                    valor_total += preenchimento.valor_total
+        
+        valor_medio_por_solicitacao = valor_total / total_solicitacoes if total_solicitacoes > 0 else 0
+        
+        # Adicionar a função formatar_valor ao contexto do template
+        import sys
+        sys.path.append('.')
         
         return render_template(
             'dashboard.html',
-            total_materiais=total_materiais,
-            estoque_critico=len(materiais_criticos),
-            materiais_criticos=materiais_criticos,
-            requisicoes_abertas=requisicoes_abertas,
-            total_estoque=total_estoque,
-            ultimas_requisicoes=ultimas_requisicoes,
-            estoque_grafico=estoque_grafico,
-            requisicoes_grafico=requisicoes_grafico,
-            consumo_mensal=consumo_mensal
+            # Dados básicos
+            total_solicitacoes=total_solicitacoes,
+            aprovadas=aprovadas,
+            pendentes=pendentes,
+            rejeitadas=rejeitadas,
+            valor_total=formatar_valor(valor_total),
+            tempo_medio_aprovacao=round(tempo_medio_aprovacao, 1),
+            valor_medio_por_solicitacao=formatar_valor(valor_medio_por_solicitacao),
+            
+            # Dados para gráficos e tabelas
+            compradores_produtividade=compradores_lista[:8],
+            produtos_pendentes=produtos_pendentes_lista[:8],
+            volume_empresa=volume_empresa_data[:6],
+            pendencias_empresa=pendencias_lista[:6],
+            gastos_veiculo=gastos_veiculo_lista[:5],
+            compras_veiculo=compras_veiculo_lista[:5],
+            tempo_aberto=tempo_aberto_lista,
+            gastos_empresa=gastos_empresa_lista[:6],
+            evolucao_compras=evolucao_compras,
+            evolucao_meses_labels=meses_labels,
+            produtividade_geral=produtividade_lista[:6],
+            
+            # Filtros
+            empresas_filtro=empresas_filtro,
+            compradores_filtro=compradores_filtro,
+            empresa_selecionada=empresa,
+            periodo_selecionado=periodo,
+            status_selecionado=status_filtro,
+            comprador_selecionado=comprador_filtro,
+            
+            # Função auxiliar
+            formatar_valor=formatar_valor
         )
         
     except Exception as e:
         flash(f'Erro ao carregar dashboard: {str(e)}', 'error')
-        app.logger.error(f'Erro no dashboard: {str(e)}')
+        app.logger.error(f'Erro no dashboard: {str(e)}', exc_info=True)
+        
+        # Retornar dados vazios em caso de erro
         return render_template(
             'dashboard.html',
-            total_materiais=0,
-            estoque_critico=0,
-            materiais_criticos=[],
-            requisicoes_abertas=0,
-            total_estoque=0,
-            ultimas_requisicoes=[],
-            estoque_grafico={'labels': [], 'data': []},
-            requisicoes_grafico={'data': [0, 0]},
-            consumo_mensal={'labels': [], 'data': []}
+            total_solicitacoes=0,
+            aprovadas=0,
+            pendentes=0,
+            rejeitadas=0,
+            valor_total="R$ 0,00",
+            tempo_medio_aprovacao=0,
+            valor_medio_por_solicitacao="R$ 0,00",
+            compradores_produtividade=[],
+            produtos_pendentes=[],
+            volume_empresa=[],
+            pendencias_empresa=[],
+            gastos_veiculo=[],
+            compras_veiculo=[],
+            tempo_aberto=[],
+            gastos_empresa=[],
+            evolucao_compras={},
+            evolucao_meses_labels=[],
+            produtividade_geral=[],
+            empresas_filtro=['Todas'],
+            compradores_filtro=['Todos'],
+            empresa_selecionada='Todas',
+            periodo_selecionado='Últimos 30 dias',
+            status_selecionado='Todos',
+            comprador_selecionado='Todos'
         )
+
+#------------------------------------------------------------------------------------
     
 @routes_bp.route('/dashboard/data', methods=['GET'])
 def dashboard_data():
