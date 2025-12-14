@@ -883,7 +883,8 @@
                 <div class="metric-value">{{ total_solicitacoes }}</div>
                 <div class="metric-subvalue">Período: {{ periodo_selecionado }}</div>
                 <div class="progress-bar">
-                    <div class="progress-fill success" style="width: {{ ((aprovadas / total_solicitacoes) * 100)|default(0) }}%"></div>
+                    <!-- CORREÇÃO: Adicionar verificação para evitar divisão por zero -->
+                    <div class="progress-fill success" style="width: {% if total_solicitacoes > 0 %}{{ (aprovadas / total_solicitacoes * 100) }}{% else %}0{% endif %}%"></div>
                 </div>
                 <div class="metric-trend trend-up">
                     <i class="fas fa-arrow-up"></i>
@@ -905,7 +906,8 @@
                 </div>
                 <div class="metric-subvalue">{{ aprovadas }} aprovadas de {{ total_solicitacoes }}</div>
                 <div class="progress-bar">
-                    <div class="progress-fill success" style="width: {{ ((aprovadas / total_solicitacoes) * 100)|default(0) }}%"></div>
+                    <!-- CORREÇÃO: Adicionar verificação para evitar divisão por zero -->
+                    <div class="progress-fill success" style="width: {% if total_solicitacoes > 0 %}{{ (aprovadas / total_solicitacoes * 100) }}{% else %}0{% endif %}%"></div>
                 </div>
             </div>
             
@@ -917,7 +919,8 @@
                 <div class="metric-value">{{ pendentes }}</div>
                 <div class="metric-subvalue">{{ tempo_medio_aprovacao }} dias (média aprovação)</div>
                 <div class="progress-bar">
-                    <div class="progress-fill warning" style="width: {{ ((pendentes / total_solicitacoes) * 100)|default(0) }}%"></div>
+                    <!-- CORREÇÃO: Adicionar verificação para evitar divisão por zero -->
+                    <div class="progress-fill warning" style="width: {% if total_solicitacoes > 0 %}{{ (pendentes / total_solicitacoes * 100) }}{% else %}0{% endif %}%"></div>
                 </div>
                 <div class="metric-trend trend-down">
                     <i class="fas fa-exclamation-triangle"></i>
@@ -1218,9 +1221,17 @@
                             <td>{{ valor }}</td>
                             {% endfor %}
                             <td>
-                                {% set ultimo = dados|last if dados else 0 %}
-                                {% set penultimo = dados[-2] if dados|length > 1 else 0 %}
-                                {% set variacao = ((ultimo - penultimo) / penultimo * 100) if penultimo > 0 else 100 %}
+                                {% if dados and dados|length > 1 %}
+                                    {% set ultimo = dados|last %}
+                                    {% set penultimo = dados[-2] %}
+                                    {% if penultimo > 0 %}
+                                        {% set variacao = ((ultimo - penultimo) / penultimo * 100) %}
+                                    {% else %}
+                                        {% set variacao = 100 %}
+                                    {% endif %}
+                                {% else %}
+                                    {% set variacao = 0 %}
+                                {% endif %}
                                 <span class="metric-trend {% if variacao > 0 %}trend-up{% elif variacao < 0 %}trend-down{% else %}trend-neutral{% endif %}">
                                     {% if variacao > 0 %}<i class="fas fa-arrow-up"></i>{% elif variacao < 0 %}<i class="fas fa-arrow-down"></i>{% else %}<i class="fas fa-minus"></i>{% endif %}
                                     {{ variacao|round(1) }}%
