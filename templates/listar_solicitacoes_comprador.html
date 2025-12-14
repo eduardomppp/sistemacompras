@@ -156,11 +156,22 @@
 
         .btn-preencher-grupo {
             background-color: #28a745;
-            margin-left: 10px;
+            margin-right: 10px;
         }
 
         .btn-preencher-grupo:hover {
             background-color: #218838;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-print-group {
+            background-color: #6f42c1;
+            margin-left: 10px;
+        }
+
+        .btn-print-group:hover {
+            background-color: #5a32a3;
             transform: translateY(-1px);
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
@@ -384,6 +395,18 @@
                 align-items: flex-start;
                 gap: 10px;
             }
+
+            .group-actions {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .btn-preencher-grupo,
+            .btn-print-group {
+                margin: 5px 0;
+                width: 100%;
+                justify-content: center;
+            }
         }
     </style>
 </head>
@@ -491,6 +514,10 @@
                         <a href="{{ url_for('routes_bp.preencher_solicitacao', id=items[0].id) }}?grupo_ids={{ items|map(attribute='id')|join(',') }}"
                             class="btn btn-preencher-grupo">
                             <i class="fas fa-edit"></i> Preencher Grupo ({{ items|length }} itens)
+                        </a>
+                        <a href="{{ url_for('routes_bp.cotacao_imprimir', id=items[0].id) }}?grupo_ids={{ items|map(attribute='id')|join(',') }}"
+                            class="btn btn-print-group">
+                            <i class="fas fa-print"></i> Preparar para Impressão
                         </a>
                     </div>
                 </div>

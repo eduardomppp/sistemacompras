@@ -185,6 +185,27 @@
             background: #f8f9fa;
             page-break-inside: avoid;
         }
+        .info-geral h3 {
+            color: #022855;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        .campo-editavel {
+            display: inline-block;
+            min-width: 150px;
+            padding: 2px 5px;
+            border: 1px dashed #ccc;
+            border-radius: 3px;
+            background-color: #fff;
+            cursor: text;
+            transition: all 0.2s;
+        }
+        .campo-editavel:focus {
+            outline: none;
+            border: 1px solid #022855;
+            box-shadow: 0 0 0 2px rgba(2, 40, 85, 0.1);
+        }
+        
         .footer {
             margin-top: 50px;
             text-align: center;
@@ -218,6 +239,24 @@
             z-index: 1000;
             box-shadow: 0 4px 10px rgba(0,0,0,0.2);
         }
+        .btn-impressao:hover {
+            background: #144288;
+        }
+
+        /* Instrução */
+        .instrucao {
+            position: fixed;
+            top: 70px;
+            right: 20px;
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 10px;
+            font-size: 10px;
+            max-width: 250px;
+            z-index: 1000;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
 
         /* ==================== IMPRESSÃO ==================== */
         @media print {
@@ -231,7 +270,7 @@
                 font-size: 9pt;
             }
 
-            .btn-impressao, .table-container::after {
+            .btn-impressao, .instrucao, .table-container::after {
                 display: none !important;
             }
 
@@ -272,6 +311,14 @@
             .fornecedores-detalhes {
                 page-break-before: auto;
             }
+            
+            /* Campos editáveis na impressão */
+            .campo-editavel {
+                border: 1px dashed #ccc !important;
+                background: transparent !important;
+                min-width: 150px !important;
+                display: inline-block !important;
+            }
         }
     </style>
 </head>
@@ -280,6 +327,11 @@
     <button class="btn-impressao" onclick="window.print()">
         🖨️ Imprimir (A4 Paisagem)
     </button>
+
+    <div class="instrucao">
+        <strong>Instruções: Informações Gerais</strong><br>
+        • Clique nos campos pontilhados para editar<br>
+    </div>
 
     <div class="header">
         <h1>
@@ -450,17 +502,41 @@
 
     <!-- Informações gerais -->
     <div class="info-geral">
-        <h3 style="color: #022855; margin-bottom: 10px; text-align: center;">Informações Gerais</h3>
+        <h3>Informações Gerais</h3>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; font-size: 10px;">
             <div>
-                <strong>Empresa:</strong> {{ solicitacoes_grupo[0].empresa if modo_grupo else solicitacao.empresa }}<br>
-                <strong>Aplicação:</strong> {{ solicitacoes_grupo[0].aplicacao or solicitacoes_grupo[0].material.Aplicacao or 'Sem Aplicação' if modo_grupo else solicitacao.aplicacao or solicitacao.material.Aplicacao or '-' }}<br>
-                <strong>Prioridade:</strong> {{ solicitacoes_grupo[0].prioridade if modo_grupo else solicitacao.prioridade }}
+                <strong>Empresa:</strong> 
+                <span class="campo-editavel" contenteditable="true">
+                    {{ solicitacoes_grupo[0].empresa if modo_grupo else solicitacao.empresa }}
+                </span>
+                <br>
+                
+                <strong>Aplicação:</strong> 
+                <span class="campo-editavel" contenteditable="true">
+                    {{ solicitacoes_grupo[0].aplicacao or solicitacoes_grupo[0].material.Aplicacao or 'Sem Aplicação' if modo_grupo else solicitacao.aplicacao or solicitacao.material.Aplicacao or '-' }}
+                </span>
+                <br>
+                
+                <strong>Prioridade:</strong> 
+                <span class="campo-editavel" contenteditable="true">
+                    {{ solicitacoes_grupo[0].prioridade if modo_grupo else solicitacao.prioridade }}
+                </span>
             </div>
             <div>
-                <strong>Data Solicitação:</strong> {{ solicitacao.data_solicitacao.strftime('%d/%m/%Y') if solicitacao.data_solicitacao else '-' }}<br>
-                <strong>Solicitante:</strong> {{ solicitacao.solicitante_nome if solicitacao.solicitante_nome else '-' }}<br>
-                <strong>Setor:</strong> {{ solicitacao.setor if solicitacao.setor else '-' }}
+                <strong>Data Solicitação:</strong> 
+                <span>{{ solicitacao.data_solicitacao.strftime('%d/%m/%Y') if solicitacao.data_solicitacao else '-' }}</span>
+                <br>
+                
+                <strong>Solicitante:</strong> 
+                <span class="campo-editavel" contenteditable="true">
+                    {{ solicitacao.solicitante_nome if solicitacao.solicitante_nome else '-' }}
+                </span>
+                <br>
+                
+                <strong>Setor:</strong> 
+                <span class="campo-editavel" contenteditable="true">
+                    {{ solicitacao.setor if solicitacao.setor else '-' }}
+                </span>
             </div>
         </div>
     </div>
@@ -479,6 +555,39 @@
             </div>
         </div>
     </div>
+
+    <script>
+        // Aplica borda tracejada em todos os campos editáveis
+        document.addEventListener('DOMContentLoaded', function() {
+            const campos = document.querySelectorAll('.campo-editavel');
+            campos.forEach(campo => {
+                campo.style.border = '1px dashed #ccc';
+                campo.style.padding = '2px 5px';
+                campo.style.borderRadius = '3px';
+                campo.style.backgroundColor = '#fff';
+                campo.style.minWidth = '150px';
+                campo.style.display = 'inline-block';
+                campo.contentEditable = true;
+                
+                // Adiciona tooltip
+                campo.title = 'Clique para editar (as edições serão impressas)';
+            });
+        });
+        
+        // Foca no campo quando clicado
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('campo-editavel')) {
+                e.target.focus();
+            }
+        });
+        
+        // Previne que Enter quebre linha
+        document.addEventListener('keydown', function(e) {
+            if (e.target.classList.contains('campo-editavel') && e.key === 'Enter') {
+                e.preventDefault();
+            }
+        });
+    </script>
 
 </body>
 </html>
