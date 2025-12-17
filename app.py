@@ -910,42 +910,71 @@ def uploads(filename):
 @routes_bp.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        print(f"Dados recebidos - Usuário: {request.form.get('usuario')}")
         usuario_completo = request.form.get('usuario', '').strip()
         senha = request.form.get('senha', '').strip()
         
         senhas = ler_senhas()
-        print(f"Usuários no sistema: {list(senhas.keys())}")
         
-        # CORREÇÃO: Verificar se o usuário existe e a senha está correta
         if usuario_completo in senhas and senha == senhas[usuario_completo]["senha"]:
             # CORREÇÃO: Usar o usuário base para a sessão
             usuario_base = senhas[usuario_completo]["usuario_base"]
             session['usuario'] = usuario_base
-            session['usuario_completo'] = usuario_completo  # Guardar também o completo para referência
+            session['usuario_completo'] = usuario_completo  # Guardar o completo
             session['_fresh'] = True
             
-            print(f"Sessão criada para {usuario_base}. Conteúdo: {dict(session)}")
-            
+            # Redireciona para o menu correto
             pagina_destino = senhas[usuario_completo]["pagina"].replace('.html', '')
-            print(f"Redirecionando para: {pagina_destino}")
-            
-            # Registrar log de login
-            registrar_log(usuario_base, 'login', request.remote_addr)
-            
-            response = redirect(url_for(f'routes_bp.{pagina_destino}'))
-            return response
+            return redirect(url_for(f'routes_bp.{pagina_destino}'))
         
         flash('Credenciais inválidas', 'error')
-        print("Falha na autenticação")
     
     return render_template('login.html')
+
+@routes_bp.before_request
+def verificar_acesso_menu():
+    """Verifica se o usuário está acessando o menu correto"""
+    
+    # Lista de endpoints de menus
+    endpoints_menus = {
+        'routes_bp.menu_master': 'menu_master.html',
+        'routes_bp.menu_supervisor': 'menu_supervisor.html',
+        'routes_bp.menu_aprovacao': 'menu_aprovacao.html',
+        'routes_bp.menu_comprador': 'menu_comprador.html',
+        'routes_bp.menu_cadastro': 'menu_cadastro.html',
+        'routes_bp.menu_solicitante': 'menu_solicitante.html',
+        'routes_bp.menu_financeiro': 'menu_financeiro.html',
+        'routes_bp.menu_estoquista': 'menu_estoquista.html',
+        'routes_bp.menu_auditoria': 'menu_auditoria.html'
+    }
+    
+    # Se não for um endpoint de menu, não faz nada
+    if request.endpoint not in endpoints_menus:
+        return
+    
+    # Se não estiver logado, redireciona para login
+    if 'usuario' not in session:
+        flash('Faça login para acessar.', 'error')
+        return redirect(url_for('routes_bp.login'))
+    
+    # Verifica qual menu o usuário deveria acessar
+    usuario_completo = session.get('usuario_completo')
+    if usuario_completo:
+        senhas = ler_senhas()
+        if usuario_completo in senhas:
+            menu_permitido = senhas[usuario_completo]["pagina"]
+            
+            # Se o menu que está tentando acessar não for o permitido
+            if menu_permitido != endpoints_menus[request.endpoint]:
+                # Limpa a sessão e pede login novamente
+                session.clear()
+                flash('Acesso não permitido. Faça login novamente.', 'error')
+                return redirect(url_for('routes_bp.login'))
 
 @routes_bp.route('/logout', methods=['GET'])
 def logout():
     usuario = session.get('usuario')
     if usuario:
-        app.jinja_env.globals['registrar_log'](usuario, 'logout', request.remote_addr)
+        registrar_log(usuario, 'logout', request.remote_addr)
         session.clear()
     return redirect(url_for('routes_bp.login'))
 
@@ -2210,48 +2239,158 @@ def preencher_solicitacao(id):
     if 'usuario' not in session:
         flash('Acesso não autorizado', 'error')
         return redirect(url_for('routes_bp.login'))
-
+    
+    # === FUNÇÃO AUXILIAR PARA CONVERSÃO DE VALORES ===
+    def parse_br_currency_final(value_str):
+        """
+        Converte string de valor monetário brasileiro para float.
+        Suporta: "15,00", "15.00", "15", "1.234,56", "1234,56", etc.
+        
+        CORREÇÃO: Agora trata "15" como 15.00 (e não 0.15)
+        """
+        if not value_str:
+            return 0.0
+        
+        # Converte para string
+        valor = str(value_str)
+        
+        # Remove espaços e R$
+        valor = valor.strip()
+        valor = valor.replace('R$', '').replace('r$', '').strip()
+        
+        # Remove caracteres não numéricos exceto . , -
+        import re
+        valor = re.sub(r'[^\d,\.\-]', '', valor)
+        
+        if not valor or valor == '-':
+            return 0.0
+        
+        # Verifica se é negativo
+        negativo = False
+        if valor.startswith('-'):
+            negativo = True
+            valor = valor[1:]
+        
+        # Remove zeros à esquerda que não são significativos
+        valor = valor.lstrip('0')
+        if valor == '' or valor.startswith(('.', ',')):
+            valor = '0' + valor
+        
+        # CORREÇÃO PRINCIPAL: Nova lógica mais robusta
+        try:
+            # Se não tem nem vírgula nem ponto
+            if ',' not in valor and '.' not in valor:
+                # "15" → 15.00 (não 0.15)
+                # "150" → 150.00
+                resultado = float(valor)
+            else:
+                # Tem vírgula ou ponto
+                # Conta quantas vírgulas e pontos
+                num_virgulas = valor.count(',')
+                num_pontos = valor.count('.')
+                
+                # CASO 1: "1.234,56" (tem ponto como separador de milhar e vírgula decimal)
+                if num_pontos >= 1 and num_virgulas == 1:
+                    # Remove pontos (separadores de milhar)
+                    valor_sem_pontos = valor.replace('.', '')
+                    # Substitui vírgula por ponto
+                    valor_final = valor_sem_pontos.replace(',', '.')
+                    resultado = float(valor_final)
+                
+                # CASO 2: "15,00" ou "15,5" (apenas vírgula como decimal)
+                elif num_virgulas == 1 and num_pontos == 0:
+                    partes = valor.split(',')
+                    # Verifica se a parte decimal tem 1-2 dígitos
+                    if len(partes) == 2:
+                        if len(partes[1]) <= 2:
+                            # "15,00" → 15.00
+                            resultado = float(f"{partes[0]}.{partes[1]}")
+                        else:
+                            # "15,000" → trata como 15.000 (dividido)
+                            resultado = float(valor.replace(',', '.'))
+                    else:
+                        resultado = float(valor.replace(',', '.'))
+                
+                # CASO 3: "15.00" ou "15.5" (apenas ponto como decimal)
+                elif num_pontos == 1 and num_virgulas == 0:
+                    partes = valor.split('.')
+                    if len(partes) == 2:
+                        if len(partes[1]) <= 2:
+                            # "15.00" → 15.00
+                            resultado = float(valor)
+                        else:
+                            # "15.000" → 15.000
+                            resultado = float(valor)
+                    else:
+                        resultado = float(valor)
+                
+                # CASO 4: "1,234.56" (vírgula como separador de milhar, ponto decimal) - formato americano
+                elif num_virgulas >= 1 and num_pontos == 1:
+                    # Remove vírgulas (separadores de milhar)
+                    valor_sem_virgulas = valor.replace(',', '')
+                    resultado = float(valor_sem_virgulas)
+                
+                # CASO 5: Outros formatos (múltiplos separadores)
+                else:
+                    # Remove todos os separadores e trata como número inteiro
+                    valor_limpo = valor.replace('.', '').replace(',', '')
+                    resultado = float(valor_limpo)
+        
+        except ValueError as e:
+            print(f"DEBUG - Erro na conversão de '{value_str}' para float: {e}")
+            resultado = 0.0
+        
+        # Aplica sinal negativo se necessário
+        if negativo:
+            resultado = -resultado
+        
+        # Arredonda para 2 casas decimais
+        resultado = round(resultado, 2)
+        
+        return resultado
+    # === FIM DA FUNÇÃO AUXILIAR ===
+    
     # === MODO GRUPO ===
     grupo_ids_param = request.args.get('grupo_ids', '')
     grupo_ids = []
     modo_grupo = False
     solicitacoes_grupo = []
-
+    
     if grupo_ids_param:
         try:
             grupo_ids = [int(x) for x in grupo_ids_param.split(',') if x.strip().isdigit()]
             if grupo_ids:
-                solicitacoes_grupo = SolicitacoesCompra.query.filter(SolicitacoesCompra.id.in_(grupo_ids)).all()
+                solicitacoes_grupo = SolicitacoesCompra.query.filter(
+                    SolicitacoesCompra.id.in_(grupo_ids)
+                ).all()
                 modo_grupo = len(solicitacoes_grupo) > 1
         except:
             flash('IDs de grupo inválidos.', 'error')
             return redirect(url_for('routes_bp.listar_solicitacoes_comprador'))
-
+    
     solicitacao = SolicitacoesCompra.query.get_or_404(id)
+    
     if modo_grupo and id not in grupo_ids:
         if solicitacao not in solicitacoes_grupo:
             solicitacoes_grupo.append(solicitacao)
-        grupo_ids.append(id)
-
+            grupo_ids.append(id)
+    
     todas_solicitacoes = solicitacoes_grupo if modo_grupo else [solicitacao]
-
+    
     if request.method == 'POST':
         action = request.form.get('action')
-        print(f"DEBUG - Action recebido: {action}")  # Para debug
+        print(f"DEBUG - Action recebido: {action}")
         
         if not action:
-            # Tentar capturar de outra forma
             action = request.form.get('action[]')
-            print(f"DEBUG - Action[] recebido: {action}")  # Para debug
-            
+            print(f"DEBUG - Action[] recebido: {action}")
+        
         if not action:
-            # Verificar qual botão foi clicado
             if 'salvar_rascunho' in request.form:
                 action = 'salvar_rascunho'
             elif 'salvar_finalizar' in request.form:
                 action = 'salvar_finalizar'
             else:
-                # Verificar se veio em outro formato
                 for key in request.form.keys():
                     print(f"DEBUG - Chave no form: {key}")
                     if 'salvar' in key.lower():
@@ -2262,11 +2401,11 @@ def preencher_solicitacao(id):
         
         is_rascunho = action == 'salvar_rascunho'
         is_finalizar = action == 'salvar_finalizar'
-
+        
         if not (is_rascunho or is_finalizar):
             flash('Ação inválida. Selecione "Salvar Rascunho" ou "Finalizar".', 'error')
             return redirect(request.url)
-
+        
         try:
             usuario = session['usuario']
             
@@ -2280,9 +2419,8 @@ def preencher_solicitacao(id):
             pdf_files = request.files.getlist('pdf_file[]')
             
             print(f"DEBUG - Fornecedores IDs recebidos: {fornecedores_ids}")
+            print(f"DEBUG - Valores frete recebidos: {valores_frete}")
             print(f"DEBUG - Qtde fornecedores: {len(fornecedores_ids)}")
-            print(f"DEBUG - Prazos: {prazos}")
-            print(f"DEBUG - Condições: {condicoes}")
             
             # === Captura de dados dos materiais ===
             todos_valores_unitarios = request.form.getlist('valor_unitario[]')
@@ -2317,15 +2455,11 @@ def preencher_solicitacao(id):
                     if not condicao:
                         erros_validacao.append(f'Cotação {idx+1}: Condição de pagamento é obrigatória.')
                 
-                # === Conversão segura de valor frete ===
-                try:
-                    vf_clean = vf_str.replace('.', '').replace(',', '.')
-                    valor_frete = float(vf_clean) if vf_clean and float(vf_clean) > 0 else 0.0
-                except:
-                    valor_frete = 0.0
+                # === CONVERSÃO SEGURA USANDO FUNÇÃO AUXILIAR ===
+                valor_frete = parse_br_currency_final(vf_str)
+                print(f"DEBUG - Cotação {idx+1}: '{vf_str}' -> {valor_frete}")
                 
                 # === Processar cada material desta cotação ===
-                # Assumir que cada cotação tem todos os materiais em sequência
                 num_materiais_por_cotacao = len(todas_solicitacoes)
                 inicio_idx = idx * num_materiais_por_cotacao
                 
@@ -2348,14 +2482,14 @@ def preencher_solicitacao(id):
                         erros_validacao.append(f'Cotação {idx+1}, Material {i+1}: Valor unitário é obrigatório.')
                         continue
                     
-                    try:
-                        vu_clean = valor_unitario_str.replace('.', '').replace(',', '.')
-                        valor_unitario = float(vu_clean) if vu_clean else 0.0
-                        if valor_unitario <= 0:
-                            erros_validacao.append(f'Cotação {idx+1}, Material {i+1}: Valor unitário deve ser maior que zero.')
-                            continue
-                    except ValueError:
-                        erros_validacao.append(f'Cotação {idx+1}, Material {i+1}: Valor unitário inválido.')
+                    # USANDO A NOVA FUNÇÃO PARA CONVERSÃO
+                    valor_unitario = parse_br_currency_final(valor_unitario_str)
+                    
+                    # DEBUG
+                    print(f"DEBUG - Material {i+1}: '{valor_unitario_str}' -> {valor_unitario}")
+                    
+                    if valor_unitario <= 0:
+                        erros_validacao.append(f'Cotação {idx+1}, Material {i+1}: Valor unitário deve ser maior que zero.')
                         continue
                     
                     # Calcular valor total
@@ -2417,8 +2551,8 @@ def preencher_solicitacao(id):
                             )
                             db.session.add(historico)
                             print(f"📝 Histórico de desconto registrado para preenchimento {preenchimento.id}")
-                            print(f"   Valor unitário: {valor_unitario_anterior} → {valor_unitario}")
-                            print(f"   Valor frete: {valor_frete_anterior} → {valor_frete}")
+                            print(f"  Valor unitário: {valor_unitario_anterior} → {valor_unitario}")
+                            print(f"  Valor frete: {valor_frete_anterior} → {valor_frete}")
                     else:
                         # Criar novo preenchimento
                         preenchimento = SolicitacoesPreenchidas(
@@ -2457,8 +2591,8 @@ def preencher_solicitacao(id):
                             path = os.path.join(app.config['UPLOAD_FOLDER'], unique_name)
                             pdf_file.save(path)
                             preenchimento.pdf_path = unique_name
-                    
-                    cotacoes_salvas += 1
+                
+                cotacoes_salvas += 1
             
             if erros_validacao:
                 for erro in erros_validacao:
@@ -2471,19 +2605,21 @@ def preencher_solicitacao(id):
             
             # === Commit final ===
             db.session.commit()
+            
             if is_rascunho:
                 flash(f'{cotacoes_salvas} material(is) em {total_cotacoes} cotação(ões) salvo(s) como rascunho!', 'success')
             else:
                 flash(f'{cotacoes_salvas} material(is) em {total_cotacoes} cotação(ões) finalizado(s) e enviado(s) para aprovação!', 'success')
-            return redirect(url_for('routes_bp.listar_solicitacoes_comprador'))
             
+            return redirect(url_for('routes_bp.listar_solicitacoes_comprador'))
+        
         except Exception as e:
             db.session.rollback()
             flash(f'Erro ao salvar: {str(e)}', 'error')
             import traceback
             print(f"DEBUG - Erro completo: {traceback.format_exc()}")
             return redirect(request.url)
-
+    
     # === GET: Carregar rascunhos ===
     if modo_grupo:
         # Buscar todas as cotações para o grupo
@@ -2497,21 +2633,21 @@ def preencher_solicitacao(id):
             solicitacao_id=id,
             status='Rascunho'
         ).order_by(SolicitacoesPreenchidas.fornecedor_id).all()
-
+    
     # Organizar cotações por fornecedor
     cotacoes_por_fornecedor = {}
     for c in cotacoes_raw:
         if c.fornecedor_id not in cotacoes_por_fornecedor:
             cotacoes_por_fornecedor[c.fornecedor_id] = []
         cotacoes_por_fornecedor[c.fornecedor_id].append(c)
-
+    
     # Criar estrutura para o template
     cotacoes_estruturadas = []
     
     for fornecedor_id, cotacoes_fornecedor in cotacoes_por_fornecedor.items():
         if not cotacoes_fornecedor:
             continue
-            
+        
         # Pegar a primeira cotação como referência para dados gerais
         cotacao_ref = cotacoes_fornecedor[0]
         
@@ -2527,8 +2663,8 @@ def preencher_solicitacao(id):
         if conn:
             cursor = conn.cursor()
             cursor.execute("""
-                SELECT nome_fantasia, cnpj, telefone, endereco, bairro, cidade, estado 
-                FROM fornecedores 
+                SELECT nome_fantasia, cnpj, telefone, endereco, bairro, cidade, estado
+                FROM fornecedores
                 WHERE id = ?
             """, (fornecedor_id,))
             row = cursor.fetchone()
@@ -2622,8 +2758,8 @@ def preencher_solicitacao(id):
     for i, cotacao in enumerate(cotacoes_estruturadas):
         print(f"DEBUG - Cotação {i+1}: Fornecedor {cotacao.get('fornecedor_id')}, {len(cotacao.get('materiais', []))} materiais")
         for j, material in enumerate(cotacao.get('materiais', [])):
-            print(f"DEBUG -   Material {j+1}: ID {material.get('solicitacao_id')}, Valor R$ {material.get('valor_unitario')}")
-
+            print(f"DEBUG - Material {j+1}: ID {material.get('solicitacao_id')}, Valor R$ {material.get('valor_unitario')}")
+    
     return render_template(
         'preencher_solicitacao.html',
         solicitacao=solicitacao,
