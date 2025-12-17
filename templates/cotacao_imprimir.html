@@ -17,37 +17,42 @@
             color: #333;
             padding: 20px;
             font-size: 11px;
+            line-height: 1.3;
         }
 
         /* Container com rolagem na tela */
         .table-container {
             overflow-x: auto;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
             border: 1px solid #ddd;
             border-radius: 8px;
             background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
-        /* Cabeçalho */
+        /* Cabeçalho - COLORIDO para tela */
         .header {
-            background: #022855;
+            background: linear-gradient(135deg, #022855 0%, #144288 100%);
             color: white;
             padding: 15px 25px;
             border-radius: 8px;
             margin-bottom: 20px;
             text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
         .header h1 {
-            font-size: 20px;
+            font-size: 18px;
             margin: 0;
             text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
         .header p {
-            font-size: 13px;
+            font-size: 12px;
             margin: 8px 0 0;
+            opacity: 0.9;
         }
 
-        /* Tabela principal */
+        /* Tabela principal - COLORIDA para tela */
         .tabela-comparativa {
             width: 100%;
             border-collapse: collapse;
@@ -60,6 +65,7 @@
             padding: 6px 5px;
             text-align: center;
             vertical-align: middle;
+            min-height: 28px;
         }
         .tabela-comparativa th {
             background: #022855;
@@ -70,34 +76,39 @@
 
         /* Colunas fixas */
         .col-material {
-            width: 38%;
-            min-width: 280px;
+            width: 35%;
+            min-width: 250px;
             text-align: left !important;
             background: #f8f9fa;
-            font-weight: 500;
+            font-weight: 600;
         }
         .col-quantidade, .col-unidade {
-            width: 60px;
+            width: 55px;
             background: #f8f9fa;
+            font-weight: 600;
         }
 
         /* Colunas de cotação */
-        .col-cotacao-unit { width: 90px; }
+        .col-cotacao-unit { 
+            width: 80px; 
+            background: #f8f9fa;
+        }
         .col-cotacao-total { 
-            width: 100px; 
-            font-weight: 600; 
+            width: 90px; 
+            font-weight: 700; 
             color: #022855;
             background: #e6f0ff;
         }
 
-        /* Cabeçalho do fornecedor */
+        /* Cabeçalho do fornecedor - COLORIDO */
         .fornecedor-header {
             background: #144288;
             color: white;
-            padding: 6px;
+            padding: 5px;
             border-radius: 4px;
             font-size: 10px;
             font-weight: bold;
+            line-height: 1.2;
         }
 
         /* Linha de material */
@@ -107,78 +118,86 @@
             background: #fff !important;
         }
 
-        /* Alternância de fundo nas cotações */
-        .cotacao-group:nth-child(odd) th,
-        .cotacao-group:nth-child(odd) td {
+        /* Alternância de fundo - COLORIDA */
+        tbody tr:nth-child(odd) td:not(.col-material):not(.col-quantidade):not(.col-unidade) {
             background-color: #f0f7ff;
         }
+        tbody tr:nth-child(even) td:not(.col-material):not(.col-quantidade):not(.col-unidade) {
+            background-color: #ffffff;
+        }
 
-        /* Seção de detalhes dos fornecedores (alinhada com as colunas) */
+        /* Seção de detalhes dos fornecedores - COLORIDA */
         .fornecedores-detalhes {
-            margin-top: 30px;
-            page-break-before: avoid;
+            margin-top: 25px;
+            page-break-inside: avoid;
         }
         .fornecedores-table {
             width: 100%;
             border-collapse: collapse;
             font-size: 9px;
-            margin-top: 10px;
+            margin-top: 8px;
+            border: 1px solid #ddd;
         }
         .fornecedores-table td {
             padding: 6px 5px;
-            border: 1px solid #ccc;
+            border: 1px solid #ddd;
             vertical-align: top;
             background: #f8f9fa;
         }
         .fornecedores-table .label {
             font-weight: bold;
-            color: #666;
+            color: #022855;
             width: 100px;
+            background: #e6f0ff;
         }
 
-        /* Totais */
+        /* Totais - COLORIDO */
         .totais-container {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 15px;
-            margin-top: 30px;
+            margin-top: 25px;
             page-break-inside: avoid;
         }
         .total-card {
             border: 2px solid #022855;
             border-radius: 8px;
-            padding: 15px;
+            padding: 12px 15px;
             background: linear-gradient(135deg, #e6f0ff 0%, #f8f9fc 100%);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
         .total-card h3 {
             background: #022855;
             color: white;
             padding: 8px;
-            margin: -15px -15px 15px -15px;
+            margin: -12px -15px 12px -15px;
             border-radius: 6px 6px 0 0;
             text-align: center;
-            font-size: 13px;
+            font-size: 12px;
+            font-weight: bold;
         }
         .total-line {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             font-size: 10px;
+            padding: 2px 0;
         }
         .total-geral {
             background: #022855;
             color: white;
-            padding: 10px;
+            padding: 8px;
             border-radius: 6px;
             text-align: center;
-            font-size: 13px;
+            font-size: 11px;
             font-weight: bold;
             margin-top: 10px;
+            border: 1px solid #022855;
         }
 
-        /* Informações gerais e rodapé */
+        /* Informações gerais - COLORIDO */
         .info-geral {
-            margin-top: 30px;
+            margin-top: 25px;
             padding: 15px;
             border: 1px solid #ddd;
             border-radius: 8px;
@@ -189,25 +208,24 @@
             color: #022855;
             margin-bottom: 10px;
             text-align: center;
+            font-size: 12px;
+            font-weight: bold;
         }
         .campo-editavel {
             display: inline-block;
-            min-width: 150px;
+            min-width: 120px;
             padding: 2px 5px;
-            border: 1px dashed #ccc;
+            border: 1px dashed #999;
             border-radius: 3px;
             background-color: #fff;
             cursor: text;
-            transition: all 0.2s;
-        }
-        .campo-editavel:focus {
-            outline: none;
-            border: 1px solid #022855;
-            box-shadow: 0 0 0 2px rgba(2, 40, 85, 0.1);
+            font-size: 10px;
+            margin: 0 2px;
         }
         
+        /* Rodapé */
         .footer {
-            margin-top: 50px;
+            margin-top: 40px;
             text-align: center;
             font-size: 10px;
             page-break-inside: avoid;
@@ -215,13 +233,13 @@
         .assinaturas {
             display: flex;
             justify-content: center;
-            gap: 120px;
-            margin-top: 30px;
+            gap: 100px;
+            margin-top: 25px;
         }
         .linha-assinatura {
-            border-top: 1px solid #333;
-            width: 220px;
-            margin: 30px auto 8px;
+            border-top: 1px solid #666;
+            width: 200px;
+            margin: 25px auto 5px;
         }
 
         /* Botão imprimir */
@@ -234,13 +252,15 @@
             border: none;
             padding: 10px 20px;
             border-radius: 6px;
-            font-size: 14px;
+            font-size: 12px;
             cursor: pointer;
             z-index: 1000;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            transition: all 0.3s;
         }
         .btn-impressao:hover {
             background: #144288;
+            transform: translateY(-2px);
         }
 
         /* Instrução */
@@ -248,76 +268,228 @@
             position: fixed;
             top: 70px;
             right: 20px;
-            background: #f8f9fa;
+            background: #fff;
             border: 1px solid #ddd;
             border-radius: 6px;
             padding: 10px;
-            font-size: 10px;
-            max-width: 250px;
+            font-size: 9px;
+            max-width: 220px;
             z-index: 1000;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
 
-        /* ==================== IMPRESSÃO ==================== */
+        /* ==================== IMPRESSÃO A4 ==================== */
+        /* APENAS NA IMPRESSÃO: TUDO EM PRETO E BRANCO */
         @media print {
             @page {
                 size: A4 landscape;
-                margin: 10mm 8mm;
+                margin: 5mm 3mm;
             }
 
             body {
                 padding: 0 !important;
-                font-size: 9pt;
+                font-size: 8pt !important;
+                line-height: 1.1 !important;
+                color: #000 !important;
+                background: #fff !important;
+                -webkit-print-color-adjust: economy;
+                print-color-adjust: economy;
             }
 
-            .btn-impressao, .instrucao, .table-container::after {
+            .btn-impressao, .instrucao {
                 display: none !important;
             }
 
+            /* REMOVE TODAS AS CORES E SOMBRAS */
             .table-container {
                 overflow: visible !important;
-                border: none;
+                border: 2px solid #000 !important;
+                margin-bottom: 12px !important;
+                background: #fff !important;
+                box-shadow: none !important;
+                border-radius: 0 !important;
             }
 
+            /* TABELA PRINCIPAL - PRETO E BRANCO */
             .tabela-comparativa {
-                font-size: 8pt !important;
+                font-size: 7.5pt !important;
                 width: 100% !important;
+                border-collapse: collapse !important;
+                background: #fff !important;
             }
 
             .tabela-comparativa th,
             .tabela-comparativa td {
-                padding: 4px 3px !important;
+                border: 1px solid #000 !important;
+                padding: 3px 2px !important;
+                font-size: 7.5pt !important;
+                height: 22px !important;
+                background: #fff !important;
+                color: #000 !important;
+            }
+
+            /* CABEÇALHO - PRETO */
+            .tabela-comparativa th {
+                background: #fff !important;
+                color: #000 !important;
+                border-bottom: 2px solid #000 !important;
+                font-weight: bold !important;
+            }
+
+            /* COLUNAS FIXAS - BORDAS ESPESSAS */
+            .col-material, .col-quantidade, .col-unidade {
+                border-right: 2px solid #000 !important;
+                background: #fff !important;
+                font-weight: bold !important;
+            }
+            
+            .col-cotacao-total {
+                border-left: 2px solid #000 !important;
+                font-weight: bold !important;
+                background: #fff !important;
+                color: #000 !important;
+            }
+
+            /* LINHAS DE MATERIAL - BORDAS ESPESSAS */
+            .material-row td {
+                border-top: 2px solid #000 !important;
+                border-bottom: 2px solid #000 !important;
+                background: #fff !important;
+            }
+
+            /* REMOVE ALTERNÂNCIA DE CORES */
+            tbody tr:nth-child(odd) td:not(.col-material):not(.col-quantidade):not(.col-unidade),
+            tbody tr:nth-child(even) td:not(.col-material):not(.col-quantidade):not(.col-unidade) {
+                background-color: #fff !important;
+            }
+
+            /* CABEÇALHO DO FORNECEDOR - PRETO */
+            .fornecedor-header {
+                border: 1px solid #000 !important;
+                background: #fff !important;
+                color: #000 !important;
+                border-radius: 0 !important;
+            }
+
+            /* HEADER - PRETO */
+            .header {
+                margin-bottom: 10px !important;
+                padding: 8px !important;
+                background: #fff !important;
+                color: #000 !important;
+                border: 2px solid #000 !important;
+                border-radius: 0 !important;
+                box-shadow: none !important;
+            }
+            .header h1 { 
+                font-size: 12pt !important; 
+                font-weight: bold !important;
+            }
+            .header p { 
+                font-size: 9pt !important; 
+                color: #000 !important;
+            }
+
+            /* TABELA FORNECEDORES - PRETO */
+            .fornecedores-detalhes {
+                margin-top: 15px !important;
+            }
+            .fornecedores-table {
+                border: 2px solid #000 !important;
+            }
+            .fornecedores-table td {
+                border: 1px solid #000 !important;
+                padding: 3px 2px !important;
+                font-size: 7pt !important;
+                background: #fff !important;
+                color: #000 !important;
+            }
+            .fornecedores-table .label {
+                font-weight: bold !important;
+                background: #fff !important;
+                color: #000 !important;
+            }
+
+            /* TOTAIS - PRETO */
+            .totais-container {
+                gap: 8px !important;
+                margin-top: 15px !important;
+            }
+            .total-card {
+                border: 2px solid #000 !important;
+                padding: 6px 8px !important;
+                background: #fff !important;
+                border-radius: 0 !important;
+                box-shadow: none !important;
+            }
+            .total-card h3 {
+                background: #fff !important;
+                color: #000 !important;
+                border-bottom: 2px solid #000 !important;
+                margin: -6px -8px 6px -8px !important;
+                border-radius: 0 !important;
+            }
+            .total-geral {
+                background: #fff !important;
+                color: #000 !important;
+                border: 2px solid #000 !important;
+                font-weight: bold !important;
+                border-radius: 0 !important;
+            }
+            .total-line {
+                border-bottom: 1px dotted #333 !important;
                 font-size: 8pt !important;
             }
 
-            /* Repete o cabeçalho da tabela em cada página */
-            thead { display: table-header-group; }
-            .material-row { page-break-inside: avoid; }
-
-            .header {
-                margin-bottom: 15px;
-                padding: 12px;
+            /* INFORMAÇÕES GERAIS - PRETO */
+            .info-geral {
+                border: 2px solid #000 !important;
+                padding: 8px !important;
+                margin-top: 15px !important;
+                background: #fff !important;
+                border-radius: 0 !important;
             }
-            .header h1 { font-size: 16pt; }
+            .info-geral h3 {
+                border-bottom: 1px solid #000 !important;
+                color: #000 !important;
+            }
 
-            /* Fornecedores alinhados corretamente */
-            .fornecedores-detalhes,
-            .totais-container,
-            .info-geral,
+            /* CAMPOS EDITÁVEIS - PRETO */
+            .campo-editavel {
+                border: 1px solid #666 !important;
+                background: #fff !important;
+                min-width: 100px !important;
+                font-size: 8pt !important;
+            }
+
+            /* RODAPÉ - PRETO */
             .footer {
-                page-break-inside: avoid;
+                margin-top: 25px !important;
+                font-size: 8pt !important;
+            }
+            .linha-assinatura {
+                border-top: 2px solid #000 !important;
+            }
+            .assinaturas {
+                gap: 80px !important;
             }
 
-            .fornecedores-detalhes {
-                page-break-before: auto;
+            /* FORÇA TUDO EM PRETO E BRANCO */
+            * {
+                -webkit-print-color-adjust: economy !important;
+                print-color-adjust: economy !important;
             }
             
-            /* Campos editáveis na impressão */
-            .campo-editavel {
-                border: 1px dashed #ccc !important;
-                background: transparent !important;
-                min-width: 150px !important;
-                display: inline-block !important;
+            /* GARANTE QUE FUNDOS SÃO BRANCOS */
+            .header, 
+            .tabela-comparativa th,
+            .tabela-comparativa td,
+            .total-card,
+            .total-geral,
+            .info-geral,
+            .fornecedores-table td {
+                background: #fff !important;
+                color: #000 !important;
             }
         }
     </style>
@@ -325,13 +497,8 @@
 <body>
 
     <button class="btn-impressao" onclick="window.print()">
-        🖨️ Imprimir (A4 Paisagem)
+        🖨️ Imprimir (Preto e Branco)
     </button>
-
-    <div class="instrucao">
-        <strong>Instruções: Informações Gerais</strong><br>
-        • Clique nos campos pontilhados para editar<br>
-    </div>
 
     <div class="header">
         <h1>
@@ -362,7 +529,7 @@
                     <th colspan="2" class="cotacao-group">
                         <div class="fornecedor-header">
                             Cotação {{ loop.index }}<br>
-                            {{ cotacao.fornecedor_nome_fantasia|truncate(25) if cotacao else 'N/A' }}
+                            {{ cotacao.fornecedor_nome_fantasia|truncate(22) if cotacao else 'N/A' }}
                         </div>
                     </th>
                     {% endfor %}
@@ -379,8 +546,8 @@
                     {% for solicitacao in solicitacoes_grupo %}
                     <tr class="material-row">
                         <td class="col-material">
-                            {{ solicitacao.material.DescricaoMaterial }}
-                            <div style="font-size: 8px; color: #666; margin-top: 3px;">
+                            <strong>{{ solicitacao.material.DescricaoMaterial }}</strong>
+                            <div style="font-size: 8px; color: #666; margin-top: 2px;">
                                 ID: #{{ solicitacao.id }}
                             </div>
                         </td>
@@ -404,8 +571,8 @@
                 {% else %}
                     <tr class="material-row">
                         <td class="col-material">
-                            {{ solicitacao.material.DescricaoMaterial }}
-                            <div style="font-size: 8px; color: #666; margin-top: 3px;">
+                            <strong>{{ solicitacao.material.DescricaoMaterial }}</strong>
+                            <div style="font-size: 8px; color: #666; margin-top: 2px;">
                                 ID: #{{ solicitacao.id }}
                             </div>
                         </td>
@@ -430,14 +597,14 @@
         </table>
     </div>
 
-    <!-- Detalhes dos fornecedores alinhados com as colunas -->
+    <!-- Detalhes dos fornecedores -->
     <div class="fornecedores-detalhes">
         <table class="fornecedores-table">
             <tr>
-                <td colspan="3"></td> <!-- Espaço vazio para as colunas Material/Qtd/Unid -->
+                <td colspan="3"></td>
                 {% for cotacao in cotacoes_salvas %}
-                <td colspan="2" style="text-align: center; font-weight: bold; background: #022855; color: white;">
-                    Cotação {{ loop.index }} - {{ cotacao.fornecedor_nome_fantasia|truncate(30) if cotacao else 'N/A' }}
+                <td colspan="2" style="text-align: center; font-weight: bold; background: #144288; color: white; font-size: 10px;">
+                    Cotação {{ loop.index }} - {{ cotacao.fornecedor_nome_fantasia|truncate(28) if cotacao else 'N/A' }}
                 </td>
                 {% endfor %}
             </tr>
@@ -469,7 +636,7 @@
             <tr>
                 <td class="label">Observações:</td><td colspan="2"></td>
                 {% for cotacao in cotacoes_salvas %}
-                <td colspan="2" style="font-size: 8.5px; text-align: left;">
+                <td colspan="2" style="font-size: 8px; text-align: left;">
                     {{ cotacao.observacoes if cotacao and cotacao.observacoes else '-' }}
                 </td>
                 {% endfor %}
@@ -503,19 +670,17 @@
     <!-- Informações gerais -->
     <div class="info-geral">
         <h3>Informações Gerais</h3>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; font-size: 10px;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; font-size: 10px;">
             <div>
                 <strong>Empresa:</strong> 
                 <span class="campo-editavel" contenteditable="true">
                     {{ solicitacoes_grupo[0].empresa if modo_grupo else solicitacao.empresa }}
-                </span>
-                <br>
+                </span><br>
                 
                 <strong>Aplicação:</strong> 
                 <span class="campo-editavel" contenteditable="true">
                     {{ solicitacoes_grupo[0].aplicacao or solicitacoes_grupo[0].material.Aplicacao or 'Sem Aplicação' if modo_grupo else solicitacao.aplicacao or solicitacao.material.Aplicacao or '-' }}
-                </span>
-                <br>
+                </span><br>
                 
                 <strong>Prioridade:</strong> 
                 <span class="campo-editavel" contenteditable="true">
@@ -524,14 +689,12 @@
             </div>
             <div>
                 <strong>Data Solicitação:</strong> 
-                <span>{{ solicitacao.data_solicitacao.strftime('%d/%m/%Y') if solicitacao.data_solicitacao else '-' }}</span>
-                <br>
+                <span>{{ solicitacao.data_solicitacao.strftime('%d/%m/%Y') if solicitacao.data_solicitacao else '-' }}</span><br>
                 
                 <strong>Solicitante:</strong> 
                 <span class="campo-editavel" contenteditable="true">
                     {{ solicitacao.solicitante_nome if solicitacao.solicitante_nome else '-' }}
-                </span>
-                <br>
+                </span><br>
                 
                 <strong>Setor:</strong> 
                 <span class="campo-editavel" contenteditable="true">
@@ -543,7 +706,7 @@
 
     <!-- Rodapé com assinaturas -->
     <div class="footer">
-        <div style="margin-bottom: 20px;">Assinaturas:</div>
+        <div style="margin-bottom: 15px; font-weight: bold;">Assinaturas:</div>
         <div class="assinaturas">
             <div class="assinatura">
                 <div class="linha-assinatura"></div>
@@ -557,31 +720,27 @@
     </div>
 
     <script>
-        // Aplica borda tracejada em todos os campos editáveis
         document.addEventListener('DOMContentLoaded', function() {
             const campos = document.querySelectorAll('.campo-editavel');
             campos.forEach(campo => {
-                campo.style.border = '1px dashed #ccc';
-                campo.style.padding = '2px 5px';
+                campo.style.border = '1px dashed #666';
+                campo.style.padding = '2px 4px';
                 campo.style.borderRadius = '3px';
                 campo.style.backgroundColor = '#fff';
-                campo.style.minWidth = '150px';
+                campo.style.minWidth = '120px';
                 campo.style.display = 'inline-block';
+                campo.style.fontSize = '10px';
                 campo.contentEditable = true;
-                
-                // Adiciona tooltip
-                campo.title = 'Clique para editar (as edições serão impressas)';
+                campo.title = 'Clique para editar (suas edições serão impressas)';
             });
         });
         
-        // Foca no campo quando clicado
         document.addEventListener('click', function(e) {
             if (e.target.classList.contains('campo-editavel')) {
                 e.target.focus();
             }
         });
         
-        // Previne que Enter quebre linha
         document.addEventListener('keydown', function(e) {
             if (e.target.classList.contains('campo-editavel') && e.key === 'Enter') {
                 e.preventDefault();
