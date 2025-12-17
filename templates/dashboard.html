@@ -94,6 +94,7 @@
             color: var(--info-color);
         }
 
+        /* Filtros */
         .filters-panel {
             background-color: #ffffff;
             padding: 25px;
@@ -104,6 +105,27 @@
             position: sticky;
             top: 20px;
             z-index: 100;
+            transition: all 0.3s ease;
+        }
+
+        /* Modo travado (fixed) - PARA MONITORES PEQUENOS */
+        .filters-panel.filters-fixed {
+            position: fixed !important;
+            top: 20px;
+            left: 30px;
+            right: 30px;
+            z-index: 1000;
+            margin-bottom: 0;
+            max-height: 70vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow-xl);
+            border: 2px solid var(--warning-color);
+        }
+
+        /* Quando os filtros estão fixos, adiciona margem ao container */
+        body.filters-fixed-active .container {
+            margin-top: calc(var(--filters-height, 200px) + 60px);
+            transition: margin-top 0.3s ease;
         }
 
         .filters-header {
@@ -121,11 +143,86 @@
             color: var(--primary-color);
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 15px;
+            flex-wrap: wrap;
         }
 
         .filters-title i {
             color: var(--info-color);
+        }
+
+        .filters-controls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-left: auto;
+        }
+
+        .control-btn {
+            padding: 6px 12px;
+            border-radius: 6px;
+            border: 1px solid var(--gray-300);
+            background: var(--gray-50);
+            color: var(--gray-700);
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .control-btn:hover {
+            background: var(--gray-100);
+            transform: translateY(-1px);
+        }
+
+        .control-btn.active {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .control-btn.warning {
+            background: #fef3c7;
+            color: #92400e;
+            border-color: #f59e0b;
+        }
+
+        .control-btn.warning.active {
+            background: #f59e0b;
+            color: white;
+            border-color: #f59e0b;
+        }
+
+        /* Estilo para filtros travados/desabilitados */
+        .filters-disabled .filter-select,
+        .filters-disabled .filter-search input {
+            background-color: var(--gray-100) !important;
+            cursor: not-allowed !important;
+            opacity: 0.7 !important;
+            border-color: var(--gray-300) !important;
+            box-shadow: none !important;
+            pointer-events: none !important;
+        }
+
+        .filters-collapsed {
+            padding: 20px !important;
+            transition: all 0.3s ease;
+        }
+
+        .filters-collapsed .filters-grid,
+        .filters-collapsed .filters-actions {
+            display: none !important;
+        }
+
+        .collapsible-icon {
+            transition: transform 0.3s ease;
+        }
+
+        .collapsed .collapsible-icon {
+            transform: rotate(180deg);
         }
 
         .filters-grid {
@@ -164,7 +261,6 @@
             font-size: 0.95rem;
             cursor: pointer;
             transition: var(--transition);
-            position: relative;
             appearance: none;
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
             background-repeat: no-repeat;
@@ -263,7 +359,7 @@
         }
 
         .metric-card:hover {
-            transform: translateY(-5px) scale(1.02);
+            transform: translateY(-5px);
             box-shadow: var(--shadow-xl);
         }
 
@@ -482,32 +578,6 @@
             background: linear-gradient(90deg, var(--danger-color) 0%, #f87171 100%);
         }
 
-        .export-section {
-            text-align: center;
-            margin: 60px 0 40px;
-        }
-
-        .export-btn {
-            padding: 16px 40px;
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
-            color: white;
-            border: none;
-            border-radius: var(--border-radius);
-            cursor: pointer;
-            font-size: 1.1rem;
-            font-weight: 600;
-            box-shadow: 0 8px 25px rgba(2, 40, 85, 0.3);
-            transition: var(--transition);
-            display: inline-flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .export-btn:hover {
-            transform: translateY(-3px) scale(1.05);
-            box-shadow: 0 12px 30px rgba(2, 40, 85, 0.4);
-        }
-
         .loading-overlay {
             position: fixed;
             top: 0;
@@ -610,100 +680,6 @@
             font-size: 0.9rem;
         }
 
-        .tooltip {
-            position: absolute;
-            background: var(--gray-800);
-            color: white;
-            padding: 8px 12px;
-            border-radius: 6px;
-            font-size: 0.85rem;
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.3s;
-            z-index: 1000;
-            box-shadow: var(--shadow-lg);
-        }
-
-        .tooltip::after {
-            content: '';
-            position: absolute;
-            top: 100%;
-            left: 50%;
-            margin-left: -5px;
-            border-width: 5px;
-            border-style: solid;
-            border-color: var(--gray-800) transparent transparent transparent;
-        }
-
-        @media (max-width: 1400px) {
-            .charts-container {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        @media (max-width: 768px) {
-            body {
-                padding: 20px 15px;
-            }
-
-            .header h1 {
-                font-size: 2rem;
-                flex-direction: column;
-                gap: 10px;
-            }
-
-            .filters-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .filters-actions {
-                flex-direction: column;
-            }
-
-            .metrics-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .chart-card {
-                padding: 20px;
-            }
-
-            .chart-header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 15px;
-            }
-
-            .chart-container {
-                height: 250px;
-            }
-
-            .chart-table {
-                display: block;
-                overflow-x: auto;
-                white-space: nowrap;
-            }
-
-            .export-btn {
-                width: 100%;
-                padding: 18px 20px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .header h1 {
-                font-size: 1.8rem;
-            }
-
-            .metric-value {
-                font-size: 2.2rem;
-            }
-
-            .chart-container {
-                height: 200px;
-            }
-        }
-
         .filter-search {
             position: relative;
         }
@@ -761,26 +737,126 @@
             color: white;
         }
 
-        .chart-legend {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
-            margin-top: 20px;
-            justify-content: center;
+        /* Otimizações para mobile */
+        @media (max-width: 1400px) {
+            .charts-container {
+                grid-template-columns: 1fr;
+            }
         }
 
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 0.85rem;
-            color: var(--gray-600);
+        @media (max-width: 768px) {
+            body {
+                padding: 20px 15px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .filters-title {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            .filters-controls {
+                margin-left: 0;
+                width: 100%;
+                justify-content: center;
+            }
+
+            .filters-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .filters-actions {
+                flex-direction: column;
+            }
+
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .chart-card {
+                padding: 20px;
+            }
+
+            .chart-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+
+            .chart-container {
+                height: 250px;
+            }
+
+            .chart-table {
+                display: block;
+                overflow-x: auto;
+                white-space: nowrap;
+            }
+
+            /* Para mobile, filtros fixos ocupam toda largura */
+            .filters-panel.filters-fixed {
+                left: 15px;
+                right: 15px;
+                max-height: 60vh;
+            }
+
+            /* Otimizações para mobile */
+            .metric-card,
+            .btn,
+            .chart-card,
+            .filters-panel {
+                transition: none !important;
+                transform: none !important;
+            }
+
+            .chart-table tbody tr:hover {
+                transform: none;
+            }
+
+            .metric-card,
+            .chart-card,
+            .filters-panel {
+                box-shadow: var(--shadow-md) !important;
+            }
         }
 
-        .legend-color {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 1.8rem;
+            }
+
+            .metric-value {
+                font-size: 2.2rem;
+            }
+
+            .chart-container {
+                height: 200px;
+            }
+
+            .control-btn span {
+                display: none;
+            }
+
+            .control-btn {
+                padding: 8px;
+            }
+        }
+
+        /* Otimizações de performance */
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
         }
     </style>
 </head>
@@ -794,24 +870,33 @@
                 <i class="fas fa-chart-line"></i>
                 Dashboard de Compras e Produtividade
             </h1>
-        </div>
 
         <!-- Filtros -->
-        <div class="filters-panel">
+        <div class="filters-panel" id="filtersPanel">
             <div class="filters-header">
                 <div class="filters-title">
                     <i class="fas fa-filter"></i>
                     Filtros do Dashboard
+                    <div class="filters-controls">
+                        <button class="control-btn" id="toggleFilters" onclick="toggleFilters()" title="Mostrar/ocultar filtros">
+                            <i class="fas fa-chevron-down collapsible-icon"></i>
+                            <span>Ocultar</span>
+                        </button>
+                        <button class="control-btn warning" id="lockFilters" onclick="toggleFixedFilters()" title="Fixar/desfixar filtros na tela">
+                            <i class="fas fa-thumbtack"></i>
+                            <span>Fixar</span>
+                        </button>
+                    </div>
                 </div>
                 <div class="filters-count">
                     <span class="badge badge-info">{{ total_solicitacoes }} solicitações</span>
                 </div>
             </div>
             
-            <div class="filters-grid">
+            <div class="filters-grid" id="filtersGrid">
                 <div class="filter-group">
                     <label for="empresa"><i class="fas fa-building"></i> Empresa</label>
-                    <select id="empresa" class="filter-select" onchange="showLoading()">
+                    <select id="empresa" class="filter-select">
                         <option value="Todas" {% if empresa_selecionada == 'Todas' %}selected{% endif %}>Todas as Empresas</option>
                         {% for empresa in empresas_filtro %}
                             {% if empresa != 'Todas' %}
@@ -823,7 +908,7 @@
                 
                 <div class="filter-group">
                     <label for="periodo"><i class="fas fa-calendar-alt"></i> Período</label>
-                    <select id="periodo" class="filter-select" onchange="showLoading()">
+                    <select id="periodo" class="filter-select">
                         <option value="Últimos 30 dias" {% if periodo_selecionado == 'Últimos 30 dias' %}selected{% endif %}>Últimos 30 dias</option>
                         <option value="Últimos 6 meses" {% if periodo_selecionado == 'Últimos 6 meses' %}selected{% endif %}>Últimos 6 meses</option>
                         <option value="2025" {% if periodo_selecionado == '2025' %}selected{% endif %}>2025</option>
@@ -833,7 +918,7 @@
                 
                 <div class="filter-group">
                     <label for="status"><i class="fas fa-tasks"></i> Status</label>
-                    <select id="status" class="filter-select" onchange="showLoading()">
+                    <select id="status" class="filter-select">
                         <option value="Todos" {% if status_selecionado == 'Todos' %}selected{% endif %}>Todos os Status</option>
                         <option value="Pendente" {% if status_selecionado == 'Pendente' %}selected{% endif %}>Pendente</option>
                         <option value="Aprovado" {% if status_selecionado == 'Aprovado' %}selected{% endif %}>Aprovado</option>
@@ -843,7 +928,7 @@
                 
                 <div class="filter-group">
                     <label for="comprador"><i class="fas fa-user-tie"></i> Comprador</label>
-                    <select id="comprador" class="filter-select" onchange="showLoading()">
+                    <select id="comprador" class="filter-select">
                         <option value="Todos" {% if comprador_selecionado == 'Todos' %}selected{% endif %}>Todos os Compradores</option>
                         {% for comprador in compradores_filtro %}
                             {% if comprador != 'Todos' %}
@@ -860,7 +945,7 @@
                 </div>
             </div>
             
-            <div class="filters-actions">
+            <div class="filters-actions" id="filtersActions">
                 <button class="btn btn-secondary" onclick="resetarFiltros()">
                     <i class="fas fa-undo"></i> Limpar Filtros
                 </button>
@@ -883,7 +968,6 @@
                 <div class="metric-value">{{ total_solicitacoes }}</div>
                 <div class="metric-subvalue">Período: {{ periodo_selecionado }}</div>
                 <div class="progress-bar">
-                    <!-- CORREÇÃO: Adicionar verificação para evitar divisão por zero -->
                     <div class="progress-fill success" style="width: {% if total_solicitacoes > 0 %}{{ (aprovadas / total_solicitacoes * 100) }}{% else %}0{% endif %}%"></div>
                 </div>
                 <div class="metric-trend trend-up">
@@ -906,7 +990,6 @@
                 </div>
                 <div class="metric-subvalue">{{ aprovadas }} aprovadas de {{ total_solicitacoes }}</div>
                 <div class="progress-bar">
-                    <!-- CORREÇÃO: Adicionar verificação para evitar divisão por zero -->
                     <div class="progress-fill success" style="width: {% if total_solicitacoes > 0 %}{{ (aprovadas / total_solicitacoes * 100) }}{% else %}0{% endif %}%"></div>
                 </div>
             </div>
@@ -919,7 +1002,6 @@
                 <div class="metric-value">{{ pendentes }}</div>
                 <div class="metric-subvalue">{{ tempo_medio_aprovacao }} dias (média aprovação)</div>
                 <div class="progress-bar">
-                    <!-- CORREÇÃO: Adicionar verificação para evitar divisão por zero -->
                     <div class="progress-fill warning" style="width: {% if total_solicitacoes > 0 %}{{ (pendentes / total_solicitacoes * 100) }}{% else %}0{% endif %}%"></div>
                 </div>
                 <div class="metric-trend trend-down">
@@ -1287,8 +1369,9 @@
                     </tbody>
                 </table>
             </div>
-
         </div>
+
+    </div>
 
     <!-- Loading Overlay -->
     <div class="loading-overlay" id="loadingOverlay" style="display: none;">
@@ -1317,6 +1400,9 @@
         // Variáveis globais
         let charts = {};
         let isLoading = false;
+        let filtersFixed = false;
+        let filtersCollapsed = false;
+        let originalFiltersHeight = 0;
 
         // Função para mostrar notificação
         function showNotification(title, message, type = 'success') {
@@ -1342,7 +1428,7 @@
             
             setTimeout(() => {
                 notification.classList.remove('show');
-            }, 5000);
+            }, 3000);
         }
 
         // Função para mostrar loading
@@ -1353,28 +1439,139 @@
             const overlay = document.getElementById('loadingOverlay');
             overlay.style.display = 'flex';
             
-            // Mostrar progresso simulado
-            let progress = 0;
-            const interval = setInterval(() => {
-                progress += Math.random() * 10;
-                if (progress >= 100) {
-                    clearInterval(interval);
-                    overlay.style.display = 'none';
-                    isLoading = false;
-                }
-            }, 100);
+            setTimeout(() => {
+                overlay.style.display = 'none';
+                isLoading = false;
+            }, 800);
         }
 
-        // Função para trocar visualização dos gráficos
-        function trocarVisualizacao(element, chartId) {
-            // Remover classe active de todos os tabs do mesmo grupo
-            const tabs = element.parentElement.querySelectorAll('.chart-tab');
-            tabs.forEach(tab => tab.classList.remove('active'));
+        // Controle de filtros - Ocultar/Mostrar
+        function toggleFilters() {
+            const panel = document.getElementById('filtersPanel');
+            const btn = document.getElementById('toggleFilters');
+            const icon = btn.querySelector('i');
+            const text = btn.querySelector('span');
             
-            // Adicionar classe active ao tab clicado
-            element.classList.add('active');
+            filtersCollapsed = !filtersCollapsed;
             
-            showNotification('Visualização Alterada', 'A visualização do gráfico foi alterada', 'info');
+            if (filtersCollapsed) {
+                panel.classList.add('filters-collapsed');
+                text.textContent = 'Mostrar';
+                icon.classList.add('collapsed');
+                showNotification('Filtros Ocultos', 'Os filtros foram minimizados', 'info');
+            } else {
+                panel.classList.remove('filters-collapsed');
+                text.textContent = 'Ocultar';
+                icon.classList.remove('collapsed');
+                showNotification('Filtros Mostrados', 'Os filtros estão visíveis', 'info');
+            }
+            
+            // Salvar preferência
+            localStorage.setItem('dashboardFiltersCollapsed', filtersCollapsed);
+            
+            // Atualizar altura se os filtros estiverem fixos
+            if (filtersFixed) {
+                updateFixedFiltersPosition();
+            }
+        }
+
+        // Fixar/Desfixar filtros na tela (PARA MONITORES PEQUENOS)
+        function toggleFixedFilters() {
+            const panel = document.getElementById('filtersPanel');
+            const btn = document.getElementById('lockFilters');
+            const icon = btn.querySelector('i');
+            const text = btn.querySelector('span');
+            const body = document.body;
+            
+            filtersFixed = !filtersFixed;
+            
+            if (filtersFixed) {
+                // Salvar altura original antes de fixar
+                originalFiltersHeight = panel.offsetHeight;
+                
+                // Fixar os filtros
+                panel.classList.add('filters-fixed');
+                body.classList.add('filters-fixed-active');
+                
+                // Atualizar variável CSS com a altura
+                document.documentElement.style.setProperty('--filters-height', originalFiltersHeight + 'px');
+                
+                // Atualizar botão
+                btn.classList.add('active');
+                text.textContent = 'Desfixar';
+                icon.className = 'fas fa-thumbtack';
+                
+                showNotification('Filtros Fixados', 'Os filtros estão fixos na tela', 'warning');
+                
+                // Desabilitar edição dos filtros quando fixados
+                disableFilters(true);
+            } else {
+                // Remover fixação
+                panel.classList.remove('filters-fixed');
+                body.classList.remove('filters-fixed-active');
+                
+                // Atualizar botão
+                btn.classList.remove('active');
+                text.textContent = 'Fixar';
+                icon.className = 'fas fa-thumbtack';
+                
+                showNotification('Filtros Desfixados', 'Os filtros voltaram à posição original', 'success');
+                
+                // Habilitar edição dos filtros
+                disableFilters(false);
+            }
+            
+            // Salvar preferência
+            localStorage.setItem('dashboardFiltersFixed', filtersFixed);
+            
+            // Redimensionar gráficos
+            setTimeout(() => {
+                Object.values(charts).forEach(chart => {
+                    if (chart) chart.resize();
+                });
+            }, 300);
+        }
+
+        // Habilitar/Desabilitar filtros
+        function disableFilters(disabled) {
+            const panel = document.getElementById('filtersPanel');
+            
+            if (disabled) {
+                panel.classList.add('filters-disabled');
+            } else {
+                panel.classList.remove('filters-disabled');
+            }
+        }
+
+        // Atualizar posição dos filtros fixos
+        function updateFixedFiltersPosition() {
+            if (!filtersFixed) return;
+            
+            const panel = document.getElementById('filtersPanel');
+            originalFiltersHeight = panel.offsetHeight;
+            document.documentElement.style.setProperty('--filters-height', originalFiltersHeight + 'px');
+        }
+
+        // Restaurar estado dos filtros
+        function restoreFilterState() {
+            const collapsed = localStorage.getItem('dashboardFiltersCollapsed') === 'true';
+            const fixed = localStorage.getItem('dashboardFiltersFixed') === 'true';
+            
+            if (collapsed) {
+                filtersCollapsed = true;
+                const panel = document.getElementById('filtersPanel');
+                const btn = document.getElementById('toggleFilters');
+                panel.classList.add('filters-collapsed');
+                btn.querySelector('span').textContent = 'Mostrar';
+                btn.querySelector('i').classList.add('collapsed');
+            }
+            
+            if (fixed) {
+                // Esperar um pouco para garantir que o DOM esteja carregado
+                setTimeout(() => {
+                    toggleFixedFilters();
+                }, 100);
+            }
         }
 
         // Função para filtrar tabelas
@@ -1409,412 +1606,208 @@
             });
         }
 
-        // Inicializar todos os gráficos
+        // Função para trocar visualização dos gráficos
+        function trocarVisualizacao(element, chartId) {
+            const tabs = element.parentElement.querySelectorAll('.chart-tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            element.classList.add('active');
+            showNotification('Visualização Alterada', 'A visualização do gráfico foi alterada', 'info');
+        }
+
+        // Inicializar gráficos
         function initCharts() {
-            // Paleta de cores moderna
-            const colorPalette = [
-                '#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6',
-                '#ec4899', '#14b8a6', '#f97316', '#6366f1', '#d946ef'
-            ];
-
+            // Paleta de cores
+            const colorPalette = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'];
+            
+            // Configurações comuns
+            const commonOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    }
+                }
+            };
+            
             // 1. Gráfico de Produtividade dos Compradores
-            const compradoresCtx = document.getElementById('chartCompradores').getContext('2d');
-            charts.compradores = new Chart(compradoresCtx, {
-                type: 'bar',
-                data: {
-                    labels: {{ compradores_produtividade|map(attribute='nome')|list|tojson }},
-                    datasets: [
-                        {
-                            label: 'Aprovadas',
-                            data: {{ compradores_produtividade|map(attribute='aprovadas')|list|tojson }},
-                            backgroundColor: '#10b981',
-                            borderColor: '#10b981',
-                            borderWidth: 2,
-                            borderRadius: 6,
-                            borderSkipped: false,
-                        },
-                        {
-                            label: 'Pendentes',
-                            data: {{ compradores_produtividade|map(attribute='pendentes')|list|tojson }},
-                            backgroundColor: '#f59e0b',
-                            borderColor: '#f59e0b',
-                            borderWidth: 2,
-                            borderRadius: 6,
-                            borderSkipped: false,
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    interaction: {
-                        intersect: false,
-                        mode: 'index',
-                    },
-                    plugins: {
-                        legend: {
-                            display: false
-                        },
-                        tooltip: {
-                            backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                            titleColor: '#1e293b',
-                            bodyColor: '#475569',
-                            borderColor: '#e2e8f0',
-                            borderWidth: 1,
-                            padding: 12,
-                            boxPadding: 6,
-                            usePointStyle: true,
-                            callbacks: {
-                                label: function(context) {
-                                    let label = context.dataset.label || '';
-                                    if (label) {
-                                        label += ': ';
-                                    }
-                                    label += context.parsed.y;
-                                    return label;
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        x: {
-                            grid: {
-                                display: false
+            const compradoresCtx = document.getElementById('chartCompradores')?.getContext('2d');
+            if (compradoresCtx) {
+                charts.compradores = new Chart(compradoresCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: {{ compradores_produtividade|map(attribute='nome')|list|tojson }},
+                        datasets: [
+                            {
+                                label: 'Aprovadas',
+                                data: {{ compradores_produtividade|map(attribute='aprovadas')|list|tojson }},
+                                backgroundColor: '#10b981',
+                                borderRadius: 6,
                             },
-                            ticks: {
-                                font: {
-                                    size: 11
-                                }
+                            {
+                                label: 'Pendentes',
+                                data: {{ compradores_produtividade|map(attribute='pendentes')|list|tojson }},
+                                backgroundColor: '#f59e0b',
+                                borderRadius: 6,
                             }
-                        },
-                        y: {
-                            beginAtZero: true,
-                            grid: {
-                                color: 'rgba(226, 232, 240, 0.5)'
-                            },
-                            ticks: {
-                                font: {
-                                    size: 11
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-
-            // 2. Gráfico de Produtos Pendentes
-            const produtosCtx = document.getElementById('chartProdutosPendentes').getContext('2d');
-            charts.produtosPendentes = new Chart(produtosCtx, {
-                type: 'bar',
-                data: {
-                    labels: {{ produtos_pendentes|map(attribute='produto')|list|tojson }},
-                    datasets: [
-                        {
-                            label: 'Dias Pendente',
-                            data: {{ produtos_pendentes|map(attribute='dias_pendente')|list|tojson }},
-                            backgroundColor: colorPalette.map(color => color + '80'),
-                            borderColor: colorPalette,
-                            borderWidth: 2,
-                            borderRadius: 6
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: false
-                        },
-                        datalabels: {
-                            color: '#1e293b',
-                            font: {
-                                weight: '600',
-                                size: 11
-                            },
-                            anchor: 'end',
-                            align: 'top',
-                            formatter: function(value) {
-                                return value + ' dias';
-                            }
-                        }
+                        ]
                     },
-                    scales: {
-                        x: {
-                            grid: {
-                                display: false
-                            }
-                        },
-                        y: {
-                            beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: 'Dias Pendente'
-                            }
-                        }
-                    }
-                }
-            });
-
-            // 3. Gráfico de Volume por Empresa (Doughnut)
-            const volumeCtx = document.getElementById('chartVolumeEmpresa').getContext('2d');
-            charts.volumeEmpresa = new Chart(volumeCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: {{ volume_empresa|map(attribute='empresa')|list|tojson }},
-                    datasets: [{
-                        data: {{ volume_empresa|map(attribute='volume')|list|tojson }},
-                        backgroundColor: colorPalette,
-                        borderColor: '#ffffff',
-                        borderWidth: 2,
-                        hoverOffset: 15
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    cutout: '60%',
-                    plugins: {
-                        legend: {
-                            position: 'right',
-                            labels: {
-                                padding: 20,
-                                usePointStyle: true,
-                                pointStyle: 'circle'
-                            }
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    const label = context.label || '';
-                                    const value = context.raw || 0;
-                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                    const percentage = Math.round((value / total) * 100);
-                                    return `${label}: ${value} (${percentage}%)`;
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-
-            // 4. Gráfico de Pendências por Empresa
-            const pendenciasCtx = document.getElementById('chartPendenciasEmpresa').getContext('2d');
-            charts.pendenciasEmpresa = new Chart(pendenciasCtx, {
-                type: 'bar',
-                data: {
-                    labels: {{ pendencias_empresa|map(attribute='empresa')|list|tojson }},
-                    datasets: [{
-                        label: 'Pendências',
-                        data: {{ pendencias_empresa|map(attribute='pendencias')|list|tojson }},
-                        backgroundColor: '#f59e0b',
-                        borderColor: '#f59e0b',
-                        borderWidth: 2,
-                        borderRadius: 6
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    indexAxis: 'y',
-                    plugins: {
-                        legend: {
-                            display: false
-                        }
-                    },
-                    scales: {
-                        x: {
-                            beginAtZero: true
-                        }
-                    }
-                }
-            });
-
-            // 5. Gráfico de Gastos por Veículo
-            const gastosCtx = document.getElementById('chartGastosVeiculo').getContext('2d');
-            charts.gastosVeiculo = new Chart(gastosCtx, {
-                type: 'bar',
-                data: {
-                    labels: {{ gastos_veiculo|map(attribute='veiculo')|list|tojson }},
-                    datasets: [{
-                        label: 'Valor Total (R$)',
-                        data: {{ gastos_veiculo|map(attribute='valor_total')|list|tojson }},
-                        backgroundColor: '#8b5cf6',
-                        borderColor: '#8b5cf6',
-                        borderWidth: 2,
-                        borderRadius: 6
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: false
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    let value = context.raw;
-                                    return formatarValorTooltip(value);
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            ticks: {
-                                callback: function(value) {
-                                    return formatarValorTooltip(value);
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-
-            // 6. Gráfico de Tempo em Aberto
-            const tempoCtx = document.getElementById('chartTempoAberto').getContext('2d');
-            charts.tempoAberto = new Chart(tempoCtx, {
-                type: 'bar',
-                data: {
-                    labels: {{ tempo_aberto|map(attribute='id')|list|tojson }}.map(id => `#${id}`),
-                    datasets: [{
-                        label: 'Dias em Aberto',
-                        data: {{ tempo_aberto|map(attribute='dias_aberto')|list|tojson }},
-                        backgroundColor: '#ef4444',
-                        borderColor: '#ef4444',
-                        borderWidth: 2,
-                        borderRadius: 6
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: false
-                        }
-                    }
-                }
-            });
-
-            // 7. Gráfico de Evolução de Compras
-            {% if evolucao_compras %}
-            const evolucaoCtx = document.getElementById('chartEvolucaoCompras').getContext('2d');
-            const evolucaoData = {{ evolucao_compras|tojson }};
-            const evolucaoMeses = {{ evolucao_meses_labels|tojson }};
-            
-            const empresasCores = {};
-            const datasetsEvolucao = [];
-            let colorIndex = 0;
-            
-            for (const [empresa, dados] of Object.entries(evolucaoData)) {
-                if (!empresasCores[empresa]) {
-                    empresasCores[empresa] = colorPalette[colorIndex % colorPalette.length];
-                    colorIndex++;
-                }
-                
-                datasetsEvolucao.push({
-                    label: empresa,
-                    data: dados,
-                    borderColor: empresasCores[empresa],
-                    backgroundColor: empresasCores[empresa] + '20',
-                    borderWidth: 3,
-                    tension: 0.3,
-                    fill: true,
-                    pointBackgroundColor: empresasCores[empresa],
-                    pointBorderColor: '#ffffff',
-                    pointBorderWidth: 2,
-                    pointRadius: 5,
-                    pointHoverRadius: 7
+                    options: commonOptions
                 });
             }
             
-            charts.evolucaoCompras = new Chart(evolucaoCtx, {
-                type: 'line',
-                data: {
-                    labels: evolucaoMeses,
-                    datasets: datasetsEvolucao
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                            labels: {
-                                usePointStyle: true,
-                                padding: 20
-                            }
-                        }
+            // 2. Gráfico de Produtos Pendentes
+            const produtosCtx = document.getElementById('chartProdutosPendentes')?.getContext('2d');
+            if (produtosCtx) {
+                charts.produtosPendentes = new Chart(produtosCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: {{ produtos_pendentes|map(attribute='produto')|list|tojson }},
+                        datasets: [{
+                            label: 'Dias Pendente',
+                            data: {{ produtos_pendentes|map(attribute='dias_pendente')|list|tojson }},
+                            backgroundColor: colorPalette,
+                            borderRadius: 6
+                        }]
                     },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: {
-                                color: 'rgba(226, 232, 240, 0.5)'
-                            }
-                        },
-                        x: {
-                            grid: {
-                                color: 'rgba(226, 232, 240, 0.5)'
-                            }
-                        }
+                    options: commonOptions
+                });
+            }
+            
+            // 3. Gráfico de Volume por Empresa
+            const volumeCtx = document.getElementById('chartVolumeEmpresa')?.getContext('2d');
+            if (volumeCtx) {
+                charts.volumeEmpresa = new Chart(volumeCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: {{ volume_empresa|map(attribute='empresa')|list|tojson }},
+                        datasets: [{
+                            data: {{ volume_empresa|map(attribute='volume')|list|tojson }},
+                            backgroundColor: colorPalette,
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        ...commonOptions,
+                        cutout: '60%'
                     }
-                }
-            });
+                });
+            }
+            
+            // 4. Gráfico de Pendências por Empresa
+            const pendenciasCtx = document.getElementById('chartPendenciasEmpresa')?.getContext('2d');
+            if (pendenciasCtx) {
+                charts.pendenciasEmpresa = new Chart(pendenciasCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: {{ pendencias_empresa|map(attribute='empresa')|list|tojson }},
+                        datasets: [{
+                            label: 'Pendências',
+                            data: {{ pendencias_empresa|map(attribute='pendencias')|list|tojson }},
+                            backgroundColor: '#f59e0b',
+                            borderRadius: 6
+                        }]
+                    },
+                    options: commonOptions
+                });
+            }
+            
+            // 5. Gráfico de Gastos por Veículo
+            const gastosCtx = document.getElementById('chartGastosVeiculo')?.getContext('2d');
+            if (gastosCtx) {
+                charts.gastosVeiculo = new Chart(gastosCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: {{ gastos_veiculo|map(attribute='veiculo')|list|tojson }},
+                        datasets: [{
+                            label: 'Valor Total (R$)',
+                            data: {{ gastos_veiculo|map(attribute='valor_total')|list|tojson }},
+                            backgroundColor: '#8b5cf6',
+                            borderRadius: 6
+                        }]
+                    },
+                    options: commonOptions
+                });
+            }
+            
+            // 6. Gráfico de Tempo em Aberto
+            const tempoCtx = document.getElementById('chartTempoAberto')?.getContext('2d');
+            if (tempoCtx) {
+                charts.tempoAberto = new Chart(tempoCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: {{ tempo_aberto|map(attribute='id')|list|tojson }}.map(id => `#${id}`),
+                        datasets: [{
+                            label: 'Dias em Aberto',
+                            data: {{ tempo_aberto|map(attribute='dias_aberto')|list|tojson }},
+                            backgroundColor: '#ef4444',
+                            borderRadius: 6
+                        }]
+                    },
+                    options: commonOptions
+                });
+            }
+            
+            // 7. Gráfico de Evolução de Compras
+            {% if evolucao_compras %}
+            const evolucaoCtx = document.getElementById('chartEvolucaoCompras')?.getContext('2d');
+            if (evolucaoCtx) {
+                const evolucaoData = {{ evolucao_compras|tojson }};
+                const evolucaoMeses = {{ evolucao_meses_labels|tojson }};
+                const empresasCores = {};
+                const datasetsEvolucao = [];
+                
+                Object.entries(evolucaoData).forEach(([empresa, dados], index) => {
+                    empresasCores[empresa] = colorPalette[index % colorPalette.length];
+                    datasetsEvolucao.push({
+                        label: empresa,
+                        data: dados,
+                        borderColor: empresasCores[empresa],
+                        backgroundColor: empresasCores[empresa] + '20',
+                        borderWidth: 2,
+                        tension: 0.3
+                    });
+                });
+                
+                charts.evolucaoCompras = new Chart(evolucaoCtx, {
+                    type: 'line',
+                    data: {
+                        labels: evolucaoMeses,
+                        datasets: datasetsEvolucao
+                    },
+                    options: commonOptions
+                });
+            }
             {% endif %}
-
+            
             // 8. Gráfico de Produtividade por Empresa
-            const produtividadeCtx = document.getElementById('chartProdutividadeEmpresa').getContext('2d');
-            charts.produtividadeEmpresa = new Chart(produtividadeCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: {{ produtividade_geral|map(attribute='empresa')|list|tojson }},
-                    datasets: [{
-                        data: {{ produtividade_geral|map(attribute='taxa_aprovacao')|list|tojson }},
-                        backgroundColor: colorPalette,
-                        borderColor: '#ffffff',
-                        borderWidth: 2
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    cutout: '65%',
-                    plugins: {
-                        legend: {
-                            position: 'right'
-                        },
-                        datalabels: {
-                            color: '#ffffff',
-                            font: {
-                                weight: 'bold',
-                                size: 12
-                            },
-                            formatter: (value) => {
-                                return value.toFixed(1) + '%';
-                            }
-                        }
+            const produtividadeCtx = document.getElementById('chartProdutividadeEmpresa')?.getContext('2d');
+            if (produtividadeCtx) {
+                charts.produtividadeEmpresa = new Chart(produtividadeCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: {{ produtividade_geral|map(attribute='empresa')|list|tojson }},
+                        datasets: [{
+                            data: {{ produtividade_geral|map(attribute='taxa_aprovacao')|list|tojson }},
+                            backgroundColor: colorPalette,
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        ...commonOptions,
+                        cutout: '65%'
                     }
-                }
-            });
-        }
-
-        // Função auxiliar para formatar valores no tooltip
-        function formatarValorTooltip(value) {
-            if (value >= 1000000) {
-                return 'R$ ' + (value/1000000).toFixed(1) + 'M';
-            } else if (value >= 1000) {
-                return 'R$ ' + (value/1000).toFixed(1) + 'K';
-            } else {
-                return 'R$ ' + value.toFixed(2);
+                });
             }
         }
 
         // Funções de controle
         function aplicarFiltros() {
+            if (filtersFixed) {
+                showNotification('Filtros Fixados', 'Desfixe os filtros para aplicar alterações', 'warning');
+                return;
+            }
+            
             showLoading();
             
             const empresa = document.getElementById('empresa').value;
@@ -1834,7 +1827,6 @@
                 url += params.join('&');
             }
             
-            // Simular delay para mostrar loading
             setTimeout(() => {
                 window.location.href = url;
             }, 800);
@@ -1843,16 +1835,19 @@
         }
 
         function resetarFiltros() {
+            if (filtersFixed) {
+                showNotification('Filtros Fixados', 'Desfixe os filtros para resetar', 'warning');
+                return;
+            }
+            
             showLoading();
             
-            // Resetar selects
             document.getElementById('empresa').value = 'Todas';
             document.getElementById('periodo').value = 'Últimos 30 dias';
             document.getElementById('status').value = 'Todos';
             document.getElementById('comprador').value = 'Todos';
             document.getElementById('busca').value = '';
             
-            // Aplicar filtros resetados
             setTimeout(() => {
                 window.location.href = '/dashboard';
             }, 800);
@@ -1865,60 +1860,25 @@
             aplicarFiltros();
         }
 
-        function exportarDados() {
-            const empresa = document.getElementById('empresa').value;
-            const periodo = document.getElementById('periodo').value;
-            const status = document.getElementById('status').value;
-            const comprador = document.getElementById('comprador').value;
-            
-            let url = '/exportar_dashboard?';
-            const params = [];
-            
-            if (empresa !== 'Todas') params.push(`empresa=${encodeURIComponent(empresa)}`);
-            if (periodo !== 'Últimos 30 dias') params.push(`periodo=${encodeURIComponent(periodo)}`);
-            if (status !== 'Todos') params.push(`status=${encodeURIComponent(status)}`);
-            if (comprador !== 'Todos') params.push(`comprador=${encodeURIComponent(comprador)}`);
-            
-            url += params.join('&');
-            
-            showLoading();
-            setTimeout(() => {
-                window.open(url, '_blank');
-                showNotification('Exportação Iniciada', 'O download do arquivo CSV começará em breve', 'success');
-            }, 1000);
-        }
-
-        // Inicializar gráficos quando a página carregar
+        // Inicialização
         document.addEventListener('DOMContentLoaded', function() {
+            // Restaurar estado dos filtros
+            restoreFilterState();
+            
+            // Inicializar gráficos
             initCharts();
             
-            // Inicializar tooltips
-            const tooltip = document.createElement('div');
-            tooltip.className = 'tooltip';
-            document.body.appendChild(tooltip);
-            
-            document.querySelectorAll('[title]').forEach(element => {
-                element.addEventListener('mouseenter', function(e) {
-                    tooltip.textContent = this.getAttribute('title');
-                    tooltip.style.opacity = '1';
-                    
-                    const rect = this.getBoundingClientRect();
-                    tooltip.style.left = rect.left + (rect.width / 2) + 'px';
-                    tooltip.style.top = rect.top - 10 + 'px';
-                    tooltip.style.transform = 'translate(-50%, -100%)';
-                });
+            // Atualizar posição dos filtros fixos ao redimensionar
+            window.addEventListener('resize', function() {
+                if (filtersFixed) {
+                    updateFixedFiltersPosition();
+                }
                 
-                element.addEventListener('mouseleave', function() {
-                    tooltip.style.opacity = '0';
+                // Redimensionar gráficos
+                Object.values(charts).forEach(chart => {
+                    if (chart) chart.resize();
                 });
             });
-            
-            // Auto-refresh a cada 10 minutos (se confirmado)
-            setTimeout(() => {
-                if (!isLoading && confirm('Os dados foram atualizados há 10 minutos. Deseja atualizar o dashboard?')) {
-                    refreshDashboard();
-                }
-            }, 600000); // 10 minutos
             
             // Mostrar notificação de boas-vindas
             setTimeout(() => {
@@ -1927,23 +1887,14 @@
                     'Todos os dados foram carregados com sucesso',
                     'success'
                 );
-            }, 1500);
+            }, 1000);
         });
 
-        // Função para redimensionar gráficos quando a janela é redimensionada
+        // Redimensionar gráficos
         window.addEventListener('resize', function() {
             Object.values(charts).forEach(chart => {
                 if (chart) chart.resize();
             });
-        });
-
-        // Tecla de atalho para buscar (Ctrl + F)
-        document.addEventListener('keydown', function(e) {
-            if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
-                e.preventDefault();
-                document.getElementById('busca').focus();
-                showNotification('Busca Ativada', 'Pressione Ctrl+F novamente para buscar', 'info');
-            }
         });
     </script>
 
