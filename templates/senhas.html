@@ -210,6 +210,7 @@
             <option value="menu_financeiro.html">Financeiro</option>
             <option value="menu_estoquista.html">Estoquista</option>
             <option value="menu_auditoria.html">Auditor</option>
+            <option value="desativado.html">Desativado</option>
           
             
             <option value="outro">Outro</option>
@@ -254,38 +255,7 @@
         <button type="submit">Adicionar</button>
     </form>
 
-    <h2>Lista de Senhas</h2>
-    {% if senhas %}
-    <table>
-        <thead>
-            <tr>
-                <th>Usuário</th>
-                <th>Senha</th>
-                <th>Página</th>
-                <th>Empresa</th>
-                <th>Ação</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for usuario, dados in senhas.items() %}
-            <tr>
-                <td>{{ usuario }}</td>
-                <td>{{ dados.senha }}</td>
-                <td>{{ dados.pagina }}</td>
-                <td>{{ dados.empresa }}</td>
-                <td>
-                    <form method="POST" action="{{ url_for('routes_bp.excluir_senha', usuario=usuario) }}">
-                        <button class="action-button" type="submit"
-                            onclick="return confirm('Tem certeza que deseja excluir a senha para {{ usuario }}?')">Excluir</button>
-                    </form>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    {% else %}
-    <p>Nenhum usuário cadastrado.</p>
-    {% endif %}
+   
 
     <script>
         function togglePaginaPersonalizada() {
