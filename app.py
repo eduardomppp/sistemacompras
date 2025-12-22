@@ -1185,6 +1185,13 @@ def menu_cadastro():
         return redirect(url_for('routes_bp.login'))
     return render_template('menu_cadastro.html')
 
+#Usuario Desativado
+@routes_bp.route('/desativado', methods=['GET'])
+def desativado():
+    if 'usuario' not in session:
+        return redirect(url_for('routes_bp.login'))
+    return render_template('desativado.html')
+
 @routes_bp.route('/menu_reenvio', methods=['GET'])
 def menu_reenvio():
     if 'usuario' not in session:
@@ -1680,18 +1687,28 @@ def listar_solicitacoes():
         return redirect(url_for('routes_bp.login'))
 
     try:
-        # pega tudo aprovado já ordenado por aplicação e data (mais novo primeiro)
-        solicitacoes_ordenadas = (
-            SolicitacoesCompra.query
-            .filter_by(status_aprovacao="Aprovado")
-            .order_by(
-                SolicitacoesCompra.aplicacao.asc(),
-                SolicitacoesCompra.data_solicitacao.desc()
-            )
-            .all()
+        # Subquery: IDs das solicitações que já estão em pedidos de compra
+        subquery_pedidos = db.session.query(
+            SolicitacoesPreenchidas.solicitacao_id
+        ).join(
+            pedido_preenchimento_associacao,
+            SolicitacoesPreenchidas.id == pedido_preenchimento_associacao.c.preenchimento_id
+        ).distinct()
+
+        # Buscar solicitações aprovadas que NÃO estão em pedidos de compra
+        solicitacoes_aprovadas = SolicitacoesCompra.query.filter(
+            SolicitacoesCompra.status_aprovacao == "Aprovado",
+            ~SolicitacoesCompra.id.in_(subquery_pedidos)  # Excluir as que já estão em pedidos
+        ).all()
+
+        # Ordenar por aplicação e data (mais novo primeiro)
+        solicitacoes_ordenadas = sorted(
+            solicitacoes_aprovadas,
+            key=lambda s: (s.aplicacao or "Sem Aplicação", s.data_solicitacao),
+            reverse=True
         )
 
-        # AGRUPAR manualmente e manter ordem correta
+        # Agrupar manualmente e manter ordem correta
         solicitacoes_por_aplicacao = {}
         for s in solicitacoes_ordenadas:
             aplicacao = s.aplicacao or "Sem Aplicação"
@@ -1699,7 +1716,7 @@ def listar_solicitacoes():
                 solicitacoes_por_aplicacao[aplicacao] = []
             solicitacoes_por_aplicacao[aplicacao].append(s)
 
-        # listas para filtros
+        # Listas para filtros
         empresas = sorted({s.empresa for s in solicitacoes_ordenadas if s.empresa})
         usuarios = sorted({s.usuario for s in solicitacoes_ordenadas if s.usuario})
         aplicacoes = sorted(solicitacoes_por_aplicacao.keys())
@@ -1722,7 +1739,6 @@ def listar_solicitacoes():
                                solicitacoes=[],
                                solicitacoes_por_aplicacao={},
                                compradores=[])
-
     
 #Tela Comprado
 @routes_bp.route('/listar_solicitacoes_comprador', methods=['GET'])
