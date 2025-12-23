@@ -3081,13 +3081,38 @@ def listar_solicitacoes_preenchidas():
         return redirect(url_for('routes_bp.login'))
     
     try:
+        # 1. OBTER FILTROS
         empresa = request.args.get('empresa')
         usuario = request.args.get('usuario')
         data_inicio = request.args.get('data_inicio')
         data_fim = request.args.get('data_fim')
         
-        query = SolicitacoesPreenchidas.query.join(SolicitacoesCompra)
+        # 2. SUBCONSULTA CRÍTICA: Excluir solicitações que já estão em pedidos
+        subquery_pedidos = db.session.query(
+            SolicitacoesPreenchidas.solicitacao_id
+        ).join(
+            pedido_preenchimento_associacao,
+            SolicitacoesPreenchidas.id == pedido_preenchimento_associacao.c.preenchimento_id
+        ).distinct()
         
+        # 3. CONSULTA OTIMIZADA COM JOIN E FILTROS
+        query = db.session.query(
+            SolicitacoesPreenchidas,
+            SolicitacoesCompra,
+            Materiais
+        ).join(
+            SolicitacoesCompra,
+            SolicitacoesPreenchidas.solicitacao_id == SolicitacoesCompra.id
+        ).join(
+            Materiais,
+            SolicitacoesCompra.cod_material == Materiais.CodMaterial
+        ).filter(
+            # FILTRO PRINCIPAL: Status correto E não está em pedidos
+            SolicitacoesPreenchidas.status == 'Aguardando Aprovacao',
+            ~SolicitacoesCompra.id.in_(subquery_pedidos)
+        )
+        
+        # 4. APLICAR FILTROS ADICIONAIS
         if empresa:
             query = query.filter(SolicitacoesCompra.empresa == empresa)
         if usuario:
@@ -3098,35 +3123,82 @@ def listar_solicitacoes_preenchidas():
             data_fim_ajustada = datetime.strptime(data_fim, '%Y-%m-%d') + timedelta(days=1)
             query = query.filter(SolicitacoesPreenchidas.data_preenchimento <= data_fim_ajustada)
         
-        preenchimentos = query.order_by(SolicitacoesPreenchidas.data_preenchimento.desc()).all()
+        # 5. EXECUTAR COM LIMITE (evita travamento com muitos dados)
+        resultados = query.order_by(
+            Materiais.DescricaoMaterial,
+            SolicitacoesPreenchidas.data_preenchimento.desc()
+        ).limit(50).all()  # 🔹 LIMITE PARA TESTE - ajuste depois
         
-        preenchimentos_por_material = {}
-        for p in preenchimentos:
-            material_nome = p.solicitacao.material.DescricaoMaterial if p.solicitacao.material else 'N/A'
-            if material_nome not in preenchimentos_por_material:
-                preenchimentos_por_material[material_nome] = []
-            preenchimentos_por_material[material_nome].append({
-                'id': p.id,
-                'fornecedor_nome': get_fornecedor_nome(p.fornecedor_id),
-                'solicitacao': p.solicitacao,
-                'valor_unitario': p.valor_unitario,
-                'valor_frete': p.valor_frete,
-                'valor_total': p.valor_total,
-                'prazo_entrega': p.prazo_entrega,
-                'condicao_pagamento': p.condicao_pagamento,
-                'status': p.status,
-                'usuario': p.usuario,
-                'pdf_path': p.pdf_path,
-                'historico_descontos': [h.to_dict() for h in p.historico_descontos],
-                'observacoes': p.observacoes
+        # 6. ESTRUTURAR DADOS DE FORMA INTELIGENTE
+        dados_processados = []
+        
+        for preenchimento, solicitacao, material in resultados:
+            # Buscar fornecedor
+            fornecedor_nome = get_fornecedor_nome(preenchimento.fornecedor_id)
+            
+            # Buscar histórico uma vez só
+            historico = HistoricoDescontos.query.filter_by(
+                preenchimento_id=preenchimento.id
+            ).order_by(HistoricoDescontos.data_alteracao.desc()).all()
+            
+            # Verificar se há cotação aprovada para este material
+            cotacao_aprovada = SolicitacoesPreenchidas.query.filter(
+                SolicitacoesPreenchidas.solicitacao_id == solicitacao.id,
+                SolicitacoesPreenchidas.status == 'Aprovado'
+            ).first()
+            
+            # Preparar dados para o template
+            dados_processados.append({
+                'preenchimento': preenchimento,
+                'solicitacao': solicitacao,
+                'material': material,
+                'material_nome': material.DescricaoMaterial,
+                'aplicacao': solicitacao.aplicacao or 'Sem Aplicação',
+                'fornecedor_nome': fornecedor_nome,
+                'historico': [h.to_dict() for h in historico],
+                'tem_cotacao_aprovada': cotacao_aprovada is not None,
+                'is_bloqueado': cotacao_aprovada is not None and preenchimento.status != 'Aprovado'
             })
         
-        empresas = db.session.query(SolicitacoesCompra.empresa).distinct().order_by(SolicitacoesCompra.empresa).all()
-        usuarios = db.session.query(SolicitacoesPreenchidas.usuario).distinct().order_by(SolicitacoesPreenchidas.usuario).all()
+        # 7. AGRUPAR POR APLICAÇÃO NO BACKEND (MUITO MAIS RÁPIDO!)
+        aplicacoes_agrupadas = {}
+        for dado in dados_processados:
+            aplicacao = dado['aplicacao']
+            if aplicacao not in aplicacoes_agrupadas:
+                aplicacoes_agrupadas[aplicacao] = []
+            aplicacoes_agrupadas[aplicacao].append(dado)
         
+        # 8. AGRUPAR POR MATERIAL DENTRO DE CADA APLICAÇÃO
+        aplicacoes_com_materiais = {}
+        for aplicacao, dados_list in aplicacoes_agrupadas.items():
+            # Agrupar por material
+            materiais_agrupados = {}
+            for dado in dados_list:
+                material_nome = dado['material_nome']
+                if material_nome not in materiais_agrupados:
+                    materiais_agrupados[material_nome] = []
+                materiais_agrupados[material_nome].append(dado)
+            
+            aplicacoes_com_materiais[aplicacao] = materiais_agrupados
+        
+        # 9. OBTER DADOS PARA FILTROS (separadamente, mais leve)
+        empresas = db.session.query(
+            SolicitacoesCompra.empresa
+        ).distinct().order_by(SolicitacoesCompra.empresa).all()
+        
+        usuarios = db.session.query(
+            SolicitacoesPreenchidas.usuario
+        ).distinct().order_by(SolicitacoesPreenchidas.usuario).all()
+        
+        # 10. DEBUG - Ver quantos registros estamos processando
+        print(f"DEBUG - Total registros: {len(dados_processados)}")
+        print(f"DEBUG - Total aplicações: {len(aplicacoes_com_materiais)}")
+        
+        # 11. RENDERIZAR COM DADOS PRÉ-PROCESSADOS
         return render_template(
             'listar_solicitacoes_preenchidas.html',
-            preenchimentos_por_material=preenchimentos_por_material,
+            # 🔹 Mudei o nome da variável para refletir a nova estrutura
+            aplicacoes_com_materiais=aplicacoes_com_materiais,
             empresas=[e[0] for e in empresas if e[0]],
             usuarios=[u[0] for u in usuarios if u[0]],
             filtros={
@@ -3138,27 +3210,18 @@ def listar_solicitacoes_preenchidas():
         )
     
     except Exception as e:
-        flash(f'Erro ao carregar solicitações preenchidas: {str(e)}', 'error')
-        app.logger.error(f'Erro em listar_solicitacoes_preenchidas: {str(e)}', exc_info=True)
+        print(f"ERRO CRÍTICO: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        
+        flash(f'Erro ao carregar solicitações: {str(e)}', 'error')
         return render_template(
             'listar_solicitacoes_preenchidas.html',
-            preenchimentos_por_material={},
+            aplicacoes_com_materiais={},  # 🔹 Variável atualizada
             empresas=[],
             usuarios=[],
             filtros={}
         )
-
-def get_fornecedor_nome(fornecedor_id):
-    conn = get_db_connection(DB_PATH_FORNECEDORES)
-    if conn:
-        try:
-            cursor = conn.cursor()
-            cursor.execute('SELECT nome_fantasia FROM fornecedores WHERE id = ?', (fornecedor_id,))
-            result = cursor.fetchone()
-            return result['nome_fantasia'] if result else 'Fornecedor não encontrado'
-        finally:
-            conn.close()
-    return 'Fornecedor não encontrado'
 
 @routes_bp.route('/download_pdf/<int:preenchimento_id>', methods=['GET'])
 def download_pdf(preenchimento_id):
