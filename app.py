@@ -3077,75 +3077,253 @@ def cotacao_imprimir(id):
 
 @routes_bp.route('/listar_solicitacoes_preenchidas', methods=['GET'])
 def listar_solicitacoes_preenchidas():
+    """Lista solicitações preenchidas com tratamento robusto de erros"""
+    
+    # Verificação de autenticação
     if 'usuario' not in session:
+        flash('🔒 Acesso não autorizado. Faça login para continuar.', 'warning')
         return redirect(url_for('routes_bp.login'))
     
+    # Inicializar variáveis com valores padrão
+    preenchimentos_por_material = {}
+    empresas = []
+    usuarios = []
+    filtros = {
+        'empresa': '',
+        'usuario': '',
+        'data_inicio': '',
+        'data_fim': ''
+    }
+    
     try:
-        empresa = request.args.get('empresa')
-        usuario = request.args.get('usuario')
-        data_inicio = request.args.get('data_inicio')
-        data_fim = request.args.get('data_fim')
+        # 1. Coletar e validar parâmetros de filtro
+        empresa = request.args.get('empresa', '').strip()
+        usuario = request.args.get('usuario', '').strip()
+        data_inicio_str = request.args.get('data_inicio', '').strip()
+        data_fim_str = request.args.get('data_fim', '').strip()
         
-        query = SolicitacoesPreenchidas.query.join(SolicitacoesCompra)
+        # Armazenar filtros para o template
+        filtros['empresa'] = empresa
+        filtros['usuario'] = usuario
+        filtros['data_inicio'] = data_inicio_str
+        filtros['data_fim'] = data_fim_str
         
+        # 2. Validar e converter datas
+        data_inicio = None
+        data_fim = None
+        
+        if data_inicio_str:
+            try:
+                data_inicio = datetime.strptime(data_inicio_str, '%Y-%m-%d')
+            except ValueError:
+                flash('⚠️ Data inicial inválida. Use o formato AAAA-MM-DD.', 'warning')
+                data_inicio_str = ''
+                filtros['data_inicio'] = ''
+        
+        if data_fim_str:
+            try:
+                data_fim = datetime.strptime(data_fim_str, '%Y-%m-%d')
+                # Adicionar 1 dia para incluir todo o dia final
+                data_fim_ajustada = data_fim + timedelta(days=1)
+            except ValueError:
+                flash('⚠️ Data final inválida. Use o formato AAAA-MM-DD.', 'warning')
+                data_fim_str = ''
+                filtros['data_fim'] = ''
+        
+        # 3. Construir query com tratamento seguro
+        query = SolicitacoesPreenchidas.query
+        
+        # Join com SolicitacoesCompra para filtros de empresa
+        query = query.join(SolicitacoesCompra)
+        
+        # Aplicar filtros com validação
         if empresa:
-            query = query.filter(SolicitacoesCompra.empresa == empresa)
+            # Verificar se a empresa existe na tabela
+            empresa_existe = db.session.query(
+                SolicitacoesCompra.empresa
+            ).filter(SolicitacoesCompra.empresa == empresa).first()
+            
+            if empresa_existe:
+                query = query.filter(SolicitacoesCompra.empresa == empresa)
+            else:
+                flash(f'⚠️ Empresa "{empresa}" não encontrada nos registros.', 'warning')
+        
         if usuario:
-            query = query.filter(SolicitacoesPreenchidas.usuario == usuario)
+            # Verificar se o usuário existe
+            usuario_existe = db.session.query(
+                SolicitacoesPreenchidas.usuario
+            ).filter(SolicitacoesPreenchidas.usuario == usuario).first()
+            
+            if usuario_existe:
+                query = query.filter(SolicitacoesPreenchidas.usuario == usuario)
+            else:
+                flash(f'⚠️ Usuário "{usuario}" não encontrado nos registros.', 'warning')
+        
         if data_inicio:
             query = query.filter(SolicitacoesPreenchidas.data_preenchimento >= data_inicio)
+        
         if data_fim:
-            data_fim_ajustada = datetime.strptime(data_fim, '%Y-%m-%d') + timedelta(days=1)
             query = query.filter(SolicitacoesPreenchidas.data_preenchimento <= data_fim_ajustada)
         
-        preenchimentos = query.order_by(SolicitacoesPreenchidas.data_preenchimento.desc()).all()
+        # 4. Executar query com timeout
+        try:
+            preenchimentos = query.order_by(
+                SolicitacoesPreenchidas.data_preenchimento.desc()
+            ).all()
+            
+            app.logger.info(f'✅ Query executada: {len(preenchimentos)} preenchimentos encontrados')
+            
+        except SQLAlchemyError as db_error:
+            app.logger.error(f'❌ Erro de banco de dados: {str(db_error)}', exc_info=True)
+            flash('⛔ Erro ao acessar o banco de dados. Tente novamente.', 'danger')
+            raise
         
+        # 5. Processar resultados com tratamento de erros individuais
         preenchimentos_por_material = {}
+        contador_processados = 0
+        contador_erros = 0
+        
         for p in preenchimentos:
-            material_nome = p.solicitacao.material.DescricaoMaterial if p.solicitacao.material else 'N/A'
-            if material_nome not in preenchimentos_por_material:
-                preenchimentos_por_material[material_nome] = []
-            preenchimentos_por_material[material_nome].append({
-                'id': p.id,
-                'fornecedor_nome': get_fornecedor_nome(p.fornecedor_id),
-                'solicitacao': p.solicitacao,
-                'valor_unitario': p.valor_unitario,
-                'valor_frete': p.valor_frete,
-                'valor_total': p.valor_total,
-                'prazo_entrega': p.prazo_entrega,
-                'condicao_pagamento': p.condicao_pagamento,
-                'status': p.status,
-                'usuario': p.usuario,
-                'pdf_path': p.pdf_path,
-                'historico_descontos': [h.to_dict() for h in p.historico_descontos],
-                'observacoes': p.observacoes
-            })
+            try:
+                # Obter nome do material com fallback
+                material_nome = 'N/A'
+                if p.solicitacao and p.solicitacao.material:
+                    material_nome = p.solicitacao.material.DescricaoMaterial or 'Material sem descrição'
+                elif p.solicitacao:
+                    material_nome = f'Solicitação #{p.solicitacao.id} (material não encontrado)'
+                else:
+                    material_nome = 'Solicitação não encontrada'
+                    app.logger.warning(f'⚠️ Preenchimento {p.id} sem solicitação associada')
+                
+                # Obter nome do fornecedor com tratamento de erro
+                fornecedor_nome = 'Fornecedor não encontrado'
+                try:
+                    fornecedor_nome = get_fornecedor_nome(p.fornecedor_id)
+                except Exception as fornecedor_error:
+                    app.logger.warning(f'⚠️ Erro ao buscar fornecedor {p.fornecedor_id}: {str(fornecedor_error)}')
+                
+                # Garantir que valores numéricos não sejam None
+                valor_unitario = p.valor_unitario if p.valor_unitario is not None else 0.0
+                valor_frete = p.valor_frete if p.valor_frete is not None else 0.0
+                valor_total = p.valor_total if p.valor_total is not None else 0.0
+                
+                # Processar histórico de descontos com tratamento seguro
+                historico_descontos = []
+                try:
+                    if hasattr(p, 'historico_descontos'):
+                        historico_descontos = [h.to_dict() for h in p.historico_descontos]
+                except Exception as historico_error:
+                    app.logger.warning(f'⚠️ Erro ao processar histórico de descontos para {p.id}: {str(historico_error)}')
+                
+                # Criar estrutura do preenchimento
+                preenchimento_info = {
+                    'id': p.id,
+                    'fornecedor_nome': fornecedor_nome,
+                    'solicitacao': p.solicitacao,
+                    'valor_unitario': valor_unitario,
+                    'valor_frete': valor_frete,
+                    'valor_total': valor_total,
+                    'prazo_entrega': p.prazo_entrega or 'Não informado',
+                    'condicao_pagamento': p.condicao_pagamento or 'Não informada',
+                    'status': p.status or 'Desconhecido',
+                    'usuario': p.usuario or 'Não informado',
+                    'pdf_path': p.pdf_path,
+                    'historico_descontos': historico_descontos,
+                    'observacoes': p.observacoes or ''
+                }
+                
+                # Agrupar por material
+                if material_nome not in preenchimentos_por_material:
+                    preenchimentos_por_material[material_nome] = []
+                
+                preenchimentos_por_material[material_nome].append(preenchimento_info)
+                contador_processados += 1
+                
+            except Exception as process_error:
+                contador_erros += 1
+                app.logger.error(f'❌ Erro ao processar preenchimento {p.id}: {str(process_error)}', exc_info=True)
+                continue
         
-        empresas = db.session.query(SolicitacoesCompra.empresa).distinct().order_by(SolicitacoesCompra.empresa).all()
-        usuarios = db.session.query(SolicitacoesPreenchidas.usuario).distinct().order_by(SolicitacoesPreenchidas.usuario).all()
+        # Log de processamento
+        if contador_erros > 0:
+            app.logger.warning(f'⚠️ {contador_erros} erro(s) durante o processamento de preenchimentos')
         
+        # 6. Obter listas para filtros
+        try:
+            empresas_query = db.session.query(
+                SolicitacoesCompra.empresa
+            ).distinct().order_by(
+                SolicitacoesCompra.empresa
+            ).all()
+            
+            empresas = [e[0] for e in empresas_query if e[0]]
+            
+            usuarios_query = db.session.query(
+                SolicitacoesPreenchidas.usuario
+            ).distinct().order_by(
+                SolicitacoesPreenchidas.usuario
+            ).all()
+            
+            usuarios = [u[0] for u in usuarios_query if u[0]]
+            
+        except SQLAlchemyError as filter_error:
+            app.logger.error(f'❌ Erro ao buscar filtros: {str(filter_error)}')
+            # Continuar com listas vazias
+        
+        # 7. Mensagem informativa
+        if not preenchimentos_por_material:
+            flash('📭 Nenhuma solicitação preenchida encontrada com os filtros aplicados.', 'info')
+        else:
+            total_materiais = len(preenchimentos_por_material)
+            total_cotacoes = sum(len(cotacoes) for cotacoes in preenchimentos_por_material.values())
+            flash(f'📊 {total_cotacoes} cotações encontradas em {total_materiais} materiais diferentes.', 'success')
+        
+        # 8. Renderizar template
         return render_template(
             'listar_solicitacoes_preenchidas.html',
             preenchimentos_por_material=preenchimentos_por_material,
-            empresas=[e[0] for e in empresas if e[0]],
-            usuarios=[u[0] for u in usuarios if u[0]],
-            filtros={
-                'empresa': empresa,
-                'usuario': usuario,
-                'data_inicio': data_inicio,
-                'data_fim': data_fim
-            }
+            empresas=empresas,
+            usuarios=usuarios,
+            filtros=filtros
         )
     
-    except Exception as e:
-        flash(f'Erro ao carregar solicitações preenchidas: {str(e)}', 'error')
-        app.logger.error(f'Erro em listar_solicitacoes_preenchidas: {str(e)}', exc_info=True)
+    except SQLAlchemyError as db_error:
+        # Erro específico do banco de dados
+        app.logger.error(f'❌ Erro de banco de dados em listar_solicitacoes_preenchidas: {str(db_error)}', exc_info=True)
+        flash('⛔ Erro crítico no banco de dados. Entre em contato com o administrador.', 'danger')
+        
         return render_template(
             'listar_solicitacoes_preenchidas.html',
             preenchimentos_por_material={},
             empresas=[],
             usuarios=[],
-            filtros={}
+            filtros=filtros
+        )
+    
+    except ValueError as val_error:
+        # Erro de validação
+        app.logger.error(f'❌ Erro de validação: {str(val_error)}', exc_info=True)
+        flash(f'⚠️ Erro de validação: {str(val_error)}', 'warning')
+        
+        return render_template(
+            'listar_solicitacoes_preenchidas.html',
+            preenchimentos_por_material={},
+            empresas=[],
+            usuarios=[],
+            filtros=filtros
+        )
+    
+    except Exception as e:
+        # Erro geral não tratado
+        app.logger.error(f'❌ Erro inesperado em listar_solicitacoes_preenchidas: {str(e)}', exc_info=True)
+        flash('⛔ Ocorreu um erro inesperado. Tente novamente ou entre em contato com o suporte.', 'danger')
+        
+        return render_template(
+            'listar_solicitacoes_preenchidas.html',
+            preenchimentos_por_material={},
+            empresas=[],
+            usuarios=[],
+            filtros=filtros
         )
 
 def get_fornecedor_nome(fornecedor_id):
