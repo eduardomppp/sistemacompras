@@ -3147,7 +3147,7 @@ def listar_solicitacoes_preenchidas():
             usuarios=[],
             filtros={}
         )
-        
+
 def get_fornecedor_nome(fornecedor_id):
     conn = get_db_connection(DB_PATH_FORNECEDORES)
     if conn:
@@ -3159,7 +3159,7 @@ def get_fornecedor_nome(fornecedor_id):
         finally:
             conn.close()
     return 'Fornecedor não encontrado'
-    
+
 @routes_bp.route('/download_pdf/<int:preenchimento_id>', methods=['GET'])
 def download_pdf(preenchimento_id):
     if 'usuario' not in session:
