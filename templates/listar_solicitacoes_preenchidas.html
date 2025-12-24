@@ -146,24 +146,24 @@
 
     <!-- Conteúdo principal -->
     {% if preenchimentos_por_material %}
-        {% set aplicacoes_agrupadas = namespace(value={}) %}
+        {% set aplicacoes_agrupadas = {} %}
         {% for material_nome, preenchimentos in preenchimentos_por_material.items() %}
-            {% set filtrados = namespace(value=[]) %}
+            {% set filtrados = [] %}
             {% for p in preenchimentos %}
                 {% if p.status == 'Aguardando Aprovacao' %}
-                    {% set _ = filtrados.value.append(p) %}
+                    {% set _ = filtrados.append(p) %}
                 {% endif %}
             {% endfor %}
-            {% if filtrados.value %}
-                {% set aplicacao = filtrados.value[0].solicitacao.aplicacao if filtrados.value[0].solicitacao.aplicacao else 'Sem Aplicação' %}
-                {% if aplicacao not in aplicacoes_agrupadas.value %}
-                    {% set _ = aplicacoes_agrupadas.value.update({aplicacao: {}}) %}
+            {% if filtrados %}
+                {% set aplicacao = filtrados[0].solicitacao.aplicacao if filtrados[0].solicitacao.aplicacao else 'Sem Aplicação' %}
+                {% if aplicacao not in aplicacoes_agrupadas %}
+                    {% set _ = aplicacoes_agrupadas.update({aplicacao: {}}) %}
                 {% endif %}
-                {% set _ = aplicacoes_agrupadas.value[aplicacao].update({material_nome: filtrados.value}) %}
+                {% set _ = aplicacoes_agrupadas[aplicacao].update({material_nome: filtrados}) %}
             {% endif %}
         {% endfor %}
 
-        {% for aplicacao, materiais in aplicacoes_agrupadas.value.items() %}
+        {% for aplicacao, materiais in aplicacoes_agrupadas.items() %}
         <div class="aplicacao-group p-3">
             <div class="aplicacao-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0"><i class="bi bi-tags"></i> {{ aplicacao }}</h5>
@@ -172,15 +172,15 @@
             <div class="accordion mt-3">
                 {% for mat_nome, preenchs in materiais.items() %}
                     {% set aprovada = None %}
-                    {% set outras = namespace(value=[]) %}
+                    {% set outras = [] %}
                     {% for p in preenchs %}
                         {% if p.status == 'Aprovado' %}
                             {% set aprovada = p %}
                         {% else %}
-                            {% set _ = outras.value.append(p) %}
+                            {% set _ = outras.append(p) %}
                         {% endif %}
                     {% endfor %}
-                    {% set outras = outras.value | sort(attribute='data_preenchimento', reverse=true) %}
+                    {% set outras = outras | sort(attribute='data_preenchimento', reverse=true) %}
                     {% set ordenados = [aprovada] if aprovada else [] %}
                     {% for o in outras %}
                         {% set _ = ordenados.append(o) %}
@@ -202,9 +202,10 @@
                                             {% set is_aprovada = p.status == 'Aprovado' %}
                                             {% set is_bloqueada = aprovada and not is_aprovada %}
 
-                                            <!-- Cálculo do desconto -->
-                                            {% set subtotal_produtos = p.solicitacao.quantidade * p.valor_unitario %}
-                                            {% set frete = p.valor_frete | default(0) %}
+                                            <!-- Cálculo do desconto COM CORREÇÃO -->
+                                            {% set valor_unitario_calc = p.valor_unitario if p.valor_unitario is not none else 0 %}
+                                            {% set subtotal_produtos = p.solicitacao.quantidade * valor_unitario_calc %}
+                                            {% set frete = p.valor_frete if p.valor_frete is not none else 0 %}
                                             {% set desconto_raw = (p.condicao_pagamento or '') | string | trim %}
 
                                             {% set desconto_valor = 0 %}
@@ -259,7 +260,7 @@
                                                         <!-- Informações básicas -->
                                                         <div class="row g-2 mb-2">
                                                             <div class="col-6"><strong>Qtde:</strong> {{ p.solicitacao.quantidade }}</div>
-                                                            <div class="col-6"><strong>Unitário:</strong> R$ {{ "%.2f"|format(p.valor_unitario) }}</div>
+                                                            <div class="col-6"><strong>Unitário:</strong> R$ {{ "%.2f"|format(valor_unitario_calc) }}</div>
                                                             <div class="col-6"><strong>Entrega:</strong> {{ p.prazo_entrega }}</div>
                                                             <div class="col-12"><strong>Obs:</strong> {{ p.observacoes or '—' }}</div>
                                                         </div>
