@@ -7659,6 +7659,204 @@ def excluir_grupo_aplicacao():
             'success': False,
             'error': f'Erro ao excluir grupo: {str(e)}'
         }), 500
+
+@routes_bp.route('/editar_fornecedor/<int:fornecedor_id>', methods=['GET', 'POST'])
+def editar_fornecedor(fornecedor_id):
+    """Rota para editar fornecedor (GET para carregar, POST para salvar)"""
+    if 'usuario' not in session:
+        flash('Você precisa estar logado para editar fornecedores.', 'warning')
+        return redirect(url_for('routes_bp.login'))
+    
+    conn = get_db_connection(DB_PATH_FORNECEDORES)
+    if not conn:
+        flash('Erro ao conectar ao banco de dados.', 'error')
+        return redirect(url_for('routes_bp.lista_fornecedores'))
+    
+    try:
+        cursor = conn.cursor()
+        
+        if request.method == 'GET':
+            # Buscar dados do fornecedor para edição
+            cursor.execute('''
+                SELECT id, nome_fantasia, cnpj, telefone, email, endereco, 
+                       bairro, cidade, estado, contato, materiais
+                FROM fornecedores WHERE id = ?
+            ''', (fornecedor_id,))
+            
+            fornecedor_raw = cursor.fetchone()
+            
+            if not fornecedor_raw:
+                flash('Fornecedor não encontrado.', 'error')
+                return redirect(url_for('routes_bp.lista_fornecedores'))
+            
+            # Converter para dicionário
+            fornecedor = {
+                'id': fornecedor_raw[0],
+                'nome_fantasia': fornecedor_raw[1],
+                'cnpj': fornecedor_raw[2],
+                'telefone': fornecedor_raw[3],
+                'email': fornecedor_raw[4],
+                'endereco': fornecedor_raw[5],
+                'bairro': fornecedor_raw[6],
+                'cidade': fornecedor_raw[7],
+                'estado': fornecedor_raw[8],
+                'contato': fornecedor_raw[9],
+                'materiais': fornecedor_raw[10]
+            }
+            
+            return render_template('editar_fornecedor.html', fornecedor=fornecedor)
+        
+        elif request.method == 'POST':
+            # Obter dados do formulário de edição
+            nome_fantasia = request.form.get('nome_fantasia', '').strip()
+            telefone = request.form.get('telefone', '').strip()
+            email = request.form.get('email', '').strip()
+            endereco = request.form.get('endereco', '').strip()
+            bairro = request.form.get('bairro', '').strip()
+            cidade = request.form.get('cidade', '').strip()
+            estado = request.form.get('estado', '').strip()
+            contato = request.form.get('contato', '').strip()
+            materiais = request.form.get('materiais', '').strip()
+            
+            # Validações (exceto CNPJ)
+            if not all([nome_fantasia, telefone, email, endereco, bairro, cidade, estado, contato, materiais]):
+                flash('Todos os campos são obrigatórios.', 'error')
+                return redirect(url_for('routes_bp.editar_fornecedor', fornecedor_id=fornecedor_id))
+            
+            if not validate_email(email):
+                flash('Email inválido. Insira um email válido.', 'error')
+                return redirect(url_for('routes_bp.editar_fornecedor', fornecedor_id=fornecedor_id))
+            
+            if len(telefone) < 10:
+                flash('Telefone inválido. Deve conter pelo menos 10 dígitos.', 'error')
+                return redirect(url_for('routes_bp.editar_fornecedor', fornecedor_id=fornecedor_id))
+            
+            # Atualizar fornecedor (exceto CNPJ)
+            cursor.execute('''
+                UPDATE fornecedores SET 
+                    nome_fantasia = ?,
+                    telefone = ?,
+                    email = ?,
+                    endereco = ?,
+                    bairro = ?,
+                    cidade = ?,
+                    estado = ?,
+                    contato = ?,
+                    materiais = ?
+                WHERE id = ?
+            ''', (nome_fantasia, telefone, email, endereco, bairro, cidade, estado, contato, materiais, fornecedor_id))
+            
+            conn.commit()
+            flash('Fornecedor atualizado com sucesso!', 'success')
+            return redirect(url_for('routes_bp.lista_fornecedores'))
+            
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        flash(f'Erro ao editar fornecedor: {str(e)}', 'error')
+        return redirect(url_for('routes_bp.lista_fornecedores'))
+    finally:
+        if conn:
+            conn.close()
+
+@routes_bp.route('/excluir_fornecedor/<int:fornecedor_id>', methods=['POST'])
+def excluir_fornecedor(fornecedor_id):
+    """Exclui um fornecedor - versão simplificada e testada"""
+    if 'usuario' not in session:
+        flash('Você precisa estar logado.', 'warning')
+        return redirect(url_for('routes_bp.login'))
+    
+    try:
+        # Conectar ao banco de fornecedores
+        conn = sqlite3.connect(DB_PATH_FORNECEDORES)
+        cursor = conn.cursor()
+        
+        # 1. Buscar nome do fornecedor para mensagem
+        cursor.execute('SELECT nome_fantasia FROM fornecedores WHERE id = ?', (fornecedor_id,))
+        resultado = cursor.fetchone()
+        
+        if not resultado:
+            flash('Fornecedor não encontrado.', 'error')
+            return redirect(url_for('routes_bp.lista_fornecedores'))
+        
+        nome_fornecedor = resultado[0]
+        
+        # 2. Verificar se está em uso (opcional - comente se quiser forçar exclusão)
+        try:
+            conn_main = sqlite3.connect(DATABASE)
+            cursor_main = conn_main.cursor()
+            cursor_main.execute('SELECT COUNT(*) FROM SolicitacoesPreenchidas WHERE fornecedor_id = ?', (fornecedor_id,))
+            uso_count = cursor_main.fetchone()[0]
+            conn_main.close()
+            
+            if uso_count > 0:
+                flash(f'❌ Fornecedor "{nome_fornecedor}" está em {uso_count} cotações. Não pode ser excluído.', 'error')
+                return redirect(url_for('routes_bp.lista_fornecedores'))
+        except Exception as e:
+            print(f"AVISO: Não foi possível verificar uso - {e}")
+            # Continua mesmo sem verificar
+        
+        # 3. Excluir fornecedor
+        cursor.execute('DELETE FROM fornecedores WHERE id = ?', (fornecedor_id,))
+        conn.commit()
+        conn.close()
+        
+        flash(f'✅ Fornecedor "{nome_fornecedor}" excluído com sucesso!', 'success')
+        
+    except Exception as e:
+        print(f"ERRO CRÍTICO ao excluir: {str(e)}")
+        flash(f'❌ Erro ao excluir fornecedor: {str(e)}', 'error')
+    
+    return redirect(url_for('routes_bp.lista_fornecedores'))
+
+    
+@routes_bp.route('/api/fornecedor/<int:fornecedor_id>', methods=['GET'])
+def api_get_fornecedor(fornecedor_id):
+    """API para obter dados de um fornecedor específico"""
+    if 'usuario' not in session:
+        return jsonify({'success': False, 'error': 'Não autenticado'}), 401
+    
+    try:
+        conn = get_db_connection(DB_PATH_FORNECEDORES)
+        if not conn:
+            return jsonify({'success': False, 'error': 'Erro ao conectar ao banco'}), 500
+        
+        cursor = conn.cursor()
+        cursor.execute('''
+            SELECT id, nome_fantasia, cnpj, telefone, email, endereco, 
+                   bairro, cidade, estado, contato, materiais
+            FROM fornecedores WHERE id = ?
+        ''', (fornecedor_id,))
+        
+        fornecedor_raw = cursor.fetchone()
+        conn.close()
+        
+        if not fornecedor_raw:
+            return jsonify({'success': False, 'error': 'Fornecedor não encontrado'}), 404
+        
+        fornecedor = {
+            'id': fornecedor_raw[0],
+            'nome_fantasia': fornecedor_raw[1],
+            'cnpj': fornecedor_raw[2],
+            'telefone': fornecedor_raw[3],
+            'email': fornecedor_raw[4],
+            'endereco': fornecedor_raw[5],
+            'bairro': fornecedor_raw[6],
+            'cidade': fornecedor_raw[7],
+            'estado': fornecedor_raw[8],
+            'contato': fornecedor_raw[9],
+            'materiais': fornecedor_raw[10],
+            'cnpj_formatado': format_cnpj(fornecedor_raw[2]) if fornecedor_raw[2] else ''
+        }
+        
+        return jsonify({
+            'success': True,
+            'fornecedor': fornecedor
+        })
+        
+    except Exception as e:
+        logging.error(f"Erro na API de fornecedor específico: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
     
   # Registro do Blueprint (apenas uma vez)
 app.register_blueprint(routes_bp)  
