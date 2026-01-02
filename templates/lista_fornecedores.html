@@ -82,18 +82,58 @@
         .export-button:hover {
             background-color: #011c3f;
         }
-        .delete-btn {
-            background-color: #ff4d4d;
+        
+        /* Estilos para botões de ação */
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+        .btn-edit {
+            background-color: #3498db;
             color: white;
             border: none;
-            padding: 5px 10px;
+            padding: 6px 12px;
             border-radius: 4px;
             cursor: pointer;
             transition: background-color 0.3s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 14px;
         }
-        .delete-btn:hover {
+        .btn-edit:hover {
+            background-color: #2980b9;
+            text-decoration: none;
+            color: white;
+        }
+        .btn-delete {
+            background-color: #ff4d4d;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 14px;
+        }
+        .btn-delete:hover {
             background-color: #cc0000;
         }
+        .btn-icon {
+            font-size: 12px;
+        }
+        
+        /* Estilos para formulários inline */
+        .inline-form {
+            display: inline-block;
+            margin: 0;
+            padding: 0;
+        }
+        
         .loading {
             text-align: center;
             padding: 20px;
@@ -139,9 +179,56 @@
             border: 1px solid #ccc;
             border-radius: 4px;
         }
+        
+        /* Estilo para títulos de coluna com ícones */
+        .column-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .column-header i {
+            font-size: 14px;
+        }
+        
+        /* Estilos para mensagens flash */
+        .alert {
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            text-align: center;
+            font-weight: bold;
+        }
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .alert-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .alert-warning {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
     </style>
+    <!-- Adicionando Font Awesome para ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
+    <!-- Exibir mensagens flash -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ 'error' if category == 'error' else 'success' if category == 'success' else 'warning' }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
     <div class="search-container">
         <input type="text" id="searchNameCNPJ" class="search-input" placeholder="Pesquisar por Nome ou CNPJ">
         <input type="text" id="searchMaterial" class="search-input" placeholder="Pesquisar por Materiais">
@@ -149,24 +236,58 @@
         <button class="search-button" onclick="clearSearch()">Limpar</button>
     </div>
     
-    <button class="export-button" onclick="exportCSV()">Exportar para CSV</button>
+    <button class="export-button" onclick="exportCSV()">
+        <i class="fas fa-file-export"></i> Exportar para CSV
+    </button>
     
     <div class="table-container">
         <table id="fornecedores-table">
             <thead>
                 <tr>
                     <th>ID</th>
-                    <th>Nome Fantasia</th>
-                    <th>CNPJ</th>
-                    <th>Telefone</th>
-                    <th>Email</th>
-                    <th>Endereço</th>
+                    <th>
+                        <div class="column-header">
+                            <i class="fas fa-building"></i> Nome Fantasia
+                        </div>
+                    </th>
+                    <th>
+                        <div class="column-header">
+                            <i class="fas fa-id-card"></i> CNPJ
+                        </div>
+                    </th>
+                    <th>
+                        <div class="column-header">
+                            <i class="fas fa-phone"></i> Telefone
+                        </div>
+                    </th>
+                    <th>
+                        <div class="column-header">
+                            <i class="fas fa-envelope"></i> Email
+                        </div>
+                    </th>
+                    <th>
+                        <div class="column-header">
+                            <i class="fas fa-map-marker-alt"></i> Endereço
+                        </div>
+                    </th>
                     <th>Bairro</th>
                     <th>Cidade</th>
                     <th>Estado</th>
-                    <th>Contato</th>
-                    <th>Materiais</th>
-                    <th>Ação</th>
+                    <th>
+                        <div class="column-header">
+                            <i class="fas fa-user"></i> Contato
+                        </div>
+                    </th>
+                    <th>
+                        <div class="column-header">
+                            <i class="fas fa-box"></i> Materiais
+                        </div>
+                    </th>
+                    <th>
+                        <div class="column-header">
+                            <i class="fas fa-cogs"></i> Ações
+                        </div>
+                    </th>
                 </tr>
             </thead>
             <tbody id="table-body">
@@ -179,9 +300,13 @@
     
     <!-- Controles de Paginação -->
     <div class="pagination">
-        <button onclick="changePage(currentPage - 1)" id="prev-btn" disabled>Anterior</button>
+        <button onclick="changePage(currentPage - 1)" id="prev-btn" disabled>
+            <i class="fas fa-chevron-left"></i> Anterior
+        </button>
         <span class="pagination-info" id="page-info">Página 1 de 1</span>
-        <button onclick="changePage(currentPage + 1)" id="next-btn" disabled>Próxima</button>
+        <button onclick="changePage(currentPage + 1)" id="next-btn" disabled>
+            Próxima <i class="fas fa-chevron-right"></i>
+        </button>
         
         <div class="page-size-selector">
             <label for="page-size">Itens por página:</label>
@@ -250,7 +375,7 @@
                 });
         }
 
-        // Função para renderizar fornecedores na tabela
+        // Função para renderizar fornecedores na tabela - VERSÃO CORRIGIDA
         function renderFornecedores(fornecedores) {
             const tableBody = document.getElementById('table-body');
             
@@ -261,11 +386,15 @@
             
             let html = '';
             fornecedores.forEach(fornecedor => {
+                // Usar escape para JavaScript
+                const nomeEscapado = fornecedor.nome_fantasia ? 
+                    fornecedor.nome_fantasia.replace(/'/g, "\\'").replace(/"/g, '\\"') : '';
+                
                 html += `
                 <tr data-id="${fornecedor.id}">
                     <td>${fornecedor.id}</td>
                     <td class="nome-fantasia">${fornecedor.nome_fantasia || 'N/A'}</td>
-                    <td class="cnpj">${fornecedor.cnpj_formatado || 'N/A'}</td>
+                    <td class="cnpj">${fornecedor.cnpj_formatado || fornecedor.cnpj || 'N/A'}</td>
                     <td>${fornecedor.telefone || 'N/A'}</td>
                     <td>${fornecedor.email || 'N/A'}</td>
                     <td>${fornecedor.endereco || 'N/A'}</td>
@@ -274,7 +403,20 @@
                     <td>${fornecedor.estado || 'N/A'}</td>
                     <td>${fornecedor.contato || 'N/A'}</td>
                     <td class="materiais">${fornecedor.materiais || 'N/A'}</td>
-                    <td><button class="delete-btn" onclick="deleteRow(this)">Excluir</button></td>
+                    <td>
+                        <div class="action-buttons">
+                            <a href="/editar_fornecedor/${fornecedor.id}" class="btn-edit" title="Editar Fornecedor">
+                                <i class="fas fa-edit btn-icon"></i> Editar
+                            </a>
+                            <form method="POST" action="/excluir_fornecedor/${fornecedor.id}" 
+                                  class="inline-form"
+                                  onsubmit="return confirm('Tem certeza que deseja excluir o fornecedor \\'${nomeEscapado}\\'?\\n\\nEsta ação não pode ser desfeita!')">
+                                <button type="submit" class="btn-delete" title="Excluir Fornecedor">
+                                    <i class="fas fa-trash-alt btn-icon"></i> Excluir
+                                </button>
+                            </form>
+                        </div>
+                    </td>
                 </tr>
                 `;
             });
@@ -327,12 +469,12 @@
             loadFornecedores(1);
         }
 
-        // Função para exportar CSV (agora busca todos os dados)
+        // Função para exportar CSV
         function exportCSV() {
             // Para exportar, buscamos todos os dados sem paginação
             const params = new URLSearchParams({
                 page: 1,
-                per_page: 1000000, // Número grande para pegar tudo
+                per_page: 1000000,
                 search_name: currentSearchName,
                 search_material: currentSearchMaterial
             });
@@ -368,7 +510,7 @@
                 const row = [
                     fornecedor.id,
                     `"${fornecedor.nome_fantasia || ''}"`,
-                    `"${fornecedor.cnpj_formatado || ''}"`,
+                    `"${fornecedor.cnpj_formatado || fornecedor.cnpj || ''}"`,
                     `"${fornecedor.telefone || ''}"`,
                     `"${fornecedor.email || ''}"`,
                     `"${fornecedor.endereco || ''}"`,
@@ -385,43 +527,21 @@
             const encodedUri = encodeURI(csvContent);
             const link = document.createElement('a');
             link.setAttribute('href', encodedUri);
-            link.setAttribute('download', 'fornecedores.csv');
+            link.setAttribute('download', `fornecedores_${new Date().toISOString().slice(0,10)}.csv`);
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
         }
 
-        // Função para excluir fornecedor
-        function deleteRow(button) {
-            if (!confirm('Tem certeza que deseja excluir este fornecedor?')) {
-                return;
-            }
-            
-            const row = button.parentNode.parentNode;
-            const supplierId = row.getAttribute('data-id');
-            
-            fetch('/delete_supplier', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ id: supplierId })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    // Recarregar a página atual após exclusão
-                    loadFornecedores(currentPage);
-                    alert('Fornecedor excluído com sucesso!');
-                } else {
-                    alert('Erro ao excluir o fornecedor: ' + data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Erro:', error);
-                alert('Erro ao excluir o fornecedor.');
+        // Função auxiliar para limpar mensagens flash após 5 segundos
+        setTimeout(function() {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(alert => {
+                alert.style.transition = 'opacity 0.5s';
+                alert.style.opacity = '0';
+                setTimeout(() => alert.remove(), 500);
             });
-        }
+        }, 5000);
     </script>
 </body>
 </html>

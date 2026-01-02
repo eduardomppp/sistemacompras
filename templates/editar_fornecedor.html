@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editar Fornecedor | Sistema de Gestão</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --accent-color: #2980b9;
+            --light-gray: #f5f7fa;
+            --medium-gray: #e0e0e0;
+            --dark-gray: #7f8c8d;
+            --error-color: #e74c3c;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+        }
+        
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--light-gray);
+            color: var(--primary-color);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+            line-height: 1.6;
+        }
+        
+        .form-container {
+            width: 100%;
+            max-width: 900px;
+            margin: 20px;
+            box-sizing: border-box;
+        }
+        
+        .form-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .form-header h1 {
+            color: var(--primary-color);
+            font-weight: 700;
+            font-size: 2.2em;
+            margin-bottom: 10px;
+        }
+        
+        .form-header p {
+            color: var(--dark-gray);
+            font-weight: 300;
+            margin-top: 0;
+        }
+        
+        .warning-box {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 25px;
+            color: #856404;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .warning-box i {
+            color: var(--warning-color);
+            font-size: 1.2em;
+        }
+        
+        form {
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            padding: 40px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .full-width {
+            grid-column: span 2;
+        }
+        
+        .cnpj-disabled {
+            background-color: #f8f9fa !important;
+            color: #6c757d !important;
+            cursor: not-allowed !important;
+            border-color: #dee2e6 !important;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--primary-color);
+            font-weight: 500;
+            font-size: 0.95em;
+        }
+        
+        .required-field::after {
+            content: " *";
+            color: var(--error-color);
+        }
+        
+        input, textarea, select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid var(--medium-gray);
+            border-radius: 6px;
+            font-size: 1em;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+            background-color: #f9f9f9;
+        }
+        
+        input:focus, textarea:focus, select:focus {
+            border-color: var(--secondary-color);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+            background-color: #fff;
+        }
+        
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+        
+        .form-footer {
+            margin-top: 30px;
+            text-align: center;
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+        
+        .btn {
+            padding: 14px 30px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            width: auto;
+            display: inline-block;
+            text-decoration: none;
+            text-align: center;
+            border: none;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: #ffffff;
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--accent-color);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-secondary {
+            background-color: #6c757d;
+            color: #ffffff;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #5a6268;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .important-message {
+            color: var(--dark-gray);
+            font-size: 0.85em;
+            margin-top: 25px;
+            text-align: center;
+            font-style: italic;
+            border-top: 1px solid var(--medium-gray);
+            padding-top: 15px;
+        }
+        
+        .error-message {
+            color: var(--error-color);
+            font-size: 0.8em;
+            margin-top: 5px;
+            display: none;
+        }
+        
+        .input-with-icon {
+            position: relative;
+        }
+        
+        .input-with-icon i {
+            position: absolute;
+            right: 15px;
+            top: 42px;
+            color: var(--dark-gray);
+        }
+        
+        .cnpj-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 5px;
+            color: var(--dark-gray);
+            font-size: 0.85em;
+        }
+        
+        @media only screen and (max-width: 768px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .full-width {
+                grid-column: span 1;
+            }
+            
+            .form-container {
+                width: 95%;
+                padding: 0;
+            }
+            
+            form {
+                padding: 25px;
+            }
+            
+            .form-header h1 {
+                font-size: 1.8em;
+            }
+            
+            .form-footer {
+                flex-direction: column;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="form-container">
+        <div class="form-header">
+            <h1>Editar Fornecedor</h1>
+            <p>Atualize os dados do fornecedor abaixo</p>
+        </div>
+        
+        <div class="warning-box">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span><strong>Atenção:</strong> O campo CNPJ não pode ser alterado após o cadastro inicial.</span>
+        </div>
+        
+        <form action="{{ url_for('routes_bp.editar_fornecedor', fornecedor_id=fornecedor.id) }}" method="post" autocomplete="off" onsubmit="return validateForm()">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="nome_fantasia" class="required-field">Nome Fantasia</label>
+                    <div class="input-with-icon">
+                        <input type="text" id="nome_fantasia" name="nome_fantasia" 
+                               value="{{ fornecedor.nome_fantasia }}" required 
+                               placeholder="Digite o nome fantasia">
+                        <i class="fas fa-building"></i>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="cnpj" class="required-field">CNPJ</label>
+                    <div class="input-with-icon">
+                        <input type="text" id="cnpj" name="cnpj" 
+                               value="{{ fornecedor.cnpj }}" 
+                               class="cnpj-disabled" readonly 
+                               placeholder="CNPJ (não editável)">
+                        <i class="fas fa-id-card"></i>
+                    </div>
+                    <div class="cnpj-info">
+                        <i class="fas fa-info-circle"></i>
+                        <span>CNPJ não pode ser alterado</span>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="telefone" class="required-field">Telefone</label>
+                    <div class="input-with-icon">
+                        <input type="tel" id="telefone" name="telefone" 
+                               value="{{ fornecedor.telefone }}" required 
+                               placeholder="(00) 00000-0000">
+                        <i class="fas fa-phone"></i>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="email" class="required-field">E-Mail</label>
+                    <div class="input-with-icon">
+                        <input type="email" id="email" name="email" 
+                               value="{{ fornecedor.email }}" required 
+                               placeholder="seu@email.com">
+                        <i class="fas fa-envelope"></i>
+                    </div>
+                    <span class="error-message" id="emailError">Por favor, insira um email válido</span>
+                </div>
+                
+                <div class="form-group">
+                    <label for="endereco" class="required-field">Endereço</label>
+                    <div class="input-with-icon">
+                        <input type="text" id="endereco" name="endereco" 
+                               value="{{ fornecedor.endereco }}" required 
+                               placeholder="Rua, número, complemento">
+                        <i class="fas fa-map-marker-alt"></i>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="bairro" class="required-field">Bairro</label>
+                    <input type="text" id="bairro" name="bairro" 
+                           value="{{ fornecedor.bairro }}" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="cidade" class="required-field">Cidade</label>
+                    <input type="text" id="cidade" name="cidade" 
+                           value="{{ fornecedor.cidade }}" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="estado" class="required-field">Estado</label>
+                    <select id="estado" name="estado" required>
+                        <option value="">Selecione...</option>
+                        <option value="AC" {% if fornecedor.estado == 'AC' %}selected{% endif %}>Acre</option>
+                        <option value="AL" {% if fornecedor.estado == 'AL' %}selected{% endif %}>Alagoas</option>
+                        <option value="AP" {% if fornecedor.estado == 'AP' %}selected{% endif %}>Amapá</option>
+                        <option value="AM" {% if fornecedor.estado == 'AM' %}selected{% endif %}>Amazonas</option>
+                        <option value="BA" {% if fornecedor.estado == 'BA' %}selected{% endif %}>Bahia</option>
+                        <option value="CE" {% if fornecedor.estado == 'CE' %}selected{% endif %}>Ceará</option>
+                        <option value="DF" {% if fornecedor.estado == 'DF' %}selected{% endif %}>Distrito Federal</option>
+                        <option value="ES" {% if fornecedor.estado == 'ES' %}selected{% endif %}>Espírito Santo</option>
+                        <option value="GO" {% if fornecedor.estado == 'GO' %}selected{% endif %}>Goiás</option>
+                        <option value="MA" {% if fornecedor.estado == 'MA' %}selected{% endif %}>Maranhão</option>
+                        <option value="MT" {% if fornecedor.estado == 'MT' %}selected{% endif %}>Mato Grosso</option>
+                        <option value="MS" {% if fornecedor.estado == 'MS' %}selected{% endif %}>Mato Grosso do Sul</option>
+                        <option value="MG" {% if fornecedor.estado == 'MG' %}selected{% endif %}>Minas Gerais</option>
+                        <option value="PA" {% if fornecedor.estado == 'PA' %}selected{% endif %}>Pará</option>
+                        <option value="PB" {% if fornecedor.estado == 'PB' %}selected{% endif %}>Paraíba</option>
+                        <option value="PR" {% if fornecedor.estado == 'PR' %}selected{% endif %}>Paraná</option>
+                        <option value="PE" {% if fornecedor.estado == 'PE' %}selected{% endif %}>Pernambuco</option>
+                        <option value="PI" {% if fornecedor.estado == 'PI' %}selected{% endif %}>Piauí</option>
+                        <option value="RJ" {% if fornecedor.estado == 'RJ' %}selected{% endif %}>Rio de Janeiro</option>
+                        <option value="RN" {% if fornecedor.estado == 'RN' %}selected{% endif %}>Rio Grande do Norte</option>
+                        <option value="RS" {% if fornecedor.estado == 'RS' %}selected{% endif %}>Rio Grande do Sul</option>
+                        <option value="RO" {% if fornecedor.estado == 'RO' %}selected{% endif %}>Rondônia</option>
+                        <option value="RR" {% if fornecedor.estado == 'RR' %}selected{% endif %}>Roraima</option>
+                        <option value="SC" {% if fornecedor.estado == 'SC' %}selected{% endif %}>Santa Catarina</option>
+                        <option value="SP" {% if fornecedor.estado == 'SP' %}selected{% endif %}>São Paulo</option>
+                        <option value="SE" {% if fornecedor.estado == 'SE' %}selected{% endif %}>Sergipe</option>
+                        <option value="TO" {% if fornecedor.estado == 'TO' %}selected{% endif %}>Tocantins</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="contato" class="required-field">Contato Responsável</label>
+                    <div class="input-with-icon">
+                        <input type="text" id="contato" name="contato" 
+                               value="{{ fornecedor.contato }}" required 
+                               placeholder="Nome do responsável">
+                        <i class="fas fa-user"></i>
+                    </div>
+                </div>
+                
+                <div class="form-group full-width">
+                    <label for="materiais" class="required-field">Materiais/Peças fornecidos</label>
+                    <textarea id="materiais" name="materiais" required 
+                              placeholder="Descreva os principais materiais ou peças fornecidas por este fornecedor">{{ fornecedor.materiais }}</textarea>
+                </div>
+            </div>
+            
+            <div class="form-footer">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Salvar Alterações
+                </button>
+                <a href="{{ url_for('routes_bp.lista_fornecedores') }}" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> Cancelar
+                </a>
+            </div>
+            
+            <p class="important-message">
+                Todos os campos marcados com * são obrigatórios, exceto o CNPJ que não pode ser alterado.
+            </p>
+        </form>
+    </div>
+
+    <script>
+        function validateEmail(email) {
+            const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return regex.test(email);
+        }
+
+        function validateForm() {
+            const emailInput = document.getElementById('email');
+            const emailError = document.getElementById('emailError');
+            
+            // Reset error display
+            emailError.style.display = 'none';
+            emailInput.style.borderColor = '';
+            
+            if (!validateEmail(emailInput.value)) {
+                emailError.style.display = 'block';
+                emailInput.style.borderColor = '#e74c3c';
+                emailInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return false;
+            }
+            
+            return true;
+        }
+
+        // Máscara para telefone
+        document.getElementById('telefone').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            
+            if (value.length > 10) {
+                value = value.replace(/^(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+            } else if (value.length > 6) {
+                value = value.replace(/^(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3');
+            } else if (value.length > 2) {
+                value = value.replace(/^(\d{2})(\d{0,5})/, '($1) $2');
+            } else if (value.length > 0) {
+                value = value.replace(/^(\d{0,2})/, '($1');
+            }
+            
+            e.target.value = value;
+        });
+
+        // Formatar CNPJ para exibição
+        document.addEventListener('DOMContentLoaded', function() {
+            const cnpjInput = document.getElementById('cnpj');
+            if (cnpjInput && cnpjInput.value) {
+                let cnpjValue = cnpjInput.value.replace(/\D/g, '');
+                if (cnpjValue.length === 14) {
+                    cnpjInput.value = cnpjValue.replace(
+                        /^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, 
+                        '$1.$2.$3/$4-$5'
+                    );
+                }
+            }
+        });
+    </script>
+</body>
+</html>
