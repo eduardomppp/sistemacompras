@@ -576,7 +576,7 @@
     .materiais-table .total input {
         text-align: right;
         direction: rtl;
-        padding-right: 35px; /* Reduzido */
+        padding-right: 45px; /* Aumentado para 4 casas decimais */
         padding-left: 6px;
         font-weight: 600;
         font-size: 10.5px;
@@ -599,6 +599,7 @@
         color: #022855;
         cursor: not-allowed;
         font-size: 10.5px;
+        padding-right: 35px !important; /* Mantém 2 casas para total */
     }
 
     .btn-remove-material {
@@ -1492,13 +1493,13 @@ Grupo de {{ solicitacoes_grupo|length }} solicitações para {{ solicitacoes_gru
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     
-    <!-- JavaScript COMPLETO E CORRIGIDO -->
+    <!-- JavaScript COMPLETO E MODIFICADO PARA 4 CASAS DECIMAIS -->
 <script>
     // Variável global para contar cotações
     let contadorCotacoes = {{ cotacoes_salvas|length if cotacoes_salvas else 1 }};
     const MAX_COTACOES = 5;
 
-    // Dados dos materiais - CORRIGIDO com escape de aspas
+    // Dados dos materiais
     const materiaisSolicitacao = [
         {% if modo_grupo %}
         {% for sol in solicitacoes_grupo %}
@@ -1521,61 +1522,117 @@ Grupo de {{ solicitacoes_grupo|length }} solicitações para {{ solicitacoes_gru
         {% endif %}
     ];
 
-    // FUNÇÃO para formatar número para exibição (Brasil: 1.234,56)
-    function formatarNumero(numero) {
+    // ============================================
+    // FUNÇÕES PRINCIPAIS MODIFICADAS
+    // ============================================
+
+    // FUNÇÃO para formatar número para exibição (Brasil: 1.234,5678)
+    function formatarNumero(numero, casasDecimais = 2) {
         if (isNaN(numero)) numero = 0;
         return numero.toLocaleString('pt-BR', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
+            minimumFractionDigits: casasDecimais,
+            maximumFractionDigits: casasDecimais
         });
     }
 
-    // FUNÇÃO para formatar número para envio (Python: 1234.56)
-    function formatarNumeroParaEnvio(numero) {
-        // Se for string, converte para número
-        if (typeof numero === 'string') {
-            // Remove símbolos e espaços
-            let limpo = numero.toString().replace(/[^\d,.-]/g, '');
+    // FUNÇÃO para aplicar máscara monetária em um input
+function aplicarMascaraMonetaria(input) {
+    let valor = input.val();
+    const isUnitario = input.hasClass('material-unitario');
+    const casasDecimais = isUnitario ? 4 : 2; // 4 casas para unitário, 2 para outros
 
-            // Se tiver vírgula como separador decimal
-            if (limpo.includes(',')) {
+    // Se estiver vazio, define como vazio
+    if (valor === '') {
+        input.val('');
+        return '';
+    }
+
+    // **CORREÇÃO**: Se já estiver no formato correto com vírgula, não faz nada
+    if (valor.includes(',') && valor.split(',')[1]?.length === casasDecimais) {
+        // Verifica se já está formatado corretamente
+        return valor;
+    }
+
+    // Remove tudo que não é número
+    valor = valor.replace(/\D/g, '');
+
+    // Se estiver vazio após limpar, define como vazio
+    if (valor === '') {
+        input.val('');
+        return '';
+    }
+
+    // Converte para número (considerando decimais)
+    const divisor = Math.pow(10, casasDecimais);
+    const numero = parseInt(valor) / divisor;
+
+    // Formata para exibição
+    const formatado = formatarNumero(numero, casasDecimais);
+    input.val(formatado);
+
+    return numero.toString();
+}
+
+   // FUNÇÃO para formatar número para envio (Python: 1234.5678)
+function formatarNumeroParaEnvio(numero) {
+    // Se for string, converte para número
+    if (typeof numero === 'string') {
+        // Se já estiver no formato numérico com ponto, converte diretamente
+        if (numero.includes('.') && !numero.includes(',')) {
+            const resultado = parseFloat(numero);
+            return isNaN(resultado) ? 0 : resultado;
+        }
+        
+        // Remove símbolos e espaços (mantém números, vírgulas e pontos)
+        let limpo = numero.toString().replace(/[^\d,.-]/g, '');
+
+        // Se estiver vazio, retorna 0
+        if (!limpo) return 0;
+
+        // Se tiver vírgula como separador decimal
+        if (limpo.includes(',')) {
+            // Verifica se tem ponto como separador de milhar
+            const ultimoPonto = limpo.lastIndexOf('.');
+            const ultimaVirgula = limpo.lastIndexOf(',');
+            
+            // Se a vírgula vem depois do ponto, ponto é separador de milhar
+            if (ultimaVirgula > ultimoPonto) {
                 // Remove pontos (separadores de milhar)
                 limpo = limpo.replace(/\./g, '');
                 // Substitui vírgula por ponto
                 limpo = limpo.replace(',', '.');
             }
-
-            // Converte para número
-            const resultado = parseFloat(limpo);
-            return isNaN(resultado) ? 0 : resultado;
+            // Se o ponto vem depois da vírgula, vírgula é separador de milhar
+            else if (ultimoPonto > ultimaVirgula) {
+                // Remove vírgulas (separadores de milhar)
+                limpo = limpo.replace(/,/g, '');
+            }
         }
 
-        // Se já for número, retorna como está
-        return numero;
+        // Converte para número
+        const resultado = parseFloat(limpo);
+        return isNaN(resultado) ? 0 : resultado;
     }
 
-    // FUNÇÃO para aplicar máscara monetária em um input
-    function aplicarMascaraMonetaria(input) {
-        let valor = input.val();
+    // Se já for número, retorna como está
+    return numero;
+}
 
-        // Remove tudo que não é número
-        valor = valor.replace(/\D/g, '');
-
-        // Se estiver vazio, define como 0
-        if (valor === '') {
-            input.val('');
-            return '0';
+// FUNÇÃO para converter número para string com 4 casas decimais
+function numeroParaString4Decimais(numero) {
+    if (typeof numero === 'string') {
+        // Se já for string, verifica se precisa ajustar
+        const num = parseFloat(numero);
+        if (!isNaN(num)) {
+            // Garante 4 casas decimais
+            return num.toFixed(4);
         }
-
-        // Converte para número (considerando centavos)
-        const numero = parseInt(valor) / 100;
-
-        // Formata para exibição
-        const formatado = formatarNumero(numero);
-        input.val(formatado);
-
-        return numero.toString();
+        return '0.0000';
     }
+    
+    // Se for número, formata com 4 casas decimais
+    return numero.toFixed(4);
+}
 
     // FUNÇÃO para gerar JSON de materiais por cotação
     function gerarJsonMateriais() {
@@ -1609,6 +1666,10 @@ Grupo de {{ solicitacoes_grupo|length }} solicitações para {{ solicitacoes_gru
         return JSON.stringify(materiaisPorCotacao);
     }
 
+    // ============================================
+    // FUNÇÕES DE GERENCIAMENTO DE COTAÇÕES
+    // ============================================
+
     // Função para adicionar nova cotação
     function adicionarNovaCotacao() {
         console.log('Clicou no botão para adicionar nova cotação!');
@@ -1622,7 +1683,7 @@ Grupo de {{ solicitacoes_grupo|length }} solicitações para {{ solicitacoes_gru
             return;
         }
 
-        // Calcular próximo ID - IMPORTANTE: usar o contador global
+        // Calcular próximo ID
         const novoId = contadorCotacoes + 1;
         console.log('Novo ID da cotação:', novoId);
 
@@ -1721,7 +1782,7 @@ Grupo de {{ solicitacoes_grupo|length }} solicitações para {{ solicitacoes_gru
         $('#cotacoes-dinamicas').append(novaCotacaoHTML);
         console.log('Cotação ' + novoId + ' adicionada ao DOM');
 
-        // Atualizar contador GLOBAL (IMPORTANTE!)
+        // Atualizar contador GLOBAL
         contadorCotacoes = novoId;
 
         // Mostrar botão de remover na primeira cotação se tiver mais de uma
@@ -1759,13 +1820,6 @@ Grupo de {{ solicitacoes_grupo|length }} solicitações para {{ solicitacoes_gru
             aplicarMascaraMonetaria($(this));
             calcularTotalCotacao(id);
         });
-        
-        // Configurar máscara para campos de materiais
-        $(document).on('input', '#materiais-body-' + id + ' .material-unitario', function () {
-            aplicarMascaraMonetaria($(this));
-            const cotacaoId = $(this).closest('.cotacao-card').attr('id').replace('cotacao-', '');
-            calcularTotalLinha(this, cotacaoId);
-        });
     }
 
     // Função para remover cotação
@@ -1781,7 +1835,7 @@ Grupo de {{ solicitacoes_grupo|length }} solicitações para {{ solicitacoes_gru
             // Atualizar contador
             contadorCotacoes = $('.cotacao-card').length;
 
-            // Reorganizar IDs se necessário (opcional)
+            // Reorganizar IDs se necessário
             reorganizarIdsCotacoes();
 
             // Esconder botão de remover da primeira se só tiver uma
@@ -1793,9 +1847,8 @@ Grupo de {{ solicitacoes_grupo|length }} solicitações para {{ solicitacoes_gru
         }
     }
 
-    // Função para reorganizar IDs das cotações (opcional)
+    // Função para reorganizar IDs das cotações
     function reorganizarIdsCotacoes() {
-        // Esta função é opcional, mas pode ser útil
         $('.cotacao-card').each(function(index) {
             const novoId = index + 1;
             const oldId = $(this).attr('id').replace('cotacao-', '');
@@ -1815,7 +1868,7 @@ Grupo de {{ solicitacoes_grupo|length }} solicitações para {{ solicitacoes_gru
                     $(this).attr('id', newAttr);
                 });
                 
-                // Atualizar fornecador_id
+                // Atualizar fornecedor_id
                 $(this).find('[id^="fornecedor_id_"]').attr('id', 'fornecedor_id_' + novoId);
                 $(this).find('[id^="fornecedor_"]').attr('id', 'fornecedor_' + novoId);
                 
@@ -1833,11 +1886,15 @@ Grupo de {{ solicitacoes_grupo|length }} solicitações para {{ solicitacoes_gru
         contadorCotacoes = $('.cotacao-card').length;
     }
 
+    // ============================================
+    // FUNÇÕES DE FORNECEDORES
+    // ============================================
+
     // Função para inicializar Select2 de uma cotação
     function initSelect2ForCotacao(id) {
         console.log('Inicializando Select2 para cotação', id);
 
-        // Destruir Select2 se já existir (para evitar duplicação)
+        // Destruir Select2 se já existir
         if ($('#fornecedor_' + id).hasClass('select2-hidden-accessible')) {
             $('#fornecedor_' + id).select2('destroy');
         }
@@ -1915,214 +1972,245 @@ Grupo de {{ solicitacoes_grupo|length }} solicitações para {{ solicitacoes_gru
         });
     }
 
+    // ============================================
+    // FUNÇÕES DE MATERIAIS
+    // ============================================
+
     // FUNÇÃO para adicionar todos os materiais
-    function adicionarTodosMateriais(cotacaoId) {
-        console.log('Adicionando materiais para cotação ' + cotacaoId + '...');
+// Função para adicionar todos os materiais (VERSÃO CORRIGIDA)
+function adicionarTodosMateriais(cotacaoId) {
+    console.log('Adicionando materiais para cotação ' + cotacaoId + '...');
 
-        // Verificar se há materiais
-        if (!materiaisSolicitacao || materiaisSolicitacao.length === 0) {
-            console.error('Nenhum material encontrado!');
-            alert('Erro: Nenhum material encontrado para esta solicitação.');
-            return;
+    // Verificar se há materiais
+    if (!materiaisSolicitacao || materiaisSolicitacao.length === 0) {
+        console.error('Nenhum material encontrado!');
+        alert('Erro: Nenhum material encontrado para esta solicitação.');
+        return;
+    }
+
+    // Limpar tabela
+    $('#materiais-body-' + cotacaoId).empty();
+
+    // Adicionar cada material
+    materiaisSolicitacao.forEach(function (material, index) {
+        const materialId = index + 1;
+
+        // Criar linha HTML SEM o oninput inline
+        const rowHTML = `
+            <tr id="material-${cotacaoId}-${materialId}">
+                <td class="descricao">
+                    <textarea class="material-descricao"
+                           name="material_descricao_${cotacaoId}[]"
+                           title="${material.descricao || ''}"
+                           readonly
+                           style="white-space: normal; word-break: break-word; overflow-wrap: break-word; height: auto; min-height: 38px; padding: 4px 6px; resize: none; border: 1px solid #e0e0e0; border-radius: 3px; font-size: 9.5px; line-height: 1.3; width: 100%; box-sizing: border-box;">${material.descricao || ''}</textarea>
+                    <input type="hidden" name="solicitacao_id[]" value="${material.id}">
+                </td>
+                <td class="quantidade">
+                    <input type="text" class="material-quantidade"
+                           name="quantidade[]"
+                           value="${material.quantidade}" 
+                           readonly
+                           style="background: #f5f5f5; cursor: not-allowed;">
+                </td>
+                <td class="unidade">
+                    <input type="text" class="material-unidade"
+                           name="material_unidade_${cotacaoId}[]"
+                           value="${material.unidade}" readonly
+                           style="background: #f5f5f5; cursor: not-allowed;">
+                </td>
+                <td class="unitario">
+                    <div class="valor-input" style="position: relative;">
+                        <input type="text" class="material-unitario"
+                               name="valor_unitario[]"
+                               placeholder="0,0000"
+                               required
+                               data-cotacao-id="${cotacaoId}"
+                               data-material-id="${materialId}">
+                        <span class="valor-simbolo">R$</span>
+                    </div>
+                </td>
+                <td class="total">
+                    <input type="text" class="material-total-display" 
+                           id="material-total-${cotacaoId}-${materialId}"
+                           value="R$ 0,00" readonly
+                           style="background: #f0f8ff; cursor: not-allowed;">
+                </td>
+                <td class="acoes">
+                    #${material.id}
+                </td>
+            </tr>
+        `;
+
+        // Adicionar linha à tabela
+        $('#materiais-body-' + cotacaoId).append(rowHTML);
+
+        // Configurar evento de input PARA O CAMPO UNITÁRIO
+        const unitarioInput = $(`#material-${cotacaoId}-${materialId} .material-unitario`);
+        
+        // Configurar evento de input (CORREÇÃO AQUI)
+        unitarioInput.off('input').on('input', function () {
+            // Primeiro, aplicar a máscara monetária
+            aplicarMascaraMonetaria($(this));
+            
+            // Depois, calcular o total da linha
+            calcularTotalLinha(this, cotacaoId);
+        });
+
+        // Configurar evento de blur para garantir o cálculo final
+        unitarioInput.off('blur').on('blur', function () {
+            aplicarMascaraMonetaria($(this));
+            calcularTotalLinha(this, cotacaoId);
+        });
+
+        // Ajustar altura do textarea de descrição
+        const descricaoTextarea = $(`#material-${cotacaoId}-${materialId} .material-descricao`);
+        if (descricaoTextarea.length) {
+            // Forçar altura baseada no conteúdo
+            setTimeout(() => {
+                descricaoTextarea.css('height', 'auto');
+                const scrollHeight = descricaoTextarea[0].scrollHeight;
+                if (scrollHeight > 38) {
+                    descricaoTextarea.css('height', scrollHeight + 'px');
+                }
+            }, 10);
         }
+    });
 
-        // Limpar tabela
-        $('#materiais-body-' + cotacaoId).empty();
+    console.log('Materiais adicionados: ' + materiaisSolicitacao.length + ' linhas');
 
-        // Adicionar cada material
-        materiaisSolicitacao.forEach(function (material, index) {
-            const materialId = index + 1;
-
-            // Usar template literals para evitar problemas com aspas
-            const descricaoSegura = material.descricao || '';
-
-            const rowHTML = `
-                <tr id="material-${cotacaoId}-${materialId}">
-                    <td class="descricao">
-                        <input type="text" class="material-descricao"
-                               name="material_descricao_${cotacaoId}[]"
-                               value="${descricaoSegura}" 
-                               title="${descricaoSegura}"
-                               readonly
-                               style="white-space: normal; word-break: break-word; overflow-wrap: break-word;">
-                        <input type="hidden" name="solicitacao_id[]" value="${material.id}">
-                    </td>
-                    <td class="quantidade">
-                        <input type="number" class="material-quantidade"
-                               name="quantidade[]"
-                               value="${material.quantidade}" 
-                               min="0" step="0.001" readonly>
-                    </td>
-                    <td class="unidade">
-                        <input type="text" class="material-unidade"
-                               name="material_unidade_${cotacaoId}[]"
-                               value="${material.unidade}" readonly>
-                    </td>
-                    <td class="unitario">
-                        <div class="valor-input" style="position: relative;">
-                            <input type="text" class="material-unitario"
-                                   name="valor_unitario[]"
-                                   placeholder="0,00" required
-                                   oninput="calcularTotalLinha(this, ${cotacaoId})">
-                            <span class="valor-simbolo">R$</span>
-                        </div>
-                    </td>
-                    <td class="total">
-                        <input type="text" class="material-total-display" 
-                               id="material-total-${cotacaoId}-${materialId}"
-                               value="R$ 0,00" readonly>
-                    </td>
-                    <td class="acoes">
-                        #${material.id}
-                    </td>
-                </tr>
-            `;
-
-            $('#materiais-body-' + cotacaoId).append(rowHTML);
-
-            // Configurar eventos para o campo unitário
-            $(`#material-${cotacaoId}-${materialId} .material-unitario`).off('input').on('input', function () {
-                aplicarMascaraMonetaria($(this));
-                calcularTotalLinha(this, cotacaoId);
-            });
-            
-            // Ajustar altura do campo de descrição
-            const descricaoInput = $(`#material-${cotacaoId}-${materialId} .material-descricao`);
-            if (descricaoInput.length) {
-                descricaoInput.css({
-                    'white-space': 'normal',
-                    'word-break': 'break-word',
-                    'overflow-wrap': 'break-word',
-                    'height': 'auto',
-                    'min-height': '38px'
-                });
-                
-                setTimeout(() => {
-                    const scrollHeight = descricaoInput[0].scrollHeight;
-                    if (scrollHeight > 38) {
-                        descricaoInput.css('height', scrollHeight + 'px');
-                    }
-                }, 10);
-            }
-        });
-
-        console.log('Materiais adicionados: ' + materiaisSolicitacao.length + ' linhas');
-
-        // Recalcular totais
+    // Recalcular totais após adicionar todos os materiais
+    setTimeout(() => {
         calcularTotalCotacao(cotacaoId);
-    }
+    }, 100);
+}
 
-    // Função para adicionar materiais com valores salvos
-    function adicionarMateriaisComValores(cotacaoId, materiaisSalvos) {
-        console.log('Adicionando materiais com valores para cotação ' + cotacaoId + ':', materiaisSalvos);
+ // Função para adicionar materiais com valores salvos (VERSÃO CORRIGIDA)
+function adicionarMateriaisComValores(cotacaoId, materiaisSalvos) {
+    console.log('Adicionando materiais com valores para cotação ' + cotacaoId + ':', materiaisSalvos);
+    
+    // Limpar tabela
+    $('#materiais-body-' + cotacaoId).empty();
+    
+    // Criar um mapa de materiais salvos por ID de solicitação
+    const materiaisPorSolicitacao = {};
+    materiaisSalvos.forEach(material => {
+        materiaisPorSolicitacao[material.solicitacao_id] = material;
+    });
+    
+    // Adicionar cada material da solicitação
+    materiaisSolicitacao.forEach(function (material, index) {
+        const materialId = index + 1;
         
-        // Limpar tabela
-        $('#materiais-body-' + cotacaoId).empty();
+        // Verificar se temos valor salvo para este material
+        const materialSalvo = materiaisPorSolicitacao[material.id];
+        const valorUnitarioSalvo = materialSalvo ? materialSalvo.valor_unitario : 0;
         
-        // Criar um mapa de materiais salvos por ID de solicitação
-        const materiaisPorSolicitacao = {};
-        materiaisSalvos.forEach(material => {
-            materiaisPorSolicitacao[material.solicitacao_id] = material;
+        // **CORREÇÃO AQUI**: Converter o valor salvo para string com 4 casas decimais
+        const valorUnitarioParaInput = valorUnitarioSalvo > 0 ? 
+            formatarNumero(valorUnitarioSalvo, 4) : '';
+        
+        const valorTotal = valorUnitarioSalvo > 0 ? 
+            valorUnitarioSalvo * material.quantidade : 0;
+        
+        const descricaoSegura = material.descricao || '';
+
+        const rowHTML = `
+            <tr id="material-${cotacaoId}-${materialId}">
+                <td class="descricao">
+                    <input type="text" class="material-descricao"
+                           name="material_descricao_${cotacaoId}[]"
+                           value="${descricaoSegura}" 
+                           title="${descricaoSegura}"
+                           readonly
+                           style="white-space: normal; word-break: break-word; overflow-wrap: break-word;">
+                    <input type="hidden" name="solicitacao_id[]" value="${material.id}">
+                </td>
+                <td class="quantidade">
+                    <input type="number" class="material-quantidade"
+                           name="quantidade[]"
+                           value="${material.quantidade}" 
+                           min="0" step="0.001" readonly>
+                </td>
+                <td class="unidade">
+                    <input type="text" class="material-unidade"
+                           name="material_unidade_${cotacaoId}[]"
+                           value="${material.unidade}" readonly>
+                </td>
+                <td class="unitario">
+                    <div class="valor-input" style="position: relative;">
+                        <input type="text" class="material-unitario"
+                               name="valor_unitario[]"
+                               placeholder="0,0000"
+                               value="${valorUnitarioParaInput}"
+                               required>
+                        <span class="valor-simbolo">R$</span>
+                    </div>
+                </td>
+                <td class="total">
+                    <input type="text" class="material-total-display" 
+                           id="material-total-${cotacaoId}-${materialId}"
+                           value="${valorUnitarioSalvo > 0 ? 'R$ ' + formatarNumero(valorTotal, 2) : 'R$ 0,00'}" 
+                           readonly>
+                </td>
+                <td class="acoes">
+                    #${material.id}
+                </td>
+            </tr>
+        `;
+
+        $('#materiais-body-' + cotacaoId).append(rowHTML);
+
+        const unitarioInput = $(`#material-${cotacaoId}-${materialId} .material-unitario`);
+        
+        // Configurar eventos para o campo unitário
+        unitarioInput.off('input').on('input', function () {
+            aplicarMascaraMonetaria($(this));
+            calcularTotalLinha(this, cotacaoId);
         });
         
-        // Adicionar cada material da solicitação (modo_grupo ou não)
-        materiaisSolicitacao.forEach(function (material, index) {
-            const materialId = index + 1;
-            
-            // Verificar se temos valor salvo para este material
-            const materialSalvo = materiaisPorSolicitacao[material.id];
-            const valorUnitarioSalvo = materialSalvo ? materialSalvo.valor_unitario : 0;
-            const valorUnitarioFormatado = valorUnitarioSalvo > 0 ? formatarNumero(valorUnitarioSalvo) : '';
-            const valorTotal = valorUnitarioSalvo > 0 ? valorUnitarioSalvo * material.quantidade : 0;
-            
-            // Usar template literals para evitar problemas com aspas
-            const descricaoSegura = material.descricao || '';
-
-            const rowHTML = `
-                <tr id="material-${cotacaoId}-${materialId}">
-                    <td class="descricao">
-                        <input type="text" class="material-descricao"
-                               name="material_descricao_${cotacaoId}[]"
-                               value="${descricaoSegura}" 
-                               title="${descricaoSegura}"
-                               readonly
-                               style="white-space: normal; word-break: break-word; overflow-wrap: break-word;">
-                        <input type="hidden" name="solicitacao_id[]" value="${material.id}">
-                    </td>
-                    <td class="quantidade">
-                        <input type="number" class="material-quantidade"
-                               name="quantidade[]"
-                               value="${material.quantidade}" 
-                               min="0" step="0.001" readonly>
-                    </td>
-                    <td class="unidade">
-                        <input type="text" class="material-unidade"
-                               name="material_unidade_${cotacaoId}[]"
-                               value="${material.unidade}" readonly>
-                    </td>
-                    <td class="unitario">
-                        <div class="valor-input" style="position: relative;">
-                            <input type="text" class="material-unitario"
-                                   name="valor_unitario[]"
-                                   placeholder="0,00" 
-                                   value="${valorUnitarioFormatado}"
-                                   required
-                                   oninput="calcularTotalLinha(this, ${cotacaoId})">
-                            <span class="valor-simbolo">R$</span>
-                        </div>
-                    </td>
-                    <td class="total">
-                        <input type="text" class="material-total-display" 
-                               id="material-total-${cotacaoId}-${materialId}"
-                               value="${valorUnitarioSalvo > 0 ? 'R$ ' + formatarNumero(valorTotal) : 'R$ 0,00'}" 
-                               readonly>
-                    </td>
-                    <td class="acoes">
-                        #${material.id}
-                    </td>
-                </tr>
-            `;
-
-            $('#materiais-body-' + cotacaoId).append(rowHTML);
-
-            // Configurar eventos para o campo unitário
-            $(`#material-${cotacaoId}-${materialId} .material-unitario`).off('input').on('input', function () {
-                aplicarMascaraMonetaria($(this));
-                calcularTotalLinha(this, cotacaoId);
+        // Adicionar evento de blur também
+        unitarioInput.off('blur').on('blur', function () {
+            aplicarMascaraMonetaria($(this));
+            calcularTotalLinha(this, cotacaoId);
+        });
+        
+        // Ajustar altura do campo de descrição
+        const descricaoInput = $(`#material-${cotacaoId}-${materialId} .material-descricao`);
+        if (descricaoInput.length) {
+            descricaoInput.css({
+                'white-space': 'normal',
+                'word-break': 'break-word',
+                'overflow-wrap': 'break-word',
+                'height': 'auto',
+                'min-height': '38px'
             });
             
-            // Ajustar altura do campo de descrição
-            const descricaoInput = $(`#material-${cotacaoId}-${materialId} .material-descricao`);
-            if (descricaoInput.length) {
-                descricaoInput.css({
-                    'white-space': 'normal',
-                    'word-break': 'break-word',
-                    'overflow-wrap': 'break-word',
-                    'height': 'auto',
-                    'min-height': '38px'
-                });
-                
-                setTimeout(() => {
-                    const scrollHeight = descricaoInput[0].scrollHeight;
-                    if (scrollHeight > 38) {
-                        descricaoInput.css('height', scrollHeight + 'px');
-                    }
-                }, 10);
-            }
-            
-            // Se tiver valor salvo, calcular total da linha
-            if (valorUnitarioSalvo > 0) {
-                setTimeout(function() {
-                    const input = $(`#material-${cotacaoId}-${materialId} .material-unitario`)[0];
-                    if (input) {
-                        calcularTotalLinha(input, cotacaoId);
-                    }
-                }, 50);
-            }
-        });
+            setTimeout(() => {
+                const scrollHeight = descricaoInput[0].scrollHeight;
+                if (scrollHeight > 38) {
+                    descricaoInput.css('height', scrollHeight + 'px');
+                }
+            }, 10);
+        }
+        
+        // Se tiver valor salvo, calcular total da linha
+        if (valorUnitarioSalvo > 0) {
+            setTimeout(function() {
+                const input = $(`#material-${cotacaoId}-${materialId} .material-unitario`)[0];
+                if (input) {
+                    calcularTotalLinha(input, cotacaoId);
+                }
+            }, 50);
+        }
+    });
 
-        console.log('Materiais adicionados com valores: ' + materiaisSolicitacao.length + ' linhas');
-    }
+    console.log('Materiais adicionados com valores: ' + materiaisSolicitacao.length + ' linhas');
+}
+
+    // ============================================
+    // FUNÇÕES DE CÁLCULO
+    // ============================================
 
     // Função para calcular total de uma linha
     function calcularTotalLinha(input, cotacaoId) {
@@ -2132,7 +2220,8 @@ Grupo de {{ solicitacoes_grupo|length }} solicitações para {{ solicitacoes_gru
         const unitario = formatarNumeroParaEnvio(unitarioStr);
         const total = quantidade * unitario;
 
-        const totalFormatado = '' + formatarNumero(total);
+        // Total com 2 casas decimais
+        const totalFormatado = 'R$ ' + formatarNumero(total, 2);
         row.find('.material-total-display').val(totalFormatado);
 
         calcularTotalCotacao(cotacaoId);
@@ -2159,11 +2248,15 @@ Grupo de {{ solicitacoes_grupo|length }} solicitações para {{ solicitacoes_gru
         
         const totalGeral = totalProdutos + frete - desconto;
 
-        $('#total-produtos-' + cotacaoId).text('R$ ' + formatarNumero(totalProdutos));
-        $('#total-frete-display-' + cotacaoId).text('R$ ' + formatarNumero(frete));
-        $('#total-desconto-display-' + cotacaoId).text('R$ ' + formatarNumero(desconto));
-        $('#total-geral-fornecedor-' + cotacaoId).text('Total Geral: R$ ' + formatarNumero(totalGeral));
+        $('#total-produtos-' + cotacaoId).text('R$ ' + formatarNumero(totalProdutos, 2));
+        $('#total-frete-display-' + cotacaoId).text('R$ ' + formatarNumero(frete, 2));
+        $('#total-desconto-display-' + cotacaoId).text('R$ ' + formatarNumero(desconto, 2));
+        $('#total-geral-fornecedor-' + cotacaoId).text('Total Geral: R$ ' + formatarNumero(totalGeral, 2));
     }
+
+    // ============================================
+    // FUNÇÕES AUXILIARES
+    // ============================================
 
     // Funções auxiliares
     function formatCNPJ(cnpj) {
@@ -2200,7 +2293,7 @@ Grupo de {{ solicitacoes_grupo|length }} solicitações para {{ solicitacoes_gru
             
             // Preencher outros campos
             if (dados.valor_frete && dados.valor_frete > 0) {
-                $('#valor_frete_' + cotacaoId).val(formatarNumero(dados.valor_frete));
+                $('#valor_frete_' + cotacaoId).val(formatarNumero(dados.valor_frete, 2));
             }
             
             // O desconto agora está em condicao_pagamento
@@ -2219,6 +2312,10 @@ Grupo de {{ solicitacoes_grupo|length }} solicitações para {{ solicitacoes_gru
             calcularTotalCotacao(cotacaoId);
         }, 200);
     }
+
+    // ============================================
+    // INICIALIZAÇÃO DA PÁGINA
+    // ============================================
 
     // Inicializar quando a página carregar
     $(document).ready(function () {
@@ -2266,7 +2363,7 @@ Grupo de {{ solicitacoes_grupo|length }} solicitações para {{ solicitacoes_gru
         // Atualizar contador global
         contadorCotacoes = totalCotacoes;
         
-        // Configurar evento para máscara de valores ao digitar (para elementos existentes e futuros)
+        // Configurar evento para máscara de valores ao digitar
         $(document).on('input', '.material-unitario, .valor-frete, [id^="condicao_pagamento_"]', function () {
             aplicarMascaraMonetaria($(this));
             
@@ -2284,129 +2381,157 @@ Grupo de {{ solicitacoes_grupo|length }} solicitações para {{ solicitacoes_gru
         });
     });
 
-    // Validação do formulário
-    $('#cotacoes-form').on('submit', function (e) {
-        e.preventDefault();
+   // ============================================
+// VALIDAÇÃO DO FORMULÁRIO - VERSÃO CORRIGIDA
+// ============================================
 
-        // Gerar JSON de materiais
-        const materiaisJson = gerarJsonMateriais();
-        $('#materiais_json').val(materiaisJson);
-        console.log('JSON gerado:', materiaisJson);
-
-        // Formatar todos os valores para o padrão de envio
-        $('.material-unitario').each(function () {
-            const valor = $(this).val();
-            if (valor) {
-                const valorParaEnvio = formatarNumeroParaEnvio(valor);
-                $(this).val(valorParaEnvio);
-            }
-        });
-
-        $('.valor-frete').each(function () {
-            const valor = $(this).val();
-            if (valor) {
-                const valorParaEnvio = formatarNumeroParaEnvio(valor);
-                $(this).val(valorParaEnvio);
-            }
-        });
-        
-        // Formatar também os valores de desconto (condicao_pagamento)
-        $('[id^="condicao_pagamento_"]').each(function () {
-            const valor = $(this).val();
-            if (valor) {
-                const valorParaEnvio = formatarNumeroParaEnvio(valor);
-                $(this).val(valorParaEnvio);
-            }
-        });
-
-        // Validação dos campos
-        let isValid = true;
-        let hasValidCotacao = false;
-
-        // Verificar todas as cotações existentes
-        $('.cotacao-card').each(function () {
-            const cotacaoId = $(this).attr('id').replace('cotacao-', '');
-            const fornecedor = $('#fornecedor_id_' + cotacaoId).val();
-            const hasMateriais = $('#materiais-body-' + cotacaoId + ' tr').length > 0;
-
-            if (fornecedor) {
-                hasValidCotacao = true;
-
-                if (!hasMateriais) {
-                    isValid = false;
-                    alert('Cotação ' + cotacaoId + ': É necessário adicionar materiais quando um fornecedor é selecionado.');
-                    return false;
-                }
-
-                $('#materiais-body-' + cotacaoId + ' tr').each(function () {
-                    const unitario = $(this).find('.material-unitario').val();
-
-                    if (!unitario || unitario === '0') {
-                        isValid = false;
-                        $(this).addClass('border border-danger');
-                        alert('Cotação ' + cotacaoId + ': Preencha todos os valores unitários.');
-                        return false;
-                    }
-                });
-
-                const prazoEntrega = $('#prazo_entrega_' + cotacaoId).val();
-
-                if (!prazoEntrega) {
-                    isValid = false;
-                    alert('Cotação ' + cotacaoId + ': Preencha o prazo de entrega.');
-                    return false;
-                }
-            }
-        });
-
-        if (!hasValidCotacao) {
-            alert('É necessário preencher pelo menos UMA cotação com fornecedor e materiais.');
-            return;
-        }
-
-        if (!isValid) {
-            alert('Por favor, preencha todos os campos obrigatórios das cotações com fornecedor selecionado.');
-            return;
-        }
-
-        // Determinar qual botão foi clicado
-        const clickedButton = $(document.activeElement);
-        const actionValue = clickedButton.val();
-        let confirmMessage = '';
-
-        if (actionValue === 'salvar_rascunho') {
-            confirmMessage = 'Tem certeza de que deseja salvar como rascunho?';
-        } else if (actionValue === 'salvar_finalizar') {
-            confirmMessage = 'Tem certeza de que deseja finalizar e enviar para aprovação?';
+// Validação do formulário - VERSÃO SIMPLIFICADA
+$('#cotacoes-form').on('submit', function (e) {
+    e.preventDefault();
+    
+    // Determinar qual botão foi clicado
+    const clickedButton = $(e.originalEvent.submitter || document.activeElement);
+    const actionValue = clickedButton.val();
+    
+    console.log('DEBUG JS - Botão clicado:', clickedButton);
+    console.log('DEBUG JS - Valor do botão:', actionValue);
+    
+    // Garantir que temos um action
+    let finalAction = actionValue;
+    if (!finalAction) {
+        // Tentar encontrar o action de outras formas
+        if (clickedButton.attr('name') === 'salvar_finalizar') {
+            finalAction = 'salvar_finalizar';
+        } else if (clickedButton.attr('name') === 'salvar_rascunho') {
+            finalAction = 'salvar_rascunho';
         } else {
-            // Se não conseguiu determinar, perguntar
+            // Se não conseguir determinar, pedir confirmação
             const userChoice = confirm('Deseja salvar como rascunho ou finalizar?\n\nClique OK para finalizar e enviar para aprovação.\nClique Cancelar para salvar como rascunho.');
-            if (userChoice) {
-                // Simular clique no botão de finalizar
-                $('button[value="salvar_finalizar"]').trigger('click');
-                return;
-            } else {
-                // Simular clique no botão de rascunho
-                $('button[value="salvar_rascunho"]').trigger('click');
-                return;
+            finalAction = userChoice ? 'salvar_finalizar' : 'salvar_rascunho';
+        }
+    }
+    
+    console.log('DEBUG JS - Action final:', finalAction);
+    const isFinalizar = finalAction === 'salvar_finalizar';
+    
+    // Gerar JSON de materiais
+    const materiaisJson = gerarJsonMateriais();
+    $('#materiais_json').val(materiaisJson);
+    console.log('DEBUG JS - JSON gerado:', materiaisJson);
+
+    // Formatar todos os valores para o padrão de envio
+    $('.material-unitario').each(function () {
+        const valor = $(this).val();
+        if (valor) {
+            const valorParaEnvio = formatarNumeroParaEnvio(valor);
+            $(this).val(numeroParaString4Decimais(valorParaEnvio));
+        }
+    });
+
+    $('.valor-frete').each(function () {
+        const valor = $(this).val();
+        if (valor) {
+            const valorParaEnvio = formatarNumeroParaEnvio(valor);
+            $(this).val(valorParaEnvio.toFixed(2));
+        }
+    });
+    
+    // Formatar também os valores de desconto (condicao_pagamento)
+    $('[id^="condicao_pagamento_"]').each(function () {
+        const valor = $(this).val();
+        if (valor) {
+            const valorParaEnvio = formatarNumeroParaEnvio(valor);
+            $(this).val(valorParaEnvio.toFixed(2));
+        }
+    });
+
+    // Validação dos campos
+    let isValid = true;
+    let hasValidCotacao = false;
+
+    // Verificar todas as cotações existentes
+    $('.cotacao-card').each(function () {
+        const cotacaoId = $(this).attr('id').replace('cotacao-', '');
+        const fornecedor = $('#fornecedor_id_' + cotacaoId).val();
+        const hasMateriais = $('#materiais-body-' + cotacaoId + ' tr').length > 0;
+
+        if (fornecedor) {
+            hasValidCotacao = true;
+
+            if (!hasMateriais) {
+                isValid = false;
+                alert('Cotação ' + cotacaoId + ': É necessário adicionar materiais quando um fornecedor é selecionado.');
+                return false;
+            }
+
+            // Verificar se todos os materiais têm valores unitários preenchidos
+            $('#materiais-body-' + cotacaoId + ' tr').each(function () {
+                const unitario = $(this).find('.material-unitario').val();
+
+                if (!unitario || unitario === '0' || unitario === '0,0000') {
+                    isValid = false;
+                    $(this).addClass('border border-danger');
+                    alert('Cotação ' + cotacaoId + ': Preencha todos os valores unitários.');
+                    return false;
+                }
+            });
+
+            // VALIDAÇÃO EXTRA PARA FINALIZAR
+            if (isFinalizar) {
+                const prazoEntrega = $('#prazo_entrega_' + cotacaoId).val();
+                const condicaoPagamento = $('#condicao_pagamento_' + cotacaoId).val();
+
+                if (!prazoEntrega || prazoEntrega.trim() === '') {
+                    isValid = false;
+                    alert('Cotação ' + cotacaoId + ': Prazo de entrega é obrigatório para finalizar.');
+                    return false;
+                }
+
+                if (!condicaoPagamento || condicaoPagamento.trim() === '') {
+                    isValid = false;
+                    alert('Cotação ' + cotacaoId + ': Condição de pagamento é obrigatória para finalizar.');
+                    return false;
+                }
             }
         }
-
-        if (confirmMessage && !confirm(confirmMessage)) {
-            return;
-        }
-
-        // Adicionar o action ao formulário
-        $('<input>').attr({
-            type: 'hidden',
-            name: 'action',
-            value: actionValue
-        }).appendTo('#cotacoes-form');
-
-        // Se tudo ok, enviar formulário
-        console.log('Enviando formulário com action:', actionValue);
-        $(this).off('submit').submit();
     });
+
+    if (!hasValidCotacao) {
+        alert('É necessário preencher pelo menos UMA cotação com fornecedor e materiais.');
+        return false;
+    }
+
+    if (!isValid) {
+        alert('Por favor, corrija os erros indicados antes de enviar.');
+        return false;
+    }
+
+    // Confirmar com o usuário
+    let confirmMessage = '';
+    if (isFinalizar) {
+        confirmMessage = 'Tem certeza de que deseja FINALIZAR e enviar para aprovação?\n\nEsta ação não pode ser desfeita.';
+    } else {
+        confirmMessage = 'Tem certeza de que deseja salvar como RASCUNHO?';
+    }
+
+    if (!confirm(confirmMessage)) {
+        return false;
+    }
+
+    // Adicionar o action ao formulário de forma explícita
+    $('<input>').attr({
+        type: 'hidden',
+        name: 'action',
+        value: finalAction
+    }).appendTo('#cotacoes-form');
+
+    // Remover o event listener para evitar loop infinito
+    $(this).off('submit');
+    
+    // Enviar o formulário
+    console.log('DEBUG JS - Enviando formulário com action:', finalAction);
+    this.submit();
+});
 </script>
 </body>
 </html>
