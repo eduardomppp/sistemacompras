@@ -2262,7 +2262,8 @@ def preencher_solicitacao(id):
         Converte string de valor monetário brasileiro para float.
         Suporta: "15,00", "15.00", "15", "1.234,56", "1234,56", etc.
         
-        CORREÇÃO: Agora trata "15" como 15.00 (e não 0.15)
+        CORREÇÃO: Não arredonda automaticamente para 2 casas decimais,
+        mantém a precisão original.
         """
         if not value_str:
             return 0.0
@@ -2292,12 +2293,10 @@ def preencher_solicitacao(id):
         if valor == '' or valor.startswith(('.', ',')):
             valor = '0' + valor
         
-        # CORREÇÃO PRINCIPAL: Nova lógica mais robusta
         try:
             # Se não tem nem vírgula nem ponto
             if ',' not in valor and '.' not in valor:
-                # "15" → 15.00 (não 0.15)
-                # "150" → 150.00
+                # "15" → 15.0 (não 15.00)
                 resultado = float(valor)
             else:
                 # Tem vírgula ou ponto
@@ -2313,30 +2312,23 @@ def preencher_solicitacao(id):
                     valor_final = valor_sem_pontos.replace(',', '.')
                     resultado = float(valor_final)
                 
-                # CASO 2: "15,00" ou "15,5" (apenas vírgula como decimal)
+                # CASO 2: "15,00" ou "15,5" ou "15,0680" (apenas vírgula como decimal)
                 elif num_virgulas == 1 and num_pontos == 0:
                     partes = valor.split(',')
-                    # Verifica se a parte decimal tem 1-2 dígitos
+                    # Verifica se a parte decimal tem dígitos
                     if len(partes) == 2:
-                        if len(partes[1]) <= 2:
-                            # "15,00" → 15.00
-                            resultado = float(f"{partes[0]}.{partes[1]}")
-                        else:
-                            # "15,000" → trata como 15.000 (dividido)
-                            resultado = float(valor.replace(',', '.'))
+                        # "15,0680" → 15.0680 (mantém todas as casas)
+                        # "15,00" → 15.00
+                        resultado = float(f"{partes[0]}.{partes[1]}")
                     else:
                         resultado = float(valor.replace(',', '.'))
                 
-                # CASO 3: "15.00" ou "15.5" (apenas ponto como decimal)
+                # CASO 3: "15.00" ou "15.5" ou "15.0680" (apenas ponto como decimal)
                 elif num_pontos == 1 and num_virgulas == 0:
                     partes = valor.split('.')
                     if len(partes) == 2:
-                        if len(partes[1]) <= 2:
-                            # "15.00" → 15.00
-                            resultado = float(valor)
-                        else:
-                            # "15.000" → 15.000
-                            resultado = float(valor)
+                        # "15.0680" → 15.0680 (mantém todas as casas)
+                        resultado = float(valor)
                     else:
                         resultado = float(valor)
                 
@@ -2360,8 +2352,8 @@ def preencher_solicitacao(id):
         if negativo:
             resultado = -resultado
         
-        # Arredonda para 2 casas decimais
-        resultado = round(resultado, 2)
+        # NÃO ARREDONDA - mantém a precisão original
+        # resultado = round(resultado, 2)  # REMOVIDO
         
         return resultado
     # === FIM DA FUNÇÃO AUXILIAR ===
@@ -2508,8 +2500,8 @@ def preencher_solicitacao(id):
                         erros_validacao.append(f'Cotação {idx+1}, Material {i+1}: Valor unitário deve ser maior que zero.')
                         continue
                     
-                    # Calcular valor total
-                    valor_total = valor_unitario * sol.quantidade
+                    # Calcular valor total - arredonda apenas para cálculo total
+                    valor_total = round(valor_unitario * sol.quantidade, 2)
                     
                     # Buscar ou criar preenchimento
                     preenchimento = None
@@ -2539,13 +2531,13 @@ def preencher_solicitacao(id):
                         print(f"  Valor frete anterior: {valor_frete_anterior}")
                         print(f"  Valor frete novo: {valor_frete}")
                         
-                        # Comparar valores (com margem de 0.01 para evitar problemas de ponto flutuante)
-                        valor_unitario_mudou = abs(valor_unitario_anterior - valor_unitario) > 0.01
+                        # Comparar valores (com margem de 0.001 para maior precisão)
+                        valor_unitario_mudou = abs(valor_unitario_anterior - valor_unitario) > 0.001
                         
                         # Verificar se o frete mudou (tratando casos de None)
                         valor_frete_mudou = False
                         if valor_frete > 0:
-                            if valor_frete_anterior is None or abs(valor_frete_anterior - valor_frete) > 0.01:
+                            if valor_frete_anterior is None or abs(valor_frete_anterior - valor_frete) > 0.001:
                                 valor_frete_mudou = True
                         else:
                             if valor_frete_anterior is not None and valor_frete_anterior > 0:
@@ -2587,7 +2579,7 @@ def preencher_solicitacao(id):
                         db.session.add(preenchimento)
                     
                     # Atualizar dados do preenchimento
-                    preenchimento.valor_unitario = valor_unitario
+                    preenchimento.valor_unitario = valor_unitario  # Mantém a precisão original
                     preenchimento.valor_total = valor_total
                     preenchimento.valor_frete = valor_frete if valor_frete > 0 else None
                     preenchimento.prazo_entrega = prazo
