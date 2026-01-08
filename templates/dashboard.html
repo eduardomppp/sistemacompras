@@ -77,6 +77,210 @@
             font-weight: 400;
         }
 
+        .header-actions {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 20px;
+            gap: 15px;
+        }
+
+        .print-controls {
+            background-color: white;
+            padding: 15px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--gray-200);
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .print-selector {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .chart-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: var(--gray-50);
+            border-radius: 6px;
+            border: 1px solid var(--gray-200);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .chart-checkbox:hover {
+            background: var(--gray-100);
+            transform: translateY(-1px);
+        }
+
+        .chart-checkbox.selected {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .chart-checkbox input[type="checkbox"] {
+            margin: 0;
+            cursor: pointer;
+        }
+
+        .chart-checkbox label {
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        .print-preview-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 10001;
+            padding: 20px;
+            overflow-y: auto;
+            backdrop-filter: blur(5px);
+        }
+
+        .print-preview-modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .print-preview-container {
+            background: white;
+            border-radius: var(--border-radius);
+            width: 100%;
+            max-width: 210mm; /* Largura A4 */
+            min-height: 297mm; /* Altura A4 */
+            padding: 20mm; /* Margens A4 padrão */
+            position: relative;
+            box-shadow: var(--shadow-xl);
+            overflow: hidden;
+        }
+
+        .print-preview-header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid var(--gray-200);
+        }
+
+        .print-preview-header h2 {
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+
+        .print-preview-header .date {
+            color: var(--gray-500);
+            font-size: 0.9rem;
+        }
+
+        .print-preview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .print-chart-container {
+            background: white;
+            border: 1px solid var(--gray-200);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            break-inside: avoid;
+            page-break-inside: avoid;
+        }
+
+        .print-chart-container h4 {
+            margin: 0 0 10px 0;
+            color: var(--primary-color);
+            font-size: 1rem;
+            text-align: center;
+        }
+
+        .print-chart-canvas {
+            width: 100% !important;
+            height: 200px !important;
+        }
+
+        .print-actions {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            display: flex;
+            gap: 10px;
+            z-index: 10002;
+        }
+
+        .print-actions button {
+            padding: 12px 24px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: var(--transition);
+        }
+
+        .print-actions .btn-print {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .print-actions .btn-close {
+            background: var(--gray-200);
+            color: var(--gray-700);
+        }
+
+        .print-actions button:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            
+            .print-preview-container,
+            .print-preview-container * {
+                visibility: visible;
+            }
+            
+            .print-preview-container {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                max-width: 100%;
+                min-height: 100%;
+                padding: 0;
+                margin: 0;
+                box-shadow: none;
+            }
+            
+            .print-actions,
+            .print-controls {
+                display: none !important;
+            }
+        }
+
         .last-update {
             background: var(--gray-100);
             padding: 10px 20px;
@@ -824,6 +1028,17 @@
             .filters-panel {
                 box-shadow: var(--shadow-md) !important;
             }
+
+            .print-selector {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .print-actions {
+                bottom: 15px;
+                right: 15px;
+                flex-direction: column;
+            }
         }
 
         @media (max-width: 480px) {
@@ -870,6 +1085,68 @@
                 <i class="fas fa-chart-line"></i>
                 Dashboard de Compras e Produtividade
             </h1>
+            
+            <div class="header-actions">
+                <button class="btn btn-primary" onclick="openPrintPreview()">
+                    <i class="fas fa-print"></i> Selecionar Gráficos para Impressão
+                </button>
+            </div>
+        </div>
+
+        <!-- Controles de Impressão -->
+        <div class="print-controls">
+            <div class="print-selector">
+                <strong>Selecione os gráficos para impressão:</strong>
+                
+                <div class="chart-checkbox" onclick="toggleChartSelection('compradores')">
+                    <input type="checkbox" id="printCompradores" checked>
+                    <label for="printCompradores">Produtividade Compradores</label>
+                </div>
+                
+                <div class="chart-checkbox" onclick="toggleChartSelection('produtosPendentes')">
+                    <input type="checkbox" id="printProdutosPendentes" checked>
+                    <label for="printProdutosPendentes">Produtos Pendentes</label>
+                </div>
+                
+                <div class="chart-checkbox" onclick="toggleChartSelection('volumeEmpresa')">
+                    <input type="checkbox" id="printVolumeEmpresa" checked>
+                    <label for="printVolumeEmpresa">Volume por Empresa</label>
+                </div>
+                
+                <div class="chart-checkbox" onclick="toggleChartSelection('pendenciasEmpresa')">
+                    <input type="checkbox" id="printPendenciasEmpresa" checked>
+                    <label for="printPendenciasEmpresa">Pendências por Empresa</label>
+                </div>
+                
+                <div class="chart-checkbox" onclick="toggleChartSelection('gastosVeiculo')">
+                    <input type="checkbox" id="printGastosVeiculo" checked>
+                    <label for="printGastosVeiculo">Gastos por Veículo</label>
+                </div>
+                
+                <div class="chart-checkbox" onclick="toggleChartSelection('tempoAberto')">
+                    <input type="checkbox" id="printTempoAberto" checked>
+                    <label for="printTempoAberto">Tempo em Aberto</label>
+                </div>
+                
+                <div class="chart-checkbox" onclick="toggleChartSelection('evolucaoCompras')">
+                    <input type="checkbox" id="printEvolucaoCompras" checked>
+                    <label for="printEvolucaoCompras">Evolução de Compras</label>
+                </div>
+                
+                <div class="chart-checkbox" onclick="toggleChartSelection('produtividadeEmpresa')">
+                    <input type="checkbox" id="printProdutividadeEmpresa" checked>
+                    <label for="printProdutividadeEmpresa">Produtividade por Empresa</label>
+                </div>
+                
+                <button class="btn btn-secondary" onclick="selectAllCharts()">
+                    <i class="fas fa-check-square"></i> Selecionar Todos
+                </button>
+                
+                <button class="btn btn-secondary" onclick="deselectAllCharts()">
+                    <i class="fas fa-square"></i> Desmarcar Todos
+                </button>
+            </div>
+        </div>
 
         <!-- Filtros -->
         <div class="filters-panel" id="filtersPanel">
@@ -1031,7 +1308,7 @@
         <div class="charts-container">
             
             <!-- 1. Produtividade dos Compradores -->
-            <div class="chart-card">
+            <div class="chart-card" id="chartCardCompradores">
                 <div class="chart-header">
                     <div class="chart-title">
                         <i class="fas fa-users"></i>
@@ -1079,7 +1356,7 @@
             </div>
 
             <!-- 2. Produtos Pendentes -->
-            <div class="chart-card">
+            <div class="chart-card" id="chartCardProdutosPendentes">
                 <div class="chart-header">
                     <div class="chart-title">
                         <i class="fas fa-box-open"></i>
@@ -1117,7 +1394,7 @@
             </div>
 
             <!-- 3. Volume de Compras por Empresa -->
-            <div class="chart-card">
+            <div class="chart-card" id="chartCardVolumeEmpresa">
                 <div class="chart-header">
                     <div class="chart-title">
                         <i class="fas fa-shopping-cart"></i>
@@ -1158,7 +1435,7 @@
             </div>
 
             <!-- 4. Pendências por Empresa -->
-            <div class="chart-card">
+            <div class="chart-card" id="chartCardPendenciasEmpresa">
                 <div class="chart-header">
                     <div class="chart-title">
                         <i class="fas fa-exclamation-triangle"></i>
@@ -1194,7 +1471,7 @@
             </div>
 
             <!-- 5. Gastos por Veículo -->
-            <div class="chart-card">
+            <div class="chart-card" id="chartCardGastosVeiculo">
                 <div class="chart-header">
                     <div class="chart-title">
                         <i class="fas fa-money-bill-wave"></i>
@@ -1230,7 +1507,7 @@
             </div>
 
             <!-- 6. Solicitações com Maior Tempo em Aberto -->
-            <div class="chart-card">
+            <div class="chart-card" id="chartCardTempoAberto">
                 <div class="chart-header">
                     <div class="chart-title">
                         <i class="fas fa-clock"></i>
@@ -1274,7 +1551,7 @@
             </div>
 
             <!-- 7. Evolução de Compras nos Últimos Meses -->
-            <div class="chart-card">
+            <div class="chart-card" id="chartCardEvolucaoCompras">
                 <div class="chart-header">
                     <div class="chart-title">
                         <i class="fas fa-chart-line"></i>
@@ -1326,7 +1603,7 @@
             </div>
 
             <!-- 8. Produtividade Geral por Empresa -->
-            <div class="chart-card">
+            <div class="chart-card" id="chartCardProdutividadeEmpresa">
                 <div class="chart-header">
                     <div class="chart-title">
                         <i class="fas fa-trophy"></i>
@@ -1373,6 +1650,31 @@
 
     </div>
 
+    <!-- Modal de Preview de Impressão -->
+    <div class="print-preview-modal" id="printPreviewModal">
+        <div class="print-preview-container" id="printPreviewContainer">
+            <div class="print-preview-header">
+                <h2>Dashboard de Compras e Produtividade</h2>
+                <p class="date">Período: {{ periodo_selecionado }} | Data: <span id="currentDate"></span></p>
+                <p>Geração: {{ total_solicitacoes }} solicitações | Valor Total: {{ valor_total }}</p>
+            </div>
+            
+            <div class="print-preview-grid" id="printPreviewGrid">
+                <!-- Gráficos serão inseridos aqui dinamicamente -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Botões de Ação para Impressão -->
+    <div class="print-actions" id="printActions" style="display: none;">
+        <button class="btn-print" onclick="printSelectedCharts()">
+            <i class="fas fa-print"></i> Imprimir
+        </button>
+        <button class="btn-close" onclick="closePrintPreview()">
+            <i class="fas fa-times"></i> Fechar
+        </button>
+    </div>
+
     <!-- Loading Overlay -->
     <div class="loading-overlay" id="loadingOverlay" style="display: none;">
         <div class="spinner"></div>
@@ -1399,10 +1701,63 @@
 
         // Variáveis globais
         let charts = {};
+        let printCharts = {};
         let isLoading = false;
         let filtersFixed = false;
         let filtersCollapsed = false;
         let originalFiltersHeight = 0;
+        
+        // Configuração de gráficos para impressão
+        const chartConfigs = {
+            'compradores': {
+                id: 'chartCompradores',
+                title: 'Produtividade dos Compradores',
+                type: 'bar',
+                canvasId: 'printChartCompradores'
+            },
+            'produtosPendentes': {
+                id: 'chartProdutosPendentes',
+                title: 'Produtos Pendentes',
+                type: 'bar',
+                canvasId: 'printChartProdutosPendentes'
+            },
+            'volumeEmpresa': {
+                id: 'chartVolumeEmpresa',
+                title: 'Volume de Compras por Empresa',
+                type: 'doughnut',
+                canvasId: 'printChartVolumeEmpresa'
+            },
+            'pendenciasEmpresa': {
+                id: 'chartPendenciasEmpresa',
+                title: 'Pendências por Empresa',
+                type: 'bar',
+                canvasId: 'printChartPendenciasEmpresa'
+            },
+            'gastosVeiculo': {
+                id: 'chartGastosVeiculo',
+                title: 'Maior Volume de Gastos por Veículo',
+                type: 'bar',
+                canvasId: 'printChartGastosVeiculo'
+            },
+            'tempoAberto': {
+                id: 'chartTempoAberto',
+                title: 'Solicitações com Maior Tempo em Aberto',
+                type: 'bar',
+                canvasId: 'printChartTempoAberto'
+            },
+            'evolucaoCompras': {
+                id: 'chartEvolucaoCompras',
+                title: 'Evolução de Compras',
+                type: 'line',
+                canvasId: 'printChartEvolucaoCompras'
+            },
+            'produtividadeEmpresa': {
+                id: 'chartProdutividadeEmpresa',
+                title: 'Produtividade Geral por Empresa',
+                type: 'doughnut',
+                canvasId: 'printChartProdutividadeEmpresa'
+            }
+        };
 
         // Função para mostrar notificação
         function showNotification(title, message, type = 'success') {
@@ -1612,6 +1967,166 @@
             tabs.forEach(tab => tab.classList.remove('active'));
             element.classList.add('active');
             showNotification('Visualização Alterada', 'A visualização do gráfico foi alterada', 'info');
+        }
+
+        // Funções de seleção de gráficos para impressão
+        function toggleChartSelection(chartId) {
+            const checkbox = document.getElementById(`print${chartId.charAt(0).toUpperCase() + chartId.slice(1)}`);
+            const checkboxContainer = checkbox.parentElement;
+            
+            checkbox.checked = !checkbox.checked;
+            
+            if (checkbox.checked) {
+                checkboxContainer.classList.add('selected');
+            } else {
+                checkboxContainer.classList.remove('selected');
+            }
+            
+            // Verificar se pelo menos um gráfico está selecionado
+            updatePrintButtonState();
+        }
+
+        function selectAllCharts() {
+            Object.keys(chartConfigs).forEach(chartId => {
+                const checkbox = document.getElementById(`print${chartId.charAt(0).toUpperCase() + chartId.slice(1)}`);
+                const checkboxContainer = checkbox.parentElement;
+                checkbox.checked = true;
+                checkboxContainer.classList.add('selected');
+            });
+            updatePrintButtonState();
+            showNotification('Todos Selecionados', 'Todos os gráficos foram selecionados para impressão', 'info');
+        }
+
+        function deselectAllCharts() {
+            Object.keys(chartConfigs).forEach(chartId => {
+                const checkbox = document.getElementById(`print${chartId.charAt(0).toUpperCase() + chartId.slice(1)}`);
+                const checkboxContainer = checkbox.parentElement;
+                checkbox.checked = false;
+                checkboxContainer.classList.remove('selected');
+            });
+            updatePrintButtonState();
+            showNotification('Nenhum Selecionado', 'Todos os gráficos foram desmarcados', 'info');
+        }
+
+        function updatePrintButtonState() {
+            const printButton = document.querySelector('.header-actions .btn');
+            const anySelected = Object.keys(chartConfigs).some(chartId => {
+                const checkbox = document.getElementById(`print${chartId.charAt(0).toUpperCase() + chartId.slice(1)}`);
+                return checkbox.checked;
+            });
+            
+            if (anySelected) {
+                printButton.disabled = false;
+                printButton.style.opacity = '1';
+            } else {
+                printButton.disabled = true;
+                printButton.style.opacity = '0.5';
+            }
+        }
+
+        // Abrir preview de impressão
+        function openPrintPreview() {
+            // Verificar se pelo menos um gráfico está selecionado
+            const selectedCharts = Object.keys(chartConfigs).filter(chartId => {
+                const checkbox = document.getElementById(`print${chartId.charAt(0).toUpperCase() + chartId.slice(1)}`);
+                return checkbox.checked;
+            });
+            
+            if (selectedCharts.length === 0) {
+                showNotification('Nenhum Gráfico Selecionado', 'Selecione pelo menos um gráfico para imprimir', 'warning');
+                return;
+            }
+            
+            // Atualizar data atual
+            const currentDate = new Date().toLocaleDateString('pt-BR');
+            document.getElementById('currentDate').textContent = currentDate;
+            
+            // Limpar preview anterior
+            const previewGrid = document.getElementById('printPreviewGrid');
+            previewGrid.innerHTML = '';
+            
+            // Destruir gráficos de impressão anteriores
+            Object.values(printCharts).forEach(chart => {
+                if (chart) chart.destroy();
+            });
+            printCharts = {};
+            
+            // Adicionar gráficos selecionados ao preview
+            selectedCharts.forEach((chartId, index) => {
+                const config = chartConfigs[chartId];
+                const originalChart = charts[chartId];
+                
+                if (!originalChart) return;
+                
+                // Criar container para o gráfico
+                const chartContainer = document.createElement('div');
+                chartContainer.className = 'print-chart-container';
+                chartContainer.id = `printContainer${chartId.charAt(0).toUpperCase() + chartId.slice(1)}`;
+                
+                // Adicionar título
+                const title = document.createElement('h4');
+                title.textContent = config.title;
+                chartContainer.appendChild(title);
+                
+                // Adicionar canvas
+                const canvas = document.createElement('canvas');
+                canvas.id = config.canvasId;
+                canvas.className = 'print-chart-canvas';
+                chartContainer.appendChild(canvas);
+                
+                previewGrid.appendChild(chartContainer);
+                
+                // Criar cópia do gráfico para impressão
+                setTimeout(() => {
+                    const ctx = canvas.getContext('2d');
+                    const printOptions = {
+                        ...originalChart.options,
+                        plugins: {
+                            ...originalChart.options.plugins,
+                            legend: {
+                                ...originalChart.options.plugins?.legend,
+                                display: true,
+                                position: 'bottom'
+                            }
+                        },
+                        responsive: false,
+                        maintainAspectRatio: false
+                    };
+                    
+                    printCharts[chartId] = new Chart(ctx, {
+                        type: originalChart.config.type,
+                        data: JSON.parse(JSON.stringify(originalChart.data)),
+                        options: printOptions
+                    });
+                }, 100);
+            });
+            
+            // Mostrar modal e botões de ação
+            document.getElementById('printPreviewModal').classList.add('active');
+            document.getElementById('printActions').style.display = 'flex';
+            
+            // Desabilitar scroll no body
+            document.body.style.overflow = 'hidden';
+            
+            showNotification('Preview de Impressão', 'Visualize os gráficos antes de imprimir', 'info');
+        }
+
+        // Fechar preview de impressão
+        function closePrintPreview() {
+            document.getElementById('printPreviewModal').classList.remove('active');
+            document.getElementById('printActions').style.display = 'none';
+            document.body.style.overflow = 'auto';
+            
+            // Destruir gráficos de impressão
+            Object.values(printCharts).forEach(chart => {
+                if (chart) chart.destroy();
+            });
+            printCharts = {};
+        }
+
+        // Imprimir gráficos selecionados
+        function printSelectedCharts() {
+            window.print();
         }
 
         // Inicializar gráficos
@@ -1868,6 +2383,9 @@
             // Inicializar gráficos
             initCharts();
             
+            // Inicializar estado dos botões de impressão
+            updatePrintButtonState();
+            
             // Atualizar posição dos filtros fixos ao redimensionar
             window.addEventListener('resize', function() {
                 if (filtersFixed) {
@@ -1876,6 +2394,11 @@
                 
                 // Redimensionar gráficos
                 Object.values(charts).forEach(chart => {
+                    if (chart) chart.resize();
+                });
+                
+                // Redimensionar gráficos de impressão
+                Object.values(printCharts).forEach(chart => {
                     if (chart) chart.resize();
                 });
             });
