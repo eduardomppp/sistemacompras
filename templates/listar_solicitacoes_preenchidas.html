@@ -90,6 +90,17 @@
             font-size: 0.85rem;
             color: var(--danger);
         }
+
+        /* Accordion aberto por padrão */
+        .accordion-button:not(.collapsed) {
+            background-color: #f8f9fa;
+            color: #000;
+            box-shadow: inset 0 -1px 0 rgba(0,0,0,.125);
+        }
+        .accordion-button:not(.collapsed)::after {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23000'%3e%3cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e");
+            transform: rotate(-180deg);
+        }
     </style>
 </head>
 
@@ -164,11 +175,12 @@
         {% endfor %}
 
         {% for aplicacao, materiais in aplicacoes_agrupadas.items() %}
-        <div class="aplicacao-group p-3">
+        <div class="aplicacao-group p-3 mt-4">
             <div class="aplicacao-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0"><i class="bi bi-tags"></i> {{ aplicacao }}</h5>
                 <span class="badge bg-light text-dark">{{ materiais|length }} material(is)</span>
             </div>
+
             <div class="accordion mt-3" id="accordion-{{ loop.index }}">
                 {% for mat_nome, preenchs in materiais.items() %}
                     {% set aprovada = None %}
@@ -186,152 +198,131 @@
                         {% set _ = ordenados.append(o) %}
                     {% endfor %}
 
-                    {# Criar um ID único para cada acordeão #}
                     {% set accordion_id = 'collapse-' ~ aplicacao|replace(' ', '-') ~ '-' ~ mat_nome|replace(' ', '-') ~ '-' ~ loop.index %}
-                    
+
                     <div class="accordion-item">
                         <h2 class="accordion-header">
-                            <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" 
-                                    data-bs-target="#{{ accordion_id }}" 
-                                    aria-expanded="false" 
-                                    aria-controls="{{ accordion_id }}">
+                            <button class="accordion-button fw-bold" type="button" data-bs-toggle="collapse"
+                                    data-bs-target="#{{ accordion_id }}" aria-expanded="true" aria-controls="{{ accordion_id }}">
                                 {{ mat_nome }}
                                 {% if aprovada %}<span class="badge bg-success ms-2">Aprovada (ID {{ aprovada.id }})</span>{% endif %}
                                 <span class="badge bg-secondary ms-auto">{{ preenchs|length }} cotações</span>
                             </button>
                         </h2>
-                        <div id="{{ accordion_id }}" class="accordion-collapse collapse" 
-                             data-bs-parent="#accordion-{{ loop.index }}">
+                        <div id="{{ accordion_id }}" class="accordion-collapse show" data-bs-parent="#accordion-{{ loop.index }}">
                             <div class="accordion-body">
                                 <div class="cotacoes-row">
-                                    {% for p in ordenados %}
-                                        {% if p.status != 'Entregue' %}
-                                            {% set is_aprovada = p.status == 'Aprovado' %}
-                                            {% set is_bloqueada = aprovada and not is_aprovada %}
+                                    {% for p in ordenados if p.status != 'Entregue' %}
+                                        {% set is_aprovada = p.status == 'Aprovado' %}
+                                        {% set is_bloqueada = aprovada and not is_aprovada %}
 
-                                            <!-- Cálculo do desconto COM CORREÇÃO -->
-                                            {% set valor_unitario_calc = p.valor_unitario if p.valor_unitario is not none else 0 %}
-                                            {% set subtotal_produtos = p.solicitacao.quantidade * valor_unitario_calc %}
-                                            {% set frete = p.valor_frete if p.valor_frete is not none else 0 %}
-                                            {% set desconto_raw = (p.condicao_pagamento or '') | string | trim %}
+                                        <!-- Cálculo do desconto -->
+                                        {% set valor_unitario_calc = p.valor_unitario|default(0) %}
+                                        {% set subtotal_produtos = p.solicitacao.quantidade * valor_unitario_calc %}
+                                        {% set frete = p.valor_frete|default(0) %}
+                                        {% set desconto_raw = (p.condicao_pagamento or '')|string|trim %}
 
-                                            {% set desconto_valor = 0 %}
-                                            {% set desconto_percentual = 0 %}
+                                        {% set desconto_valor = 0 %}
+                                        {% set desconto_percentual = 0 %}
 
-                                            {% if '%' in desconto_raw %}
-                                                {# Desconto informado em percentual (ex: 10%) #}
-                                                {% set desconto_percentual = desconto_raw.replace('%','') | float %}
-                                                {% set desconto_valor = subtotal_produtos * desconto_percentual / 100 %}
-                                            {% elif desconto_raw != '' %}
-                                                {# Desconto informado em valor (ex: 10 = R$ 10,00) #}
-                                                {% set desconto_valor = desconto_raw | float %}
-                                                {% set desconto_percentual = (desconto_valor / subtotal_produtos * 100) if subtotal_produtos > 0 else 0 %}
-                                            {% endif %}
+                                        {% if '%' in desconto_raw %}
+                                            {% set desconto_percentual = desconto_raw.replace('%','')|float %}
+                                            {% set desconto_valor = subtotal_produtos * desconto_percentual / 100 %}
+                                        {% elif desconto_raw != '' %}
+                                            {% set desconto_valor = desconto_raw|float %}
+                                            {% set desconto_percentual = (desconto_valor / subtotal_produtos * 100) if subtotal_produtos > 0 else 0 %}
+                                        {% endif %}
 
-                                            {% set valor_liquido_produtos = subtotal_produtos - desconto_valor %}
-                                            {% set total_calculado = valor_liquido_produtos + frete %}
+                                        {% set valor_liquido_produtos = subtotal_produtos - desconto_valor %}
+                                        {% set total_calculado = valor_liquido_produtos + frete %}
 
-                                            <div class="cotacao-col">
-                                                <div class="material-card {% if is_aprovada %}cotacao-aprovada{% elif is_bloqueada %}cotacao-bloqueada{% endif %}">
-                                                    <div class="material-header">
-                                                        <div class="d-flex align-items-center gap-2 flex-wrap">
-                                                            <input type="checkbox" class="cotacao-checkbox form-check-input" data-cotacao-id="{{ p.id }}">
-                                                            <h5 class="mb-0">ID: {{ p.id }}</h5>
-                                                            {% if is_aprovada %}<span class="badge bg-success ms-2">Aprovado</span>{% endif %}
-                                                            {% if is_bloqueada %}<span class="badge bg-secondary ms-2">Bloqueado</span>{% endif %}
-                                                        </div>
-                                                        <small class="d-flex flex-column gap-1 mt-1">
-                                                            <div class="d-flex align-items-center gap-3 flex-wrap">
-                                                                <span><i class="bi bi-building"></i> {{ p.fornecedor_nome }}</span>
-                                                                <span><i class="bi bi-person"></i> {{ p.usuario }}</span>
-                                                            </div>
-                                                            <div class="d-flex align-items-center gap-3 flex-wrap">
-                                                                <span>
-                                                                    <i class="bi bi-lightning-charge"></i> Ativo:
-                                                                    <span class="badge bg-{{ 'success' if p.solicitacao.ativo == 'Sim' else 'secondary' }}">
-                                                                        {{ p.solicitacao.ativo }}
-                                                                    </span>
-                                                                </span>
-                                                                {% if p.solicitacao.ativo == 'Sim' and p.solicitacao.nome_ativo %}
-                                                                    <span class="ativo-info" title="{{ p.solicitacao.nome_ativo }}">
-                                                                        <i class="bi bi-tag"></i> Nome do Ativo:
-                                                                        <span class="ativo-nome badge bg-info">
-                                                                            {{ p.solicitacao.nome_ativo }}
-                                                                        </span>
-                                                                    </span>
-                                                                {% endif %}
-                                                            </div>
-                                                        </small>
+                                        <div class="cotacao-col">
+                                            <div class="material-card {% if is_aprovada %}cotacao-aprovada{% elif is_bloqueada %}cotacao-bloqueada{% endif %}">
+                                                <div class="material-header">
+                                                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                                                        <input type="checkbox" class="cotacao-checkbox form-check-input" data-cotacao-id="{{ p.id }}">
+                                                        <h5 class="mb-0">ID: {{ p.id }}</h5>
+                                                        {% if is_aprovada %}<span class="badge bg-success ms-2">Aprovado</span>{% endif %}
+                                                        {% if is_bloqueada %}<span class="badge bg-secondary ms-2">Bloqueado</span>{% endif %}
                                                     </div>
-                                                    <div class="p-3 small">
-                                                        <!-- Informações básicas -->
-                                                        <div class="row g-2 mb-2">
-                                                            <div class="col-6"><strong>Qtde:</strong> {{ p.solicitacao.quantidade }}</div>
-                                                            <div class="col-6"><strong>Unitário:</strong> R$ {{ "%.2f"|format(valor_unitario_calc) }}</div>
-                                                            <div class="col-6"><strong>Entrega:</strong> {{ p.prazo_entrega }}</div>
-                                                            <div class="col-12"><strong>Obs:</strong> {{ p.observacoes or '—' }}</div>
+                                                    <small class="d-flex flex-column gap-1 mt-1">
+                                                        <div class="d-flex align-items-center gap-3 flex-wrap">
+                                                            <span><i class="bi bi-building"></i> {{ p.fornecedor_nome }}</span>
+                                                            <span><i class="bi bi-person"></i> {{ p.usuario }}</span>
                                                         </div>
-                                                        
-                                                        <!-- Valores financeiros organizados -->
-                                                        <div class="valores-container">
-                                                            <div class="valor-item">
-                                                                <span>Subtotal produtos:</span>
-                                                                <span>R$ {{ "%.2f"|format(subtotal_produtos) }}</span>
-                                                            </div>
-                                                            
-                                                            {% if desconto_valor > 0 %}
-                                                            <div class="valor-item">
-                                                                <span>
-                                                                    Desconto: 
-                                                                    <span class="desconto-info">
-                                                                        ({{ "%.2f"|format(desconto_percentual) }}%)
-                                                                    </span>
+                                                        <div class="d-flex align-items-center gap-3 flex-wrap">
+                                                            <span>
+                                                                <i class="bi bi-lightning-charge"></i> Ativo:
+                                                                <span class="badge bg-{{ 'success' if p.solicitacao.ativo == 'Sim' else 'secondary' }}">
+                                                                    {{ p.solicitacao.ativo }}
                                                                 </span>
-                                                                <span class="text-danger">- R$ {{ "%.2f"|format(desconto_valor) }}</span>
-                                                            </div>
+                                                            </span>
+                                                            {% if p.solicitacao.ativo == 'Sim' and p.solicitacao.nome_ativo %}
+                                                                <span class="ativo-info" title="{{ p.solicitacao.nome_ativo }}">
+                                                                    <i class="bi bi-tag"></i> Nome do Ativo:
+                                                                    <span class="ativo-nome badge bg-info">{{ p.solicitacao.nome_ativo }}</span>
+                                                                </span>
                                                             {% endif %}
-                                                            
-                                                            <div class="valor-item">
-                                                                <span>Valor líquido produtos:</span>
-                                                                <span>R$ {{ "%.2f"|format(valor_liquido_produtos) }}</span>
-                                                            </div>
-                                                            
-                                                            <div class="valor-item">
-                                                                <span>Frete:</span>
-                                                                <span>+ R$ {{ "%.2f"|format(frete) }}</span>
-                                                            </div>
-                                                            
-                                                            <div class="valor-item valor-total">
-                                                                <span>TOTAL:</span>
-                                                                <span>R$ {{ "%.2f"|format(total_calculado) }}</span>
-                                                            </div>
                                                         </div>
-                                                        
-                                                        <div class="d-flex gap-2 mt-3 flex-wrap">
-                                                            {% if not is_bloqueada %}
-                                                                <select name="status" class="form-select form-select-sm status-select"
-                                                                        data-id="{{ p.id }}"
-                                                                        {% if p.status in ['Aprovado','Reprovado','Em Processamento'] %}disabled data-status="{{ p.status }}"{% endif %}>
-                                                                    <option value="" disabled selected>Alterar</option>
-                                                                    <option value="Aprovado" {% if p.status == 'Aprovado' %}selected{% endif %}>Aprovado</option>
-                                                                    <option value="Reprovado" {% if p.status == 'Reprovado' %}selected{% endif %}>Reprovado</option>
-                                                                    {% if p.status in ['Aprovado','Em Processamento'] %}
-                                                                        <option value="Entregue">Entregue</option>
-                                                                    {% endif %}
-                                                                </select>
-                                                                {% if p.status in ['Aprovado','Reprovado'] %}
-                                                                    <button class="btn btn-secondary btn-sm" onclick="reverterStatus({{ p.id }})">
-                                                                        <i class="bi bi-arrow-counterclockwise"></i> Reverter
-                                                                    </button>
+                                                    </small>
+                                                </div>
+                                                <div class="p-3 small">
+                                                    <div class="row g-2 mb-2">
+                                                        <div class="col-6"><strong>Qtde:</strong> {{ p.solicitacao.quantidade }}</div>
+                                                        <div class="col-6"><strong>Unitário:</strong> R$ {{ "%.2f"|format(valor_unitario_calc) }}</div>
+                                                        <div class="col-6"><strong>Entrega:</strong> {{ p.prazo_entrega }}</div>
+                                                        <div class="col-12"><strong>Obs:</strong> {{ p.observacoes or '—' }}</div>
+                                                    </div>
+                                                    
+                                                    <div class="valores-container">
+                                                        <div class="valor-item">
+                                                            <span>Subtotal produtos:</span>
+                                                            <span>R$ {{ "%.2f"|format(subtotal_produtos) }}</span>
+                                                        </div>
+                                                        {% if desconto_valor > 0 %}
+                                                        <div class="valor-item">
+                                                            <span>Desconto: <span class="desconto-info">({{ "%.2f"|format(desconto_percentual) }}%)</span></span>
+                                                            <span class="text-danger">- R$ {{ "%.2f"|format(desconto_valor) }}</span>
+                                                        </div>
+                                                        {% endif %}
+                                                        <div class="valor-item">
+                                                            <span>Valor líquido produtos:</span>
+                                                            <span>R$ {{ "%.2f"|format(valor_liquido_produtos) }}</span>
+                                                        </div>
+                                                        <div class="valor-item">
+                                                            <span>Frete:</span>
+                                                            <span>+ R$ {{ "%.2f"|format(frete) }}</span>
+                                                        </div>
+                                                        <div class="valor-item valor-total">
+                                                            <span>TOTAL:</span>
+                                                            <span>R$ {{ "%.2f"|format(total_calculado) }}</span>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div class="d-flex gap-2 mt-3 flex-wrap">
+                                                        {% if not is_bloqueada %}
+                                                            <select name="status" class="form-select form-select-sm status-select"
+                                                                    data-id="{{ p.id }}"
+                                                                    {% if p.status in ['Aprovado','Reprovado','Em Processamento'] %}disabled data-status="{{ p.status }}"{% endif %}>
+                                                                <option value="" disabled selected>Alterar</option>
+                                                                <option value="Aprovado">Aprovado</option>
+                                                                <option value="Reprovado">Reprovado</option>
+                                                                {% if p.status in ['Aprovado','Em Processamento'] %}
+                                                                    <option value="Entregue">Entregue</option>
                                                                 {% endif %}
-                                                            {% else %}
-                                                                <span class="text-muted small">Bloqueada por cotação aprovada</span>
+                                                            </select>
+                                                            {% if p.status in ['Aprovado','Reprovado'] %}
+                                                                <button class="btn btn-secondary btn-sm" onclick="reverterStatus({{ p.id }})">
+                                                                    <i class="bi bi-arrow-counterclockwise"></i> Reverter
+                                                                </button>
                                                             {% endif %}
-                                                        </div>
+                                                        {% else %}
+                                                            <span class="text-muted small">Bloqueada por cotação aprovada</span>
+                                                        {% endif %}
                                                     </div>
                                                 </div>
                                             </div>
-                                        {% endif %}
+                                        </div>
                                     {% endfor %}
                                 </div>
                             </div>
@@ -351,13 +342,11 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    // Atualiza botão de impressão
     function updatePrintButton() {
         const checked = document.querySelectorAll('.cotacao-checkbox:checked').length;
         document.getElementById('printSelectedBtn').disabled = checked === 0;
     }
 
-    // Reverter status
     function reverterStatus(id) {
         if (!confirm('Reverter status? Isso desbloqueia todas as cotações.')) return;
         fetch(`/atualizar_status_preenchimento/${id}`, {
@@ -366,21 +355,17 @@
         })
         .then(res => res.json())
         .then(data => {
-            if (data.success) {
-                location.reload(); // Recarrega para refletir desbloqueio
-            } else {
-                alert('Erro ao reverter: ' + (data.message || 'Desconhecido'));
-            }
+            if (data.success) location.reload();
+            else alert('Erro ao reverter: ' + (data.message || 'Desconhecido'));
         })
         .catch(() => alert('Erro na requisição'));
     }
 
-    // Atualiza visualmente o status no DOM
     function updateStatusInDOM(id, status) {
         const card = document.querySelector(`[data-cotacao-id="${id}"]`)?.closest('.material-card');
         if (!card) return;
 
-        const badge = card.querySelector('.badge');
+        const badge = card.querySelector('.badge.bg-success, .badge.bg-secondary');
         if (badge) {
             badge.textContent = status;
             badge.className = `badge bg-${status === 'Aprovado' ? 'success' : status === 'Reprovado' ? 'danger' : 'warning'}`;
@@ -390,14 +375,12 @@
         if (select) {
             select.disabled = true;
             select.dataset.status = status;
-            select.value = status;
         }
 
         card.classList.toggle('cotacao-aprovada', status === 'Aprovado');
         card.classList.toggle('cotacao-bloqueada', status !== 'Aprovado');
     }
 
-    // Reprova outras cotações do mesmo material
     async function reprovarOutrasCotacoes(aprovadoId) {
         const accordion = document.querySelector(`[data-cotacao-id="${aprovadoId}"]`)?.closest('.accordion-item');
         if (!accordion) return;
@@ -406,23 +389,20 @@
         accordion.querySelectorAll('.material-card').forEach(card => {
             const cb = card.querySelector('.cotacao-checkbox');
             const id = cb?.dataset.cotacaoId;
-            if (id && id !== aprovadoId) {
+            if (id && id !== aprovadoId.toString()) {
                 promises.push(
                     fetch(`/atualizar_status_preenchimento/${id}`, {
                         method: 'POST',
                         body: new URLSearchParams({ status: 'Reprovado' })
                     })
                     .then(res => res.json())
-                    .then(data => {
-                        if (data.success) updateStatusInDOM(id, 'Reprovado');
-                    })
+                    .then(data => { if (data.success) updateStatusInDOM(id, 'Reprovado'); })
                 );
             }
         });
         await Promise.all(promises);
     }
 
-    // Handler de mudança de status
     document.querySelectorAll('.status-select').forEach(select => {
         select.addEventListener('change', async function() {
             const id = this.dataset.id;
@@ -437,7 +417,6 @@
                     this.disabled = false;
                     return;
                 }
-
                 await reprovarOutrasCotacoes(id);
             }
 
@@ -461,12 +440,10 @@
         });
     });
 
-    // Inicialização
     document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.cotacao-checkbox').forEach(cb => cb.addEventListener('change', updatePrintButton));
         updatePrintButton();
 
-        // Impressão
         document.getElementById('printSelectedBtn').onclick = () => {
             const checked = Array.from(document.querySelectorAll('.cotacao-checkbox:checked'))
                 .map(cb => cb.closest('.material-card').outerHTML);
@@ -476,13 +453,19 @@
             win.document.write(`
                 <!DOCTYPE html>
                 <html>
-                <head><title>Cotações</title>
+                <head><title>Cotações Selecionadas</title>
                 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-                <style>@page{size:landscape;margin:10mm}</style>
+                <style>@page{size:landscape;margin:10mm} .material-card{margin-bottom:2rem;}</style>
                 </head>
-                <body><h2>Cotações Selecionadas</h2><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1rem;">${checked.join('')}</div></body>
+                <body class="p-4">
+                <h2 class="mb-4">Cotações Selecionadas para Impressão</h2>
+                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(350px,1fr));gap:1.5rem;">
+                    ${checked.join('')}
+                </div>
+                </body>
                 </html>
             `);
+            win.document.close();
             win.print();
         };
     });
