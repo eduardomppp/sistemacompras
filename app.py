@@ -1034,9 +1034,12 @@ def adicionar_senha():
             return redirect(url_for('routes_bp.listar_senhas'))
 
         senhas = ler_senhas()
+        
+        # Verifica se é uma atualização ou criação nova
         if usuario in senhas:
-            flash('Usuário já existe.', 'error')
-            return redirect(url_for('routes_bp.listar_senhas'))
+            mensagem = 'Senha atualizada com sucesso.'
+        else:
+            mensagem = 'Senha adicionada com sucesso.'
 
         senhas[usuario] = {
             "senha": senha,
@@ -1045,13 +1048,12 @@ def adicionar_senha():
         }
 
         salvar_senhas(senhas)
-        flash('Senha adicionada com sucesso.', 'success')
+        flash(mensagem, 'success')
         return redirect(url_for('routes_bp.listar_senhas'))
 
     except Exception as e:
-        flash('Erro ao adicionar senha.', 'error')
+        flash('Erro ao adicionar/atualizar senha.', 'error')
         return redirect(url_for('routes_bp.listar_senhas'))
-
 
 
 @routes_bp.route('/excluir_senha/<usuario>', methods=['POST'])
