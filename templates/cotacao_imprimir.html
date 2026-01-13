@@ -492,6 +492,7 @@
                 color: #000 !important;
             }
         }
+
     </style>
 </head>
 <body>
@@ -557,12 +558,14 @@
                             {% set material_cotacao = cotacao.materiais|selectattr("solicitacao_id", "equalto", solicitacao.id)|first if cotacao and cotacao.materiais else none %}
                             <td class="col-cotacao-unit">
                                 {% if material_cotacao %}
-                                    R$ {{ "%.2f"|format(material_cotacao.valor_unitario|float) }}
+                                    R$ {{ material_cotacao.valor_unitario|float|string|replace('.', ',') if '.' in material_cotacao.valor_unitario|string else material_cotacao.valor_unitario }}
                                 {% else %} - {% endif %}
                             </td>
                             <td class="col-cotacao-total">
                                 {% if material_cotacao %}
-                                    R$ {{ "%.2f"|format(material_cotacao.valor_total|float) }}
+                                    {% set valor_unitario = material_cotacao.valor_unitario|float if material_cotacao.valor_unitario is number else material_cotacao.valor_unitario|string|replace(',', '.')|float %}
+                                    {% set total = valor_unitario * solicitacao.quantidade %}
+                                    R$ {{ "%.2f"|format(total)|replace('.', ',') }}
                                 {% else %} - {% endif %}
                             </td>
                         {% endfor %}
@@ -582,12 +585,14 @@
                             {% set material_cotacao = cotacao.materiais|first if cotacao and cotacao.materiais else none %}
                             <td class="col-cotacao-unit">
                                 {% if material_cotacao %}
-                                    R$ {{ "%.2f"|format(material_cotacao.valor_unitario|float) }}
+                                    R$ {{ material_cotacao.valor_unitario|float|string|replace('.', ',') if '.' in material_cotacao.valor_unitario|string else material_cotacao.valor_unitario }}
                                 {% else %} - {% endif %}
                             </td>
                             <td class="col-cotacao-total">
                                 {% if material_cotacao %}
-                                    R$ {{ "%.2f"|format(material_cotacao.valor_total|float) }}
+                                    {% set valor_unitario = material_cotacao.valor_unitario|float if material_cotacao.valor_unitario is number else material_cotacao.valor_unitario|string|replace(',', '.')|float %}
+                                    {% set total = valor_unitario * solicitacao.quantidade %}
+                                    R$ {{ "%.2f"|format(total)|replace('.', ',') }}
                                 {% else %} - {% endif %}
                             </td>
                         {% endfor %}
@@ -645,27 +650,65 @@
         </table>
     </div>
 
-    <!-- Totais por cotação -->
-    <div class="totais-container">
-        {% for cotacao in cotacoes_salvas %}
-        <div class="total-card">
-            <h3>Cotação {{ loop.index }} - Totais</h3>
-            {% set total_produtos = cotacao.materiais|sum(attribute='valor_total')|float if cotacao and cotacao.materiais else 0 %}
-            {% set valor_frete = cotacao.valor_frete|float if cotacao.valor_frete else 0 %}
-            {% set desconto = cotacao.desconto_valor|float if cotacao and cotacao.desconto_valor else (cotacao.condicao_pagamento|float if cotacao and cotacao.condicao_pagamento|float > 0 else 0) %}
-            {% set total_geral = total_produtos + valor_frete - desconto %}
+   <!-- Totais por cotação - CORRIGIDO -->
+<div class="totais-container">
+    {% for cotacao in cotacoes_salvas %}
+    <div class="total-card">
+        <h3>Cotação {{ loop.index }} - Totais</h3>
+        
+        {# Calcular total dos produtos CORRIGIDO #}
+        {% set total_produtos = 0 %}
+        {% if cotacao and cotacao.materiais %}
+            {% if modo_grupo %}
+                {# Modo GRUPO: soma todas as solicitações #}
+                {% for solicitacao in solicitacoes_grupo %}
+                    {% set material_cotacao = cotacao.materiais|selectattr("solicitacao_id", "equalto", solicitacao.id)|first if cotacao and cotacao.materiais else none %}
+                    {% if material_cotacao and material_cotacao.valor_unitario %}
+                        {% set valor_unitario = material_cotacao.valor_unitario|float if material_cotacao.valor_unitario is number else material_cotacao.valor_unitario|string|replace(',', '.')|float %}
+                        {% set quantidade = solicitacao.quantidade|float %}
+                        {% set material_total = valor_unitario * quantidade %}
+                        {% set total_produtos = total_produtos + material_total %}
+                    {% endif %}
+                {% endfor %}
+            {% else %}
+                {# Modo SOLICITAÇÃO ÚNICA: calcula apenas uma #}
+                {% set material_cotacao = cotacao.materiais|first if cotacao and cotacao.materiais else none %}
+                {% if material_cotacao and material_cotacao.valor_unitario %}
+                    {% set valor_unitario = material_cotacao.valor_unitario|float if material_cotacao.valor_unitario is number else material_cotacao.valor_unitario|string|replace(',', '.')|float %}
+                    {% set quantidade = solicitacao.quantidade|float %}
+                    {% set material_total = valor_unitario * quantidade %}
+                    {% set total_produtos = total_produtos + material_total %}
+                {% endif %}
+            {% endif %}
+        {% endif %}
+        
+        {# Tratar frete #}
+        {% set valor_frete = 0 %}
+        {% if cotacao and cotacao.valor_frete %}
+            {% set valor_frete = cotacao.valor_frete|float if cotacao.valor_frete is number else cotacao.valor_frete|string|replace(',', '.')|float %}
+        {% endif %}
+        
+        {# Tratar desconto #}
+        {% set desconto = 0 %}
+        {% if cotacao and cotacao.desconto_valor %}
+            {% set desconto = cotacao.desconto_valor|float if cotacao.desconto_valor is number else cotacao.desconto_valor|string|replace(',', '.')|float %}
+        {% elif cotacao and cotacao.condicao_pagamento %}
+            {% set desconto = cotacao.condicao_pagamento|float if cotacao.condicao_pagamento is number else cotacao.condicao_pagamento|string|replace(',', '.')|float %}
+        {% endif %}
+        
+        {% set total_geral = total_produtos + valor_frete - desconto %}
 
-            <div class="total-line"><span>Total Produtos:</span><span>R$ {{ "%.2f"|format(total_produtos) }}</span></div>
-            {% if valor_frete > 0 %}
-            <div class="total-line"><span>Frete:</span><span>R$ {{ "%.2f"|format(valor_frete) }}</span></div>
-            {% endif %}
-            {% if desconto > 0 %}
-            <div class="total-line"><span>Desconto:</span><span>R$ {{ "%.2f"|format(desconto) }}</span></div>
-            {% endif %}
-            <div class="total-geral">Total Geral: R$ {{ "%.2f"|format(total_geral) }}</div>
-        </div>
-        {% endfor %}
+        <div class="total-line"><span>Total Produtos:</span><span>R$ {{ "%.2f"|format(total_produtos)|replace('.', ',') }}</span></div>
+        {% if valor_frete > 0 %}
+        <div class="total-line"><span>Frete:</span><span>R$ {{ "%.2f"|format(valor_frete)|replace('.', ',') }}</span></div>
+        {% endif %}
+        {% if desconto > 0 %}
+        <div class="total-line"><span>Desconto:</span><span>R$ {{ "%.2f"|format(desconto)|replace('.', ',') }}</span></div>
+        {% endif %}
+        <div class="total-geral">Total Geral: R$ {{ "%.2f"|format(total_geral)|replace('.', ',') }}</div>
     </div>
+    {% endfor %}
+</div>
 
     <!-- Informações gerais -->
     <div class="info-geral">
