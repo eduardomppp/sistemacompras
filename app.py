@@ -22,6 +22,7 @@ from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 from io import BytesIO
+from flask import make_response
 
 # Carregar variáveis de ambiente
 load_dotenv()
@@ -5431,31 +5432,39 @@ def exportar_auditoria_xlsx():
         data_inicio = request.args.get('data_inicio')
         data_fim = request.args.get('data_fim')
         
-        # Aplicar a mesma lógica de filtragem da auditoria_solicitacoes
-        query = db.session.query(SolicitacoesCompra).join(
+        # Aplicar a mesma lógica de filtragem, mas com outer join para incluir solicitações sem preenchimentos
+        from sqlalchemy import outerjoin  # Certifique-se de importar outerjoin se necessário
+        
+        query = db.session.query(SolicitacoesCompra).outerjoin(
             SolicitacoesPreenchidas,
             SolicitacoesCompra.id == SolicitacoesPreenchidas.solicitacao_id
         ).filter(
-            SolicitacoesPreenchidas.status != 'Rascunho'
+            # Removido o filtro SolicitacoesPreenchidas.status != 'Rascunho' daqui para permitir 'Aberta'
         )
         
-        # Aplicar filtros
-        if empresa and empresa != 'Todas':
+        # Aplicar filtros - CORREÇÃO NO FILTRO DE USUÁRIO
+        if empresa and empresa != '' and empresa != 'Todas':
             query = query.filter(SolicitacoesCompra.empresa == empresa)
-        if usuario and usuario != 'Todos':
+        
+        # CORREÇÃO: "Todos" é string vazia, não "Todos"
+        if usuario and usuario != '' and usuario != 'Todos':
             query = query.filter(SolicitacoesCompra.usuario == usuario)
-        if ativo:
+        
+        if ativo and ativo != '':
             query = query.filter(SolicitacoesCompra.ativo == ativo)
-        if nome_ativo and ativo == 'Sim':
+        
+        if nome_ativo and nome_ativo != '' and ativo == 'Sim':
             query = query.filter(SolicitacoesCompra.nome_ativo.ilike(f'%{nome_ativo}%'))
-        if data_inicio:
+        
+        if data_inicio and data_inicio != '':
             query = query.filter(SolicitacoesCompra.data_solicitacao >= data_inicio)
-        if data_fim:
+        
+        if data_fim and data_fim != '':
             data_fim_ajustada = datetime.strptime(data_fim, '%Y-%m-%d') + timedelta(days=1)
             query = query.filter(SolicitacoesCompra.data_solicitacao <= data_fim_ajustada)
         
-        # Obter dados
-        solicitacoes = query.order_by(SolicitacoesCompra.data_solicitacao.desc()).all()
+        # Obter dados (agrupar por solicitacao para evitar duplicatas do outerjoin)
+        solicitacoes = query.order_by(SolicitacoesCompra.data_solicitacao.desc()).distinct().all()
         
         # Preparar dados para o Excel
         dados = []
@@ -5470,12 +5479,72 @@ def exportar_auditoria_xlsx():
                 SolicitacoesPreenchidas.status != 'Rascunho'
             ).all()
             
+            # Se não houver preenchimentos, tratar como 'Aberta' (se filtro permite)
+            if not preenchimentos:
+                # Aplicar filtro de status: só adicionar se status é 'Todos' ou vazio ou 'Aberta'
+                if status and status.strip() and status != 'Todos' and status != 'Aberta':
+                    continue
+                
+                # Para 'Aberta', prioridade baixa, sem fornecedor, etc.
+                prioridade = 0
+                nivel_prioridade = 'Baixa (Outras)'
+                status_formatado = 'Aberta'
+                fornecedor_nome = ''
+                fornecedor_cnpj = ''
+                pedido_numero = ''
+                pedido_status = ''
+                valor_unitario = 0
+                valor_total = 0
+                valor_frete = 0
+                prazo_entrega = ''
+                condicao_pagamento = ''
+                observacoes = ''
+                
+                # Aplicar filtro de prioridade (se aplicável)
+                if prioridade_filtro and prioridade_filtro != '':
+                    if int(prioridade_filtro) != prioridade:
+                        continue
+                
+                # Adicionar linha para 'Aberta'
+                dados.append({
+                    'ID_Solicitacao': solicitacao.id,
+                    'ID_Cotacao': '',
+                    'Material': material.DescricaoMaterial if material else 'Material não encontrado',
+                    'Cod_Material': material.CodMaterial if material else '',
+                    'Especificacao': solicitacao.especificacao,
+                    'Marca': solicitacao.marca or '',
+                    'Solicitante': solicitacao.usuario,
+                    'Empresa': solicitacao.empresa,
+                    'Ativo': 'Sim' if solicitacao.ativo == 'Sim' else 'Não',
+                    'Nome_Ativo': solicitacao.nome_ativo if solicitacao.ativo == 'Sim' else '',
+                    'Quantidade': solicitacao.quantidade,
+                    'Unidade_Medida': solicitacao.unidade_medida,
+                    'Prioridade_Original': solicitacao.prioridade,
+                    'Nivel_Prioridade': nivel_prioridade,
+                    'Valor_Prioridade': prioridade,
+                    'Data_Solicitacao': solicitacao.data_solicitacao.strftime('%d/%m/%Y %H:%M'),
+                    'Status': status_formatado,
+                    'Fornecedor': fornecedor_nome,
+                    'CNPJ_Fornecedor': fornecedor_cnpj,
+                    'Valor_Unitario': valor_unitario,
+                    'Valor_Total': valor_total,
+                    'Valor_Frete': valor_frete,
+                    'Prazo_Entrega': prazo_entrega,
+                    'Condicao_Pagamento': condicao_pagamento,
+                    'Pedido_Numero': pedido_numero,
+                    'Pedido_Status': pedido_status,
+                    'Observacoes': observacoes,
+                    'Aprovacao': solicitacao.status_aprovacao or 'Pendente',
+                    'Aplicacao': solicitacao.aplicacao or '',
+                    'Aplicacao_Geral': solicitacao.aplicacao_geral or ''
+                })
+                continue  # Prosseguir para próxima solicitação
+            
+            # Se houver preenchimentos, processar cada um
             for preenchimento in preenchimentos:
                 # Aplicar filtro de status se especificado
-                if status and status != 'Todos':
-                    if status == 'Aberta':
-                        continue
-                    elif preenchimento.status != status:
+                if status and status.strip() and status != 'Todos':
+                    if preenchimento.status != status:
                         continue
                 
                 # Calcular prioridade
@@ -5495,6 +5564,7 @@ def exportar_auditoria_xlsx():
                         prioridade = 1
                 
                 # Aplicar filtro de prioridade se especificado
+                # CORREÇÃO: tratar string vazia
                 if prioridade_filtro and prioridade_filtro != '':
                     if int(prioridade_filtro) != prioridade:
                         continue
@@ -5506,8 +5576,8 @@ def exportar_auditoria_xlsx():
                     conn = get_db_connection(DB_PATH_FORNECEDORES)
                     if conn:
                         cursor = conn.cursor()
-                        cursor.execute('SELECT nome_fantasia, cnpj FROM fornecedores WHERE id = ?', 
-                                     (preenchimento.fornecedor_id,))
+                        cursor.execute('SELECT nome_fantasia, cnpj FROM fornecedores WHERE id = ?',
+                                       (preenchimento.fornecedor_id,))
                         result = cursor.fetchone()
                         if result:
                             fornecedor_nome = result[0]
@@ -5680,13 +5750,16 @@ def exportar_auditoria_xlsx():
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         filename = f'auditoria_solicitacoes_{timestamp}.xlsx'
         
-        # Retornar o arquivo
-        return send_file(
-            output,
-            as_attachment=True,
-            download_name=filename,
-            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        )
+        # CORREÇÃO: Usar make_response em vez de send_file para evitar corrupção
+        response = make_response(output.getvalue())
+        response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        response.headers['Content-Disposition'] = f'attachment; filename="{filename}"'
+        response.headers['Content-Length'] = len(output.getvalue())
+        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
+        
+        return response
         
     except Exception as e:
         flash(f'Erro ao exportar relatório: {str(e)}', 'error')
