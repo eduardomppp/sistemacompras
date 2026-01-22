@@ -7924,7 +7924,87 @@ def api_get_fornecedor(fornecedor_id):
     except Exception as e:
         logging.error(f"Erro na API de fornecedor específico: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
+
+@routes_bp.route('/duplicar_grupo_aplicacao', methods=['POST'])
+def duplicar_grupo_aplicacao():
+    """Duplica todas as solicitações de um grupo (aplicação)"""
+    if 'usuario' not in session:
+        return jsonify({'success': False, 'error': 'Usuário não autenticado'}), 401
     
+    try:
+        data = request.get_json()
+        aplicacao_original = data.get('aplicacao')
+        
+        if not aplicacao_original:
+            return jsonify({'success': False, 'error': 'Aplicação não especificada'}), 400
+        
+        # Buscar todas as solicitações da aplicação original
+        solicitacoes_originais = SolicitacoesCompra.query.filter(
+            SolicitacoesCompra.aplicacao == aplicacao_original,
+            SolicitacoesCompra.status_aprovacao == "Aprovado"
+        ).all()
+        
+        if not solicitacoes_originais:
+            return jsonify({'success': False, 'error': 'Nenhuma solicitação encontrada para esta aplicação'}), 404
+        
+        # Criar nova aplicação com sufixo _copia
+        aplicacao_nova = f"{aplicacao_original}_copia"
+        usuario = session['usuario']
+        
+        # Contador de duplicações bem-sucedidas
+        duplicacoes_criadas = 0
+        
+        # Duplicar cada solicitação
+        for solicitacao_original in solicitacoes_originais:
+            try:
+                # Criar nova solicitação baseada na original
+                nova_solicitacao = SolicitacoesCompra(
+                    cod_material=solicitacao_original.cod_material,
+                    especificacao=solicitacao_original.especificacao,
+                    quantidade=solicitacao_original.quantidade,
+                    unidade_medida=solicitacao_original.unidade_medida,
+                    aplicacao=aplicacao_nova,
+                    aplicacao_geral=aplicacao_nova,  # Aplicação geral também atualizada
+                    empresa=solicitacao_original.empresa,
+                    usuario=usuario,
+                    foto_path=solicitacao_original.foto_path,
+                    marca=solicitacao_original.marca,
+                    ativo=solicitacao_original.ativo,
+                    nome_ativo=solicitacao_original.nome_ativo,
+                    prioridade=solicitacao_original.prioridade,
+                    status_aprovacao=None,  # Nova solicitação começa sem aprovação
+                    comprador_atribuido=None  # Resetar comprador atribuído
+                )
+                
+                db.session.add(nova_solicitacao)
+                duplicacoes_criadas += 1
+                
+            except Exception as e:
+                db.session.rollback()
+                logging.error(f"Erro ao duplicar solicitação {solicitacao_original.id}: {str(e)}")
+                return jsonify({
+                    'success': False, 
+                    'error': f'Erro ao duplicar solicitação {solicitacao_original.id}: {str(e)}'
+                }), 500
+        
+        # Commit de todas as novas solicitações
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Grupo duplicado com sucesso! {duplicacoes_criadas} solicitações criadas.',
+            'aplicacao_nova': aplicacao_nova,
+            'count': duplicacoes_criadas
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"Erro geral ao duplicar grupo: {str(e)}")
+        return jsonify({
+            'success': False, 
+            'error': f'Erro ao duplicar grupo: {str(e)}'
+        }), 500   
+
   # Registro do Blueprint (apenas uma vez)
 app.register_blueprint(routes_bp)  
 
