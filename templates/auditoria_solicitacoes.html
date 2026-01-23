@@ -223,6 +223,21 @@
             font-weight: bold;
             color: #0d6efd;
         }
+
+        /* Estilo para linhas reprovadas */
+        .linha-reprovada {
+            background-color: #f8d7da !important;
+            opacity: 0.8;
+        }
+
+        /* Estilo para status reprovado na timeline */
+        .timeline-item.reprovado:before {
+            background-color: #dc3545;
+        }
+
+        .timeline-item.reprovado i {
+            color: #dc3545;
+        }
     </style>
 </head>
 
@@ -377,8 +392,9 @@
                         </thead>
                         <tbody>
                             {% for item in auditoria %}
-                            <tr
-                                class="{% if item.prioridade == 3 %}prioridade-alta{% elif item.prioridade == 2 %}prioridade-media{% elif item.prioridade == 1 %}prioridade-baixa{% endif %}">
+                            {% set is_reprovado = item.solicitacao.status_aprovacao == 'Reprovado' %}
+                            <tr class="{% if is_reprovado %}linha-reprovada{% endif %}
+                                      {% if item.prioridade == 3 %}prioridade-alta{% elif item.prioridade == 2 %}prioridade-media{% elif item.prioridade == 1 %}prioridade-baixa{% endif %}">
                                 <td>
                                     <strong>SOL#{{ item.solicitacao.id }}</strong>
                                     {% if item.preenchimento %}
@@ -411,6 +427,11 @@
                                             <i class="fas fa-clock"></i> Baixa Prioridade
                                         </span>
                                         {% endif %}
+                                        {% if is_reprovado %}
+                                        <span class="badge bg-danger mt-1">
+                                            <i class="fas fa-ban"></i> Reprovada Individualmente
+                                        </span>
+                                        {% endif %}
                                     </div>
                                 </td>
                                 <td>{{ item.solicitacao.usuario }}</td>
@@ -434,30 +455,68 @@
                                 </td>
                                 <td>{{ item.solicitacao.data_solicitacao.strftime('%d/%m/%Y') }}</td>
                                 <td>
-                                    {% if not item.preenchimento %}
-                                    {% if item.solicitacao.status == 'Pendente' %}
-                                    <span class="status-badge status-pendente">Pendente</span>
+                                    <!-- LÓGICA CORRIGIDA PARA EXIBIR STATUS -->
+                                    {% if is_reprovado %}
+                                        <!-- Se foi reprovada individualmente -->
+                                        <span class="status-badge status-reprovada">
+                                            <i class="fas fa-times-circle"></i> Reprovado
+                                        </span>
+                                    {% elif not item.preenchimento %}
+                                        <!-- Sem preenchimento -->
+                                        {% if item.solicitacao.status_aprovacao %}
+                                            {% if item.solicitacao.status_aprovacao == 'Aprovado' %}
+                                            <span class="status-badge status-aprovada">
+                                                <i class="fas fa-check-circle"></i> Aprovado
+                                            </span>
+                                            {% else %}
+                                            <span class="status-badge status-aberta">
+                                                {{ item.solicitacao.status_aprovacao }}
+                                            </span>
+                                            {% endif %}
+                                        {% elif item.solicitacao.status == 'Pendente' %}
+                                        <span class="status-badge status-pendente">
+                                            <i class="fas fa-clock"></i> Pendente
+                                        </span>
+                                        {% else %}
+                                        <span class="status-badge status-aberta">
+                                            <i class="fas fa-folder-open"></i> Aberta
+                                        </span>
+                                        {% endif %}
                                     {% else %}
-                                    <span class="status-badge status-aberta">Aberta</span>
-                                    {% endif %}
-                                    {% else %}
-                                    {% if item.preenchimento.status == 'Rascunho' %}
-                                    <span class="status-badge status-rascunho">Rascunho</span>
-                                    {% elif item.preenchimento.status == 'Pendente' %}
-                                    <span class="status-badge status-pendente">Pendente</span>
-                                    {% elif item.preenchimento.status == 'Aguardando Aprovação' %}
-                                    <span class="status-badge status-preenchida">Aguardando Aprovação</span>
-                                    {% elif item.preenchimento.status == 'Aprovado' %}
-                                    <span class="status-badge status-aprovada">Aprovado</span>
-                                    {% elif item.preenchimento.status == 'Reprovado' %}
-                                    <span class="status-badge status-reprovada">Reprovado</span>
-                                    {% elif item.preenchimento.status == 'Em Processamento' %}
-                                    <span class="status-badge status-processamento">Em Processamento</span>
-                                    {% elif item.preenchimento.status == 'Entregue' %}
-                                    <span class="status-badge status-entregue">Entregue</span>
-                                    {% else %}
-                                    <span class="status-badge status-aberta">{{ item.preenchimento.status }}</span>
-                                    {% endif %}
+                                        <!-- Com preenchimento -->
+                                        {% if item.preenchimento.status == 'Rascunho' %}
+                                        <span class="status-badge status-rascunho">
+                                            <i class="fas fa-edit"></i> Rascunho
+                                        </span>
+                                        {% elif item.preenchimento.status == 'Pendente' %}
+                                        <span class="status-badge status-pendente">
+                                            <i class="fas fa-clock"></i> Pendente
+                                        </span>
+                                        {% elif item.preenchimento.status == 'Aguardando Aprovação' %}
+                                        <span class="status-badge status-preenchida">
+                                            <i class="fas fa-hourglass-half"></i> Aguardando Aprovação
+                                        </span>
+                                        {% elif item.preenchimento.status == 'Aprovado' %}
+                                        <span class="status-badge status-aprovada">
+                                            <i class="fas fa-check-circle"></i> Aprovado
+                                        </span>
+                                        {% elif item.preenchimento.status == 'Reprovado' %}
+                                        <span class="status-badge status-reprovada">
+                                            <i class="fas fa-times-circle"></i> Reprovado
+                                        </span>
+                                        {% elif item.preenchimento.status == 'Em Processamento' %}
+                                        <span class="status-badge status-processamento">
+                                            <i class="fas fa-cogs"></i> Em Processamento
+                                        </span>
+                                        {% elif item.preenchimento.status == 'Entregue' %}
+                                        <span class="status-badge status-entregue">
+                                            <i class="fas fa-truck"></i> Entregue
+                                        </span>
+                                        {% else %}
+                                        <span class="status-badge status-aberta">
+                                            <i class="fas fa-question-circle"></i> {{ item.preenchimento.status }}
+                                        </span>
+                                        {% endif %}
                                     {% endif %}
                                 </td>
                                 <td>
@@ -486,6 +545,7 @@
 
         <!-- Modais de Detalhes -->
         {% for item in auditoria %}
+        {% set is_reprovado = item.solicitacao.status_aprovacao == 'Reprovado' %}
         <div class="modal fade"
             id="detalhesModal{{ item.solicitacao.id }}_{{ item.preenchimento.id if item.preenchimento else '0' }}"
             tabindex="-1"
@@ -493,21 +553,28 @@
             aria-hidden="true">
             <div class="modal-dialog modal-xl">
                 <div class="modal-content">
-                    <div class="modal-header">
+                    <div class="modal-header {% if is_reprovado %}bg-danger text-white{% endif %}">
                         <h5 class="modal-title"
                             id="detalhesModalLabel{{ item.solicitacao.id }}_{{ item.preenchimento.id if item.preenchimento else '0' }}">
+                            {% if is_reprovado %}
+                            <i class="fas fa-times-circle me-2"></i>
+                            {% endif %}
                             Detalhes da Solicitação #{{ item.solicitacao.id }}
                             {% if item.preenchimento %}
                             - Cotação #{{ item.preenchimento.id }}
                             {% endif %}
+                            {% if is_reprovado %}
+                            <span class="badge bg-light text-danger ms-2">REPROVADA</span>
+                            {% endif %}
                         </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        <button type="button" class="btn-close {% if is_reprovado %}btn-close-white{% endif %}"
+                            data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
                         <div class="row mb-4">
                             <div class="col-md-6">
                                 <div class="card h-100">
-                                    <div class="card-header">
+                                    <div class="card-header {% if is_reprovado %}bg-danger text-white{% endif %}">
                                         <i class="fas fa-box me-2"></i>Informações do Material
                                     </div>
                                     <div class="card-body">
@@ -540,20 +607,27 @@
                                             <p class="mb-1"><strong>Aprovação:</strong>
                                                 {% if item.solicitacao.status_aprovacao %}
                                                 <span
-                                                    class="badge bg-{{ 'success' if item.solicitacao.status_aprovacao == 'Aprovado' else 'danger' }}">
+                                                    class="badge bg-{{ 'success' if item.solicitacao.status_aprovacao == 'Aprovado' else 'danger' if item.solicitacao.status_aprovacao == 'Reprovado' else 'warning' }}">
                                                     {{ item.solicitacao.status_aprovacao }}
                                                 </span>
                                                 {% else %}
                                                 <span class="badge bg-secondary">Pendente</span>
                                                 {% endif %}
                                             </p>
+                                            {% if is_reprovado and item.solicitacao.observacoes_col %}
+                                            <div class="alert alert-danger mt-2">
+                                                <strong><i class="fas fa-exclamation-triangle me-1"></i> Motivo da
+                                                    Reprovação:</strong><br>
+                                                {{ item.solicitacao.observacoes_col|replace('[', '<br>[')|safe }}
+                                            </div>
+                                            {% endif %}
                                         </div>
                                     </div>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="card h-100">
-                                    <div class="card-header">
+                                    <div class="card-header {% if is_reprovado %}bg-danger text-white{% endif %}">
                                         <i class="fas fa-user me-2"></i>Informações da Solicitação
                                     </div>
                                     <div class="card-body">
@@ -584,7 +658,21 @@
                                                     <small>{{ item.solicitacao.data_solicitacao.strftime('%d/%m/%Y
                                                         %H:%M') }}</small>
                                                 </div>
-                                                {% if item.preenchimento %}
+                                                
+                                                {% if is_reprovado %}
+                                                <!-- Se foi reprovada individualmente -->
+                                                <div class="timeline-item reprovado">
+                                                    <i class="fas fa-times-circle"></i>
+                                                    <strong>REPROVADA INDIVIDUALMENTE</strong><br>
+                                                    <small>Status: Reprovado</small>
+                                                    {% if item.solicitacao.observacoes_col %}
+                                                    <br><small class="text-danger">{{ item.solicitacao.observacoes_col|truncate(50)
+                                                        }}</small>
+                                                    {% endif %}
+                                                </div>
+                                                {% endif %}
+                                                
+                                                {% if item.preenchimento and not is_reprovado %}
                                                 <div class="timeline-item completed">
                                                     <i class="fas fa-file-invoice-dollar"></i>
                                                     <strong>Cotação Preenchida</strong><br>
@@ -593,7 +681,7 @@
                                                     <small>Por: {{ item.preenchimento.usuario }}</small>
                                                 </div>
                                                 {% if item.preenchimento.status in ['Aprovado', 'Reprovado'] %}
-                                                <div class="timeline-item completed">
+                                                <div class="timeline-item {{ 'completed' if item.preenchimento.status == 'Aprovado' else 'reprovado' }}">
                                                     <i
                                                         class="fas {% if item.preenchimento.status == 'Aprovado' %}fa-check-circle{% else %}fa-times-circle{% endif %}"></i>
                                                     <strong>{{ item.preenchimento.status }}</strong><br>
@@ -626,32 +714,51 @@
                                                 </div>
                                                 {% endif %}
                                                 {% endif %}
+                                                
                                                 <div
-                                                    class="timeline-item {% if item.preenchimento and item.preenchimento.status == 'Entregue' %}completed{% else %}current{% endif %}">
+                                                    class="timeline-item {% if is_reprovado %}reprovado{% elif item.preenchimento and item.preenchimento.status == 'Entregue' %}completed{% else %}current{% endif %}">
                                                     <i class="fas fa-info-circle"></i>
                                                     <strong>Status Atual</strong><br>
-                                                    {% if not item.preenchimento %}
-                                                    {% if item.solicitacao.status == 'Pendente' %}
-                                                    <span class="badge bg-warning">Pendente</span>
+                                                    {% if is_reprovado %}
+                                                    <span class="badge bg-danger">
+                                                        <i class="fas fa-ban"></i> Reprovado
+                                                    </span>
+                                                    {% elif not item.preenchimento %}
+                                                        {% if item.solicitacao.status_aprovacao %}
+                                                            {% if item.solicitacao.status_aprovacao == 'Aprovado' %}
+                                                            <span class="badge bg-success">
+                                                                <i class="fas fa-check-circle"></i> Aprovado
+                                                            </span>
+                                                            {% elif item.solicitacao.status_aprovacao == 'Reprovado' %}
+                                                            <span class="badge bg-danger">
+                                                                <i class="fas fa-times-circle"></i> Reprovado
+                                                            </span>
+                                                            {% else %}
+                                                            <span class="badge bg-warning">
+                                                                {{ item.solicitacao.status_aprovacao }}
+                                                            </span>
+                                                            {% endif %}
+                                                        {% elif item.solicitacao.status == 'Pendente' %}
+                                                        <span class="badge bg-warning">Pendente</span>
+                                                        {% else %}
+                                                        <span class="badge bg-warning text-dark">Aberta</span>
+                                                        {% endif %}
                                                     {% else %}
-                                                    <span class="badge bg-warning text-dark">Aberta</span>
-                                                    {% endif %}
-                                                    {% else %}
-                                                    {% if item.preenchimento.status == 'Rascunho' %}
-                                                    <span class="badge bg-secondary">Rascunho</span>
-                                                    {% elif item.preenchimento.status == 'Pendente' %}
-                                                    <span class="badge bg-warning">Pendente</span>
-                                                    {% elif item.preenchimento.status == 'Aguardando Aprovação' %}
-                                                    <span class="badge bg-info">Aguardando Aprovação</span>
-                                                    {% elif item.preenchimento.status == 'Aprovado' %}
-                                                    <span class="badge bg-success">Aprovado</span>
-                                                    {% elif item.preenchimento.status == 'Reprovado' %}
-                                                    <span class="badge bg-danger">Reprovado</span>
-                                                    {% elif item.preenchimento.status == 'Em Processamento' %}
-                                                    <span class="badge bg-secondary">Em Processamento</span>
-                                                    {% elif item.preenchimento.status == 'Entregue' %}
-                                                    <span class="badge bg-primary">Entregue</span>
-                                                    {% endif %}
+                                                        {% if item.preenchimento.status == 'Rascunho' %}
+                                                        <span class="badge bg-secondary">Rascunho</span>
+                                                        {% elif item.preenchimento.status == 'Pendente' %}
+                                                        <span class="badge bg-warning">Pendente</span>
+                                                        {% elif item.preenchimento.status == 'Aguardando Aprovação' %}
+                                                        <span class="badge bg-info">Aguardando Aprovação</span>
+                                                        {% elif item.preenchimento.status == 'Aprovado' %}
+                                                        <span class="badge bg-success">Aprovado</span>
+                                                        {% elif item.preenchimento.status == 'Reprovado' %}
+                                                        <span class="badge bg-danger">Reprovado</span>
+                                                        {% elif item.preenchimento.status == 'Em Processamento' %}
+                                                        <span class="badge bg-secondary">Em Processamento</span>
+                                                        {% elif item.preenchimento.status == 'Entregue' %}
+                                                        <span class="badge bg-primary">Entregue</span>
+                                                        {% endif %}
                                                     {% endif %}
                                                 </div>
                                             </div>
@@ -661,7 +768,7 @@
                             </div>
                         </div>
 
-                        {% if item.preenchimento %}
+                        {% if item.preenchimento and not is_reprovado %}
                         <div class="card mb-4">
                             <div class="card-header">
                                 <i class="fas fa-file-invoice-dollar me-2"></i>Detalhes da Cotação
@@ -906,7 +1013,6 @@
         });
 
         // Exportar para XLSX
-        // Exportar para XLSX
         document.getElementById('exportXlsxBtn').addEventListener('click', function () {
             // Feedback imediato ao usuário
             const toast = new bootstrap.Toast(document.getElementById('filterToast'), {
@@ -989,5 +1095,4 @@
         });
     </script>
 </body>
-
 </html>

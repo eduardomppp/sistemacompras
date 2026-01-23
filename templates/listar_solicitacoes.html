@@ -26,62 +26,76 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             color: var(--text-color);
             margin: 0;
-            padding: 20px;
+            padding: 15px;
         }
 
         .container {
             background: #fff;
-            padding: 20px 40px;
+            padding: 20px;
             border-radius: 10px;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-            max-width: 1400px;
-            margin: auto;
+            width: 100%;
+            max-width: 100%;
+            overflow-x: hidden;
         }
 
         h1 {
             color: var(--primary-color);
             text-align: center;
-            margin-bottom: 30px;
-            font-size: 22px;
+            margin-bottom: 25px;
+            font-size: 20px;
             font-weight: 700;
         }
 
         .filter-row {
             display: flex;
             flex-wrap: wrap;
-            gap: 10px;
+            gap: 8px;
             margin-bottom: 15px;
         }
 
+        .filter-group {
+            flex: 1 1 200px;
+            min-width: 150px;
+        }
+
         .filter-group label {
-            font-size: 12px;
+            font-size: 11px;
             color: #555;
             font-weight: 600;
             margin-bottom: 3px;
+            display: block;
         }
 
         .filter-group select,
         .filter-group input {
-            font-size: 13px;
-            padding: 6px;
+            font-size: 12px;
+            padding: 5px 8px;
+            height: 34px;
+            width: 100%;
         }
 
         .filter-actions {
-            text-align: right;
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
             margin-top: 10px;
+            width: 100%;
         }
 
         .btn-filter,
         .btn-clear {
-            font-size: 13px;
+            font-size: 12px;
             padding: 6px 12px;
             border-radius: 6px;
             transition: all 0.2s;
+            height: 34px;
         }
 
         .btn-filter {
             background-color: var(--primary-color);
             color: #fff;
+            border: none;
         }
 
         .btn-filter:hover {
@@ -91,6 +105,7 @@
         .btn-clear {
             background-color: #6c757d;
             color: white;
+            border: none;
         }
 
         .btn-clear:hover {
@@ -98,13 +113,13 @@
         }
 
         .aplicacao-section {
-            margin-top: 40px;
-            page-break-after: always;
+            margin-top: 30px;
             border: 1px solid #ddd;
             border-radius: 8px;
-            padding: 15px;
+            padding: 12px;
             background: #fff;
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            overflow: hidden;
         }
 
         .aplicacao-header {
@@ -112,49 +127,60 @@
             justify-content: space-between;
             align-items: center;
             background: linear-gradient(135deg, #e9f0fb 0%, #dce7f8 100%);
-            padding: 12px 20px;
+            padding: 10px 15px;
             border-radius: 8px;
             margin-bottom: 15px;
             border-left: 4px solid var(--primary-color);
+            flex-wrap: wrap;
+            gap: 10px;
         }
 
         .aplicacao-title {
             color: var(--primary-color);
             font-weight: 700;
-            font-size: 18px;
+            font-size: 16px;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
+            flex: 1;
+            min-width: 200px;
         }
 
         .aplicacao-title i {
-            font-size: 20px;
+            font-size: 18px;
         }
 
         .grupo-info {
-            font-size: 12px;
+            font-size: 11px;
             color: #666;
             background: #f8f9fa;
-            padding: 4px 10px;
+            padding: 3px 8px;
             border-radius: 4px;
-            margin-top: 5px;
+            margin-top: 4px;
         }
 
         .btn-group-acoes {
             display: flex;
-            gap: 10px;
+            gap: 8px;
+            flex-wrap: wrap;
         }
 
-        .btn-duplicar-grupo {
-            font-size: 12px;
-            padding: 6px 12px;
+        .btn-duplicar-grupo,
+        .btn-excluir-grupo {
+            font-size: 11px;
+            padding: 5px 10px;
             border-radius: 6px;
             font-weight: 600;
             transition: all 0.3s;
             display: flex;
             align-items: center;
             gap: 5px;
-            border: 1px solid var(--success-color);
+            white-space: nowrap;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-duplicar-grupo {
             background-color: var(--success-color);
             color: white;
         }
@@ -163,19 +189,9 @@
             transform: translateY(-2px);
             box-shadow: 0 4px 8px rgba(40, 167, 69, 0.2);
             background-color: #218838;
-            border-color: #1e7e34;
         }
 
         .btn-excluir-grupo {
-            font-size: 12px;
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-weight: 600;
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            border: 1px solid var(--danger-color);
             background-color: var(--danger-color);
             color: white;
         }
@@ -184,51 +200,124 @@
             transform: translateY(-2px);
             box-shadow: 0 4px 8px rgba(220, 53, 69, 0.2);
             background-color: #c82333;
-            border-color: #bd2130;
+        }
+
+        /* CONTAINER RESPONSIVO PARA TABELA */
+        .table-responsive-container {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            margin-bottom: 20px;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 30px;
-            font-size: 13px;
-            table-layout: fixed;
+            font-size: 12px;
+            min-width: 1100px;
         }
 
-        th,
-        td {
+        th, td {
             border: 1px solid var(--border-color);
-            padding: 8px 10px;
+            padding: 6px 8px;
             text-align: center;
             vertical-align: middle;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         th {
             background-color: var(--primary-color);
             color: #fff;
-            font-size: 13px;
+            font-size: 12px;
             position: sticky;
             top: 0;
+            font-weight: 600;
         }
 
         tr:nth-child(even) {
             background-color: #f9fbfd;
         }
 
-        .col-especificacao {
-            width: 200px;
-            max-width: 200px;
-            word-wrap: break-word;
-            word-break: break-word;
-            overflow-wrap: break-word;
+        tr:hover {
+            background-color: #f0f7ff;
+        }
+
+        /* COLUNAS OTIMIZADAS */
+        .col-id {
+            width: 60px;
+            min-width: 60px;
+        }
+
+        .col-material {
+            width: 140px;
+            min-width: 140px;
+            max-width: 140px;
             white-space: normal;
-            line-height: 1.4;
+        }
+
+        .col-especificacao {
+            width: 180px;
+            min-width: 180px;
+            max-width: 180px;
+            word-wrap: break-word;
+            white-space: normal;
+            line-height: 1.3;
+            text-align: left;
+        }
+
+        .col-quantidade {
+            width: 80px;
+            min-width: 80px;
+        }
+
+        .col-empresa {
+            width: 120px;
+            min-width: 120px;
+        }
+
+        .col-aplicacao {
+            width: 130px;
+            min-width: 130px;
+        }
+
+        .col-data {
+            width: 110px;
+            min-width: 110px;
+        }
+
+        .col-usuario {
+            width: 120px;
+            min-width: 120px;
+        }
+
+        .col-status {
+            width: 100px;
+            min-width: 100px;
+        }
+
+        .col-comprador {
+            width: 130px;
+            min-width: 130px;
+        }
+
+        .col-atribuicao {
+            width: 160px;
+            min-width: 160px;
+        }
+
+        .col-reprovar {
+            width: 100px;
+            min-width: 100px;
         }
 
         .status-badge {
             padding: 3px 8px;
             border-radius: 10px;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 600;
             display: inline-block;
         }
@@ -248,14 +337,22 @@
             color: var(--status-pendente);
         }
 
+        /* BOTÕES COMPACTOS */
         .btn-atribuir {
             background-color: var(--primary-color);
             color: white;
-            font-size: 12px;
+            font-size: 11px;
             padding: 4px 8px;
             border: none;
-            border-radius: 6px;
+            border-radius: 4px;
             transition: background 0.2s;
+            margin-left: 5px;
+            width: 32px;
+            height: 32px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
         }
 
         .btn-atribuir:hover {
@@ -263,9 +360,108 @@
         }
 
         .comprador-select {
-            font-size: 12px;
+            font-size: 11px;
             padding: 4px;
             width: 120px;
+            height: 32px;
+        }
+
+        /* BOTÃO REPROVAR COMPACTO */
+        .btn-reprovar {
+            background-color: var(--danger-color);
+            color: white;
+            font-size: 11px;
+            padding: 5px 8px;
+            border: none;
+            border-radius: 4px;
+            transition: all 0.3s;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            font-weight: 600;
+            width: 100%;
+            height: 32px;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+
+        .btn-reprovar:hover:not(:disabled) {
+            background-color: #c82333;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(220, 53, 69, 0.2);
+        }
+
+        .btn-reprovar:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* RESPONSIVIDADE */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .container {
+                padding: 15px;
+            }
+            
+            .filter-group {
+                flex: 1 1 100%;
+            }
+            
+            .aplicacao-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .btn-group-acoes {
+                width: 100%;
+                justify-content: flex-start;
+            }
+            
+            .btn-reprovar span {
+                display: none;
+            }
+            
+            .btn-reprovar {
+                width: 40px;
+                justify-content: center;
+            }
+            
+            .btn-reprovar i {
+                margin: 0;
+                font-size: 14px;
+            }
+            
+            .col-atribuicao {
+                width: 140px;
+                min-width: 140px;
+            }
+            
+            table {
+                min-width: 1000px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 18px;
+            }
+            
+            .aplicacao-title {
+                font-size: 14px;
+            }
+            
+            .btn-duplicar-grupo,
+            .btn-excluir-grupo {
+                font-size: 10px;
+                padding: 4px 8px;
+            }
         }
 
         .empty-state {
@@ -275,7 +471,48 @@
             padding: 40px;
         }
 
-        /* Modal de confirmação */
+        /* TOOLTIPS */
+        .tooltip-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
+        .tooltip-wrapper:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .tooltip-text {
+            visibility: hidden;
+            width: 200px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px 8px;
+            position: absolute;
+            z-index: 1000;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 11px;
+            white-space: normal;
+        }
+
+        .tooltip-text::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: #333 transparent transparent transparent;
+        }
+
+        /* MODAIS */
         .confirmation-modal {
             position: fixed;
             top: 0;
@@ -291,7 +528,7 @@
 
         .modal-content {
             background: white;
-            padding: 30px;
+            padding: 25px;
             border-radius: 10px;
             max-width: 500px;
             width: 90%;
@@ -301,17 +538,28 @@
         .modal-warning {
             background: #fff3cd;
             border-left: 4px solid var(--warning-color);
-            padding: 15px;
+            padding: 12px;
             margin: 15px 0;
             border-radius: 4px;
+            font-size: 13px;
         }
 
         .modal-success {
             background: #d4edda;
             border-left: 4px solid var(--success-color);
-            padding: 15px;
+            padding: 12px;
             margin: 15px 0;
             border-radius: 4px;
+            font-size: 13px;
+        }
+
+        .modal-danger {
+            background: #f8d7da;
+            border-left: 4px solid var(--danger-color);
+            padding: 12px;
+            margin: 15px 0;
+            border-radius: 4px;
+            font-size: 13px;
         }
 
         .modal-actions {
@@ -321,83 +569,142 @@
             margin-top: 20px;
         }
 
-        /* Quebra de página na impressão */
+        /* AJUSTES PARA IMPRESSÃO */
         @media print {
             body {
                 background: white;
+                padding: 0;
+                font-size: 10pt;
             }
 
             .filter-row,
             .filter-actions,
             h1,
             .btn-duplicar-grupo,
-            .btn-excluir-grupo {
-                display: none;
+            .btn-excluir-grupo,
+            .btn-atribuir,
+            .btn-reprovar,
+            .comprador-select {
+                display: none !important;
             }
 
             .container {
                 box-shadow: none;
                 padding: 0;
+                margin: 0;
+                max-width: 100%;
             }
 
-            .aplicacao-section {
-                page-break-after: always;
+            .table-responsive-container {
+                overflow: visible;
                 border: none;
-                padding: 0;
-            }
-
-            .aplicacao-header {
-                background: #f0f0f0;
-                border-left: 3px solid #000;
             }
 
             table {
-                page-break-inside: auto;
+                min-width: auto;
+                width: 100%;
+                font-size: 9pt;
             }
 
-            tr {
-                page-break-inside: avoid;
-                page-break-after: auto;
+            th, td {
+                padding: 3px 5px;
+                border: 1px solid #ccc;
             }
 
             .col-especificacao {
-                width: 180px;
-                max-width: 180px;
+                white-space: normal;
+                max-width: 150px;
+            }
+            
+            .aplicacao-section {
+                page-break-inside: avoid;
+                border: none;
+                padding: 0;
+                margin: 0 0 20px 0;
             }
         }
 
-        /* Destaque suave para solicitações com mais de 7 dias */
+        /* Destaque para solicitações antigas */
         .highlight-old {
             background-color: #fff6c2 !important;
-            animation: softBlink 2s ease-in-out infinite;
+            animation: pulse 2s infinite;
         }
 
-        @keyframes softBlink {
-
-            0%,
-            100% {
-                background-color: #fff6c2;
-            }
-
-            50% {
-                background-color: #fffbdb;
-            }
+        @keyframes pulse {
+            0% { background-color: #fff6c2; }
+            50% { background-color: #fffbdb; }
+            100% { background-color: #fff6c2; }
         }
 
         /* Loading spinner */
         .loading-spinner {
             display: inline-block;
-            width: 1em;
-            height: 1em;
+            width: 16px;
+            height: 16px;
             border: 2px solid rgba(255, 255, 255, 0.3);
             border-radius: 50%;
             border-top-color: #fff;
             animation: spin 1s ease-in-out infinite;
+            vertical-align: middle;
+            margin-right: 5px;
         }
 
         @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Notificações */
+        .custom-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            min-width: 300px;
+            max-width: 400px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border-radius: 8px;
+            padding: 15px;
+            animation: slideIn 0.3s ease;
+            border-left: 4px solid;
+        }
+
+        .notification-success {
+            background-color: #d4edda;
+            border-left-color: #28a745;
+            color: #155724;
+        }
+
+        .notification-danger {
+            background-color: #f8d7da;
+            border-left-color: #dc3545;
+            color: #721c24;
+        }
+
+        .notification-warning {
+            background-color: #fff3cd;
+            border-left-color: #ffc107;
+            color: #856404;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
             to {
-                transform: rotate(360deg);
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
             }
         }
     </style>
@@ -410,44 +717,44 @@
         <!-- Filtros -->
         <div class="search-filter-container">
             <div class="filter-row">
-                <div class="filter-group flex-fill">
+                <div class="filter-group">
                     <label>Empresa</label>
-                    <select id="empresaFilter" class="form-select">
+                    <select id="empresaFilter" class="form-select form-select-sm">
                         <option value="">Todas</option>
                         {% for empresa in empresas %}
                         <option value="{{ empresa }}">{{ empresa }}</option>
                         {% endfor %}
                     </select>
                 </div>
-                <div class="filter-group flex-fill">
+                <div class="filter-group">
                     <label>Usuário</label>
-                    <select id="usuarioFilter" class="form-select">
+                    <select id="usuarioFilter" class="form-select form-select-sm">
                         <option value="">Todos</option>
                         {% for usuario in usuarios %}
                         <option value="{{ usuario }}">{{ usuario }}</option>
                         {% endfor %}
                     </select>
                 </div>
-                <div class="filter-group flex-fill">
+                <div class="filter-group">
                     <label>Aplicação</label>
-                    <select id="aplicacaoFilter" class="form-select">
+                    <select id="aplicacaoFilter" class="form-select form-select-sm">
                         <option value="">Todas</option>
                         {% for aplicacao in aplicacoes %}
                         <option value="{{ aplicacao }}">{{ aplicacao }}</option>
                         {% endfor %}
                     </select>
                 </div>
-                <div class="filter-group flex-fill">
+                <div class="filter-group">
                     <label>Status</label>
-                    <select id="statusFilter" class="form-select">
+                    <select id="statusFilter" class="form-select form-select-sm">
                         <option value="">Todos</option>
                         <option value="Aprovado">Aprovado</option>
                         <option value="Reprovado">Reprovado</option>
                     </select>
                 </div>
-                <div class="filter-group flex-fill">
+                <div class="filter-group">
                     <label>Comprador</label>
-                    <select id="compradorFilter" class="form-select">
+                    <select id="compradorFilter" class="form-select form-select-sm">
                         <option value="">Todos</option>
                         {% for comprador in compradores %}
                         <option value="{{ comprador }}">{{ comprador }}</option>
@@ -457,17 +764,17 @@
                 </div>
             </div>
             <div class="filter-row">
-                <div class="filter-group">
+                <div class="filter-group" style="flex: 2;">
                     <label>Data de Solicitação</label>
                     <div class="d-flex align-items-center gap-2">
-                        <input type="date" id="dataInicio" class="form-control">
-                        <span>até</span>
-                        <input type="date" id="dataFim" class="form-control">
+                        <input type="date" id="dataInicio" class="form-control form-control-sm">
+                        <span class="small">até</span>
+                        <input type="date" id="dataFim" class="form-control form-control-sm">
                     </div>
                 </div>
-                <div class="filter-actions flex-grow-1 text-end">
-                    <button class="btn-clear" id="clearFilters"><i class="fas fa-times"></i> Limpar</button>
-                    <button class="btn-filter" id="applyFilters"><i class="fas fa-filter"></i> Aplicar</button>
+                <div class="filter-actions">
+                    <button class="btn-clear btn-sm" id="clearFilters"><i class="fas fa-times"></i> Limpar</button>
+                    <button class="btn-filter btn-sm" id="applyFilters"><i class="fas fa-filter"></i> Aplicar</button>
                 </div>
             </div>
         </div>
@@ -520,55 +827,81 @@
                 </div>
             </div>
             
-            <table>
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Material</th>
-                        <th class="col-especificacao">Especificação</th>
-                        <th>Quantidade</th>
-                        <th>Empresa</th>
-                        <th>Aplicação</th>
-                        <th>Data Solicitação</th>
-                        <th>Usuário</th>
-                        <th>Status</th>
-                        <th>Comprador</th>
-                        <th>Atribuição</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {# Ordenamos as solicitações dentro de cada aplicação pela data (do mais novo para o mais antigo) #}
-                    {% for solicitacao in solicitacoes_por_aplicacao[aplicacao]|sort(attribute='data_solicitacao', reverse=true) %}
-                    <tr data-id="{{ solicitacao.id }}" data-aplicacao="{{ solicitacao.aplicacao }}">
-                        <td>{{ solicitacao.id }}</td>
-                        <td>{{ solicitacao.material.DescricaoMaterial }}</td>
-                        <td class="col-especificacao">{{ solicitacao.especificacao or '-' }}</td>
-                        <td>{{ solicitacao.quantidade }}</td>
-                        <td>{{ solicitacao.empresa }}</td>
-                        <td>{{ solicitacao.aplicacao }}</td>
-                        <td data-order="{{ solicitacao.data_solicitacao.strftime('%Y-%m-%d') }}">{{
-                            solicitacao.data_solicitacao | format_brasil_time }}</td>
-                        <td>{{ solicitacao.usuario }}</td>
-                        <td>
-                            <span class="status-badge status-{{ solicitacao.status_aprovacao|lower }}">{{
-                                solicitacao.status_aprovacao }}</span>
-                        </td>
-                        <td>{{ solicitacao.comprador_atribuido or 'Não atribuído' }}</td>
-                        <td>
-                            <select class="form-select comprador-select" data-id="{{ solicitacao.id }}">
-                                <option value="">Selecionar</option>
-                                {% for comprador in compradores %}
-                                <option value="{{ comprador }}" {% if solicitacao.comprador_atribuido==comprador
-                                    %}selected{% endif %}>{{ comprador }}</option>
-                                {% endfor %}
-                            </select>
-                            <button class="btn-atribuir" data-id="{{ solicitacao.id }}"><i
-                                    class="fas fa-user-check"></i></button>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+            <!-- CONTAINER RESPONSIVO ADICIONADO -->
+            <div class="table-responsive-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th class="col-id">ID</th>
+                            <th class="col-material">Material</th>
+                            <th class="col-especificacao">Especificação</th>
+                            <th class="col-quantidade">Quantidade</th>
+                            <th class="col-empresa">Empresa</th>
+                            <th class="col-aplicacao">Aplicação</th>
+                            <th class="col-data">Data Solicitação</th>
+                            <th class="col-usuario">Usuário</th>
+                            <th class="col-status">Status</th>
+                            <th class="col-comprador">Comprador</th>
+                            <th class="col-atribuicao">Atribuição</th>
+                            <th class="col-reprovar">Reprovar</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {# Ordenamos as solicitações dentro de cada aplicação pela data (do mais novo para o mais antigo) #}
+                        {% for solicitacao in solicitacoes_por_aplicacao[aplicacao]|sort(attribute='data_solicitacao', reverse=true) %}
+                        <tr data-id="{{ solicitacao.id }}" 
+                            data-aplicacao="{{ solicitacao.aplicacao }}" 
+                            data-order-date="{{ solicitacao.data_solicitacao.strftime('%Y-%m-%d') }}"
+                            class="{% if solicitacao.dias_atraso and solicitacao.dias_atraso > 7 %}highlight-old{% endif %}">
+                            <td class="col-id">{{ solicitacao.id }}</td>
+                            <td class="col-material">{{ solicitacao.material.DescricaoMaterial }}</td>
+                            <td class="col-especificacao">{{ solicitacao.especificacao or '-' }}</td>
+                            <td class="col-quantidade">{{ solicitacao.quantidade }}</td>
+                            <td class="col-empresa">{{ solicitacao.empresa }}</td>
+                            <td class="col-aplicacao">{{ solicitacao.aplicacao }}</td>
+                            <td class="col-data" data-order="{{ solicitacao.data_solicitacao.strftime('%Y-%m-%d') }}">
+                                {{ solicitacao.data_solicitacao | format_brasil_time }}
+                            </td>
+                            <td class="col-usuario">{{ solicitacao.usuario }}</td>
+                            <td class="col-status">
+                                <span class="status-badge status-{{ solicitacao.status_aprovacao|lower }}">
+                                    {{ solicitacao.status_aprovacao }}
+                                </span>
+                            </td>
+                            <td class="col-comprador">{{ solicitacao.comprador_atribuido or 'Não atribuído' }}</td>
+                            <td class="col-atribuicao">
+                                <div class="d-flex align-items-center">
+                                    <select class="form-select form-select-sm comprador-select" data-id="{{ solicitacao.id }}">
+                                        <option value="">Selecionar</option>
+                                        {% for comprador in compradores %}
+                                        <option value="{{ comprador }}" {% if solicitacao.comprador_atribuido==comprador %}selected{% endif %}>
+                                            {{ comprador }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                    <button class="btn-atribuir" data-id="{{ solicitacao.id }}" title="Atribuir comprador">
+                                        <i class="fas fa-user-check"></i>
+                                    </button>
+                                </div>
+                            </td>
+                            <td class="col-reprovar">
+                                <button class="btn-reprovar" 
+                                        data-id="{{ solicitacao.id }}"
+                                        data-material="{{ solicitacao.material.DescricaoMaterial }}"
+                                        data-especificacao="{{ solicitacao.especificacao }}"
+                                        data-status="{{ solicitacao.status_aprovacao }}"
+                                        {% if not solicitacao.pode_reprovar_individual or solicitacao.status_aprovacao == 'Reprovado' %}disabled{% endif %}
+                                        title="{% if solicitacao.status_aprovacao == 'Reprovado' %}Já reprovada{% elif not solicitacao.pode_reprovar_individual %}Não pode ser reprovada (já possui cotações enviadas){% else %}Reprovar apenas esta solicitação{% endif %}">
+                                    <i class="fas fa-times-circle"></i> 
+                                    <span>{% if solicitacao.status_aprovacao == 'Reprovado' %}Reprovada{% else %}Reprovar{% endif %}</span>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <!-- FIM DO CONTAINER RESPONSIVO -->
         </div>
         {% endfor %}
         {% else %}
@@ -601,8 +934,8 @@
             </div>
             
             <div class="modal-actions">
-                <button class="btn btn-secondary" id="cancelDelete">Cancelar</button>
-                <button class="btn btn-danger" id="confirmDelete" disabled>
+                <button class="btn btn-secondary btn-sm" id="cancelDelete">Cancelar</button>
+                <button class="btn btn-danger btn-sm" id="confirmDelete" disabled>
                     <i class="fas fa-trash"></i> Confirmar Exclusão
                 </button>
             </div>
@@ -631,9 +964,41 @@
             </div>
             
             <div class="modal-actions">
-                <button class="btn btn-secondary" id="cancelDuplication">Cancelar</button>
-                <button class="btn btn-success" id="confirmDuplication">
+                <button class="btn btn-secondary btn-sm" id="cancelDuplication">Cancelar</button>
+                <button class="btn btn-success btn-sm" id="confirmDuplication">
                     <i class="fas fa-copy"></i> Confirmar Duplicação
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Confirmação (Reprovação Individual) -->
+    <div class="confirmation-modal" id="reprovarModal">
+        <div class="modal-content">
+            <h3><i class="fas fa-times-circle text-danger"></i> Confirmar Reprovação</h3>
+            
+            <div class="modal-danger">
+                <i class="fas fa-exclamation-triangle"></i>
+                <strong>ATENÇÃO:</strong>
+                <p>Apenas solicitações <strong>sem cotações enviadas</strong> podem ser reprovadas individualmente.</p>
+            </div>
+            
+            <div id="reprovarInfo">
+                <!-- Informações da solicitação serão inseridas aqui -->
+            </div>
+            
+            <div class="mb-3">
+                <label for="motivoReprovar" class="form-label">
+                    Motivo da reprovação (opcional):
+                </label>
+                <textarea id="motivoReprovar" class="form-control" rows="3" 
+                          placeholder="Digite o motivo da reprovação..."></textarea>
+            </div>
+            
+            <div class="modal-actions">
+                <button class="btn btn-secondary btn-sm" id="cancelReprovar">Cancelar</button>
+                <button class="btn btn-danger btn-sm" id="confirmReprovar">
+                    <i class="fas fa-times-circle"></i> Confirmar Reprovação
                 </button>
             </div>
         </div>
@@ -653,7 +1018,7 @@
 
             // Event listeners para filtros
             document.getElementById('applyFilters').addEventListener('click', applyFilters);
-            document.getElementById('clearFilters').addEventListener('click', () => location.reload());
+            document.getElementById('clearFilters').addEventListener('click', clearFilters);
 
             // Atribuição de comprador
             document.querySelectorAll('.btn-atribuir').forEach(btn => {
@@ -661,21 +1026,43 @@
                     const id = btn.dataset.id;
                     const select = document.querySelector(`.comprador-select[data-id="${id}"]`);
                     const comprador = select.value;
-                    if (!comprador) return alert('Selecione um comprador.');
+                    if (!comprador) return showNotification('Selecione um comprador.', 'warning');
 
                     if (!confirm(`Atribuir esta solicitação a ${comprador}?`)) return;
                     
                     try {
+                        btn.innerHTML = '<span class="loading-spinner"></span>';
+                        btn.disabled = true;
+                        
                         const resp = await fetch(`/api/solicitacoes/${id}/atribuir_comprador`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ comprador })
                         });
+                        
                         const data = await resp.json();
-                        alert(data.message || 'Comprador atribuído com sucesso!');
-                        location.reload();
+                        
+                        if (data.success) {
+                            showNotification(`Comprador ${comprador} atribuído com sucesso!`, 'success');
+                            // Atualiza o texto na coluna do comprador
+                            const row = btn.closest('tr');
+                            const compradorCell = row.querySelector('.col-comprador');
+                            if (compradorCell) {
+                                compradorCell.textContent = comprador;
+                            }
+                            // Atualiza o select
+                            select.querySelectorAll('option').forEach(option => {
+                                option.selected = option.value === comprador;
+                            });
+                        } else {
+                            showNotification(data.error || 'Erro ao atribuir comprador.', 'danger');
+                        }
                     } catch (error) {
-                        alert('Erro ao atribuir comprador. Tente novamente.');
+                        showNotification('Erro ao conectar com o servidor.', 'danger');
+                        console.error('Erro:', error);
+                    } finally {
+                        btn.innerHTML = '<i class="fas fa-user-check"></i>';
+                        btn.disabled = false;
                     }
                 });
             });
@@ -702,7 +1089,8 @@
                     document.getElementById('confirmationModal').style.display = 'flex';
                     
                     // Configurar botão de confirmação
-                    document.getElementById('confirmDelete').onclick = () => {
+                    const confirmBtn = document.getElementById('confirmDelete');
+                    confirmBtn.onclick = () => {
                         confirmExclusaoGrupo(aplicacao, this);
                     };
                 });
@@ -731,11 +1119,44 @@
                     document.getElementById('confirmDuplication').onclick = () => {
                         const novaAplicacao = document.getElementById('newAplicacaoName').value.trim();
                         if (!novaAplicacao) {
-                            alert('Por favor, informe um nome para a nova aplicação.');
+                            showNotification('Por favor, informe um nome para a nova aplicação.', 'warning');
                             return;
                         }
                         confirmDuplicacaoGrupo(aplicacao, novaAplicacao, this);
                     };
+                });
+            });
+
+            // Botão de reprovar individual
+            document.querySelectorAll('.btn-reprovar:not(:disabled)').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const id = this.dataset.id;
+                    const material = this.dataset.material;
+                    const especificacao = this.dataset.especificacao;
+                    const statusAtual = this.dataset.status;
+                    
+                    // Se já estiver reprovado, não fazer nada
+                    if (statusAtual === 'Reprovado') return;
+                    
+                    // Configurar modal de reprovação
+                    document.getElementById('reprovarInfo').innerHTML = `
+                        <p><strong>ID da Solicitação:</strong> ${id}</p>
+                        <p><strong>Material:</strong> ${material}</p>
+                        <p><strong>Especificação:</strong> ${especificacao || '-'}</p>
+                        <p class="text-warning"><i class="fas fa-info-circle"></i> 
+                        Esta solicitação será reprovada individualmente e não afetará outras do mesmo grupo.</p>
+                    `;
+                    
+                    // Resetar textarea
+                    document.getElementById('motivoReprovar').value = '';
+                    
+                    // Armazenar o ID para uso posterior
+                    const confirmBtn = document.getElementById('confirmReprovar');
+                    confirmBtn.dataset.id = id;
+                    confirmBtn.dataset.btnElement = this.outerHTML;
+                    
+                    // Mostrar modal
+                    document.getElementById('reprovarModal').style.display = 'flex';
                 });
             });
 
@@ -749,15 +1170,134 @@
                 document.getElementById('duplicationModal').style.display = 'none';
             });
 
+            // Cancelar reprovação
+            document.getElementById('cancelReprovar').addEventListener('click', () => {
+                document.getElementById('reprovarModal').style.display = 'none';
+            });
+
             // Validação do input de confirmação (exclusão)
             document.getElementById('confirmationInput').addEventListener('input', function() {
                 const confirmBtn = document.getElementById('confirmDelete');
-                confirmBtn.disabled = this.value.trim().toUpperCase() !== '122004';
+                // Substitua 'SENHA_ADMIN' pela senha real
+                confirmBtn.disabled = this.value.trim().toUpperCase() !== 'SENHA_ADMIN';
+            });
+
+            // Enter no input de confirmação
+            document.getElementById('confirmationInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' && !document.getElementById('confirmDelete').disabled) {
+                    document.getElementById('confirmDelete').click();
+                }
+            });
+
+            // Confirmar reprovação
+            document.getElementById('confirmReprovar').addEventListener('click', async function() {
+                const id = this.dataset.id;
+                const motivo = document.getElementById('motivoReprovar').value.trim();
+                
+                // Mostrar loading no botão
+                const originalText = this.innerHTML;
+                this.innerHTML = '<span class="loading-spinner"></span> Reprovando...';
+                this.disabled = true;
+                
+                try {
+                    const response = await fetch(`/reprovar_solicitacao_individual/${id}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ motivo: motivo })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        // Fechar modal
+                        document.getElementById('reprovarModal').style.display = 'none';
+                        
+                        // Exibir mensagem de sucesso
+                        showNotification(`✅ ${data.message}`, 'success');
+                        
+                        // Atualizar a linha da tabela
+                        const row = document.querySelector(`tr[data-id="${id}"]`);
+                        if (row) {
+                            // Atualizar status
+                            const statusCell = row.cells[8];
+                            statusCell.innerHTML = '<span class="status-badge status-reprovado">Reprovado</span>';
+                            
+                            // Atualizar botão de reprovar
+                            const reprovarBtn = row.querySelector('.btn-reprovar');
+                            if (reprovarBtn) {
+                                reprovarBtn.disabled = true;
+                                reprovarBtn.innerHTML = '<i class="fas fa-ban"></i> <span>Reprovada</span>';
+                                reprovarBtn.style.backgroundColor = '#6c757d';
+                                reprovarBtn.title = 'Já reprovada' + (motivo ? ` - Motivo: ${motivo}` : '');
+                            }
+                            
+                            // Desabilitar atribuição
+                            const atribuirBtn = row.querySelector('.btn-atribuir');
+                            const compradorSelect = row.querySelector('.comprador-select');
+                            if (atribuirBtn) atribuirBtn.disabled = true;
+                            if (compradorSelect) compradorSelect.disabled = true;
+                            
+                            // Adicionar efeito visual
+                            row.style.opacity = '0.8';
+                            row.style.backgroundColor = '#f8f9fa';
+                            row.classList.remove('highlight-old');
+                        }
+                        
+                    } else {
+                        // Restaurar botão
+                        this.innerHTML = originalText;
+                        this.disabled = false;
+                        
+                        // Mostrar erro
+                        showNotification(`❌ ${data.message}`, 'danger');
+                    }
+                    
+                } catch (error) {
+                    // Restaurar botão
+                    this.innerHTML = originalText;
+                    this.disabled = false;
+                    
+                    showNotification('❌ Erro ao conectar com o servidor.', 'danger');
+                    console.error('Erro:', error);
+                }
+            });
+
+            // Fechar modal ao clicar fora
+            window.addEventListener('click', (event) => {
+                const modals = ['confirmationModal', 'duplicationModal', 'reprovarModal'];
+                modals.forEach(modalId => {
+                    const modal = document.getElementById(modalId);
+                    if (modal && event.target === modal) {
+                        modal.style.display = 'none';
+                    }
+                });
             });
 
             // Destaque para solicitações antigas
             highlightOldRequests();
         });
+
+        // Função para limpar filtros
+        function clearFilters() {
+            document.getElementById('empresaFilter').value = '';
+            document.getElementById('usuarioFilter').value = '';
+            document.getElementById('aplicacaoFilter').value = '';
+            document.getElementById('statusFilter').value = '';
+            document.getElementById('compradorFilter').value = '';
+            document.getElementById('dataInicio').value = '';
+            document.getElementById('dataFim').value = '';
+            
+            // Define datas padrão novamente
+            const start = new Date();
+            start.setDate(start.getDate() - 30);
+            document.getElementById('dataInicio').valueAsDate = start;
+            document.getElementById('dataFim').valueAsDate = new Date();
+            
+            applyFilters();
+            showNotification('Filtros limpos com sucesso!', 'success');
+        }
 
         // Função para confirmar exclusão
         async function confirmExclusaoGrupo(aplicacao, button) {
@@ -892,30 +1432,27 @@
             // Remove notificação anterior se existir
             const existingNotification = document.querySelector('.custom-notification');
             if (existingNotification) {
-                existingNotification.remove();
+                existingNotification.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => existingNotification.remove(), 300);
             }
             
             const notification = document.createElement('div');
-            notification.className = `custom-notification alert alert-${type}`;
-            notification.innerHTML = message;
-            notification.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                z-index: 9999;
-                min-width: 300px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                border-radius: 8px;
-                padding: 15px;
-                animation: slideIn 0.3s ease;
+            notification.className = `custom-notification notification-${type}`;
+            notification.innerHTML = `
+                <div class="d-flex align-items-center">
+                    <i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'danger' ? 'fa-exclamation-circle' : 'fa-info-circle'} me-2"></i>
+                    <div>${message}</div>
+                </div>
             `;
             
             document.body.appendChild(notification);
             
             // Auto-remover após duração
             setTimeout(() => {
-                notification.style.animation = 'slideOut 0.3s ease';
-                setTimeout(() => notification.remove(), 300);
+                if (notification.parentNode) {
+                    notification.style.animation = 'slideOut 0.3s ease';
+                    setTimeout(() => notification.remove(), 300);
+                }
             }, duration);
         }
 
@@ -928,6 +1465,9 @@
             const comprador = document.getElementById('compradorFilter').value.trim();
             const inicio = document.getElementById('dataInicio').value;
             const fim = document.getElementById('dataFim').value;
+
+            let gruposVisiveis = 0;
+            let totalLinhasVisiveis = 0;
 
             // Percorre todas as seções de aplicação
             document.querySelectorAll('.aplicacao-section').forEach(section => {
@@ -957,14 +1497,25 @@
                     if (match) {
                         row.style.display = '';
                         visibleCount++;
+                        totalLinhasVisiveis++;
                     } else {
                         row.style.display = 'none';
                     }
                 });
 
                 // Se nenhuma linha visível, esconde a seção inteira
-                section.style.display = visibleCount > 0 ? '' : 'none';
+                if (visibleCount > 0) {
+                    section.style.display = '';
+                    gruposVisiveis++;
+                } else {
+                    section.style.display = 'none';
+                }
             });
+
+            // Mostra mensagem se nenhum resultado encontrado
+            if (totalLinhasVisiveis === 0 && document.querySelector('.aplicacao-section')) {
+                showNotification('Nenhuma solicitação encontrada com os filtros aplicados.', 'warning');
+            }
         }
 
         function highlightOldRequests() {
@@ -982,50 +1533,24 @@
                 const diffDias = Math.floor((hoje - dataSolicitacao) / (1000 * 60 * 60 * 24));
 
                 if (diffDias > 7) {
-                    cellData.classList.add('highlight-old');
+                    row.classList.add('highlight-old');
+                    // Adiciona tooltip
+                    row.title = `Solicitação com ${diffDias} dias de atraso`;
                 }
             });
         }
 
-        // Estilos CSS dinâmicos para animações
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes slideIn {
-                from {
-                    transform: translateX(100%);
-                    opacity: 0;
-                }
-                to {
-                    transform: translateX(0);
-                    opacity: 1;
-                }
-            }
-            
-            @keyframes slideOut {
-                from {
-                    transform: translateX(0);
-                    opacity: 1;
-                }
-                to {
-                    transform: translateX(100%);
-                    opacity: 0;
-                }
-            }
-            
-            .custom-notification {
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                z-index: 9999;
-                min-width: 300px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                border-radius: 8px;
-                padding: 15px;
-                animation: slideIn 0.3s ease;
-            }
-        `;
-        document.head.appendChild(style);
+        // Função para formatar data
+        function formatDate(date) {
+            const d = new Date(date);
+            return d.toLocaleDateString('pt-BR');
+        }
+
+        // Função para exportar para Excel
+        function exportToExcel() {
+            showNotification('Funcionalidade de exportação em desenvolvimento...', 'info');
+            // Implementar lógica de exportação aqui
+        }
     </script>
 </body>
-
 </html>
