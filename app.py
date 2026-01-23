@@ -571,6 +571,30 @@ def get_rastreabilidade_entries(solicitacao):
         'descricao': f'Solicitação registrada no sistema por {solicitacao.usuario}'
     })
     
+    # Entrada de aprovação/reprovação (se aplicável)
+    if solicitacao.status_aprovacao:
+        if solicitacao.status_aprovacao == 'Aprovado':
+            entries.append({
+                'data': data_criacao,  # Usar data de criação como fallback
+                'evento': 'Aprovação',
+                'descricao': f'Solicitação aprovada'
+            })
+        elif solicitacao.status_aprovacao == 'Reprovado':
+            # Tentar obter data da auditoria
+            auditoria = Auditoria.query.filter_by(solicitacao_id=solicitacao.id).first()
+            data_reprovacao = auditoria.data_validacao if auditoria else data_criacao
+            
+            # Verificar observações para ver se foi reprovação individual
+            motivo = ''
+            if solicitacao.observacoes_col and 'REPROVADA INDIVIDUALMENTE' in solicitacao.observacoes_col:
+                motivo = solicitacao.observacoes_col
+            
+            entries.append({
+                'data': data_reprovacao,
+                'evento': 'Reprovação',
+                'descricao': f'Solicitação reprovada' + (f'. Motivo: {motivo}' if motivo else '')
+            })
+    
     # Entrada de cotação (se existir preenchimento)
     if solicitacao.preenchimentos_fornecidos:
         primeiro_preenchimento = solicitacao.preenchimentos_fornecidos[0]
@@ -807,15 +831,35 @@ def salvar_senhas(senhas):
         logging.error(f"Erro ao salvar senhas.txt: {str(e)}")
 
 
-def registrar_log(usuario, tipo_acao, ip=None):
-    acao = 'Acesso' if tipo_acao == 'login' else 'Logout'
+def registrar_log(usuario, tipo_acao, descricao=None, ip=None):
+    """
+    Registra ação no arquivo de log
+    
+    Args:
+        usuario: Nome do usuário
+        tipo_acao: Tipo de ação ('login', 'logout', 'reprovar_solicitacao_individual', etc.)
+        descricao: Descrição adicional da ação (opcional)
+        ip: Endereço IP do usuário (opcional)
+    """
+    acao_map = {
+        'login': 'Acesso',
+        'logout': 'Logout',
+        'reprovar_solicitacao_individual': 'Reprovação Individual de Solicitação',
+        'aprovar_solicitacao': 'Aprovação de Solicitação',
+        'reprovar_solicitacao': 'Reprovação de Solicitação'
+    }
+    
+    acao = acao_map.get(tipo_acao, tipo_acao)
     ip_info = f" - IP: {ip}" if ip else ''
+    descricao_info = f" - {descricao}" if descricao else ''
+    
     try:
         with open("arquivo.log", "a", encoding="utf-8") as log_file:
-            log_file.write(f"{datetime.now()} - {acao} do usuário: {usuario}{ip_info}\n")
+            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            log_file.write(f"{timestamp} - {acao} do usuário: {usuario}{ip_info}{descricao_info}\n")
     except Exception as e:
         logging.error(f"Erro ao registrar log: {str(e)}")
-
+        
 def ler_logs():
     try:
         if not os.path.exists('arquivo.log'):
@@ -1678,10 +1722,10 @@ def get_compradores():
     
     for usuario_completo, dados in senhas.items():
         # CORREÇÃO: Verificar se a página contém 'comprador' e usar o usuário base
-        if 'comprador' in dados['pagina']:
+        if 'comprador' in dados['pagina'].lower():
             compradores.append(dados['usuario_base'])
     
-    return sorted(compradores)
+    return sorted(set(compradores))  # Usar set para remover duplicatasrn sorted(compradores)
 
 
 @routes_bp.route('/listar_solicitacoes', methods=['GET'])
@@ -1717,6 +1761,18 @@ def listar_solicitacoes():
             aplicacao = s.aplicacao or "Sem Aplicação"
             if aplicacao not in solicitacoes_por_aplicacao:
                 solicitacoes_por_aplicacao[aplicacao] = []
+            
+            # Verificar se a solicitação pode ser reprovada individualmente
+            # (não tem preenchimentos enviados)
+            preenchimentos = SolicitacoesPreenchidas.query.filter_by(
+                solicitacao_id=s.id
+            ).filter(
+                SolicitacoesPreenchidas.status != 'Rascunho'
+            ).all()
+            
+            # Adicionar flag para o template
+            s.pode_reprovar_individual = len(preenchimentos) == 0
+            
             solicitacoes_por_aplicacao[aplicacao].append(s)
 
         # Listas para filtros
@@ -5242,24 +5298,36 @@ def auditoria_solicitacoes():
                 SolicitacoesPreenchidas.status != 'Rascunho'
             ).all()
             
-            # CASO 1: Solicitação SEM preenchimentos (status "Pendente" ou "Aberta")
+            # CASO 1: Solicitação SEM preenchimentos
             if not preenchimentos:
-                # Verificar status da solicitação
-                solicitacao_status = getattr(solicitacao, 'status', None)
-                
-                # Determinar status baseado no campo da solicitação
-                if solicitacao_status == 'Pendente':
-                    status_solicitacao = 'Pendente'
+                # VERIFICAR PRIMEIRO O STATUS DE APROVAÇÃO
+                if solicitacao.status_aprovacao:
+                    # Se tem status_aprovacao, usar esse status
+                    if solicitacao.status_aprovacao == 'Reprovado':
+                        status_solicitacao = 'Reprovado'
+                        prioridade = 0  # Prioridade baixa para reprovados
+                    elif solicitacao.status_aprovacao == 'Aprovado':
+                        status_solicitacao = 'Aprovado'
+                        prioridade = 1  # Prioridade média para aprovados sem preenchimento
+                    else:
+                        status_solicitacao = solicitacao.status_aprovacao
+                        prioridade = 0
                 else:
-                    status_solicitacao = 'Aberta'  # Status padrão
+                    # Se não tem status_aprovacao, verificar outros campos
+                    solicitacao_status = getattr(solicitacao, 'status', None)
+                    
+                    # Determinar status baseado no campo da solicitação
+                    if solicitacao_status == 'Pendente':
+                        status_solicitacao = 'Pendente'
+                    else:
+                        status_solicitacao = 'Aberta'  # Status padrão
+                    
+                    prioridade = 0  # Prioridade baixa para solicitações sem preenchimento
                 
                 # Aplicar filtro de status se especificado
                 if status and status != 'Todos':
                     if status != status_solicitacao:
                         continue  # Pular se status não corresponde
-                
-                # Prioridade baixa para solicitações sem preenchimento
-                prioridade = 0
                 
                 # Aplicar filtro de prioridade se especificado
                 if prioridade_filtro and prioridade_filtro != '':
@@ -5274,7 +5342,8 @@ def auditoria_solicitacoes():
                     'estoque': None,
                     'requisicoes': [],
                     'fornecedor': {},
-                    'prioridade': prioridade
+                    'prioridade': prioridade,
+                    'status_determinado': status_solicitacao  # Adicionar status determinado
                 })
             
             # CASO 2: Solicitação COM preenchimentos
@@ -5304,12 +5373,31 @@ def auditoria_solicitacoes():
                     
                     # Aplicar filtro de status se especificado
                     if status and status != 'Todos':
-                        if preenchimento.status != status:
+                        # Para solicitações com preenchimentos, verificar status do preenchimento
+                        # Mas também considerar o status_aprovacao da solicitação
+                        status_match = False
+                        
+                        # Primeiro verificar status do preenchimento
+                        if preenchimento.status == status:
+                            status_match = True
+                        # Verificar se a solicitação foi reprovada
+                        elif solicitacao.status_aprovacao == 'Reprovado' and status == 'Reprovado':
+                            status_match = True
+                        # Verificar se a solicitação foi aprovada
+                        elif solicitacao.status_aprovacao == 'Aprovado' and status == 'Aprovado':
+                            status_match = True
+                        
+                        if not status_match:
                             continue  # Pular se status não corresponde
                     
-                    # Calcular prioridade para ordenação
+                    # Calcular prioridade para ordenação - CORREÇÃO IMPORTANTE
                     prioridade = 0
-                    if preenchimento.status == 'Entregue':
+                    
+                    # Primeiro verificar se a solicitação foi reprovada
+                    if solicitacao.status_aprovacao == 'Reprovado':
+                        prioridade = 0  # Prioridade mais baixa para reprovados
+                    # Depois verificar status do preenchimento
+                    elif preenchimento.status == 'Entregue':
                         prioridade = 3  # Máxima prioridade
                     elif preenchimento.status == 'Aprovado' and pedido:
                         prioridade = 2  # Alta prioridade
@@ -5350,7 +5438,8 @@ def auditoria_solicitacoes():
                         'estoque': estoque,
                         'requisicoes': requisicoes,
                         'fornecedor': fornecedor_info,
-                        'prioridade': prioridade
+                        'prioridade': prioridade,
+                        'status_determinado': solicitacao.status_aprovacao if solicitacao.status_aprovacao else preenchimento.status
                     })
 
         # Ordenar por prioridade (mais alta primeiro) e depois por data
@@ -5390,7 +5479,7 @@ def auditoria_solicitacoes():
             usuarios=[u[0] for u in usuarios if u[0]],
             nomes_ativos=[n[0] for n in nomes_ativos if n[0]],
             total_registros=total_registros,
-            usuario_logado=usuario_logado,  # NOVO: Adicionar usuário logado ao contexto
+            usuario_logado=usuario_logado,
             filtros={
                 'empresa': empresa,
                 'usuario': usuario,
@@ -5412,7 +5501,7 @@ def auditoria_solicitacoes():
             usuarios=[],
             nomes_ativos=[],
             total_registros=0,
-            usuario_logado=session.get('usuario'),  # NOVO: Mesmo em caso de erro
+            usuario_logado=session.get('usuario'),
             filtros={}
         )
     
@@ -8004,7 +8093,135 @@ def duplicar_grupo_aplicacao():
             'success': False, 
             'error': f'Erro ao duplicar grupo: {str(e)}'
         }), 500   
-
+    
+@routes_bp.route('/reprovar_solicitacao_individual/<int:solicitacao_id>', methods=['POST'])
+def reprovar_solicitacao_individual(solicitacao_id):
+    """Reprova uma solicitação individualmente"""
+    if 'usuario' not in session:
+        return jsonify({'success': False, 'message': 'Usuário não autenticado'}), 401
+    
+    try:
+        solicitacao = SolicitacoesCompra.query.get_or_404(solicitacao_id)
+        
+        # Verificar se a solicitação já tem preenchimentos ou está em pedido
+        preenchimentos = SolicitacoesPreenchidas.query.filter_by(solicitacao_id=solicitacao_id).all()
+        
+        # Filtrar apenas preenchimentos que não são rascunhos
+        preenchimentos_validos = [p for p in preenchimentos if p.status != 'Rascunho']
+        
+        if preenchimentos_validos:
+            return jsonify({
+                'success': False, 
+                'message': 'Esta solicitação já possui cotações enviadas para fornecedores e não pode ser reprovada individualmente.'
+            }), 400
+        
+        # Verificar se está em algum pedido de compra
+        pedido_associado = None
+        for preenchimento in preenchimentos:
+            pedido = PedidosCompra.query.join(
+                pedido_preenchimento_associacao,
+                PedidosCompra.id == pedido_preenchimento_associacao.c.pedido_id
+            ).filter(
+                pedido_preenchimento_associacao.c.preenchimento_id == preenchimento.id
+            ).first()
+            
+            if pedido:
+                pedido_associado = pedido
+                break
+        
+        if pedido_associado:
+            return jsonify({
+                'success': False, 
+                'message': f'Esta solicitação está associada ao pedido {pedido_associado.numero_pedido} e não pode ser reprovada individualmente.'
+            }), 400
+        
+        # Obter motivo da reprovação
+        data = request.get_json() if request.is_json else request.form
+        motivo = data.get('motivo', '') if data else ''
+        
+        # Reprovar a solicitação - ATUALIZAÇÃO IMPORTANTE: Garantir que todos os campos sejam atualizados
+        solicitacao.status_aprovacao = 'Reprovado'
+        
+        # Também atualizar o campo 'status' se existir no modelo (para compatibilidade)
+        if hasattr(solicitacao, 'status'):
+            solicitacao.status = 'Reprovado'
+        
+        # Salvar observação se houver motivo
+        if motivo:
+            # Verificar se a coluna observacoes_col existe
+            if hasattr(solicitacao, 'observacoes_col'):
+                # Preservar observações existentes
+                observacoes_existentes = solicitacao.observacoes_col or ''
+                nova_observacao = f"[{datetime.now().strftime('%d/%m/%Y %H:%M')}] REPROVADA INDIVIDUALMENTE por {session['usuario']}. Motivo: {motivo}"
+                
+                if observacoes_existentes:
+                    solicitacao.observacoes_col = f"{observacoes_existentes}\n{nova_observacao}"
+                else:
+                    solicitacao.observacoes_col = nova_observacao
+            else:
+                # Alternativa: usar campo de observações da solicitação
+                solicitacao.especificacao = f"{solicitacao.especificacao} [REPROVADA: {motivo}]"
+        
+        # Adicionar entrada na tabela de auditoria para rastreabilidade
+        try:
+            # Verificar se já existe uma entrada de auditoria para esta solicitação
+            auditoria_existente = Auditoria.query.filter_by(solicitacao_id=solicitacao_id).first()
+            
+            if not auditoria_existente:
+                # Criar nova entrada de auditoria
+                auditoria = Auditoria(
+                    solicitacao_id=solicitacao_id,
+                    data_validacao=datetime.now(),
+                    colaborador_1=session['usuario'],
+                    colaborador_2=None,
+                    status='Reprovado',
+                    observacao=f"Reprovada individualmente. Motivo: {motivo}" if motivo else "Reprovada individualmente"
+                )
+                db.session.add(auditoria)
+            else:
+                # Atualizar auditoria existente
+                auditoria_existente.status = 'Reprovado'
+                auditoria_existente.data_validacao = datetime.now()
+                auditoria_existente.colaborador_1 = session['usuario']
+                if motivo:
+                    observacao_existente = auditoria_existente.observacao or ''
+                    auditoria_existente.observacao = f"{observacao_existente}\nReprovada individualmente. Motivo: {motivo}"
+        
+        except Exception as audit_error:
+            logging.warning(f"Não foi possível registrar auditoria: {str(audit_error)}")
+            # Continuar mesmo se houver erro na auditoria
+        
+        # Atualizar a data de modificação
+        if hasattr(solicitacao, 'data_modificacao'):
+            solicitacao.data_modificacao = datetime.now()
+        
+        db.session.commit()
+        
+        # Registrar no log
+        logging.info(f'Solicitação {solicitacao_id} reprovada individualmente por {session["usuario"]}. Motivo: {motivo}')
+        
+        # Criar entrada de log mais detalhada no arquivo de log do sistema
+        registrar_log(
+            session['usuario'], 
+            f'reprovar_solicitacao_individual', 
+            f"Solicitação ID {solicitacao_id} reprovada. Material: {solicitacao.material.DescricaoMaterial if solicitacao.material else 'N/A'}. Motivo: {motivo}"
+        )
+        
+        return jsonify({
+            'success': True,
+            'message': 'Solicitação reprovada com sucesso!',
+            'novo_status': 'Reprovado',
+            'solicitacao_id': solicitacao_id
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f'Erro ao reprovar solicitação {solicitacao_id}: {str(e)}', exc_info=True)
+        return jsonify({
+            'success': False,
+            'message': f'Erro ao reprovar solicitação: {str(e)}'
+        }), 500
+    
   # Registro do Blueprint (apenas uma vez)
 app.register_blueprint(routes_bp)  
 
