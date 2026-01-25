@@ -898,13 +898,18 @@
                                 </div>
                             </td>
                             <td class="col-reprovar">
+                                <!-- BOTÃO REPROVAR ATUALIZADO - AGORA SÓ BLOQUEIA SE JÁ ESTIVER REPROVADO -->
                                 <button class="btn-reprovar" 
                                         data-id="{{ solicitacao.id }}"
                                         data-material="{{ solicitacao.material.DescricaoMaterial }}"
                                         data-especificacao="{{ solicitacao.especificacao }}"
                                         data-status="{{ solicitacao.status_aprovacao }}"
-                                        {% if not solicitacao.pode_reprovar_individual or solicitacao.status_aprovacao == 'Reprovado' %}disabled{% endif %}
-                                        title="{% if solicitacao.status_aprovacao == 'Reprovado' %}Já reprovada{% elif not solicitacao.pode_reprovar_individual %}Não pode ser reprovada (já possui cotações enviadas){% else %}Reprovar apenas esta solicitação{% endif %}">
+                                        {% if solicitacao.status_aprovacao == 'Reprovado' %}disabled{% endif %}
+                                        title="{% if solicitacao.status_aprovacao == 'Reprovado' %}
+                                                   Já reprovada
+                                               {% else %}
+                                                   Reprovar esta solicitação
+                                               {% endif %}">
                                     <i class="fas fa-times-circle"></i> 
                                     <span>{% if solicitacao.status_aprovacao == 'Reprovado' %}Reprovada{% else %}Reprovar{% endif %}</span>
                                 </button>
@@ -985,15 +990,16 @@
         </div>
     </div>
 
-    <!-- Modal de Confirmação (Reprovação Individual) -->
+    <!-- Modal de Confirmação (Reprovação Individual) ATUALIZADO -->
     <div class="confirmation-modal" id="reprovarModal">
         <div class="modal-content">
             <h3><i class="fas fa-times-circle text-danger"></i> Confirmar Reprovação</h3>
             
-            <div class="modal-danger">
+            <!-- ATUALIZADO: Removida a restrição de cotações -->
+            <div class="modal-warning">
                 <i class="fas fa-exclamation-triangle"></i>
                 <strong>ATENÇÃO:</strong>
-                <p>Apenas solicitações <strong>sem cotações enviadas</strong> podem ser reprovadas individualmente.</p>
+                <p>Esta ação reprovará a solicitação independentemente do status das cotações.</p>
             </div>
             
             <div id="reprovarInfo">
@@ -1140,7 +1146,7 @@
                 });
             });
 
-            // Botão de reprovar individual
+            // Botão de reprovar individual - ATUALIZADO
             document.querySelectorAll('.btn-reprovar:not(:disabled)').forEach(btn => {
                 btn.addEventListener('click', function() {
                     const id = this.dataset.id;
@@ -1157,7 +1163,7 @@
                         <p><strong>Material:</strong> ${material}</p>
                         <p><strong>Especificação:</strong> ${especificacao || '-'}</p>
                         <p class="text-warning"><i class="fas fa-info-circle"></i> 
-                        Esta solicitação será reprovada individualmente e não afetará outras do mesmo grupo.</p>
+                        Esta solicitação será reprovada independentemente de ter cotações associadas.</p>
                     `;
                     
                     // Resetar textarea
@@ -1202,7 +1208,7 @@
                 }
             });
 
-            // Confirmar reprovação
+            // Confirmar reprovação - ATUALIZADO (removida verificação de cotações)
             document.getElementById('confirmReprovar').addEventListener('click', async function() {
                 const id = this.dataset.id;
                 const motivo = document.getElementById('motivoReprovar').value.trim();
