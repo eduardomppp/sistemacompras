@@ -5521,21 +5521,16 @@ def exportar_auditoria_xlsx():
         data_inicio = request.args.get('data_inicio')
         data_fim = request.args.get('data_fim')
         
-        # Aplicar a mesma lógica de filtragem, mas com outer join para incluir solicitações sem preenchimentos
-        from sqlalchemy import outerjoin  # Certifique-se de importar outerjoin se necessário
-        
+        # Aplicar a mesma lógica de filtragem
         query = db.session.query(SolicitacoesCompra).outerjoin(
             SolicitacoesPreenchidas,
             SolicitacoesCompra.id == SolicitacoesPreenchidas.solicitacao_id
-        ).filter(
-            # Removido o filtro SolicitacoesPreenchidas.status != 'Rascunho' daqui para permitir 'Aberta'
         )
         
-        # Aplicar filtros - CORREÇÃO NO FILTRO DE USUÁRIO
+        # Aplicar filtros
         if empresa and empresa != '' and empresa != 'Todas':
             query = query.filter(SolicitacoesCompra.empresa == empresa)
         
-        # CORREÇÃO: "Todos" é string vazia, não "Todos"
         if usuario and usuario != '' and usuario != 'Todos':
             query = query.filter(SolicitacoesCompra.usuario == usuario)
         
@@ -5568,13 +5563,11 @@ def exportar_auditoria_xlsx():
                 SolicitacoesPreenchidas.status != 'Rascunho'
             ).all()
             
-            # Se não houver preenchimentos, tratar como 'Aberta' (se filtro permite)
+            # Se não houver preenchimentos, tratar como 'Aberta'
             if not preenchimentos:
-                # Aplicar filtro de status: só adicionar se status é 'Todos' ou vazio ou 'Aberta'
                 if status and status.strip() and status != 'Todos' and status != 'Aberta':
                     continue
                 
-                # Para 'Aberta', prioridade baixa, sem fornecedor, etc.
                 prioridade = 0
                 nivel_prioridade = 'Baixa (Outras)'
                 status_formatado = 'Aberta'
@@ -5589,12 +5582,11 @@ def exportar_auditoria_xlsx():
                 condicao_pagamento = ''
                 observacoes = ''
                 
-                # Aplicar filtro de prioridade (se aplicável)
                 if prioridade_filtro and prioridade_filtro != '':
                     if int(prioridade_filtro) != prioridade:
                         continue
                 
-                # Adicionar linha para 'Aberta'
+                # Adicionar linha para 'Aberta' COM COMPRADOR ATRIBUÍDO
                 dados.append({
                     'ID_Solicitacao': solicitacao.id,
                     'ID_Cotacao': '',
@@ -5603,6 +5595,7 @@ def exportar_auditoria_xlsx():
                     'Especificacao': solicitacao.especificacao,
                     'Marca': solicitacao.marca or '',
                     'Solicitante': solicitacao.usuario,
+                    'Comprador_Atribuido': solicitacao.comprador_atribuido or '',  # NOVA COLUNA
                     'Empresa': solicitacao.empresa,
                     'Ativo': 'Sim' if solicitacao.ativo == 'Sim' else 'Não',
                     'Nome_Ativo': solicitacao.nome_ativo if solicitacao.ativo == 'Sim' else '',
@@ -5627,16 +5620,14 @@ def exportar_auditoria_xlsx():
                     'Aplicacao': solicitacao.aplicacao or '',
                     'Aplicacao_Geral': solicitacao.aplicacao_geral or ''
                 })
-                continue  # Prosseguir para próxima solicitação
+                continue
             
             # Se houver preenchimentos, processar cada um
             for preenchimento in preenchimentos:
-                # Aplicar filtro de status se especificado
                 if status and status.strip() and status != 'Todos':
                     if preenchimento.status != status:
                         continue
                 
-                # Calcular prioridade
                 prioridade = 0
                 if preenchimento.status == 'Entregue':
                     prioridade = 3
@@ -5652,13 +5643,10 @@ def exportar_auditoria_xlsx():
                     else:
                         prioridade = 1
                 
-                # Aplicar filtro de prioridade se especificado
-                # CORREÇÃO: tratar string vazia
                 if prioridade_filtro and prioridade_filtro != '':
                     if int(prioridade_filtro) != prioridade:
                         continue
                 
-                # Informações do fornecedor
                 fornecedor_nome = ''
                 fornecedor_cnpj = ''
                 if preenchimento.fornecedor_id:
@@ -5673,7 +5661,6 @@ def exportar_auditoria_xlsx():
                             fornecedor_cnpj = format_cnpj(result[1]) if result[1] else ''
                         conn.close()
                 
-                # Pedido associado
                 pedido = None
                 pedido_numero = ''
                 if preenchimento:
@@ -5686,7 +5673,6 @@ def exportar_auditoria_xlsx():
                     if pedido:
                         pedido_numero = pedido.numero_pedido
                 
-                # Determinar status formatado
                 status_formatado = 'Aberta'
                 if preenchimento:
                     if preenchimento.status == 'Rascunho':
@@ -5702,7 +5688,6 @@ def exportar_auditoria_xlsx():
                     elif preenchimento.status == 'Entregue':
                         status_formatado = 'Entregue'
                 
-                # Determinar nível de prioridade
                 nivel_prioridade = ''
                 if prioridade == 3:
                     nivel_prioridade = 'Máxima (Entregues)'
@@ -5713,7 +5698,7 @@ def exportar_auditoria_xlsx():
                 else:
                     nivel_prioridade = 'Baixa (Outras)'
                 
-                # Adicionar linha de dados
+                # Adicionar linha de dados COM COMPRADOR ATRIBUÍDO
                 dados.append({
                     'ID_Solicitacao': solicitacao.id,
                     'ID_Cotacao': preenchimento.id if preenchimento else '',
@@ -5722,6 +5707,7 @@ def exportar_auditoria_xlsx():
                     'Especificacao': solicitacao.especificacao,
                     'Marca': solicitacao.marca or '',
                     'Solicitante': solicitacao.usuario,
+                    'Comprador_Atribuido': solicitacao.comprador_atribuido or '',  # NOVA COLUNA
                     'Empresa': solicitacao.empresa,
                     'Ativo': 'Sim' if solicitacao.ativo == 'Sim' else 'Não',
                     'Nome_Ativo': solicitacao.nome_ativo if solicitacao.ativo == 'Sim' else '',
@@ -5767,10 +5753,10 @@ def exportar_auditoria_xlsx():
         header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
         header_alignment = Alignment(horizontal="center", vertical="center")
         
-        # Escrever cabeçalhos
+        # Escrever cabeçalhos COM NOVA COLUNA
         headers = [
             'ID Solicitação', 'ID Cotação', 'Material', 'Cód Material', 'Especificação', 'Marca',
-            'Solicitante', 'Empresa', 'Ativo', 'Nome Ativo', 'Quantidade', 'Unidade',
+            'Solicitante', 'Comprador Atribuído', 'Empresa', 'Ativo', 'Nome Ativo', 'Quantidade', 'Unidade',
             'Prioridade Original', 'Nível Prioridade', 'Valor Prioridade', 'Data Solicitação',
             'Status', 'Fornecedor', 'CNPJ Fornecedor', 'Valor Unitário', 'Valor Total', 'Valor Frete',
             'Prazo Entrega', 'Condição Pagamento', 'Número Pedido', 'Status Pedido', 'Observações',
@@ -5783,7 +5769,7 @@ def exportar_auditoria_xlsx():
             cell.fill = header_fill
             cell.alignment = header_alignment
         
-        # Escrever dados
+        # Escrever dados COM NOVA COLUNA
         for row_num, item in enumerate(dados, 2):
             ws.cell(row=row_num, column=1, value=item['ID_Solicitacao'])
             ws.cell(row=row_num, column=2, value=item['ID_Cotacao'])
@@ -5792,67 +5778,58 @@ def exportar_auditoria_xlsx():
             ws.cell(row=row_num, column=5, value=item['Especificacao'])
             ws.cell(row=row_num, column=6, value=item['Marca'])
             ws.cell(row=row_num, column=7, value=item['Solicitante'])
-            ws.cell(row=row_num, column=8, value=item['Empresa'])
-            ws.cell(row=row_num, column=9, value=item['Ativo'])
-            ws.cell(row=row_num, column=10, value=item['Nome_Ativo'])
-            ws.cell(row=row_num, column=11, value=item['Quantidade'])
-            ws.cell(row=row_num, column=12, value=item['Unidade_Medida'])
-            ws.cell(row=row_num, column=13, value=item['Prioridade_Original'])
-            ws.cell(row=row_num, column=14, value=item['Nivel_Prioridade'])
-            ws.cell(row=row_num, column=15, value=item['Valor_Prioridade'])
-            ws.cell(row=row_num, column=16, value=item['Data_Solicitacao'])
-            ws.cell(row=row_num, column=17, value=item['Status'])
-            ws.cell(row=row_num, column=18, value=item['Fornecedor'])
-            ws.cell(row=row_num, column=19, value=item['CNPJ_Fornecedor'])
-            ws.cell(row=row_num, column=20, value=item['Valor_Unitario'])
-            ws.cell(row=row_num, column=21, value=item['Valor_Total'])
-            ws.cell(row=row_num, column=22, value=item['Valor_Frete'])
-            ws.cell(row=row_num, column=23, value=item['Prazo_Entrega'])
-            ws.cell(row=row_num, column=24, value=item['Condicao_Pagamento'])
-            ws.cell(row=row_num, column=25, value=item['Pedido_Numero'])
-            ws.cell(row=row_num, column=26, value=item['Pedido_Status'])
-            ws.cell(row=row_num, column=27, value=item['Observacoes'])
-            ws.cell(row=row_num, column=28, value=item['Aprovacao'])
-            ws.cell(row=row_num, column=29, value=item['Aplicacao'])
-            ws.cell(row=row_num, column=30, value=item['Aplicacao_Geral'])
+            ws.cell(row=row_num, column=8, value=item['Comprador_Atribuido'])  # NOVA COLUNA
+            ws.cell(row=row_num, column=9, value=item['Empresa'])
+            ws.cell(row=row_num, column=10, value=item['Ativo'])
+            ws.cell(row=row_num, column=11, value=item['Nome_Ativo'])
+            ws.cell(row=row_num, column=12, value=item['Quantidade'])
+            ws.cell(row=row_num, column=13, value=item['Unidade_Medida'])
+            ws.cell(row=row_num, column=14, value=item['Prioridade_Original'])
+            ws.cell(row=row_num, column=15, value=item['Nivel_Prioridade'])
+            ws.cell(row=row_num, column=16, value=item['Valor_Prioridade'])
+            ws.cell(row=row_num, column=17, value=item['Data_Solicitacao'])
+            ws.cell(row=row_num, column=18, value=item['Status'])
+            ws.cell(row=row_num, column=19, value=item['Fornecedor'])
+            ws.cell(row=row_num, column=20, value=item['CNPJ_Fornecedor'])
+            ws.cell(row=row_num, column=21, value=item['Valor_Unitario'])
+            ws.cell(row=row_num, column=22, value=item['Valor_Total'])
+            ws.cell(row=row_num, column=23, value=item['Valor_Frete'])
+            ws.cell(row=row_num, column=24, value=item['Prazo_Entrega'])
+            ws.cell(row=row_num, column=25, value=item['Condicao_Pagamento'])
+            ws.cell(row=row_num, column=26, value=item['Pedido_Numero'])
+            ws.cell(row=row_num, column=27, value=item['Pedido_Status'])
+            ws.cell(row=row_num, column=28, value=item['Observacoes'])
+            ws.cell(row=row_num, column=29, value=item['Aprovacao'])
+            ws.cell(row=row_num, column=30, value=item['Aplicacao'])
+            ws.cell(row=row_num, column=31, value=item['Aplicacao_Geral'])
         
         # Ajustar largura das colunas
         for column in ws.columns:
             max_length = 0
             column_letter = get_column_letter(column[0].column)
-            
             for cell in column:
                 try:
                     if len(str(cell.value)) > max_length:
                         max_length = len(str(cell.value))
                 except:
                     pass
-            
-            adjusted_width = min(max_length + 2, 50)
+            adjusted_width = min(max_length + 2, 30)
             ws.column_dimensions[column_letter].width = adjusted_width
         
-        # Salvar workbook
+        # Salvar
         wb.save(output)
         output.seek(0)
         
-        # Gerar nome do arquivo com data e hora
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        filename = f'auditoria_solicitacoes_{timestamp}.xlsx'
-        
-        # CORREÇÃO: Usar make_response em vez de send_file para evitar corrupção
+        # Criar resposta
         response = make_response(output.getvalue())
         response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        response.headers['Content-Disposition'] = f'attachment; filename="{filename}"'
-        response.headers['Content-Length'] = len(output.getvalue())
-        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
-        response.headers['Pragma'] = 'no-cache'
-        response.headers['Expires'] = '0'
+        response.headers['Content-Disposition'] = 'attachment; filename=auditoria_solicitacoes_com_comprador.xlsx'
         
         return response
         
     except Exception as e:
         flash(f'Erro ao exportar relatório: {str(e)}', 'error')
-        logging.error(f'Erro em exportar_auditoria_xlsx: {str(e)}', exc_info=True)
+        app.logger.error(f'Erro em exportar_auditoria_xlsx: {str(e)}')
         return redirect(url_for('routes_bp.auditoria_solicitacoes'))
     
 def get_fornecedor_cnpj(fornecedor_id):
