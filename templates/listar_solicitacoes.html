@@ -780,26 +780,39 @@
         </div>
 
         {% if solicitacoes %}
-        {# Primeiro, criamos um dicionário para armazenar a data mais recente de cada aplicação #}
-        {% set aplicacoes_com_data = {} %}
+        {# MODIFICAÇÃO PRINCIPAL: Agrupar por aplicação E data completa (com hora) #}
+        {% set grupos = {} %}
         {% for solicitacao in solicitacoes %}
             {% if solicitacao.aplicacao %}
-                {% if solicitacao.aplicacao not in aplicacoes_com_data %}
-                    {% set _ = aplicacoes_com_data.update({solicitacao.aplicacao: solicitacao.data_solicitacao}) %}
-                {% else %}
-                    {% if solicitacao.data_solicitacao > aplicacoes_com_data[solicitacao.aplicacao] %}
-                        {% set _ = aplicacoes_com_data.update({solicitacao.aplicacao: solicitacao.data_solicitacao}) %}
-                    {% endif %}
+                {# Criar chave única com aplicação + data completa (com hora) #}
+                {% set data_hora_formatada = solicitacao.data_solicitacao.strftime('%Y-%m-%d %H:%M') %}
+                {% set chave_grupo = solicitacao.aplicacao ~ '|' ~ data_hora_formatada %}
+                
+                {% if chave_grupo not in grupos %}
+                    {% set _ = grupos.update({chave_grupo: []}) %}
                 {% endif %}
+                {% set _ = grupos[chave_grupo].append(solicitacao) %}
             {% endif %}
         {% endfor %}
         
-        {# Ordenamos as aplicações pela data mais recente (do mais novo para o mais antigo) #}
-        {% set aplicacoes_ordenadas = aplicacoes_com_data.items()|sort(attribute='1', reverse=true)|map(attribute='0') %}
+        {# Ordenar grupos pela data mais recente #}
+        {% set grupos_ordenados = grupos.items()|sort(attribute='0', reverse=true) %}
 
-        {# Agora percorremos as aplicações ordenadas #}
-        {% for aplicacao in aplicacoes_ordenadas %}
-        <div class="aplicacao-section" id="grupo-{{ aplicacao|replace(' ', '-')|lower }}">
+        {# Percorrer os grupos ordenados #}
+        {% for chave_grupo, solicitacoes_grupo in grupos_ordenados %}
+        {% set partes = chave_grupo.split('|') %}
+        {% set aplicacao = partes[0] %}
+        {% set data_hora_grupo = partes[1] %}
+        
+        {# Encontrar a data mais recente dentro do grupo #}
+        {% set ultima_data = None %}
+        {% for solicitacao in solicitacoes_grupo %}
+            {% if not ultima_data or solicitacao.data_solicitacao > ultima_data %}
+                {% set ultima_data = solicitacao.data_solicitacao %}
+            {% endif %}
+        {% endfor %}
+        
+        <div class="aplicacao-section" id="grupo-{{ aplicacao|replace(' ', '-')|lower }}-{{ data_hora_grupo|replace(' ', '-')|replace(':', '') }}">
             <div class="aplicacao-header">
                 <div>
                     <div class="aplicacao-title">
@@ -807,20 +820,20 @@
                         <span>{{ aplicacao }}</span>
                     </div>
                     <div class="grupo-info">
-                        <i class="fas fa-file-alt"></i> {{ solicitacoes_por_aplicacao[aplicacao]|length }} solicitações
-                        | Última atualização: {{ aplicacoes_com_data[aplicacao]|format_brasil_time }}
+                        <i class="fas fa-file-alt"></i> {{ solicitacoes_grupo|length }} solicitações
+                        | Última atualização: {{ ultima_data|format_brasil_time }}
                     </div>
                 </div>
                 <div class="btn-group-acoes">
                     <button class="btn-duplicar-grupo" 
                             data-aplicacao="{{ aplicacao }}"
-                            data-count="{{ solicitacoes_por_aplicacao[aplicacao]|length }}"
+                            data-count="{{ solicitacoes_grupo|length }}"
                             title="Duplicar TODAS as solicitações deste grupo">
                         <i class="fas fa-copy"></i> Duplicar Grupo
                     </button>
                     <button class="btn-excluir-grupo" 
                             data-aplicacao="{{ aplicacao }}"
-                            data-count="{{ solicitacoes_por_aplicacao[aplicacao]|length }}"
+                            data-count="{{ solicitacoes_grupo|length }}"
                             title="Excluir TODAS as solicitações deste grupo">
                         <i class="fas fa-trash"></i> Excluir Grupo
                     </button>
@@ -847,8 +860,8 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {# Ordenamos as solicitações dentro de cada aplicação pela data (do mais novo para o mais antigo) #}
-                        {% for solicitacao in solicitacoes_por_aplicacao[aplicacao]|sort(attribute='data_solicitacao', reverse=true) %}
+                        {# Ordenar as solicitações dentro do grupo pela data (do mais novo para o mais antigo) #}
+                        {% for solicitacao in solicitacoes_grupo|sort(attribute='data_solicitacao', reverse=true) %}
                         <tr data-id="{{ solicitacao.id }}" 
                             data-aplicacao="{{ solicitacao.aplicacao }}" 
                             data-order-date="{{ solicitacao.data_solicitacao.strftime('%Y-%m-%d') }}"
@@ -1179,7 +1192,7 @@
             document.getElementById('confirmationInput').addEventListener('input', function() {
                 const confirmBtn = document.getElementById('confirmDelete');
                 // Substitua 'SENHA_ADMIN' pela senha real
-                confirmBtn.disabled = this.value.trim().toUpperCase() !== 'SENHA_ADMIN';
+                confirmBtn.disabled = this.value.trim().toUpperCase() !== '122004';
             });
 
             // Enter no input de confirmação
@@ -1327,7 +1340,7 @@
                     showNotification(`✅ ${data.message}`, 'success');
                     
                     // Remover a seção do grupo
-                    const grupoElement = document.getElementById(`grupo-${aplicacao.replace(/ /g, '-').toLowerCase()}`);
+                    const grupoElement = document.querySelector(`.aplicacao-section[id^="grupo-${aplicacao.replace(/ /g, '-').toLowerCase()}"]`);
                     if (grupoElement) {
                         grupoElement.style.opacity = '0.5';
                         grupoElement.style.transition = 'opacity 0.5s';
