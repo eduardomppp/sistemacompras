@@ -8071,133 +8071,60 @@ def duplicar_grupo_aplicacao():
             'error': f'Erro ao duplicar grupo: {str(e)}'
         }), 500   
     
-@routes_bp.route('/reprovar_solicitacao_individual/<int:solicitacao_id>', methods=['POST'])
-def reprovar_solicitacao_individual(solicitacao_id):
-    """Reprova uma solicitação individualmente"""
+@routes_bp.route('/reprovar_solicitacao_individual/<int:id>', methods=['POST'])
+def reprovar_solicitacao_individual(id):
     if 'usuario' not in session:
         return jsonify({'success': False, 'message': 'Usuário não autenticado'}), 401
     
     try:
-        solicitacao = SolicitacoesCompra.query.get_or_404(solicitacao_id)
+        # Buscar a solicitação
+        solicitacao = SolicitacoesCompra.query.get_or_404(id)
+        usuario = session['usuario']
         
-        # Verificar se a solicitação já tem preenchimentos ou está em pedido
-        preenchimentos = SolicitacoesPreenchidas.query.filter_by(solicitacao_id=solicitacao_id).all()
-        
-        # Filtrar apenas preenchimentos que não são rascunhos
-        preenchimentos_validos = [p for p in preenchimentos if p.status != 'Rascunho']
-        
-        if preenchimentos_validos:
+        # Verificar se já está reprovada
+        if solicitacao.status_aprovacao == 'Reprovado':
             return jsonify({
                 'success': False, 
-                'message': 'Esta solicitação já possui cotações enviadas para fornecedores e não pode ser reprovada individualmente.'
+                'message': 'Esta solicitação já está reprovada.'
             }), 400
         
-        # Verificar se está em algum pedido de compra
-        pedido_associado = None
-        for preenchimento in preenchimentos:
-            pedido = PedidosCompra.query.join(
-                pedido_preenchimento_associacao,
-                PedidosCompra.id == pedido_preenchimento_associacao.c.pedido_id
-            ).filter(
-                pedido_preenchimento_associacao.c.preenchimento_id == preenchimento.id
-            ).first()
-            
-            if pedido:
-                pedido_associado = pedido
-                break
+        # REMOVIDA A VERIFICAÇÃO DE COTAÇÕES
+        # A reprovação agora é permitida independentemente de ter cotações
         
-        if pedido_associado:
-            return jsonify({
-                'success': False, 
-                'message': f'Esta solicitação está associada ao pedido {pedido_associado.numero_pedido} e não pode ser reprovada individualmente.'
-            }), 400
+        # Obter motivo do corpo da requisição
+        data = request.get_json()
+        motivo = data.get('motivo', '').strip() if data else ''
         
-        # Obter motivo da reprovação
-        data = request.get_json() if request.is_json else request.form
-        motivo = data.get('motivo', '') if data else ''
-        
-        # Reprovar a solicitação - ATUALIZAÇÃO IMPORTANTE: Garantir que todos os campos sejam atualizados
+        # Atualizar status para reprovado
         solicitacao.status_aprovacao = 'Reprovado'
         
-        # Também atualizar o campo 'status' se existir no modelo (para compatibilidade)
-        if hasattr(solicitacao, 'status'):
-            solicitacao.status = 'Reprovado'
-        
-        # Salvar observação se houver motivo
+        # Adicionar observação se houver motivo
         if motivo:
-            # Verificar se a coluna observacoes_col existe
-            if hasattr(solicitacao, 'observacoes_col'):
-                # Preservar observações existentes
-                observacoes_existentes = solicitacao.observacoes_col or ''
-                nova_observacao = f"[{datetime.now().strftime('%d/%m/%Y %H:%M')}] REPROVADA INDIVIDUALMENTE por {session['usuario']}. Motivo: {motivo}"
-                
-                if observacoes_existentes:
-                    solicitacao.observacoes_col = f"{observacoes_existentes}\n{nova_observacao}"
-                else:
-                    solicitacao.observacoes_col = nova_observacao
+            if solicitacao.observacoes_col:
+                solicitacao.observacoes_col += f"\nREPROVADA INDIVIDUALMENTE - Motivo: {motivo} - Usuário: {usuario}"
             else:
-                # Alternativa: usar campo de observações da solicitação
-                solicitacao.especificacao = f"{solicitacao.especificacao} [REPROVADA: {motivo}]"
+                solicitacao.observacoes_col = f"REPROVADA INDIVIDUALMENTE - Motivo: {motivo} - Usuário: {usuario}"
         
-        # Adicionar entrada na tabela de auditoria para rastreabilidade
-        try:
-            # Verificar se já existe uma entrada de auditoria para esta solicitação
-            auditoria_existente = Auditoria.query.filter_by(solicitacao_id=solicitacao_id).first()
-            
-            if not auditoria_existente:
-                # Criar nova entrada de auditoria
-                auditoria = Auditoria(
-                    solicitacao_id=solicitacao_id,
-                    data_validacao=datetime.now(),
-                    colaborador_1=session['usuario'],
-                    colaborador_2=None,
-                    status='Reprovado',
-                    observacao=f"Reprovada individualmente. Motivo: {motivo}" if motivo else "Reprovada individualmente"
-                )
-                db.session.add(auditoria)
-            else:
-                # Atualizar auditoria existente
-                auditoria_existente.status = 'Reprovado'
-                auditoria_existente.data_validacao = datetime.now()
-                auditoria_existente.colaborador_1 = session['usuario']
-                if motivo:
-                    observacao_existente = auditoria_existente.observacao or ''
-                    auditoria_existente.observacao = f"{observacao_existente}\nReprovada individualmente. Motivo: {motivo}"
-        
-        except Exception as audit_error:
-            logging.warning(f"Não foi possível registrar auditoria: {str(audit_error)}")
-            # Continuar mesmo se houver erro na auditoria
-        
-        # Atualizar a data de modificação
-        if hasattr(solicitacao, 'data_modificacao'):
-            solicitacao.data_modificacao = datetime.now()
+        # Registrar log
+        ip = request.remote_addr
+        registrar_log(usuario, 'reprovar_solicitacao_individual', 
+                     f'Solicitação ID {id} reprovada individualmente. Motivo: {motivo}', ip)
         
         db.session.commit()
         
-        # Registrar no log
-        logging.info(f'Solicitação {solicitacao_id} reprovada individualmente por {session["usuario"]}. Motivo: {motivo}')
-        
-        # Criar entrada de log mais detalhada no arquivo de log do sistema
-        registrar_log(
-            session['usuario'], 
-            f'reprovar_solicitacao_individual', 
-            f"Solicitação ID {solicitacao_id} reprovada. Material: {solicitacao.material.DescricaoMaterial if solicitacao.material else 'N/A'}. Motivo: {motivo}"
-        )
-        
         return jsonify({
             'success': True,
-            'message': 'Solicitação reprovada com sucesso!',
-            'novo_status': 'Reprovado',
-            'solicitacao_id': solicitacao_id
+            'message': 'Solicitação reprovada com sucesso!'
         })
         
     except Exception as e:
         db.session.rollback()
-        logging.error(f'Erro ao reprovar solicitação {solicitacao_id}: {str(e)}', exc_info=True)
+        logging.error(f"Erro ao reprovar solicitação {id}: {str(e)}")
         return jsonify({
-            'success': False,
+            'success': False, 
             'message': f'Erro ao reprovar solicitação: {str(e)}'
         }), 500
+    
     
   # Registro do Blueprint (apenas uma vez)
 app.register_blueprint(routes_bp)  
