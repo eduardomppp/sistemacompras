@@ -36,9 +36,17 @@
             border-radius: 8px;
             margin-bottom: 1rem;
             transition: all 0.2s;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
         }
         .material-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        .material-header { background: var(--primary); color: white; padding: 1rem; }
+        .material-header { 
+            background: var(--primary); 
+            color: white; 
+            padding: 0.9rem 1rem; 
+            font-size: 1.05rem;
+        }
         .cotacao-aprovada { border-left: 4px solid var(--success); background: #f8fff9; }
         .cotacao-bloqueada { opacity: 0.75; background: #f8f9fa; }
         .cotacao-bloqueada .material-header { background: var(--gray) !important; }
@@ -58,20 +66,23 @@
         .ativo-nome { max-width: 300px; white-space: normal; overflow-wrap: break-word; cursor: pointer; display: inline-block; }
         .ativo-nome:hover { background: rgba(255,255,255,0.2); padding: 2px 4px; border-radius: 4px; }
         
-        /* Estilos para os valores financeiros */
         .valores-container {
             border: 1px solid #dee2e6;
             border-radius: 6px;
-            padding: 0.75rem;
+            padding: 0.9rem;
             margin: 0.5rem 0;
             background: #f8f9fa;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
         }
         .valor-item {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 0.3rem;
-            padding-bottom: 0.3rem;
+            margin-bottom: 0.4rem;
+            padding-bottom: 0.4rem;
             border-bottom: 1px dashed #dee2e6;
+            font-size: 0.95rem;
         }
         .valor-item:last-child {
             border-bottom: none;
@@ -80,26 +91,22 @@
         }
         .valor-total {
             font-weight: bold;
-            font-size: 1.1rem;
+            font-size: 1.15rem;
             color: var(--success);
             border-top: 2px solid var(--success);
-            padding-top: 0.5rem;
-            margin-top: 0.5rem;
+            padding-top: 0.75rem;
+            margin-top: auto;
         }
         .desconto-info {
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             color: var(--danger);
         }
 
-        /* Accordion aberto por padrão */
-        .accordion-button:not(.collapsed) {
-            background-color: #f8f9fa;
-            color: #000;
-            box-shadow: inset 0 -1px 0 rgba(0,0,0,.125);
-        }
-        .accordion-button:not(.collapsed)::after {
-            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23000'%3e%3cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e");
-            transform: rotate(-180deg);
+        /* Ajustes para harmonia entre seções */
+        .material-card .p-3 {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
         }
     </style>
 </head>
@@ -216,25 +223,8 @@
                                         {% set is_aprovada = p.status == 'Aprovado' %}
                                         {% set is_bloqueada = aprovada and not is_aprovada %}
 
-                                        <!-- Cálculo do desconto -->
                                         {% set valor_unitario_calc = p.valor_unitario|default(0) %}
                                         {% set subtotal_produtos = p.solicitacao.quantidade * valor_unitario_calc %}
-                                        {% set frete = p.valor_frete|default(0) %}
-                                        {% set desconto_raw = (p.condicao_pagamento or '')|string|trim %}
-
-                                        {% set desconto_valor = 0 %}
-                                        {% set desconto_percentual = 0 %}
-
-                                        {% if '%' in desconto_raw %}
-                                            {% set desconto_percentual = desconto_raw.replace('%','')|float %}
-                                            {% set desconto_valor = subtotal_produtos * desconto_percentual / 100 %}
-                                        {% elif desconto_raw != '' %}
-                                            {% set desconto_valor = desconto_raw|float %}
-                                            {% set desconto_percentual = (desconto_valor / subtotal_produtos * 100) if subtotal_produtos > 0 else 0 %}
-                                        {% endif %}
-
-                                        {% set valor_liquido_produtos = subtotal_produtos - desconto_valor %}
-                                        {% set total_calculado = valor_liquido_produtos + frete %}
 
                                         <div class="cotacao-col">
                                             <div class="material-card {% if is_aprovada %}cotacao-aprovada{% elif is_bloqueada %}cotacao-bloqueada{% endif %}">
@@ -266,8 +256,8 @@
                                                         </div>
                                                     </small>
                                                 </div>
-                                                <div class="p-3 small">
-                                                    <div class="row g-2 mb-2">
+                                                <div class="p-3">
+                                                    <div class="row g-2 mb-3 small">
                                                         <div class="col-6"><strong>Qtde:</strong> {{ p.solicitacao.quantidade }}</div>
                                                         <div class="col-6"><strong>Unitário:</strong> R$ {{ "%.2f"|format(valor_unitario_calc) }}</div>
                                                         <div class="col-6"><strong>Entrega:</strong> {{ p.prazo_entrega }}</div>
@@ -276,26 +266,15 @@
                                                     
                                                     <div class="valores-container">
                                                         <div class="valor-item">
-                                                            <span>Subtotal produtos:</span>
+                                                            <span>Subtotal produtos</span>
                                                             <span>R$ {{ "%.2f"|format(subtotal_produtos) }}</span>
                                                         </div>
-                                                        {% if desconto_valor > 0 %}
-                                                        <div class="valor-item">
-                                                            <span>Desconto: <span class="desconto-info">({{ "%.2f"|format(desconto_percentual) }}%)</span></span>
-                                                            <span class="text-danger">- R$ {{ "%.2f"|format(desconto_valor) }}</span>
-                                                        </div>
-                                                        {% endif %}
-                                                        <div class="valor-item">
-                                                            <span>Valor líquido produtos:</span>
-                                                            <span>R$ {{ "%.2f"|format(valor_liquido_produtos) }}</span>
-                                                        </div>
-                                                        <div class="valor-item">
-                                                            <span>Frete:</span>
-                                                            <span>+ R$ {{ "%.2f"|format(frete) }}</span>
+                                                        <div class="valor-item text-muted fst-italic small mt-2">
+                                                            Frete e desconto no total do fornecedor (veja resumo)
                                                         </div>
                                                         <div class="valor-item valor-total">
-                                                            <span>TOTAL:</span>
-                                                            <span>R$ {{ "%.2f"|format(total_calculado) }}</span>
+                                                            <span>Parcial produtos</span>
+                                                            <span>R$ {{ "%.2f"|format(subtotal_produtos) }}</span>
                                                         </div>
                                                     </div>
                                                     
@@ -330,6 +309,102 @@
                     </div>
                 {% endfor %}
             </div>
+
+            <!-- RESUMO POR FORNECEDOR -->
+            <div class="mt-5 pt-4 border-top">
+                <h5 class="fw-bold mb-3" style="color: var(--primary);">
+                    <i class="bi bi-receipt-cutoff me-2"></i>Resumo Consolidado por Fornecedor
+                </h5>
+
+                {% set resumo_fornecedores = {} %}
+
+                {% for mat_nome, preenchs in materiais.items() %}
+                    {% for p in preenchs %}
+                        {% set forn = p.fornecedor_nome %}
+                        {% if forn not in resumo_fornecedores %}
+                            {% set _ = resumo_fornecedores.update({forn: {
+                                'subtotal': 0.0,
+                                'frete': p.valor_frete|default(0.0)|float,
+                                'desconto_raw': (p.condicao_pagamento or '')|string|trim,
+                                'aprovada': none
+                            }}) %}
+                        {% endif %}
+
+                        {% set qtd = p.solicitacao.quantidade|float(0) %}
+                        {% set vu = p.valor_unitario|default(0.0)|float %}
+                        {% set subt = qtd * vu %}
+
+                        {% set _ = resumo_fornecedores[forn].update({
+                            'subtotal': resumo_fornecedores[forn]['subtotal'] + subt
+                        }) %}
+
+                        {% if p.status == 'Aprovado' %}
+                            {% set _ = resumo_fornecedores[forn].update({'aprovada': p}) %}
+                        {% endif %}
+                    {% endfor %}
+                {% endfor %}
+
+                {% if resumo_fornecedores %}
+                    <div class="row g-3">
+                        {% for forn, dados in resumo_fornecedores.items() | sort(attribute='0') %}
+                            {% set subt_total = dados.subtotal %}
+                            {% set desc_raw = dados.desconto_raw %}
+                            {% set desc_valor = 0.0 %}
+                            {% set desc_perc = 0.0 %}
+
+                            {% if '%' in desc_raw %}
+                                {% set desc_perc = desc_raw.replace('%','')|float(default=0.0) %}
+                                {% set desc_valor = subt_total * (desc_perc / 100) %}
+                            {% elif desc_raw and desc_raw|float(default=0) > 0 %}
+                                {% set desc_valor = desc_raw|float %}
+                                {% set desc_perc = (desc_valor / subt_total * 100) if subt_total > 0 else 0.0 %}
+                            {% endif %}
+
+                            {% set total_forn = subt_total - desc_valor + dados.frete %}
+
+                            <div class="col-lg-6 col-xl-4">
+                                <div class="material-card border-primary">
+                                    <div class="material-header">
+                                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                            <strong>{{ forn }}</strong>
+                                            {% if dados.aprovada %}
+                                                <span class="badge bg-success">Aprovada #{{ dados.aprovada.id }}</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="p-3">
+                                        <div class="valores-container">
+                                            <div class="valor-item">
+                                                <span>Subtotal produtos</span>
+                                                <span>R$ {{ "%.2f"|format(subt_total) }}</span>
+                                            </div>
+                                            {% if desc_valor > 0 %}
+                                            <div class="valor-item">
+                                                <span>Desconto ({{ "%.1f"|format(desc_perc) }}%)</span>
+                                                <span class="text-danger">- R$ {{ "%.2f"|format(desc_valor) }}</span>
+                                            </div>
+                                            {% endif %}
+                                            <div class="valor-item">
+                                                <span>Frete</span>
+                                                <span>R$ {{ "%.2f"|format(dados.frete) }}</span>
+                                            </div>
+                                            <div class="valor-item valor-total">
+                                                <strong>Total</strong>
+                                                <strong>R$ {{ "%.2f"|format(total_forn) }}</strong>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="alert alert-light small text-center py-3 mt-3">
+                        Nenhum fornecedor com valores consolidados nesta aplicação
+                    </div>
+                {% endif %}
+            </div>
+
         </div>
         {% endfor %}
     {% else %}
@@ -342,6 +417,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+    // Seu script JavaScript original (mantido sem alterações)
     function updatePrintButton() {
         const checked = document.querySelectorAll('.cotacao-checkbox:checked').length;
         document.getElementById('printSelectedBtn').disabled = checked === 0;
