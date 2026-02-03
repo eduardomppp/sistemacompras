@@ -54,12 +54,45 @@
         .status-select:disabled[data-status="Aprovado"] { background: #d4edda; color: var(--success); }
         .status-select:disabled[data-status="Reprovado"] { background: #f8d7da; color: var(--danger); }
         .status-select:disabled[data-status="Em Processamento"] { background: #fff3cd; color: var(--warning); }
-        .cotacoes-row { display: flex; gap: 1rem; overflow-x: auto; padding: 1rem 0; scroll-behavior: smooth; }
-        .cotacao-col { flex: 0 0 320px; }
-        @media (max-width: 768px) {
-            .cotacao-col { flex: 0 0 100%; }
-            .cotacoes-row { flex-wrap: wrap; }
+        
+        /* Largura fixa para cotações */
+        .cotacao-col {
+            flex: 0 0 350px;
+            min-width: 350px;
         }
+        
+        .cotacoes-row {
+            display: flex;
+            gap: 1rem;
+            overflow-x: auto;
+            padding: 1rem 0;
+            scroll-behavior: smooth;
+        }
+        
+        /* Largura para resumos consolidados */
+        .resumo-consolidado-col {
+            flex: 0 0 350px;
+            min-width: 350px;
+        }
+        
+        .resumos-consolidados-row {
+            display: flex;
+            gap: 1rem;
+            overflow-x: auto;
+            padding: 1rem 0;
+            scroll-behavior: smooth;
+        }
+        
+        @media (max-width: 768px) {
+            .cotacao-col, .resumo-consolidado-col {
+                flex: 0 0 100%;
+                min-width: 100%;
+            }
+            .cotacoes-row, .resumos-consolidados-row {
+                flex-wrap: wrap;
+            }
+        }
+        
         .print-selected-btn { background: #17a2b8; border-color: #17a2b8; }
         .print-selected-btn:disabled { opacity: 0.6; }
         .ativo-info { max-width: 300px; white-space: normal; word-break: break-word; line-height: 1.3; }
@@ -107,6 +140,39 @@
             flex-grow: 1;
             display: flex;
             flex-direction: column;
+        }
+        
+        /* Separador visual */
+        .separador-resumo {
+            margin: 2rem 0;
+            border-top: 3px solid var(--primary-light);
+            opacity: 0.5;
+        }
+        
+        /* Novos estilos para solicitações individuais */
+        .solicitacao-unica {
+            border: 2px solid #e0e0e0;
+            margin-bottom: 1.5rem;
+            border-radius: 8px;
+            background: #fafafa;
+        }
+        .solicitacao-header {
+            background: #e9ecef;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #dee2e6;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .solicitacao-id {
+            color: #495057;
+            font-size: 0.9rem;
+        }
+        .solicitacao-info {
+            background: #f1f3f5;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #dee2e6;
         }
     </style>
 </head>
@@ -164,205 +230,279 @@
 
     <!-- Conteúdo principal -->
     {% if preenchimentos_por_material %}
-        {% set aplicacoes_agrupadas = {} %}
+        <!-- NOVA ESTRUTURA: Agrupar por solicitação individual -->
+        {% set solicitacoes_unicas = {} %}
+        
         {% for material_nome, preenchimentos in preenchimentos_por_material.items() %}
-            {% set filtrados = [] %}
             {% for p in preenchimentos %}
                 {% if p.status == 'Aguardando Aprovacao' %}
-                    {% set _ = filtrados.append(p) %}
+                    {% set solicitacao_id = p.solicitacao.id %}
+                    {% if solicitacao_id not in solicitacoes_unicas %}
+                        {% set _ = solicitacoes_unicas.update({solicitacao_id: p.solicitacao}) %}
+                    {% endif %}
                 {% endif %}
             {% endfor %}
-            {% if filtrados %}
-                {% set aplicacao = filtrados[0].solicitacao.aplicacao if filtrados[0].solicitacao.aplicacao else 'Sem Aplicação' %}
-                {% if aplicacao not in aplicacoes_agrupadas %}
-                    {% set _ = aplicacoes_agrupadas.update({aplicacao: {}}) %}
-                {% endif %}
-                {% set _ = aplicacoes_agrupadas[aplicacao].update({material_nome: filtrados}) %}
-            {% endif %}
         {% endfor %}
 
-        {% for aplicacao, materiais in aplicacoes_agrupadas.items() %}
+        <!-- Agora agrupar por aplicação -->
+        {% set aplicacoes_agrupadas = {} %}
+        
+        {% for solicitacao_id, solicitacao in solicitacoes_unicas.items() %}
+            {% set aplicacao = solicitacao.aplicacao if solicitacao.aplicacao else 'Sem Aplicação' %}
+            
+            {% if aplicacao not in aplicacoes_agrupadas %}
+                {% set _ = aplicacoes_agrupadas.update({aplicacao: []}) %}
+            {% endif %}
+            
+            {% set _ = aplicacoes_agrupadas[aplicacao].append(solicitacao) %}
+        {% endfor %}
+
+        {% for aplicacao, solicitacoes in aplicacoes_agrupadas.items() %}
         <div class="aplicacao-group p-3 mt-4">
             <div class="aplicacao-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0"><i class="bi bi-tags"></i> {{ aplicacao }}</h5>
-                <span class="badge bg-light text-dark">{{ materiais|length }} material(is)</span>
+                <span class="badge bg-light text-dark">{{ solicitacoes|length }} solicitação(ões)</span>
             </div>
 
-            <div class="accordion mt-3" id="accordion-{{ loop.index }}">
-                {% for mat_nome, preenchs in materiais.items() %}
-                    {% set aprovada = None %}
-                    {% set outras = [] %}
-                    {% for p in preenchs %}
-                        {% if p.status == 'Aprovado' %}
-                            {% set aprovada = p %}
-                        {% else %}
-                            {% set _ = outras.append(p) %}
+            {% for solicitacao in solicitacoes %}
+            <div class="solicitacao-unica mt-3">
+                <!-- Cabeçalho da solicitação -->
+                <div class="solicitacao-header">
+                    <div>
+                        <strong>{{ solicitacao.material.DescricaoMaterial if solicitacao.material else 'Material não encontrado' }}</strong>
+                        <span class="solicitacao-id ms-3">Solicitação #{{ solicitacao.id }} - {{ solicitacao.especificacao }}</span>
+                    </div>
+                    <div>
+                        <span class="badge bg-primary">Qtd: {{ solicitacao.quantidade }} {{ solicitacao.unidade_medida }}</span>
+                    </div>
+                </div>
+
+                <!-- Informações da solicitação -->
+                <div class="solicitacao-info">
+                    <div class="row g-2 small">
+                        <div class="col-md-3">
+                            <strong><i class="bi bi-person"></i> Solicitante:</strong> {{ solicitacao.usuario }}
+                        </div>
+                        <div class="col-md-3">
+                            <strong><i class="bi bi-building"></i> Empresa:</strong> {{ solicitacao.empresa }}
+                        </div>
+                        <div class="col-md-3">
+                            <strong><i class="bi bi-calendar"></i> Data:</strong> {{ solicitacao.data_solicitacao.strftime('%d/%m/%Y %H:%M') if solicitacao.data_solicitacao else '' }}
+                        </div>
+                        <div class="col-md-3">
+                            <strong><i class="bi bi-lightning-charge"></i> Ativo:</strong>
+                            <span class="badge bg-{{ 'success' if solicitacao.ativo == 'Sim' else 'secondary' }}">
+                                {{ solicitacao.ativo }}
+                            </span>
+                        </div>
+                        {% if solicitacao.ativo == 'Sim' and solicitacao.nome_ativo %}
+                        <div class="col-md-12 mt-1">
+                            <strong><i class="bi bi-tag"></i> Nome do Ativo:</strong>
+                            <span class="badge bg-info">{{ solicitacao.nome_ativo }}</span>
+                        </div>
                         {% endif %}
+                    </div>
+                </div>
+
+                <!-- Cotações para esta solicitação específica -->
+                <div class="p-3">
+                    {% set cotacoes_desta_solicitacao = [] %}
+                    
+                    {% for material_nome, preenchimentos in preenchimentos_por_material.items() %}
+                        {% for p in preenchimentos %}
+                            {% if p.solicitacao.id == solicitacao.id and p.status == 'Aguardando Aprovacao' %}
+                                {% set _ = cotacoes_desta_solicitacao.append(p) %}
+                            {% endif %}
+                        {% endfor %}
                     {% endfor %}
-                    {% set outras = outras | sort(attribute='data_preenchimento', reverse=true) %}
-                    {% set ordenados = [aprovada] if aprovada else [] %}
-                    {% for o in outras %}
-                        {% set _ = ordenados.append(o) %}
-                    {% endfor %}
+                    
+                    {% if cotacoes_desta_solicitacao %}
+                        <h6 class="mb-3"><i class="bi bi-file-earmark-text"></i> Cotações para esta solicitação:</h6>
+                        <div class="cotacoes-row">
+                            {% for p in cotacoes_desta_solicitacao %}
+                                {% set is_aprovada = p.status == 'Aprovado' %}
+                                {% set is_bloqueada = false %}
+                                
+                                {% for p2 in cotacoes_desta_solicitacao %}
+                                    {% if p2.status == 'Aprovado' and p2.id != p.id %}
+                                        {% set is_bloqueada = true %}
+                                    {% endif %}
+                                {% endfor %}
 
-                    {% set accordion_id = 'collapse-' ~ aplicacao|replace(' ', '-') ~ '-' ~ mat_nome|replace(' ', '-') ~ '-' ~ loop.index %}
-
-                    <div class="accordion-item">
-                        <h2 class="accordion-header">
-                            <button class="accordion-button fw-bold" type="button" data-bs-toggle="collapse"
-                                    data-bs-target="#{{ accordion_id }}" aria-expanded="true" aria-controls="{{ accordion_id }}">
-                                {{ mat_nome }}
-                                {% if aprovada %}<span class="badge bg-success ms-2">Aprovada (ID {{ aprovada.id }})</span>{% endif %}
-                                <span class="badge bg-secondary ms-auto">{{ preenchs|length }} cotações</span>
-                            </button>
-                        </h2>
-                        <div id="{{ accordion_id }}" class="accordion-collapse show" data-bs-parent="#accordion-{{ loop.index }}">
-                            <div class="accordion-body">
-                                <div class="cotacoes-row">
-                                    {% for p in ordenados if p.status != 'Entregue' %}
-                                        {% set is_aprovada = p.status == 'Aprovado' %}
-                                        {% set is_bloqueada = aprovada and not is_aprovada %}
-
-                                        {% set valor_unitario_calc = p.valor_unitario|default(0) %}
-                                        {% set subtotal_produtos = p.solicitacao.quantidade * valor_unitario_calc %}
-
-                                        <div class="cotacao-col">
-                                            <div class="material-card {% if is_aprovada %}cotacao-aprovada{% elif is_bloqueada %}cotacao-bloqueada{% endif %}">
-                                                <div class="material-header">
-                                                    <div class="d-flex align-items-center gap-2 flex-wrap">
-                                                        <input type="checkbox" class="cotacao-checkbox form-check-input" data-cotacao-id="{{ p.id }}">
-                                                        <h5 class="mb-0">ID: {{ p.id }}</h5>
-                                                        {% if is_aprovada %}<span class="badge bg-success ms-2">Aprovado</span>{% endif %}
-                                                        {% if is_bloqueada %}<span class="badge bg-secondary ms-2">Bloqueado</span>{% endif %}
-                                                    </div>
-                                                    <small class="d-flex flex-column gap-1 mt-1">
-                                                        <div class="d-flex align-items-center gap-3 flex-wrap">
-                                                            <span><i class="bi bi-building"></i> {{ p.fornecedor_nome }}</span>
-                                                            <span><i class="bi bi-person"></i> {{ p.usuario }}</span>
-                                                        </div>
-                                                        <div class="d-flex align-items-center gap-3 flex-wrap">
-                                                            <span>
-                                                                <i class="bi bi-lightning-charge"></i> Ativo:
-                                                                <span class="badge bg-{{ 'success' if p.solicitacao.ativo == 'Sim' else 'secondary' }}">
-                                                                    {{ p.solicitacao.ativo }}
-                                                                </span>
-                                                            </span>
-                                                            {% if p.solicitacao.ativo == 'Sim' and p.solicitacao.nome_ativo %}
-                                                                <span class="ativo-info" title="{{ p.solicitacao.nome_ativo }}">
-                                                                    <i class="bi bi-tag"></i> Nome do Ativo:
-                                                                    <span class="ativo-nome badge bg-info">{{ p.solicitacao.nome_ativo }}</span>
-                                                                </span>
-                                                            {% endif %}
-                                                        </div>
-                                                    </small>
+                                <div class="cotacao-col">
+                                    <div class="material-card {% if is_aprovada %}cotacao-aprovada{% elif is_bloqueada %}cotacao-bloqueada{% endif %}">
+                                        <div class="material-header">
+                                            <div class="d-flex align-items-center gap-2 flex-wrap">
+                                                <input type="checkbox" class="cotacao-checkbox form-check-input" data-cotacao-id="{{ p.id }}">
+                                                <h5 class="mb-0">Cotação ID: {{ p.id }}</h5>
+                                                {% if is_aprovada %}<span class="badge bg-success ms-2">Aprovado</span>{% endif %}
+                                                {% if is_bloqueada %}<span class="badge bg-secondary ms-2">Bloqueado</span>{% endif %}
+                                            </div>
+                                            <small class="d-flex flex-column gap-1 mt-1">
+                                                <div class="d-flex align-items-center gap-3 flex-wrap">
+                                                    <span><i class="bi bi-building"></i> {{ p.fornecedor_nome }}</span>
+                                                    <span><i class="bi bi-person"></i> {{ p.usuario }}</span>
                                                 </div>
-                                                <div class="p-3">
-                                                    <div class="row g-2 mb-3 small">
-                                                        <div class="col-6"><strong>Qtde:</strong> {{ p.solicitacao.quantidade }}</div>
-                                                        <div class="col-6"><strong>Unitário:</strong> R$ {{ "%.2f"|format(valor_unitario_calc) }}</div>
-                                                        <div class="col-6"><strong>Entrega:</strong> {{ p.prazo_entrega }}</div>
-                                                        <div class="col-12"><strong>Obs:</strong> {{ p.observacoes or '—' }}</div>
-                                                    </div>
-                                                    
-                                                    <div class="valores-container">
-                                                        <div class="valor-item">
-                                                            <span>Subtotal produtos</span>
-                                                            <span>R$ {{ "%.2f"|format(subtotal_produtos) }}</span>
-                                                        </div>
-                                                        <div class="valor-item text-muted fst-italic small mt-2">
-                                                            Frete e desconto no total do fornecedor (veja resumo)
-                                                        </div>
-                                                        <div class="valor-item valor-total">
-                                                            <span>Parcial produtos</span>
-                                                            <span>R$ {{ "%.2f"|format(subtotal_produtos) }}</span>
-                                                        </div>
-                                                    </div>
-                                                    
-                                                    <div class="d-flex gap-2 mt-3 flex-wrap">
-                                                        {% if not is_bloqueada %}
-                                                            <select name="status" class="form-select form-select-sm status-select"
-                                                                    data-id="{{ p.id }}"
-                                                                    {% if p.status in ['Aprovado','Reprovado','Em Processamento'] %}disabled data-status="{{ p.status }}"{% endif %}>
-                                                                <option value="" disabled selected>Alterar</option>
-                                                                <option value="Aprovado">Aprovado</option>
-                                                                <option value="Reprovado">Reprovado</option>
-                                                                {% if p.status in ['Aprovado','Em Processamento'] %}
-                                                                    <option value="Entregue">Entregue</option>
-                                                                {% endif %}
-                                                            </select>
-                                                            {% if p.status in ['Aprovado','Reprovado'] %}
-                                                                <button class="btn btn-secondary btn-sm" onclick="reverterStatus({{ p.id }})">
-                                                                    <i class="bi bi-arrow-counterclockwise"></i> Reverter
-                                                                </button>
-                                                            {% endif %}
-                                                        {% else %}
-                                                            <span class="text-muted small">Bloqueada por cotação aprovada</span>
-                                                        {% endif %}
-                                                    </div>
+                                            </small>
+                                        </div>
+                                        <div class="p-3">
+                                            <!-- DADOS ESPECÍFICOS DESTA COTAÇÃO (SEM FRETE E DESCONTO) -->
+                                            <div class="row g-2 mb-3 small">
+                                                <div class="col-6"><strong>Valor unitário:</strong></div>
+                                                <div class="col-6">R$ {{ "%.2f"|format(p.valor_unitario|default(0)) }}</div>
+                                                
+                                                <div class="col-6"><strong>Entrega:</strong></div>
+                                                <div class="col-6">{{ p.prazo_entrega or 'Não informado' }}</div>
+                                                
+                                                <div class="col-12 mt-2">
+                                                    <strong>Observações:</strong><br>
+                                                    {{ p.observacoes or '—' }}
                                                 </div>
                                             </div>
+                                            
+                                            <!-- Valores calculados (APENAS PRODUTOS) -->
+                                            <div class="valores-container">
+                                                <div class="valor-item">
+                                                    <span>Quantidade solicitada:</span>
+                                                    <span>{{ solicitacao.quantidade }} {{ solicitacao.unidade_medida }}</span>
+                                                </div>
+                                                <div class="valor-item">
+                                                    <span>Valor unitário:</span>
+                                                    <span>R$ {{ "%.2f"|format(p.valor_unitario|default(0)) }}</span>
+                                                </div>
+                                                <div class="valor-item">
+                                                    <span>Subtotal produtos:</span>
+                                                    <span>R$ {{ "%.2f"|format(solicitacao.quantidade * p.valor_unitario|default(0)) }}</span>
+                                                </div>
+                                                <div class="valor-item valor-total">
+                                                    <strong>Total produtos:</strong>
+                                                    <strong>R$ {{ "%.2f"|format(solicitacao.quantidade * p.valor_unitario|default(0)) }}</strong>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Controles de status -->
+                                            <div class="d-flex gap-2 mt-3 flex-wrap">
+                                                {% if not is_bloqueada %}
+                                                    <select name="status" class="form-select form-select-sm status-select"
+                                                            data-id="{{ p.id }}"
+                                                            {% if p.status in ['Aprovado','Reprovado','Em Processamento'] %}disabled data-status="{{ p.status }}"{% endif %}>
+                                                        <option value="" disabled selected>Alterar status</option>
+                                                        <option value="Aprovado">Aprovado</option>
+                                                        <option value="Reprovado">Reprovado</option>
+                                                    </select>
+                                                    {% if p.status in ['Aprovado','Reprovado'] %}
+                                                        <button class="btn btn-secondary btn-sm" onclick="reverterStatus({{ p.id }})">
+                                                            <i class="bi bi-arrow-counterclockwise"></i> Reverter
+                                                        </button>
+                                                    {% endif %}
+                                                {% else %}
+                                                    <span class="text-muted small">Bloqueada por cotação aprovada</span>
+                                                {% endif %}
+                                            </div>
                                         </div>
-                                    {% endfor %}
+                                    </div>
                                 </div>
-                            </div>
+                            {% endfor %}
                         </div>
-                    </div>
-                {% endfor %}
+                    {% else %}
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle"></i> Nenhuma cotação encontrada para esta solicitação.
+                        </div>
+                    {% endif %}
+                </div>
             </div>
+            {% endfor %}
+            
+            <!-- SEPARADOR VISUAL -->
+            <div class="separador-resumo"></div>
 
-            <!-- RESUMO POR FORNECEDOR -->
-            <div class="mt-5 pt-4 border-top">
+            <!-- RESUMO CONSOLIDADO POR FORNECEDOR COM DESCONTO E FRETE -->
+            <div class="mt-4">
                 <h5 class="fw-bold mb-3" style="color: var(--primary);">
-                    <i class="bi bi-receipt-cutoff me-2"></i>Resumo Consolidado por Fornecedor
+                    <i class="bi bi-receipt-cutoff me-2"></i>Resumo Consolidado por Fornecedor - {{ aplicacao }}
                 </h5>
 
                 {% set resumo_fornecedores = {} %}
+                {% set ordem_fornecedores = [] %}
 
-                {% for mat_nome, preenchs in materiais.items() %}
-                    {% for p in preenchs %}
-                        {% set forn = p.fornecedor_nome %}
-                        {% if forn not in resumo_fornecedores %}
-                            {% set _ = resumo_fornecedores.update({forn: {
-                                'subtotal': 0.0,
-                                'frete': p.valor_frete|default(0.0)|float,
-                                'desconto_raw': (p.condicao_pagamento or '')|string|trim,
-                                'aprovada': none
-                            }}) %}
-                        {% endif %}
+                {% for solicitacao in solicitacoes %}
+                    {% for material_nome, preenchimentos in preenchimentos_por_material.items() %}
+                        {% for p in preenchimentos %}
+                            {% if p.solicitacao.id == solicitacao.id and p.status == 'Aguardando Aprovacao' %}
+                                {% set forn = p.fornecedor_nome %}
+                                
+                                {% if forn not in resumo_fornecedores %}
+                                    {% set _ = resumo_fornecedores.update({forn: {
+                                        'subtotal': 0.0,
+                                        'frete': 0.0,
+                                        'total': 0.0,
+                                        'desconto_raw': p.condicao_pagamento or '',
+                                        'desconto_valor': 0.0,
+                                        'desconto_perc': 0.0,
+                                        'aprovada': none,
+                                        'itens': []
+                                    }}) %}
+                                    {% set _ = ordem_fornecedores.append(forn) %}
+                                {% endif %}
 
-                        {% set qtd = p.solicitacao.quantidade|float(0) %}
-                        {% set vu = p.valor_unitario|default(0.0)|float %}
-                        {% set subt = qtd * vu %}
+                                {% set qtd = solicitacao.quantidade|float(0) %}
+                                {% set vu = p.valor_unitario|default(0.0)|float %}
+                                {% set vf = p.valor_frete|default(0.0)|float %}
+                                {% set subt = qtd * vu %}
 
-                        {% set _ = resumo_fornecedores[forn].update({
-                            'subtotal': resumo_fornecedores[forn]['subtotal'] + subt
-                        }) %}
+                                {% set item_info = {
+                                    'solicitacao_id': solicitacao.id,
+                                    'material': solicitacao.material.DescricaoMaterial if solicitacao.material else 'N/A',
+                                    'quantidade': qtd,
+                                    'valor_unitario': vu,
+                                    'subtotal': subt,
+                                    'frete': vf
+                                } %}
+                                
+                                {% set _ = resumo_fornecedores[forn]['itens'].append(item_info) %}
+                                {% set _ = resumo_fornecedores[forn].update({
+                                    'subtotal': resumo_fornecedores[forn]['subtotal'] + subt,
+                                    'frete': resumo_fornecedores[forn]['frete'] + vf
+                                }) %}
 
-                        {% if p.status == 'Aprovado' %}
-                            {% set _ = resumo_fornecedores[forn].update({'aprovada': p}) %}
-                        {% endif %}
+                                {% if p.status == 'Aprovado' %}
+                                    {% set _ = resumo_fornecedores[forn].update({'aprovada': p}) %}
+                                {% endif %}
+                            {% endif %}
+                        {% endfor %}
                     {% endfor %}
                 {% endfor %}
 
+                <!-- Calcular descontos e totais para cada fornecedor -->
+                {% for forn in resumo_fornecedores.keys() %}
+                    {% set dados = resumo_fornecedores[forn] %}
+                    {% set desc_raw = dados.desconto_raw %}
+                    {% set desc_valor = 0.0 %}
+                    {% set desc_perc = 0.0 %}
+
+                    {% if '%' in desc_raw %}
+                        {% set desc_perc = desc_raw.replace('%','').strip()|float(default=0.0) %}
+                        {% set desc_valor = dados.subtotal * (desc_perc / 100) %}
+                    {% elif desc_raw and desc_raw|float(default=0) > 0 %}
+                        {% set desc_valor = desc_raw|float %}
+                        {% set desc_perc = (desc_valor / dados.subtotal * 100) if dados.subtotal > 0 else 0.0 %}
+                    {% endif %}
+
+                    {% set total_com_desconto = dados.subtotal - desc_valor + dados.frete %}
+                    
+                    {% set _ = resumo_fornecedores[forn].update({
+                        'desconto_valor': desc_valor,
+                        'desconto_perc': desc_perc,
+                        'total': total_com_desconto
+                    }) %}
+                {% endfor %}
+
                 {% if resumo_fornecedores %}
-                    <div class="row g-3">
-                        {% for forn, dados in resumo_fornecedores.items() | sort(attribute='0') %}
-                            {% set subt_total = dados.subtotal %}
-                            {% set desc_raw = dados.desconto_raw %}
-                            {% set desc_valor = 0.0 %}
-                            {% set desc_perc = 0.0 %}
-
-                            {% if '%' in desc_raw %}
-                                {% set desc_perc = desc_raw.replace('%','')|float(default=0.0) %}
-                                {% set desc_valor = subt_total * (desc_perc / 100) %}
-                            {% elif desc_raw and desc_raw|float(default=0) > 0 %}
-                                {% set desc_valor = desc_raw|float %}
-                                {% set desc_perc = (desc_valor / subt_total * 100) if subt_total > 0 else 0.0 %}
-                            {% endif %}
-
-                            {% set total_forn = subt_total - desc_valor + dados.frete %}
-
-                            <div class="col-lg-6 col-xl-4">
+                    <div class="resumos-consolidados-row">
+                        {% for forn in ordem_fornecedores %}
+                            {% set dados = resumo_fornecedores[forn] %}
+                            
+                            <div class="resumo-consolidado-col">
                                 <div class="material-card border-primary">
                                     <div class="material-header">
                                         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
@@ -373,24 +513,41 @@
                                         </div>
                                     </div>
                                     <div class="p-3">
+                                        <!-- Lista de itens deste fornecedor -->
+                                        <div class="mb-3">
+                                            <small class="text-muted d-block mb-2">Itens incluídos:</small>
+                                            {% for item in dados.itens %}
+                                                <div class="small mb-1">
+                                                    <span class="badge bg-light text-dark">#{{ item.solicitacao_id }}</span>
+                                                    {{ item.material }} ({{ item.quantidade }} un)
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                        
+                                        <!-- RESUMO FINAL COM FRETE E DESCONTO -->
                                         <div class="valores-container">
                                             <div class="valor-item">
                                                 <span>Subtotal produtos</span>
-                                                <span>R$ {{ "%.2f"|format(subt_total) }}</span>
+                                                <span>R$ {{ "%.2f"|format(dados.subtotal) }}</span>
                                             </div>
-                                            {% if desc_valor > 0 %}
+                                            
+                                            {% if dados.desconto_valor > 0 %}
                                             <div class="valor-item">
-                                                <span>Desconto ({{ "%.1f"|format(desc_perc) }}%)</span>
-                                                <span class="text-danger">- R$ {{ "%.2f"|format(desc_valor) }}</span>
+                                                <span>Desconto ({{ "%.1f"|format(dados.desconto_perc) }}%)</span>
+                                                <span class="text-danger">- R$ {{ "%.2f"|format(dados.desconto_valor) }}</span>
                                             </div>
                                             {% endif %}
+                                            
+                                            {% if dados.frete > 0 %}
                                             <div class="valor-item">
                                                 <span>Frete</span>
                                                 <span>R$ {{ "%.2f"|format(dados.frete) }}</span>
                                             </div>
+                                            {% endif %}
+                                            
                                             <div class="valor-item valor-total">
-                                                <strong>Total</strong>
-                                                <strong>R$ {{ "%.2f"|format(total_forn) }}</strong>
+                                                <strong>Total consolidado</strong>
+                                                <strong>R$ {{ "%.2f"|format(dados.total) }}</strong>
                                             </div>
                                         </div>
                                     </div>
@@ -400,7 +557,7 @@
                     </div>
                 {% else %}
                     <div class="alert alert-light small text-center py-3 mt-3">
-                        Nenhum fornecedor com valores consolidados nesta aplicação
+                        <i class="bi bi-info-circle"></i> Nenhum fornecedor com valores consolidados nesta aplicação
                     </div>
                 {% endif %}
             </div>
@@ -417,7 +574,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    // Seu script JavaScript original (mantido sem alterações)
     function updatePrintButton() {
         const checked = document.querySelectorAll('.cotacao-checkbox:checked').length;
         document.getElementById('printSelectedBtn').disabled = checked === 0;
@@ -458,11 +614,11 @@
     }
 
     async function reprovarOutrasCotacoes(aprovadoId) {
-        const accordion = document.querySelector(`[data-cotacao-id="${aprovadoId}"]`)?.closest('.accordion-item');
-        if (!accordion) return;
+        const card = document.querySelector(`[data-cotacao-id="${aprovadoId}"]`)?.closest('.solicitacao-unica');
+        if (!card) return;
 
         const promises = [];
-        accordion.querySelectorAll('.material-card').forEach(card => {
+        card.querySelectorAll('.material-card').forEach(card => {
             const cb = card.querySelector('.cotacao-checkbox');
             const id = cb?.dataset.cotacaoId;
             if (id && id !== aprovadoId.toString()) {
