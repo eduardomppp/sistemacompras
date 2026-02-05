@@ -78,7 +78,6 @@
             text-decoration: none;
         }
 
-        /* Resto do CSS permanece igual */
         h4 {
             margin-top: 20px;
             color: var(--primary-color);
@@ -345,68 +344,21 @@
         }
 
         @media (max-width: 1200px) {
-            .container {
-                padding: 15px;
-            }
-
-            th,
-            td {
-                padding: 10px 12px;
-                font-size: 14px;
-            }
-
-            .btn {
-                padding: 6px 12px;
-                font-size: 13px;
-            }
+            .container { padding: 15px; }
+            th, td { padding: 10px 12px; font-size: 14px; }
+            .btn { padding: 6px 12px; font-size: 13px; }
         }
 
         @media (max-width: 768px) {
-            .page-header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 15px;
-            }
-
-            .filter-row {
-                flex-direction: column;
-            }
-
-            .filter-group {
-                min-width: 100%;
-            }
-
-            .date-range-picker {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-
-            .table-responsive {
-                font-size: 14px;
-            }
-
-            th,
-            td {
-                padding: 8px 10px;
-            }
-
-            .group-header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 10px;
-            }
-
-            .group-actions {
-                flex-direction: column;
-                width: 100%;
-            }
-
-            .btn-preencher-grupo,
-            .btn-print-group {
-                margin: 5px 0;
-                width: 100%;
-                justify-content: center;
-            }
+            .page-header { flex-direction: column; align-items: flex-start; gap: 15px; }
+            .filter-row { flex-direction: column; }
+            .filter-group { min-width: 100%; }
+            .date-range-picker { flex-direction: column; align-items: flex-start; }
+            .table-responsive { font-size: 14px; }
+            th, td { padding: 8px 10px; }
+            .group-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+            .group-actions { flex-direction: column; width: 100%; }
+            .btn-preencher-grupo, .btn-print-group { margin: 5px 0; width: 100%; justify-content: center; }
         }
     </style>
 </head>
@@ -424,7 +376,6 @@
 
         <!-- FILTROS -->
         <div class="search-filter-container">
-            <!-- Resto do código dos filtros permanece igual -->
             <div class="filter-row">
                 <div class="filter-group">
                     <label for="empresaFilter">Empresa</label>
@@ -495,92 +446,98 @@
         {% if solicitacoes %}
         <div id="tablesContainer">
             {% set grouped = {} %}
+
+            {# Agrupamento por aplicação + data + hora (formato string 'YYYY-MM-DD HH:MM') #}
             {% for s in solicitacoes if s.status_aprovacao and s.status_aprovacao != 'Pendente' %}
-            {% set key = s.aplicacao or s.material.Aplicacao or 'Sem Aplicação' %}
-            {% if key not in grouped %}
-            {% set _ = grouped.update({key: []}) %}
-            {% endif %}
-            {% set _ = grouped[key].append(s) %}
+                {% set aplic = s.aplicacao or s.material.Aplicacao or 'Sem Aplicação' %}
+                {% set data_hora_str = s.data_solicitacao.strftime('%Y-%m-%d %H:%M') %}
+                {% set key = aplic ~ ' | ' ~ data_hora_str %}
+
+                {% if key not in grouped %}
+                    {% set _ = grouped.update({key: []}) %}
+                {% endif %}
+                {% set _ = grouped[key].append(s) %}
             {% endfor %}
 
-            {% for aplicacao, items in grouped.items() %}
-            <div class="application-group" data-aplicacao="{{ aplicacao }}">
-                <div class="group-header">
-                    <div>
-                        <h4 style="margin: 0;">{{ aplicacao }}</h4>
-                        <span class="group-info">{{ items|length }} solicitação(ões) aprovada(s)</span>
+            {% for group_key, items in grouped.items() | sort(reverse=true) %}
+                {% set parts = group_key.split(' | ') %}
+                {% set aplicacao = parts[0] %}
+                {% set data_hora = parts[1] %}
+
+                <div class="application-group" data-aplicacao="{{ aplicacao }}" data-data-hora="{{ data_hora }}">
+                    <div class="group-header">
+                        <div>
+                            <h4 style="margin: 0;">{{ aplicacao }}</h4>
+                            <span class="group-info">
+                                {{ items|length }} solicitação(ões) aprovada(s) – {{ data_hora }}
+                            </span>
+                        </div>
+                        <div class="group-actions">
+                            <a href="{{ url_for('routes_bp.preencher_solicitacao', id=items[0].id) }}?grupo_ids={{ items|map(attribute='id')|join(',') }}"
+                               class="btn btn-preencher-grupo">
+                                <i class="fas fa-edit"></i> Preencher Grupo ({{ items|length }} itens)
+                            </a>
+                            <a href="{{ url_for('routes_bp.cotacao_imprimir', id=items[0].id) }}?grupo_ids={{ items|map(attribute='id')|join(',') }}"
+                               class="btn btn-print-group">
+                                <i class="fas fa-print"></i> Preparar para Impressão
+                            </a>
+                        </div>
                     </div>
-                    <div class="group-actions">
-                        <a href="{{ url_for('routes_bp.preencher_solicitacao', id=items[0].id) }}?grupo_ids={{ items|map(attribute='id')|join(',') }}"
-                            class="btn btn-preencher-grupo">
-                            <i class="fas fa-edit"></i> Preencher Grupo ({{ items|length }} itens)
-                        </a>
-                        <a href="{{ url_for('routes_bp.cotacao_imprimir', id=items[0].id) }}?grupo_ids={{ items|map(attribute='id')|join(',') }}"
-                            class="btn btn-print-group">
-                            <i class="fas fa-print"></i> Preparar para Impressão
-                        </a>
+
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Material</th>
+                                    <th>Especificação</th>
+                                    <th>Quantidade</th>
+                                    <th>Empresa</th>
+                                    <th>Aplicação</th>
+                                    <th>Data Solicitação</th>
+                                    <th>Usuário</th>
+                                    <th>Status</th>
+                                    <th>Comprador Atribuído</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for solicitacao in items | sort(attribute='data_solicitacao', reverse=true) %}
+                                <tr data-id="{{ solicitacao.id }}" data-aplicacao="{{ aplicacao }}">
+                                    <td>{{ solicitacao.id }}</td>
+                                    <td>{{ solicitacao.material.DescricaoMaterial }}</td>
+                                    <td>{{ solicitacao.especificacao or '-' }}</td>
+                                    <td>{{ solicitacao.quantidade }}</td>
+                                    <td>{{ solicitacao.empresa }}</td>
+                                    <td>{{ solicitacao.aplicacao or solicitacao.material.Aplicacao or '-' }}</td>
+                                    <td data-order="{{ solicitacao.data_solicitacao.strftime('%Y-%m-%d') }}">
+                                        {{ solicitacao.data_solicitacao | format_brasil_time }}
+                                    </td>
+                                    <td>{{ solicitacao.usuario }}</td>
+                                    <td>
+                                        {% set raw_status = solicitacao.status_aprovacao %}
+                                        {% set status = (raw_status | default('Pendente') | trim) %}
+                                        {% set status_upper = status.upper() %}
+
+                                        <span class="status-badge 
+                                            {% if status_upper == 'APROVADO' %}status-aprovado
+                                            {% elif status_upper == 'REPROVADO' %}status-reprovado
+                                            {% else %}status-pendente{% endif %}">
+                                            {{ status }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if solicitacao.comprador_atribuido %}
+                                            <span class="badge bg-primary">{{ solicitacao.comprador_atribuido }}</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Não atribuído</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
-                <div class="table-responsive">
-                    <table class="table table-bordered">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Material</th>
-                                <th>Especificação</th>
-                                <th>Quantidade</th>
-                                <th>Empresa</th>
-                                <th>Aplicação</th>
-                                <th>Data Solicitação</th>
-                                <th>Usuário</th>
-                                <th>Status</th>
-                                <th>Comprador Atribuído</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for solicitacao in items | sort(attribute='data_solicitacao', reverse=true) %}
-                            <tr data-id="{{ solicitacao.id }}" data-aplicacao="{{ aplicacao }}">
-                                <td>{{ solicitacao.id }}</td>
-                                <td>{{ solicitacao.material.DescricaoMaterial }}</td>
-                                <td>{{ solicitacao.especificacao or '-' }}</td>
-                                <td>{{ solicitacao.quantidade }}</td>
-                                <td>{{ solicitacao.empresa }}</td>
-                                <td>{{ solicitacao.aplicacao or solicitacao.material.Aplicacao or '-' }}</td>
-                                <td data-order="{{ solicitacao.data_solicitacao.strftime('%Y-%m-%d') }}">
-                                    {{ solicitacao.data_solicitacao | format_brasil_time }}
-                                </td>
-                                <td>{{ solicitacao.usuario }}</td>
-                                <td>
-                                    {% set raw_status = solicitacao.status_aprovacao %}
-                                    {% set status = (raw_status | default('Pendente') | trim) %}
-                                    {% set status_upper = status.upper() %}
-
-                                    <span class="status-badge 
-                                    {% if status_upper == 'APROVADO' %}
-                                        status-aprovado
-                                    {% elif status_upper == 'REPROVADO' %}
-                                        status-reprovado
-                                    {% else %}
-                                        status-pendente
-                                    {% endif %}
-                                ">
-                                        {{ status }}
-                                    </span>
-
-                                </td>
-                                <td>
-                                    {% if solicitacao.comprador_atribuido %}
-                                    <span class="badge bg-primary">{{ solicitacao.comprador_atribuido }}</span>
-                                    {% else %}
-                                    <span class="badge bg-secondary">Não atribuído</span>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
             {% endfor %}
         </div>
         {% else %}
@@ -636,7 +593,7 @@
                     const compradorMatch = !compradorFilter ||
                         (compradorFilter === 'não atribuído' ? comprador.includes('não atribuído') : comprador.includes(compradorFilter));
                     const dataMatch = (!dataInicio || dataSolicitacao >= dataInicio) &&
-                        (!dataFim || dataSolicitacao <= dataFim);
+                                      (!dataFim || dataSolicitacao <= dataFim);
 
                     if (empresaMatch && usuarioMatch && statusMatch && aplicacaoMatch && compradorMatch && dataMatch) {
                         row.style.display = '';
@@ -684,5 +641,4 @@
         }
     </script>
 </body>
-
 </html>
