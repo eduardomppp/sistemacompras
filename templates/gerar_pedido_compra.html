@@ -496,9 +496,9 @@
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="condicao_pagamento" class="form-label">Condição Específica *</label>
+                                <label for="condicao_pagamento" class="form-label">Confirmar Valor do Desconto:</label>
                                 <input type="text" class="form-control" id="condicao_pagamento" name="condicao_pagamento" 
-                                       placeholder="Ex: 30/60/90 dias, entrada + parcelas, etc." required>
+                                       placeholder="Confime o valor do desconto" required>
                             </div>
                         </div>
                     </div>
@@ -896,21 +896,6 @@
             // Atualiza a condição de pagamento com base na forma selecionada
             const formaPagamento = document.getElementById('forma_pagamento');
             const condicaoPagamento = document.getElementById('condicao_pagamento');
-            
-            formaPagamento.addEventListener('change', function() {
-                if (this.value === 'À Vista') {
-                    condicaoPagamento.value = 'Pagamento à vista';
-                } else if (this.value === 'A Prazo') {
-                    condicaoPagamento.value = '';
-                    condicaoPagamento.placeholder = 'Ex: 30/60/90 dias, entrada + parcelas, etc.';
-                } else if (this.value === 'Boleto') {
-                    condicaoPagamento.value = 'Boleto com vencimento em 30 dias';
-                } else if (this.value === 'Cartão de Crédito') {
-                    condicaoPagamento.value = 'Cartão em 3x sem juros';
-                } else if (this.value === 'Transferência Bancária') {
-                    condicaoPagamento.value = 'Transferência com desconto de 3%';
-                }
-            });
             
             // Validação do formulário antes de enviar
             document.querySelector('form').addEventListener('submit', function(e) {

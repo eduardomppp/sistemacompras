@@ -397,7 +397,7 @@ body.printing-pdf .total-fornecedor {
     color: #022855;
 }
 
-/* Total fornecedor */
+/* Total fornecedor - ORGANIZADO */
 .total-fornecedor {
     background: linear-gradient(135deg, #e6f0ff 0%, #f8f9fc 100%);
     border: 1px solid #022855;
@@ -413,7 +413,18 @@ body.printing-pdf .total-fornecedor {
     margin-bottom: 4px;
     color: #333;
 }
-.total-line.frete-line { color: #d94600; font-weight: 600; }
+.total-line.frete-line { 
+    color: #d94600; 
+    font-weight: 600;
+    padding-top: 4px;
+    border-top: 1px dashed #cbd5e1;
+}
+.total-line.desconto-line { 
+    color: #dc3545; 
+    font-weight: 600;
+    padding-top: 4px;
+    border-top: 1px dashed #cbd5e1;
+}
 
 .total-geral-fornecedor {
     font-weight: 700 !important;
@@ -467,7 +478,17 @@ body.printing-pdf .total-fornecedor {
                 <tr><td class="label">Comprador:</td><td class="value">{{ usuario }}</td></tr>
                 <tr><td class="label">Empresa:</td><td class="value">{{ pedido.preenchimentos[0].solicitacao.empresa if pedido.preenchimentos else 'Não informado' }}</td></tr>
                 <tr><td class="label">Status:</td><td class="value">{{ pedido.status }}</td></tr>
-                <tr><td class="label">Pagamento:</td><td class="value">{{ pedido.forma_pagamento }}</td></tr>
+                <tr><td class="label">Forma pgm:</td><td class="value">
+                    {% if pedido.forma_pagamento %}
+                        {% if '-' in pedido.forma_pagamento %}
+                            {{ pedido.forma_pagamento.split('-')[0]|trim }}
+                        {% else %}
+                            {{ pedido.forma_pagamento }}
+                        {% endif %}
+                    {% else %}
+                        Não informado
+                    {% endif %}
+                </td></tr>
                 <tr><td class="label">Total Itens:</td><td class="value">{{ total_itens }}</td></tr>
             </table>
 
@@ -551,11 +572,30 @@ body.printing-pdf .total-fornecedor {
     <div class="right-column">
         {% for fornecedor_id, dados in materiais_por_fornecedor.items() %}
         <div class="fornecedor-card">
+            <!-- Seção de informações do fornecedor - ORGANIZADA -->
             <div class="fornecedor-info">
                 <div><strong>Nome:</strong> {{ dados.info.nome }}</div>
                 <div><strong>CNPJ:</strong> {{ dados.info.cnpj }}</div>
                 <div><strong>Telefone:</strong> {{ dados.info.telefone }}</div>
                 <div><strong>Endereço:</strong> {{ dados.info.endereco }}</div>
+                
+                <!-- Frete - adicionando frete_info -->
+                {% if dados.frete is defined %}
+                <div class="frete-info"><strong>Frete:</strong> R$ {{ "%.2f"|format(dados.frete|default(0)|float) }}</div>
+                {% elif pedido.valor_frete %}
+                <div class="frete-info"><strong>Frete:</strong> R$ {{ "%.2f"|format(pedido.valor_frete or 0) }}</div>
+                {% else %}
+                <div class="frete-info"><strong>Frete:</strong> R$ 0,00</div>
+                {% endif %}
+                
+                <!-- Desconto -->
+                {% if dados.desconto is defined %}
+                <div class="desconto-info"><strong>Desconto:</strong> R$ {{ "%.2f"|format(dados.desconto|default(0)|float) }}</div>
+                {% elif pedido.forma_pagamento and '-' in pedido.forma_pagamento %}
+                <div class="desconto-info"><strong>Desconto:</strong> {{ pedido.forma_pagamento.split('-')[1]|trim }}</div>
+                {% else %}
+                <div class="desconto-info"><strong>Desconto:</strong> R$ 0,00</div>
+                {% endif %}
             </div>
 
             <div class="produtos-lista">
@@ -575,9 +615,26 @@ body.printing-pdf .total-fornecedor {
                 {% endfor %}
             </div>
 
+            <!-- TOTAIS DO FORNECEDOR - ESTRUTURA ORGANIZADA -->
             <div class="total-fornecedor">
-                <div class="total-line"><span>Total Produtos:</span><span class="total-produtos">R$ 0,00</span></div>
-                <div class="total-line frete-line" style="display:none;"><span>Frete:</span><span class="total-frete">R$ 0,00</span></div>
+                <div class="total-line">
+                    <span>Total Produtos:</span>
+                    <span class="total-produtos">R$ 0,00</span>
+                </div>
+                
+                <!-- Linha de frete (aparece apenas se houver valor) -->
+                <div class="total-line frete-line" style="display:none;">
+                    <span>Frete:</span>
+                    <span class="total-frete">R$ 0,00</span>
+                </div>
+                
+                <!-- Linha de desconto (aparece apenas se houver valor) -->
+                <div class="total-line desconto-line" style="display:none;">
+                    <span>Desconto:</span>
+                    <span class="total-desconto">- R$ 0,00</span>
+                </div>
+                
+                <!-- Total geral do fornecedor -->
                 <div class="total-geral-fornecedor">Total Geral: R$ 0,00</div>
             </div>
         </div>
@@ -590,11 +647,19 @@ body.printing-pdf .total-fornecedor {
     <div class="assinaturas">
         <div class="assinatura">
             <div class="linha-assinatura">____________________________</div>
-            <p>Gerente Compras</p>
+            <p></p>
         </div>
         <div class="assinatura">
             <div class="linha-assinatura">____________________________</div>
-            <p>Ednalva</p>
+            <p></p>
+        </div>
+        <div class="assinatura">
+            <div class="linha-assinatura">____________________________</div>
+            <p></p>
+        </div>
+        <div class="assinatura">
+            <div class="linha-assinatura">____________________________</div>
+            <p></p>
         </div>
     </div>
 </div>
@@ -613,45 +678,141 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!texto) return 0;
         texto = texto.replace('R$', '').trim();
 
+        // Primeiro, tenta extrair o número usando regex
+        const match = texto.match(/[\d,.]+/);
+        if (!match) return 0;
+        
+        texto = match[0];
+        
+        // Converte formato brasileiro para americano
         if (texto.includes('.') && texto.includes(',')) {
+            // Formato: 1.234,56
             texto = texto.replace(/\./g, '').replace(',', '.');
         } else if (texto.includes(',')) {
+            // Formato: 1234,56
             texto = texto.replace(',', '.');
         }
-
+        // Se só tem ponto, assume que já é formato americano
+        
         const numero = parseFloat(texto);
         return isNaN(numero) ? 0 : numero;
     }
 
+    // Processar cada cartão de fornecedor
     document.querySelectorAll('.fornecedor-card').forEach(card => {
+        console.log('Processando fornecedor card:', card);
+        
         let totalProdutos = 0;
+        
+        // Calcular total dos produtos
         card.querySelectorAll('.item-total').forEach(el => {
-            totalProdutos += parseValorBRL(el.textContent);
+            const valor = parseValorBRL(el.textContent);
+            console.log('Item total encontrado:', el.textContent, '=>', valor);
+            totalProdutos += valor;
         });
 
-        const freteEl = card.querySelector('.frete-line');
+        // Obter frete do fornecedor
         let totalFrete = 0;
+        const freteEl = card.querySelector('.frete-info');
         if (freteEl) {
-            totalFrete = parseValorBRL(freteEl.querySelector('.total-frete').textContent);
-            if (totalFrete > 0) freteEl.style.display = 'flex';
+            const freteText = freteEl.textContent || '';
+            console.log('Texto do frete:', freteText);
+            if (freteText.includes('Frete:')) {
+                const valorFrete = freteText.split('Frete:')[1]?.trim();
+                console.log('Valor frete extraído:', valorFrete);
+                if (valorFrete) {
+                    totalFrete = parseValorBRL(valorFrete);
+                }
+            }
         }
 
-        const totalGeral = totalProdutos + totalFrete;
-        card.querySelector('.total-produtos').textContent = `R$ ${formatarMoeda(totalProdutos)}`;
-        card.querySelector('.total-geral-fornecedor').textContent = `Total Geral: R$ ${formatarMoeda(totalGeral)}`;
+        // Obter desconto do fornecedor
+        let totalDesconto = 0;
+        const descontoEl = card.querySelector('.desconto-info');
+        if (descontoEl) {
+            const descontoText = descontoEl.textContent || '';
+            console.log('Texto do desconto:', descontoText);
+            if (descontoText.includes('Desconto:')) {
+                const valorDesconto = descontoText.split('Desconto:')[1]?.trim();
+                console.log('Valor desconto extraído:', valorDesconto);
+                if (valorDesconto) {
+                    totalDesconto = parseValorBRL(valorDesconto);
+                }
+            }
+        }
+
+        console.log('Totais calculados:', {
+            produtos: totalProdutos,
+            frete: totalFrete,
+            desconto: totalDesconto
+        });
+
+        // Mostrar/ocultar linhas conforme valores
+        const freteLineEl = card.querySelector('.frete-line');
+        if (freteLineEl) {
+            if (totalFrete > 0) {
+                freteLineEl.style.display = 'flex';
+                freteLineEl.querySelector('.total-frete').textContent = `R$ ${formatarMoeda(totalFrete)}`;
+                console.log('Frete mostrado:', totalFrete);
+            } else {
+                freteLineEl.style.display = 'none';
+                console.log('Frete ocultado (zero)');
+            }
+        }
+        
+        const descontoLineEl = card.querySelector('.desconto-line');
+        if (descontoLineEl) {
+            if (totalDesconto > 0) {
+                descontoLineEl.style.display = 'flex';
+                descontoLineEl.querySelector('.total-desconto').textContent = `- R$ ${formatarMoeda(totalDesconto)}`;
+                console.log('Desconto mostrado:', totalDesconto);
+            } else {
+                descontoLineEl.style.display = 'none';
+                console.log('Desconto ocultado (zero)');
+            }
+        }
+        
+        // Calcular total geral: Produtos + Frete - Desconto
+        const totalGeral = totalProdutos + totalFrete - totalDesconto;
+        console.log('Total geral calculado:', totalGeral);
+        
+        // Atualizar totais no cartão
+        const totalProdutosEl = card.querySelector('.total-produtos');
+        if (totalProdutosEl) {
+            totalProdutosEl.textContent = `R$ ${formatarMoeda(totalProdutos)}`;
+        }
+        
+        const totalGeralFornecedorEl = card.querySelector('.total-geral-fornecedor');
+        if (totalGeralFornecedorEl) {
+            totalGeralFornecedorEl.textContent = `Total Geral: R$ ${formatarMoeda(totalGeral)}`;
+        }
     });
 
+    // Calcular total geral de todos os fornecedores
     let totalPedido = 0;
-    document.querySelectorAll('.total-geral-fornecedor').forEach(el => {
-        const match = el.textContent.match(/R\$\s*([\d.,]+)/);
-        if (match) totalPedido += parseValorBRL(match[1]);
+    
+    document.querySelectorAll('.fornecedor-card').forEach(card => {
+        const totalFornecedorEl = card.querySelector('.total-geral-fornecedor');
+        if (totalFornecedorEl) {
+            const match = totalFornecedorEl.textContent.match(/R\$\s*([\d.,]+)/);
+            if (match) {
+                const valor = parseValorBRL(match[1]);
+                console.log('Total fornecedor:', totalFornecedorEl.textContent, '=>', valor);
+                totalPedido += valor;
+            }
+        }
     });
-
+    
+    console.log('Total pedido final:', totalPedido);
+    
+    // Atualizar total geral do pedido
     const totalGeralPedido = document.querySelector('.total-geral');
-    if (totalGeralPedido)
-        totalGeralPedido.textContent = `Total Geral: R$ ${formatarMoeda(totalPedido)}`;
+    if (totalGeralPedido) {
+        totalGeralPedido.textContent = `Total Geral do Pedido: R$ ${formatarMoeda(totalPedido)}`;
+    }
 });
 
+// Gerar PDF
 document.getElementById('gerarPDF').addEventListener('click', function() {
     const button = this;
     const originalText = button.textContent;
@@ -696,7 +857,7 @@ document.getElementById('gerarPDF').addEventListener('click', function() {
             button.textContent = originalText;
             button.disabled = false;
         }
-    }, 800); // Delay maior para garantir
+    }, 800);
 });
 </script>
 
