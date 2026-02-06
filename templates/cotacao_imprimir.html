@@ -18,39 +18,29 @@
             background: #f8fafc;
             color: #333;
             padding: 20px;
-            font-size: 11px;
-            line-height: 1.4;
+            font-size: 10px;
+            line-height: 1.2;
         }
 
-        /* Container principal para alinhamento */
+        /* Container principal */
         .main-content {
             max-width: 100%;
             margin: 0 auto;
         }
 
-        /* Container com rolagem na tela */
-        .table-container {
-            overflow-x: auto;
-            margin-bottom: 20px;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            background: white;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-        }
-
         /* Cabeçalho */
         .header {
-            background: linear-gradient(135deg, #022855 0%, #144288 100%);
+            background: #0B2E59;
             color: white;
-            padding: 15px 25px;
-            border-radius: 8px;
-            margin-bottom: 20px;
+            padding: 12px 20px;
+            border-radius: 4px;
+            margin-bottom: 15px;
             text-align: center;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-bottom: 3px solid #144288;
         }
 
         .header h1 {
-            font-size: 18px;
+            font-size: 16px;
             margin: 0;
             text-transform: uppercase;
             letter-spacing: 0.5px;
@@ -58,313 +48,474 @@
         }
 
         .header p {
-            font-size: 12px;
-            margin: 8px 0 0;
+            font-size: 10px;
+            margin: 5px 0 0;
             opacity: 0.9;
         }
 
-        /* Tabela principal */
+        /* Container da tabela */
+        .table-container {
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background: white;
+            overflow: hidden;
+        }
+
+        /* Tabela principal - AGRUPADA */
         .tabela-comparativa {
             width: 100%;
             border-collapse: collapse;
-            font-size: 10px;
+            font-size: 9px;
             background: white;
             table-layout: fixed;
         }
 
         .tabela-comparativa th,
         .tabela-comparativa td {
-            border: 1px solid #e2e8f0;
-            padding: 8px 6px;
+            border: 1px solid #ccc;
+            padding: 5px 4px;
             text-align: center;
             vertical-align: middle;
-            min-height: 30px;
+            height: 28px;
         }
 
-        .tabela-comparativa th {
-            background: #022855;
-            color: white;
+        /* Cabeçalho geral da tabela */
+        .tabela-header {
+            background: #0B2E59 !important;
+            color: white !important;
             font-weight: 600;
             white-space: nowrap;
+            border-bottom: 2px solid #144288 !important;
+            font-size: 9px;
+            padding: 4px 3px !important;
+        }
+
+        /* Cabeçalho de cotação com telefone - AGRUPADO */
+        .cotacao-header-agrupado {
+            background: #1E4B8C !important;
+            color: white !important;
+            position: relative;
+            padding: 4px 3px !important;
+        }
+
+        .cotacao-telefone {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            background: white;
+            color: #0B2E59;
+            font-size: 6px;
+            padding: 1px 3px;
+            border-radius: 2px;
+            border: 1px solid #0B2E59;
+            font-weight: bold;
             letter-spacing: 0.3px;
         }
 
-        /* Colunas fixas */
+        .cotacao-info {
+            font-size: 8px;
+            margin-top: 2px;
+            opacity: 0.9;
+        }
+
+        /* Colunas fixas - AJUSTADAS */
         .col-material {
-            width: 25%;
-            min-width: 180px;
+            width: 35%;
+            min-width: 220px;
             text-align: left !important;
-            background: #f8fafc;
+            background: #f8f8f8;
             font-weight: 500;
-            padding-left: 10px !important;
+            padding-left: 8px !important;
+            border-right: 2px solid #ccc !important;
         }
 
         .col-quantidade {
             width: 45px;
-            background: #f8fafc;
+            background: #f8f8f8;
             font-weight: 500;
+            border-right: 2px solid #ccc !important;
         }
 
         .col-unidade {
             width: 45px;
-            background: #f8fafc;
+            background: #f8f8f8;
+            font-weight: 500;
+            border-right: 2px solid #ccc !important;
+        }
+
+        /* Colunas de cotação - AJUSTADAS PARA FICAREM IGUAIS AOS TOTAIS */
+        .col-cotacao-unit {
+            width: 80px;
+            background: #fff;
             font-weight: 500;
         }
 
-        /* Colunas de cotação */
-        .col-cotacao-unit {
-            width: 85px;
-            background: #f8fafc;
-        }
-
         .col-cotacao-total {
-            width: 95px;
+            width: 90px;
             font-weight: 600;
-            color: #022855;
-            background: #e6f0ff;
-        }
-
-        /* Cabeçalho do fornecedor */
-        .fornecedor-header {
-            background: #144288;
-            color: white;
-            padding: 6px 4px;
-            border-radius: 4px;
-            font-size: 10px;
-            font-weight: 600;
-            line-height: 1.3;
+            color: #0B2E59;
+            background: #fff;
         }
 
         /* Linha de material */
         .material-row td {
-            border-top: 2px solid #e2e8f0;
-            border-bottom: 2px solid #e2e8f0;
+            border-top: 1px solid #ccc;
+            border-bottom: 1px solid #ccc;
             background: #fff !important;
         }
 
-        /* Alternância de fundo */
-        tbody tr:nth-child(odd) td:not(.col-material):not(.col-quantidade):not(.col-unidade) {
-            background-color: #f7f9fc;
+        /* ID do material */
+        .material-id {
+            font-size: 8px;
+            color: #666;
+            margin-top: 1px;
+            font-style: italic;
         }
 
-        tbody tr:nth-child(even) td:not(.col-material):not(.col-quantidade):not(.col-unidade) {
-            background-color: #ffffff;
-        }
-
-        /* ==================== SEÇÃO DE TOTAIS ==================== */
-        /* Container principal alinhado com a tabela */
-        .totais-wrapper {
-            margin-top: 25px;
-            page-break-inside: avoid;
-        }
-
-        .totais-container {
-            display: flex;
-            flex-direction: row;
+        /* ==================== SEÇÃO INFERIOR ==================== */
+        .info-bottom {
+            display: grid;
+            grid-template-columns: 40% 60%;
             gap: 15px;
-            justify-content: flex-start;
-            align-items: stretch;
-            width: 100%;
+            margin-top: 20px;
         }
 
-        /* Cards com largura proporcional às colunas da tabela */
-        .total-card {
-            flex: 1;
-            min-width: calc(50% - 7.5px); /* Metade do espaço menos metade do gap */
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
+        .coluna-esquerda {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .coluna-direita {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        /* Último preço - AUMENTADO */
+        .ultimo-preco {
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 12px;
             background: white;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-            overflow: hidden;
-            transition: transform 0.2s, box-shadow 0.2s;
-            display: flex;
-            flex-direction: column;
+            max-width: 100%;
+            min-height: 120px;
         }
 
-        /* Ajuste para 3 cotações */
-        .total-card[data-cotacoes="3"] {
-            min-width: calc(33.33% - 10px);
-        }
-
-        /* Ajuste para 4 cotações */
-        .total-card[data-cotacoes="4"] {
-            min-width: calc(25% - 11.25px);
-        }
-
-        .total-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-        }
-
-        .total-card-header {
-            background: linear-gradient(135deg, #022855 0%, #144288 100%);
-            color: white;
-            padding: 10px 15px;
-            text-align: center;
-            font-size: 11px;
-            font-weight: 600;
-            letter-spacing: 0.3px;
-            flex-shrink: 0;
-        }
-
-        .total-card-body {
-            padding: 15px;
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
-
-        .total-line {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 6px 0;
-            border-bottom: 1px solid #f1f5f9;
+        .ultimo-preco h4 {
+            background: #f0f0f0;
+            color: #000;
+            padding: 6px 10px;
+            margin: -12px -12px 10px -12px;
             font-size: 10px;
-        }
-
-        .total-line:last-child {
-            border-bottom: none;
-        }
-
-        .total-label {
-            color: #64748b;
-            font-weight: 500;
-        }
-
-        .total-value {
-            color: #022855;
             font-weight: 600;
-            font-family: 'Courier New', monospace;
-            text-align: right;
-            min-width: 80px;
+            border-bottom: 1px solid #ccc;
+            text-transform: uppercase;
         }
 
-        .total-geral-container {
-            margin-top: auto;
-            padding-top: 10px;
-            border-top: 2px solid #e2e8f0;
+        .preco-info {
+            font-size: 9px;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
         }
 
-        .total-geral {
+        .preco-info strong {
+            min-width: 70px;
+        }
+
+        /* Fluxo de pagamento - AUMENTADO */
+        .fluxo-pagamento {
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 12px;
+            background: white;
+            min-height: 90px;
+        }
+
+        .fluxo-pagamento h4 {
+            background: #f0f0f0;
+            color: #000;
+            padding: 6px 10px;
+            margin: -12px -12px 10px -12px;
+            font-size: 10px;
+            font-weight: 600;
+            border-bottom: 1px solid #ccc;
+            text-transform: uppercase;
+        }
+
+        .opcao-pagamento {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 6px;
+            font-size: 9px;
+        }
+
+        .opcao-pagamento input[type="checkbox"] {
+            transform: scale(0.9);
+        }
+
+        /* Status entrega - AUMENTADO */
+        .status-entrega {
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 12px;
+            background: white;
+            min-height: 120px;
+        }
+
+        .status-entrega h4 {
+            background: #f0f0f0;
+            color: #000;
+            padding: 6px 10px;
+            margin: -12px -12px 10px -12px;
+            font-size: 10px;
+            font-weight: 600;
+            border-bottom: 1px solid #ccc;
+            text-transform: uppercase;
+        }
+
+        .campo-data {
+            width: calc(100% - 85px);
+            display: inline-block;
+            margin-left: 5px;
+            padding: 5px 7px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            font-size: 9px;
+            margin-bottom: 9px;
+        }
+
+        /* Campo de observação do comprador */
+        .observacao-comprador {
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 10px;
+            background: white;
+            margin-top: 10px;
+            margin-bottom: 10px;
+        }
+
+        .observacao-comprador h4 {
+            background: #f0f0f0;
+            color: #000;
+            padding: 5px 8px;
+            margin: -10px -10px 8px -10px;
+            font-size: 10px;
+            font-weight: 600;
+            border-bottom: 1px solid #ccc;
+            text-transform: uppercase;
+        }
+
+        .campo-observacao {
+            width: 100%;
+            height: 80px;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            font-size: 9px;
+            resize: vertical;
+            background: #f9f9f9;
+        }
+
+        /* TOTAIS na seção inferior direita - AJUSTADOS PARA FICAREM IGUAIS À TABELA */
+        .totais-inferiores {
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 10px;
+            background: white;
+            height: 100%;
+        }
+
+        .totais-inferiores h4 {
+            background: #f0f0f0;
+            color: #000;
+            padding: 5px 8px;
+            margin: -10px -10px 15px -10px;
+            font-size: 10px;
+            font-weight: 600;
+            border-bottom: 1px solid #ccc;
+            text-transform: uppercase;
+            text-align: center;
+        }
+
+        /* Grid dos totais - AJUSTADO PARA FICAR COM A MESMA LARGURA DA TABELA */
+        .totais-grid {
+            display: grid;
+            grid-template-columns: repeat({{ cotacoes_salvas|length }}, 1fr);
+            gap: 8px;
+            height: calc(100% - 30px);
+        }
+
+        /* CARD DE TOTAL - AJUSTADO PARA FICAR COM A MESMA LARGURA DA TABELA */
+        .total-card-inferior {
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background: white;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            min-width: 170px;
+        }
+
+        .total-card-header-inferior {
+            background: #0B2E59;
+            color: white;
+            padding: 6px 8px;
+            text-align: center;
+            font-size: 9px;
+            font-weight: 600;
+            border-bottom: 1px solid #144288;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .total-card-body-inferior {
+            padding: 8px;
+        }
+
+        .total-line-inferior {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: #022855;
+            padding: 3px 0;
+            font-size: 8.5px;
+            min-height: 18px;
+        }
+
+        .total-label-inferior {
+            color: #333;
+            white-space: nowrap;
+        }
+
+        .total-value-inferior {
+            color: #0B2E59;
+            font-weight: 600;
+            text-align: right;
+            min-width: 70px;
+            white-space: nowrap;
+        }
+
+        .desconto-inferior {
+            color: #dc3545 !important;
+        }
+
+        .total-geral-inferior {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #0B2E59;
             color: white;
-            padding: 10px 12px;
-            border-radius: 6px;
-            font-size: 11px;
+            padding: 5px 6px;
+            border-radius: 3px;
+            font-size: 9px;
             font-weight: 600;
             margin-top: 5px;
+            min-height: 22px;
         }
 
-        .total-geral-label {
-            font-weight: 600;
-        }
-
-        .total-geral-value {
-            font-weight: 700;
-            font-size: 12px;
-            font-family: 'Courier New', monospace;
-        }
-
-        /* Destaque para valores positivos/negativos */
-        .valor-positivo {
-            color: #059669;
-        }
-
-        .valor-negativo {
-            color: #dc2626;
-        }
-
-        /* Informações gerais */
+        /* ==================== INFORMAÇÕES GERAIS EDITÁVEIS ==================== */
         .info-geral {
-            margin-top: 25px;
-            padding: 18px;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
+            margin-top: 20px;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
             background: white;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-            page-break-inside: avoid;
         }
 
         .info-geral h3 {
-            color: #022855;
-            margin-bottom: 15px;
-            text-align: center;
-            font-size: 12px;
+            background: #f0f0f0;
+            color: #000;
+            padding: 5px 8px;
+            margin: -12px -12px 10px -12px;
+            font-size: 10px;
             font-weight: 600;
-            padding-bottom: 8px;
-            border-bottom: 2px solid #e2e8f0;
+            border-bottom: 1px solid #ccc;
+            text-align: center;
+            text-transform: uppercase;
         }
 
         .info-grid {
             display: grid;
             grid-template-columns: repeat(6, 1fr);
-            gap: 12px;
-            font-size: 10px;
+            gap: 10px;
+            font-size: 9px;
         }
 
         .info-item {
             display: flex;
             flex-direction: column;
-            gap: 4px;
+            gap: 3px;
         }
 
         .info-label {
             font-weight: 600;
-            color: #64748b;
-            font-size: 9px;
+            color: #666;
+            font-size: 8px;
             text-transform: uppercase;
-            letter-spacing: 0.3px;
-            margin-bottom: 2px;
         }
 
-        .campo-editavel {
-            display: inline-block;
-            min-width: 100px;
+        .info-value-editable {
             padding: 4px 6px;
-            border: 1px solid #cbd5e1;
-            border-radius: 4px;
-            background-color: #fff;
-            cursor: text;
-            font-size: 10px;
-            transition: border-color 0.2s;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            background: #f9f9f9;
+            min-height: 24px;
+            font-size: 9px;
             width: 100%;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
-        .campo-editavel:focus {
+        .info-value-editable:focus {
             outline: none;
-            border-color: #022855;
-            box-shadow: 0 0 0 2px rgba(2, 40, 85, 0.1);
+            border-color: #0B2E59;
+            background: #fff;
         }
 
-        /* Rodapé */
+        /* ==================== RODAPÉ COM ASSINATURAS OTIMIZADAS ==================== */
         .footer {
-            margin-top: 40px;
+            margin-top: 10px;
             text-align: center;
-            font-size: 10px;
-            page-break-inside: avoid;
+            font-size: 9px;
+            width: 100%;
         }
 
         .assinaturas {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 30px;
-            margin-top: 25px;
+            gap: 8px; /* REDUZIDO DE 20px PARA 8px */
+            margin-top: 10px;
+            width: 100%;
+            align-items: end;
         }
 
         .assinatura {
             text-align: center;
+            padding: 0 5px;
+            min-width: 0; /* Permite que as colunas encolham */
         }
 
         .linha-assinatura {
-            border-top: 1px solid #94a3b8;
+            border-top: 1px solid #000;
             height: 1px;
-            margin: 25px auto 5px;
-            width: 150px;
+            margin: 15px auto 3px; /* REDUZIDO DE 20px auto 5px */
+            width: 90%; /* REDUZIDO DE 120px para 90% */
+            max-width: 100px; /* Largura máxima */
+        }
+
+        .assinatura p {
+            margin: 0;
+            font-size: 8px;
+            font-weight: 600;
+            line-height: 1.2;
+        }
+
+        /* Container para garantir que tudo caiba na página */
+        .page-container {
+            max-width: 100%;
+            overflow: hidden;
         }
 
         /* Botão imprimir */
@@ -372,72 +523,22 @@
             position: fixed;
             top: 20px;
             right: 20px;
-            background: #022855;
+            background: #0B2E59;
             color: white;
             border: none;
-            padding: 10px 20px;
-            border-radius: 6px;
-            font-size: 12px;
+            padding: 8px 15px;
+            border-radius: 4px;
+            font-size: 10px;
             cursor: pointer;
             z-index: 1000;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            transition: all 0.3s;
-            font-weight: 500;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         }
 
         .btn-impressao:hover {
             background: #144288;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
         }
 
-        /* Responsividade */
-        @media (max-width: 1200px) {
-            .info-grid {
-                grid-template-columns: repeat(3, 1fr);
-            }
-            
-            .total-card {
-                min-width: calc(50% - 7.5px);
-            }
-        }
-
-        @media (max-width: 992px) {
-            .totais-container {
-                flex-wrap: wrap;
-            }
-            
-            .total-card {
-                min-width: calc(50% - 7.5px);
-            }
-        }
-
-        @media (max-width: 768px) {
-            .totais-container {
-                flex-direction: column;
-                align-items: center;
-            }
-            
-            .total-card {
-                min-width: 100%;
-                max-width: 100%;
-            }
-            
-            .assinaturas {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 20px;
-            }
-            
-            .info-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .linha-assinatura {
-                width: 100px;
-            }
-        }
-
-        /* ==================== IMPRESSÃO A4 ==================== */
+        /* ==================== IMPRESSÃO ==================== */
         @media print {
             @page {
                 size: A4 landscape;
@@ -450,468 +551,585 @@
                 line-height: 1.1 !important;
                 color: #000 !important;
                 background: #fff !important;
-                -webkit-print-color-adjust: economy;
-                print-color-adjust: economy;
+                width: 100% !important;
+                overflow: hidden !important;
             }
 
-            .btn-impressao,
-            .instrucao {
+            .page-container {
+                width: 100% !important;
+                max-width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+
+            .btn-impressao {
                 display: none !important;
             }
 
-            /* Container principal para impressão */
             .table-container {
-                overflow: visible !important;
                 border: 1px solid #000 !important;
-                margin-bottom: 12px !important;
-                background: #fff !important;
-                box-shadow: none !important;
+                margin-bottom: 8px !important;
                 border-radius: 0 !important;
             }
 
-            /* Tabela principal */
             .tabela-comparativa {
                 font-size: 7.5pt !important;
-                width: 100% !important;
-                border-collapse: collapse !important;
-                background: #fff !important;
             }
 
             .tabela-comparativa th,
             .tabela-comparativa td {
                 border: 1px solid #000 !important;
-                padding: 4px 3px !important;
-                font-size: 7.5pt !important;
-                height: 22px !important;
-                background: #fff !important;
-                color: #000 !important;
+                padding: 3px 2px !important;
+                height: 20px !important;
             }
 
-            /* Colunas fixas */
-            .col-material {
-                width: 25% !important;
-                min-width: 150px !important;
-                border-right: 1px solid #000 !important;
-                background: #f8f8f8 !important;
-                font-weight: bold !important;
-                padding-left: 8px !important;
-            }
-
-            .col-quantidade,
-            .col-unidade {
-                width: 35px !important;
-                border-right: 1px solid #000 !important;
-                background: #f8f8f8 !important;
-                font-weight: bold !important;
-                padding: 4px 2px !important;
-            }
-
-            /* Totais na impressão - alinhados com a tabela */
-            .totais-container {
-                display: flex !important;
-                flex-direction: row !important;
-                gap: 8px !important;
-                margin-top: 15px !important;
-                width: 100% !important;
-            }
-
-            .total-card {
-                flex: 1 !important;
-                min-width: calc(50% - 4px) !important;
+            .cotacao-telefone {
                 border: 1px solid #000 !important;
-                background: #fff !important;
-                border-radius: 0 !important;
-                box-shadow: none !important;
-                page-break-inside: avoid !important;
             }
 
-            .total-card-header {
-                background: #f0f0f0 !important;
-                color: #000 !important;
-                border-bottom: 1px solid #000 !important;
-                padding: 6px 10px !important;
+            .info-bottom {
+                grid-template-columns: 40% 60% !important;
+                gap: 8px !important;
+                margin-top: 12px !important;
             }
 
-            .total-card-body {
-                padding: 10px !important;
+            .ultimo-preco,
+            .fluxo-pagamento,
+            .status-entrega {
+                padding: 8px !important;
+                min-height: auto !important;
             }
 
-            .total-line {
-                border-bottom: 1px solid #ddd !important;
+            .ultimo-preco h4,
+            .fluxo-pagamento h4,
+            .status-entrega h4 {
+                padding: 4px 6px !important;
+                margin: -8px -8px 6px -8px !important;
+            }
+
+            .totais-grid {
+                gap: 6px !important;
+            }
+
+            .total-card-inferior {
+                font-size: 7.5pt !important;
+                min-width: 160px !important;
+            }
+
+            .total-geral-inferior {
+                padding: 4px 6px !important;
                 font-size: 8pt !important;
             }
 
-            .total-geral {
-                background: #f0f0f0 !important;
-                color: #000 !important;
-                border: 1px solid #000 !important;
-                font-weight: bold !important;
-                border-radius: 0 !important;
-                padding: 6px 8px !important;
+            .campo-data {
+                padding: 3px 5px !important;
+                font-size: 8pt !important;
+                margin-bottom: 6px !important;
+            }
+
+            .total-line-inferior {
+                font-size: 7.5pt !important;
+            }
+
+            .total-value-inferior {
+                min-width: 65px !important;
+            }
+
+            .campo-observacao {
+                height: 60px !important;
+                font-size: 8pt !important;
+                padding: 6px !important;
+            }
+
+            .info-geral {
+                margin-top: 12px !important;
+                padding: 8px !important;
+            }
+
+            .info-geral h3 {
+                padding: 4px 6px !important;
+                margin: -8px -8px 8px -8px !important;
+                font-size: 9pt !important;
+            }
+
+            .info-grid {
+                gap: 8px !important;
+                font-size: 8pt !important;
+            }
+
+            /* Campos editáveis na impressão - removemos bordas e fundo */
+            .info-value-editable {
+                border: none !important;
+                background: transparent !important;
+                padding: 2px 0 !important;
+                min-height: auto !important;
+                font-size: 8pt !important;
+                pointer-events: none !important; /* Não permite edição na impressão */
+            }
+
+            .observacao-comprador {
+                margin-top: 8px !important;
+                margin-bottom: 8px !important;
+                padding: 8px !important;
+            }
+
+            .observacao-comprador h4 {
+                padding: 4px 6px !important;
+                margin: -8px -8px 6px -8px !important;
+                font-size: 9pt !important;
+            }
+
+            /* ASSINATURAS OTIMIZADAS PARA IMPRESSÃO */
+            .footer {
+                margin-top: 8px !important;
+                padding: 0 !important;
+                font-size: 8pt !important;
+            }
+
+            .assinaturas {
+                gap: 6px !important; /* MENOR AINDA NA IMPRESSÃO */
+                margin-top: 8px !important;
+            }
+
+            .assinatura {
+                padding: 0 3px !important;
+            }
+
+            .linha-assinatura {
+                margin: 12px auto 2px !important;
+                width: 85% !important;
+                max-width: 90px !important;
+            }
+
+            .assinatura p {
+                font-size: 7pt !important;
+            }
+
+            /* Reduzir espaços extras para caber tudo */
+            .header {
+                padding: 8px 12px !important;
+                margin-bottom: 10px !important;
+            }
+
+            .header h1 {
+                font-size: 12pt !important;
+            }
+
+            .header p {
+                font-size: 8pt !important;
+                margin: 3px 0 0 !important;
             }
         }
     </style>
 </head>
 
 <body>
+    <div class="page-container">
+        <button class="btn-impressao" onclick="window.print()">
+            🖨️ Imprimir
+        </button>
 
-    <button class="btn-impressao" onclick="window.print()">
-        🖨️ Imprimir (Preto e Branco)
-    </button>
-
-    <div class="header">
-        <h1>
-            {% if modo_grupo %}
-            COMPARATIVO DE COTAÇÕES - GRUPO ({{ solicitacoes_grupo|length }} SOLICITAÇÕES)
-            {% else %}
-            COMPARATIVO DE COTAÇÕES - SOLICITAÇÃO #{{ solicitacao.id }}
-            {% endif %}
-        </h1>
-        <p>
-            {% if modo_grupo %}
-            Agrupamento por aplicação: {{ solicitacoes_grupo[0].aplicacao or solicitacoes_grupo[0].material.Aplicacao or
-            'Sem Aplicação' }}
-            {% else %}
-            {{ solicitacao.material.DescricaoMaterial }}
-            {% endif %}
-        </p>
-    </div>
-
-    <!-- Tabela principal -->
-    <div class="table-container">
-        <table class="tabela-comparativa">
-            <thead>
-                <tr>
-                    <th class="col-material" rowspan="2">Material</th>
-                    <th class="col-quantidade" rowspan="2">Qtd</th>
-                    <th class="col-unidade" rowspan="2">Unid</th>
-                    {% for cotacao in cotacoes_salvas %}
-                    <th colspan="2" class="cotacao-group">
-                        <div class="fornecedor-header">
-                            Cotação {{ loop.index }}<br>
-                            {{ cotacao.fornecedor_nome_fantasia|truncate(22) if cotacao else 'N/A' }}
-                        </div>
-                    </th>
-                    {% endfor %}
-                </tr>
-                <tr>
-                    {% for cotacao in cotacoes_salvas %}
-                    <th class="col-cotacao-unit">Unitário (R$)</th>
-                    <th class="col-cotacao-total">Total (R$)</th>
-                    {% endfor %}
-                </tr>
-            </thead>
-            <tbody>
+        <div class="header">
+            <h1>
                 {% if modo_grupo %}
-                {% for solicitacao in solicitacoes_grupo %}
-                <tr class="material-row">
-                    <td class="col-material">
-                        <strong>{{ solicitacao.material.DescricaoMaterial }}</strong>
-                        <div style="font-size: 8px; color: #666; margin-top: 2px;">
-                            ID: #{{ solicitacao.id }}
-                        </div>
-                    </td>
-                    <td class="col-quantidade">{{ solicitacao.quantidade }}</td>
-                    <td class="col-unidade">{{ solicitacao.unidade_medida | default('un') }}</td>
-                    {% for cotacao in cotacoes_salvas %}
-                    {% set material_cotacao = cotacao.materiais|selectattr("solicitacao_id", "equalto",
-                    solicitacao.id)|first if cotacao and cotacao.materiais else none %}
-                    <td class="col-cotacao-unit">
-                        {% if material_cotacao %}
-                        R$ {{ material_cotacao.valor_unitario|float|string|replace('.', ',') if '.' in
-                        material_cotacao.valor_unitario|string else material_cotacao.valor_unitario }}
-                        {% else %} - {% endif %}
-                    </td>
-                    <td class="col-cotacao-total">
-                        {% if material_cotacao %}
-                        {% set valor_unitario = material_cotacao.valor_unitario|float if material_cotacao.valor_unitario
-                        is number else material_cotacao.valor_unitario|string|replace(',', '.')|float %}
-                        {% set total = valor_unitario * solicitacao.quantidade %}
-                        R$ {{ "%.2f"|format(total)|replace('.', ',') }}
-                        {% else %} - {% endif %}
-                    </td>
-                    {% endfor %}
-                </tr>
-                {% endfor %}
+                COMPARATIVO DE COTAÇÕES - GRUPO ({{ solicitacoes_grupo|length }} SOLICITAÇÕES)
                 {% else %}
-                <tr class="material-row">
-                    <td class="col-material">
-                        <strong>{{ solicitacao.material.DescricaoMaterial }}</strong>
-                        <div style="font-size: 8px; color: #666; margin-top: 2px;">
-                            ID: #{{ solicitacao.id }}
-                        </div>
-                    </td>
-                    <td class="col-quantidade">{{ solicitacao.quantidade }}</td>
-                    <td class="col-unidade">{{ solicitacao.unidade_medida | default('un') }}</td>
-                    {% for cotacao in cotacoes_salvas %}
-                    {% set material_cotacao = cotacao.materiais|first if cotacao and cotacao.materiais else none %}
-                    <td class="col-cotacao-unit">
-                        {% if material_cotacao %}
-                        R$ {{ material_cotacao.valor_unitario|float|string|replace('.', ',') if '.' in
-                        material_cotacao.valor_unitario|string else material_cotacao.valor_unitario }}
-                        {% else %} - {% endif %}
-                    </td>
-                    <td class="col-cotacao-total">
-                        {% if material_cotacao %}
-                        {% set valor_unitario = material_cotacao.valor_unitario|float if material_cotacao.valor_unitario
-                        is number else material_cotacao.valor_unitario|string|replace(',', '.')|float %}
-                        {% set total = valor_unitario * solicitacao.quantidade %}
-                        R$ {{ "%.2f"|format(total)|replace('.', ',') }}
-                        {% else %} - {% endif %}
-                    </td>
-                    {% endfor %}
-                </tr>
+                COMPARATIVO DE COTAÇÕES - SOLICITAÇÃO #{{ solicitacao.id }}
                 {% endif %}
-            </tbody>
-        </table>
-    </div>
+            </h1>
+            <p>
+                {% if modo_grupo %}
+                Agrupamento por aplicação: {{ solicitacoes_grupo[0].aplicacao or solicitacoes_grupo[0].material.Aplicacao or 'Sem Aplicação' }}
+                {% else %}
+                {{ solicitacao.material.DescricaoMaterial }}
+                {% endif %}
+            </p>
+        </div>
 
-    <!-- Totais por cotação - AGORA ALINHADOS COM A TABELA -->
-    <div class="totais-wrapper">
-        <div class="totais-container" data-total-cotacoes="{{ cotacoes_salvas|length }}">
-            {% for cotacao in cotacoes_salvas %}
-            <div class="total-card" data-cotacoes="{{ cotacoes_salvas|length }}">
-                <div class="total-card-header">
-                    Cotação {{ loop.index }} - {{ cotacao.fornecedor_nome_fantasia|truncate(25) if cotacao else 'N/A' }}
-                </div>
-                <div class="total-card-body">
-                    {% set ns = namespace(total_produtos=0) %}
-
-                    {% if cotacao and cotacao.materiais %}
+        <!-- Tabela principal - REORGANIZADA -->
+        <div class="table-container">
+            <table class="tabela-comparativa">
+                <thead>
+                    <!-- Linha 1: Cabeçalhos principais -->
+                    <tr>
+                        <th class="tabela-header col-material" rowspan="2">Material</th>
+                        <th class="tabela-header col-quantidade" rowspan="2">Qtd</th>
+                        <th class="tabela-header col-unidade" rowspan="2">Unid</th>
+                        
+                        {% for cotacao in cotacoes_salvas %}
+                        <th colspan="2" class="cotacao-header-agrupado">
+                            <div style="font-weight: bold; font-size: 9px;">
+                                Cotação {{ loop.index }}
+                            </div>
+                            <div class="cotacao-info">
+                                {{ cotacao.fornecedor_nome_fantasia|truncate(22) if cotacao else 'N/A' }}
+                            </div>
+                            <span class="cotacao-telefone">NÚMERO DE TELEFONE</span>
+                        </th>
+                        {% endfor %}
+                    </tr>
+                    
+                    <!-- Linha 2: Subcabeçalhos -->
+                    <tr>
+                        {% for cotacao in cotacoes_salvas %}
+                        <th class="tabela-header col-cotacao-unit">Unitário (R$)</th>
+                        <th class="tabela-header col-cotacao-total">Total (R$)</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
                     {% if modo_grupo %}
                     {% for solicitacao in solicitacoes_grupo %}
-                    {% set material_cotacao =
-                    cotacao.materiais
-                    | selectattr("solicitacao_id", "equalto", solicitacao.id)
-                    | first
-                    %}
-                    {% if material_cotacao and material_cotacao.valor_unitario %}
-                    {% set valor_unitario =
-                    material_cotacao.valor_unitario is number
-                    and material_cotacao.valor_unitario
-                    or material_cotacao.valor_unitario|string|replace(',', '.')|float
-                    %}
-                    {% set quantidade = solicitacao.quantidade|float %}
-                    {% set ns.total_produtos = ns.total_produtos + (valor_unitario * quantidade) %}
-                    {% endif %}
+                    <tr class="material-row">
+                        <td class="col-material">
+                            <strong>{{ solicitacao.material.DescricaoMaterial }}</strong>
+                            <div class="material-id">
+                                ID: #{{ solicitacao.id }}
+                            </div>
+                        </td>
+                        <td class="col-quantidade">{{ solicitacao.quantidade }}</td>
+                        <td class="col-unidade">{{ solicitacao.unidade_medida | default('un') }}</td>
+                        {% for cotacao in cotacoes_salvas %}
+                        {% set material_cotacao = cotacao.materiais|selectattr("solicitacao_id", "equalto",
+                        solicitacao.id)|first if cotacao and cotacao.materiais else none %}
+                        <td class="col-cotacao-unit">
+                            {% if material_cotacao %}
+                            R$ {{ material_cotacao.valor_unitario|float|string|replace('.', ',') if '.' in
+                            material_cotacao.valor_unitario|string else material_cotacao.valor_unitario }}
+                            {% else %} - {% endif %}
+                        </td>
+                        <td class="col-cotacao-total">
+                            {% if material_cotacao %}
+                            {% set valor_unitario = material_cotacao.valor_unitario|float if material_cotacao.valor_unitario
+                            is number else material_cotacao.valor_unitario|string|replace(',', '.')|float %}
+                            {% set total = valor_unitario * solicitacao.quantidade %}
+                            R$ {{ "%.2f"|format(total)|replace('.', ',') }}
+                            {% else %} - {% endif %}
+                        </td>
+                        {% endfor %}
+                    </tr>
                     {% endfor %}
                     {% else %}
-                    {% set material_cotacao = cotacao.materiais|first %}
-                    {% if material_cotacao and material_cotacao.valor_unitario %}
-                    {% set valor_unitario =
-                    material_cotacao.valor_unitario is number
-                    and material_cotacao.valor_unitario
-                    or material_cotacao.valor_unitario|string|replace(',', '.')|float
-                    %}
-                    {% set quantidade = solicitacao.quantidade|float %}
-                    {% set ns.total_produtos = ns.total_produtos + (valor_unitario * quantidade) %}
+                    <tr class="material-row">
+                        <td class="col-material">
+                            <strong>{{ solicitacao.material.DescricaoMaterial }}</strong>
+                            <div class="material-id">
+                                ID: #{{ solicitacao.id }}
+                            </div>
+                        </td>
+                        <td class="col-quantidade">{{ solicitacao.quantidade }}</td>
+                        <td class="col-unidade">{{ solicitacao.unidade_medida | default('un') }}</td>
+                        {% for cotacao in cotacoes_salvas %}
+                        {% set material_cotacao = cotacao.materiais|first if cotacao and cotacao.materiais else none %}
+                        <td class="col-cotacao-unit">
+                            {% if material_cotacao %}
+                            R$ {{ material_cotacao.valor_unitario|float|string|replace('.', ',') if '.' in
+                            material_cotacao.valor_unitario|string else material_cotacao.valor_unitario }}
+                            {% else %} - {% endif %}
+                        </td>
+                        <td class="col-cotacao-total">
+                            {% if material_cotacao %}
+                            {% set valor_unitario = material_cotacao.valor_unitario|float if material_cotacao.valor_unitario
+                            is number else material_cotacao.valor_unitario|string|replace(',', '.')|float %}
+                            {% set total = valor_unitario * solicitacao.quantidade %}
+                            R$ {{ "%.2f"|format(total)|replace('.', ',') }}
+                            {% else %} - {% endif %}
+                        </td>
+                        {% endfor %}
+                    </tr>
                     {% endif %}
-                    {% endif %}
-                    {% endif %}
+                </tbody>
+            </table>
+        </div>
 
-                    {% set valor_frete = 0 %}
-                    {% if cotacao and cotacao.valor_frete %}
-                    {% set valor_frete = cotacao.valor_frete|float if cotacao.valor_frete is number else
-                    cotacao.valor_frete|string|replace(',', '.')|float %}
-                    {% endif %}
-
-                    {% set desconto = 0 %}
-                    {% if cotacao and cotacao.desconto_valor %}
-                    {% set desconto = cotacao.desconto_valor|float if cotacao.desconto_valor is number else
-                    cotacao.desconto_valor|string|replace(',', '.')|float %}
-                    {% elif cotacao and cotacao.condicao_pagamento %}
-                    {% set desconto = cotacao.condicao_pagamento|float if cotacao.condicao_pagamento is number else
-                    cotacao.condicao_pagamento|string|replace(',', '.')|float %}
-                    {% endif %}
-
-                    {% set total_geral = ns.total_produtos + valor_frete - desconto %}
-
-                    <div class="total-line">
-                        <span class="total-label">Total Produtos:</span>
-                        <span class="total-value">R$ {{ "%.2f"|format(ns.total_produtos)|replace('.', ',') }}</span>
+        <!-- Seção inferior com informações -->
+        <div class="info-bottom">
+            <div class="coluna-esquerda">
+                <!-- Último preço - AUMENTADO -->
+                <div class="ultimo-preco">
+                    <h4>ÚLTIMO PREÇO DE COMPRAS:</h4>
+                    <div class="preco-info">
+                        <strong>Fornecedor:</strong> 
+                        <input type="text" class="campo-data" placeholder="Nome do fornecedor">
                     </div>
-
-                    {% if valor_frete > 0 %}
-                    <div class="total-line">
-                        <span class="total-label">Frete:</span>
-                        <span class="total-value">R$ {{ "%.2f"|format(valor_frete)|replace('.', ',') }}</span>
+                    <div class="preco-info">
+                        <strong>Valor:</strong> 
+                        <input type="text" class="campo-data" placeholder="R$ 0,00">
                     </div>
-                    {% endif %}
-
-                    {% if desconto > 0 %}
-                    <div class="total-line">
-                        <span class="total-label">Desconto:</span>
-                        <span class="total-value valor-negativo">- R$ {{ "%.2f"|format(desconto)|replace('.', ',')
-                            }}</span>
+                    <div class="preco-info">
+                        <strong>Data:</strong> 
+                        <input type="text" class="campo-data" placeholder="DD/MM/AAAA">
                     </div>
-                    {% endif %}
+                </div>
 
-                    <div class="total-geral-container">
-                        <div class="total-geral">
-                            <span class="total-geral-label">TOTAL GERAL:</span>
-                            <span class="total-geral-value">R$ {{ "%.2f"|format(total_geral)|replace('.', ',') }}</span>
+                <!-- Fluxo de pagamento - AUMENTADO -->
+                <div class="fluxo-pagamento">
+                    <h4>FLUXO DE PAGAMENTO</h4>
+                    <div class="opcao-pagamento">
+                        <input type="checkbox" id="normal">
+                        <label for="normal">NORMAL:</label>
+                    </div>
+                    <div class="opcao-pagamento">
+                        <input type="checkbox" id="urgente">
+                        <label for="urgente">URGENTE:</label>
+                    </div>
+                </div>
+
+                <!-- Status entrega - AUMENTADO -->
+                <div class="status-entrega">
+                    <h4>STATUS DA ENTREGA</h4>
+                    <input type="text" class="campo-data" placeholder="Status da entrega">
+                    <h4 style="margin-top: 10px;">DATA/PREVISÃO DE ENTREGA</h4>
+                    <input type="text" class="campo-data" placeholder="DD/MM/AAAA">
+                </div>
+            </div>
+
+            <!-- Totais na seção inferior direita - AJUSTADOS PARA FICAR COM A MESMA LARGURA -->
+            <div class="coluna-direita">
+                <div class="totais-inferiores">
+                    <h4>TOTAIS POR COTAÇÃO</h4>
+                    <div class="totais-grid">
+                        {% for cotacao in cotacoes_salvas %}
+                        <div class="total-card-inferior">
+                            <div class="total-card-header-inferior">
+                                Cotação {{ loop.index }} - {{ cotacao.fornecedor_nome_fantasia|truncate(18) if cotacao else 'N/A' }}
+                            </div>
+                            <div class="total-card-body-inferior">
+                                {% set ns = namespace(total_produtos=0) %}
+
+                                {% if cotacao and cotacao.materiais %}
+                                {% if modo_grupo %}
+                                {% for solicitacao in solicitacoes_grupo %}
+                                {% set material_cotacao = cotacao.materiais|selectattr("solicitacao_id", "equalto", solicitacao.id)|first %}
+                                {% if material_cotacao and material_cotacao.valor_unitario %}
+                                {% set valor_unitario = material_cotacao.valor_unitario is number and material_cotacao.valor_unitario or material_cotacao.valor_unitario|string|replace(',', '.')|float %}
+                                {% set quantidade = solicitacao.quantidade|float %}
+                                {% set ns.total_produtos = ns.total_produtos + (valor_unitario * quantidade) %}
+                                {% endif %}
+                                {% endfor %}
+                                {% else %}
+                                {% set material_cotacao = cotacao.materiais|first %}
+                                {% if material_cotacao and material_cotacao.valor_unitario %}
+                                {% set valor_unitario = material_cotacao.valor_unitario is number and material_cotacao.valor_unitario or material_cotacao.valor_unitario|string|replace(',', '.')|float %}
+                                {% set quantidade = solicitacao.quantidade|float %}
+                                {% set ns.total_produtos = ns.total_produtos + (valor_unitario * quantidade) %}
+                                {% endif %}
+                                {% endif %}
+                                {% endif %}
+
+                                {% set valor_frete = 0 %}
+                                {% if cotacao and cotacao.valor_frete %}
+                                {% set valor_frete = cotacao.valor_frete|float if cotacao.valor_frete is number else cotacao.valor_frete|string|replace(',', '.')|float %}
+                                {% endif %}
+
+                                {% set desconto = 0 %}
+                                {% if cotacao and cotacao.desconto_valor %}
+                                {% set desconto = cotacao.desconto_valor|float if cotacao.desconto_valor is number else cotacao.desconto_valor|string|replace(',', '.')|float %}
+                                {% elif cotacao and cotacao.condicao_pagamento %}
+                                {% set desconto = cotacao.condicao_pagamento|float if cotacao.condicao_pagamento is number else cotacao.condicao_pagamento|string|replace(',', '.')|float %}
+                                {% endif %}
+
+                                {% set total_geral = ns.total_produtos + valor_frete - desconto %}
+
+                                <div class="total-line-inferior">
+                                    <span class="total-label-inferior">Total Produtos:</span>
+                                    <span class="total-value-inferior">R$ {{ "%.2f"|format(ns.total_produtos)|replace('.', ',') }}</span>
+                                </div>
+
+                                {% if valor_frete > 0 %}
+                                <div class="total-line-inferior">
+                                    <span class="total-label-inferior">Frete:</span>
+                                    <span class="total-value-inferior">R$ {{ "%.2f"|format(valor_frete)|replace('.', ',') }}</span>
+                                </div>
+                                {% endif %}
+
+                                {% if desconto > 0 %}
+                                <div class="total-line-inferior">
+                                    <span class="total-label-inferior">Desconto:</span>
+                                    <span class="total-value-inferior desconto-inferior">- R$ {{ "%.2f"|format(desconto)|replace('.', ',') }}</span>
+                                </div>
+                                {% endif %}
+
+                                <div class="total-geral-inferior">
+                                    <span>TOTAL GERAL:</span>
+                                    <span>R$ {{ "%.2f"|format(total_geral)|replace('.', ',') }}</span>
+                                </div>
+                            </div>
                         </div>
+                        {% endfor %}
                     </div>
                 </div>
             </div>
-            {% endfor %}
         </div>
-    </div>
 
-    <!-- Informações gerais -->
-    <div class="info-geral">
-        <h3>Informações Gerais</h3>
-        <div class="info-grid">
-            <div class="info-item">
-                <div class="info-label">EMPRESA</div>
-                <span class="campo-editavel" contenteditable="true">
-                    {{ solicitacoes_grupo[0].empresa if modo_grupo else solicitacao.empresa }}
-                </span>
-            </div>
+        <!-- Informações Gerais EDITÁVEIS -->
+        <div class="info-geral">
+            <h3>Informações Gerais</h3>
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-label">EMPRESA</div>
+                    <input type="text" class="info-value-editable" placeholder="Nome da empresa" 
+                           value="{{ solicitacoes_grupo[0].empresa if modo_grupo else solicitacao.empresa }}">
+                </div>
 
-            <div class="info-item">
-                <div class="info-label">APLICAÇÃO</div>
-                <span class="campo-editavel" contenteditable="true">
-                    {{ solicitacoes_grupo[0].aplicacao or solicitacoes_grupo[0].material.Aplicacao or 'Sem Aplicação' if
-                    modo_grupo else solicitacao.aplicacao or solicitacao.material.Aplicacao or '-' }}
-                </span>
-            </div>
+                <div class="info-item">
+                    <div class="info-label">APLICAÇÃO</div>
+                    <input type="text" class="info-value-editable" placeholder="Aplicação do material"
+                           value="{{ solicitacoes_grupo[0].aplicacao or solicitacoes_grupo[0].material.Aplicacao or '' if modo_grupo else solicitacao.aplicacao or solicitacao.material.Aplicacao or '' }}">
+                </div>
 
-            <div class="info-item">
-                <div class="info-label">PRIORIDADE</div>
-                <span class="campo-editavel" contenteditable="true">
-                    {{ solicitacoes_grupo[0].prioridade if modo_grupo else solicitacao.prioridade }}
-                </span>
-            </div>
+                <div class="info-item">
+                    <div class="info-label">PRIORIDADE</div>
+                    <input type="text" class="info-value-editable" placeholder="Prioridade"
+                           value="{{ solicitacoes_grupo[0].prioridade if modo_grupo else solicitacao.prioridade }}">
+                </div>
 
-            <div class="info-item">
-                <div class="info-label">DATA SOLICITAÇÃO</div>
-                <span>{{ solicitacao.data_solicitacao.strftime('%d/%m/%Y') if solicitacao.data_solicitacao else '-'
-                    }}</span>
-            </div>
+                <div class="info-item">
+                    <div class="info-label">DATA SOLICITAÇÃO</div>
+                    <input type="text" class="info-value-editable" placeholder="DD/MM/AAAA"
+                           value="{{ solicitacao.data_solicitacao.strftime('%d/%m/%Y') if solicitacao.data_solicitacao else '' }}">
+                </div>
 
-            <div class="info-item">
-                <div class="info-label">SOLICITANTE</div>
-                <span class="campo-editavel" contenteditable="true">
-                    {{ solicitacao.solicitante_nome if solicitacao.solicitante_nome else '-' }}
-                </span>
-            </div>
+                <div class="info-item">
+                    <div class="info-label">SOLICITANTE</div>
+                    <input type="text" class="info-value-editable" placeholder="Nome do solicitante"
+                           value="{{ solicitacao.solicitante_nome if solicitacao.solicitante_nome else '' }}">
+                </div>
 
-            <div class="info-item">
-                <div class="info-label">SETOR</div>
-                <span class="campo-editavel" contenteditable="true">
-                    {{ solicitacao.setor if solicitacao.setor else '-' }}
-                </span>
+                <div class="info-item">
+                    <div class="info-label">SETOR</div>
+                    <input type="text" class="info-value-editable" placeholder="Setor"
+                           value="{{ solicitacao.setor if solicitacao.setor else '' }}">
+                </div>
             </div>
         </div>
-    </div>
 
-    <!-- Rodapé com assinaturas -->
-    <div class="footer">
-        <div style="margin-bottom: 15px; font-weight: 600; color: #022855;">Assinaturas</div>
-        <div class="assinaturas">
-            <div class="assinatura">
-                <div class="linha-assinatura"></div>
-                <p></p>
-            </div>
+        <!-- Observação do comprador -->
+        <div class="observacao-comprador">
+            <h4>OBSERVAÇÃO DO COMPRADOR</h4>
+            <textarea class="campo-observacao" placeholder="Digite aqui observações relevantes sobre a cotação..."></textarea>
+        </div>
 
-            <div class="assinatura">
-                <div class="linha-assinatura"></div>
-                <p></p>
-            </div>
+        <!-- Rodapé com assinaturas OTIMIZADAS -->
+        <div class="footer">
+            <div style="margin-bottom: 8px; font-weight: 600;">Assinaturas</div>
+            <div class="assinaturas">
+                <div class="assinatura">
+                    <div class="linha-assinatura"></div>
+                    <p></p>
+                </div>
 
-            <div class="assinatura">
-                <div class="linha-assinatura"></div>
-                <p></p>
-            </div>
+                <div class="assinatura">
+                    <div class="linha-assinatura"></div>
+                    <p></p>
+                </div>
 
-            <div class="assinatura">
-                <div class="linha-assinatura"></div>
-                <p></p>
+                <div class="assinatura">
+                    <div class="linha-assinatura"></div>
+                    <p></p>
+                </div>
+
+                <div class="assinatura">
+                    <div class="linha-assinatura"></div>
+                    <p></p>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            // Configura campos editáveis
-            const campos = document.querySelectorAll('.campo-editavel');
-            campos.forEach(campo => {
-                campo.style.border = '1px solid #cbd5e1';
-                campo.style.padding = '4px 6px';
-                campo.style.borderRadius = '4px';
-                campo.style.backgroundColor = '#fff';
-                campo.style.fontSize = '10px';
-                campo.contentEditable = true;
-                campo.title = 'Clique para editar (suas edições serão impressas)';
-                
-                campo.addEventListener('focus', function() {
-                    this.style.borderColor = '#022855';
-                    this.style.boxShadow = '0 0 0 2px rgba(2, 40, 85, 0.1)';
+            // Adiciona funcionalidade aos checkboxes
+            const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+            checkboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    if (this.id === 'normal' && this.checked) {
+                        document.getElementById('urgente').checked = false;
+                    } else if (this.id === 'urgente' && this.checked) {
+                        document.getElementById('normal').checked = false;
+                    }
                 });
-                
+            });
+
+            // Formata campos de valor
+            const camposValor = document.querySelectorAll('input[type="text"][placeholder*="R$"]');
+            camposValor.forEach(campo => {
                 campo.addEventListener('blur', function() {
-                    this.style.borderColor = '#cbd5e1';
-                    this.style.boxShadow = 'none';
+                    let valor = this.value.replace(/[^\d,]/g, '');
+                    if (valor) {
+                        valor = parseFloat(valor.replace(',', '.')).toFixed(2);
+                        this.value = 'R$ ' + valor.replace('.', ',');
+                    }
                 });
             });
 
-            // Previne quebra de linha nos campos editáveis
-            document.addEventListener('keydown', function (e) {
-                if (e.target.classList.contains('campo-editavel') && e.key === 'Enter') {
-                    e.preventDefault();
-                }
+            // Formata campos de data
+            const camposData = document.querySelectorAll('input[type="text"][placeholder*="DD/MM"]');
+            camposData.forEach(campo => {
+                campo.addEventListener('blur', function() {
+                    let valor = this.value.replace(/[^\d]/g, '');
+                    if (valor.length >= 8) {
+                        valor = valor.replace(/(\d{2})(\d{2})(\d{4})/, '$1/$2/$3');
+                        this.value = valor;
+                    }
+                });
             });
 
-            // Ajusta a largura dos cards para corresponder às colunas da tabela
-            function ajustarCardsTabela() {
-                const containerTotais = document.querySelector('.totais-container');
-                const totalCards = document.querySelectorAll('.total-card');
-                const tabelaContainer = document.querySelector('.table-container');
-                
-                if (tabelaContainer && totalCards.length > 0) {
-                    // Pega a largura da tabela
-                    const larguraTabela = tabelaContainer.offsetWidth;
-                    
-                    // Calcula a largura de cada card
-                    const numCards = totalCards.length;
-                    const gap = 15; // Mesmo gap do CSS
-                    const larguraCard = (larguraTabela - ((numCards - 1) * gap)) / numCards;
-                    
-                    // Aplica a largura calculada
-                    totalCards.forEach(card => {
-                        card.style.flex = '0 0 auto';
-                        card.style.width = larguraCard + 'px';
-                        card.style.minWidth = larguraCard + 'px';
-                        card.style.maxWidth = larguraCard + 'px';
-                    });
-                    
-                    // Ajusta o container para não quebrar linha
-                    containerTotais.style.flexWrap = 'nowrap';
-                    containerTotais.style.overflowX = 'hidden';
+            // Salva observação no localStorage para não perder ao recarregar
+            const campoObs = document.querySelector('.campo-observacao');
+            if (campoObs) {
+                // Carrega observação salva
+                const obsSalva = localStorage.getItem('observacao_comprador');
+                if (obsSalva) {
+                    campoObs.value = obsSalva;
                 }
+                
+                // Salva ao digitar
+                campoObs.addEventListener('input', function() {
+                    localStorage.setItem('observacao_comprador', this.value);
+                });
             }
-            
-            // Ajustar quando a página carregar e quando redimensionar
-            window.addEventListener('load', ajustarCardsTabela);
-            window.addEventListener('resize', ajustarCardsTabela);
-            
-            // Adiciona hover nos cards de total
-            const totalCards = document.querySelectorAll('.total-card');
-            totalCards.forEach(card => {
-                card.addEventListener('mouseenter', function() {
-                    this.style.transform = 'translateY(-2px)';
-                    this.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.08)';
-                });
+
+            // Salva informações gerais no localStorage
+            const camposInfo = document.querySelectorAll('.info-value-editable');
+            camposInfo.forEach((campo, index) => {
+                // Carrega valor salvo
+                const valorSalvo = localStorage.getItem(`info_geral_${index}`);
+                if (valorSalvo) {
+                    campo.value = valorSalvo;
+                }
                 
-                card.addEventListener('mouseleave', function() {
-                    this.style.transform = 'translateY(0)';
-                    this.style.boxShadow = '0 2px 6px rgba(0, 0, 0, 0.05)';
+                // Salva ao digitar
+                campo.addEventListener('input', function() {
+                    localStorage.setItem(`info_geral_${index}`, this.value);
                 });
             });
-            
-            // Garante alinhamento inicial
-            setTimeout(ajustarCardsTabela, 100);
+
+            // Salva campos do último preço
+            const camposUltimoPreco = document.querySelectorAll('.ultimo-preco input[type="text"]');
+            camposUltimoPreco.forEach((campo, index) => {
+                const valorSalvo = localStorage.getItem(`ultimo_preco_${index}`);
+                if (valorSalvo) {
+                    campo.value = valorSalvo;
+                }
+                
+                campo.addEventListener('input', function() {
+                    localStorage.setItem(`ultimo_preco_${index}`, this.value);
+                });
+            });
+
+            // Salva status entrega
+            const camposStatus = document.querySelectorAll('.status-entrega input[type="text"]');
+            camposStatus.forEach((campo, index) => {
+                const valorSalvo = localStorage.getItem(`status_entrega_${index}`);
+                if (valorSalvo) {
+                    campo.value = valorSalvo;
+                }
+                
+                campo.addEventListener('input', function() {
+                    localStorage.setItem(`status_entrega_${index}`, this.value);
+                });
+            });
         });
     </script>
 
