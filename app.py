@@ -3460,26 +3460,22 @@ def atualizar_status_preenchimento(id):
 def gerar_pedido_compra():
     if 'usuario' not in session:
         return redirect(url_for('routes_bp.login'))
-    
+
     try:
+        # ==========================
+        # POST
+        # ==========================
         if request.method == 'POST':
-            # Obter dados do formulário (já existe)
+
             preenchimento_ids = request.form.getlist('preenchimento_ids')
             forma_pagamento = request.form.get('forma_pagamento', '').strip()
             condicao_pagamento = request.form.get('condicao_pagamento', '').strip()
-            # ADICIONE ESTA LINHA PARA CAPTURAR AS OBSERVAÇÕES
             observacoes = request.form.get('observacoes', '').strip()
 
-            # Validações básicas
             if not preenchimento_ids:
                 flash('Nenhum preenchimento selecionado.', 'error')
                 return redirect(url_for('routes_bp.gerar_pedido_compra'))
 
-            if not forma_pagamento or not condicao_pagamento:
-                flash('Forma e condição de pagamento são obrigatórias.', 'error')
-                return redirect(url_for('routes_bp.gerar_pedido_compra'))
-
-            # Obter preenchimentos e validar status
             preenchimentos = SolicitacoesPreenchidas.query.filter(
                 SolicitacoesPreenchidas.id.in_(preenchimento_ids)
             ).all()
@@ -3489,87 +3485,80 @@ def gerar_pedido_compra():
                     flash(f'O preenchimento ID {preenchimento.id} não está aprovado.', 'error')
                     return redirect(url_for('routes_bp.gerar_pedido_compra'))
 
-            # Gerar número do pedido sequencial
+            # Número sequencial
             ultimo_pedido = PedidosCompra.query.order_by(PedidosCompra.id.desc()).first()
             proximo_numero = (ultimo_pedido.id + 1) if ultimo_pedido else 1
             numero_pedido = f"PC{datetime.now().year}{proximo_numero:04d}"
 
-            # Calcular valores totais
+            # Totais
             valor_total = sum(p.valor_total for p in preenchimentos)
-            valor_frete_total = sum(p.valor_frete if p.valor_frete is not None else 0 for p in preenchimentos)
+            valor_frete_total = sum(p.valor_frete if p.valor_frete else 0 for p in preenchimentos)
             valor_liquido = valor_total - valor_frete_total
 
-            # Verificar/atualizar estrutura da tabela
-            try:
-                conn = sqlite3.connect(DATABASE)
-                cursor = conn.cursor()
-                cursor.execute("PRAGMA table_info(PedidosCompra)")
-                columns = [col[1] for col in cursor.fetchall()]
-                
-                if 'valor_liquido' not in columns:
-                    cursor.execute("ALTER TABLE PedidosCompra ADD COLUMN valor_liquido REAL NOT NULL DEFAULT 0")
-                    conn.commit()
-                    logging.info("Coluna valor_liquido adicionada à tabela PedidosCompra")
-                
-                conn.close()
-            except Exception as e:
-                logging.error(f"Erro ao verificar tabela: {str(e)}")
+            # 🔥 LÓGICA FLEXÍVEL (campo não obrigatório)
+            forma_condicao_final = None
 
-            # Obter informações dos fornecedores
-            fornecedor_ids = {p.fornecedor_id for p in preenchimentos}
-            fornecedores_info = {}
-            conn = get_db_connection(DB_PATH_FORNECEDORES)
-            if conn:
-                try:
-                    cursor = conn.cursor()
-                    cursor.execute(f'''
-                        SELECT id, nome_fantasia, cnpj, telefone, email, endereco, cidade, estado 
-                        FROM fornecedores 
-                        WHERE id IN ({",".join("?"*len(fornecedor_ids))})
-                    ''', list(fornecedor_ids))
-                    
-                    for row in cursor.fetchall():
-                        fornecedores_info[row[0]] = {
-                            'nome': row[1],
-                            'cnpj': format_cnpj(row[2]) if row[2] else 'N/A',
-                            'telefone': row[3],
-                            'email': row[4],
-                            'endereco': f"{row[5]}, {row[6]}/{row[7]}"
-                        }
-                finally:
-                    conn.close()
+            if forma_pagamento and condicao_pagamento:
+                forma_condicao_final = f"{forma_pagamento} - {condicao_pagamento}"
+            elif forma_pagamento:
+                forma_condicao_final = forma_pagamento
+            elif condicao_pagamento:
+                forma_condicao_final = condicao_pagamento
 
-            # Criar o pedido de compra
-            try:
-                pedido = PedidosCompra(
-                    numero_pedido=numero_pedido,
-                    usuario=session['usuario'],
-                    status='Gerado',
-                    valor_total=valor_total,
-                    valor_frete=valor_frete_total if valor_frete_total != 0 else None,
-                    valor_liquido=valor_liquido,
-                    forma_pagamento=f"{forma_pagamento} - {condicao_pagamento}",
-                    # ADICIONE O CAMPO OBSERVAÇÕES
-                    observacoes=observacoes,
-                    data_criacao=datetime.now()
-                )
-                
-                pedido.preenchimentos = preenchimentos
-                db.session.add(pedido)
-                
-                for preenchimento in preenchimentos:
-                    preenchimento.status = 'Em Processamento'
-                
-                db.session.commit()
-            except Exception as e:
-                db.session.rollback()
-                flash(f'Erro ao criar pedido: {str(e)}', 'error')
-                return redirect(url_for('routes_bp.gerar_pedido_compra'))
+            # Criar pedido
+            pedido = PedidosCompra(
+                numero_pedido=numero_pedido,
+                usuario=session['usuario'],
+                status='Gerado',
+                valor_total=valor_total,
+                valor_frete=valor_frete_total if valor_frete_total != 0 else None,
+                valor_liquido=valor_liquido,
+                forma_pagamento=forma_condicao_final,
+                observacoes=observacoes if observacoes else None,
+                data_criacao=datetime.now()
+            )
 
-            # Preparar dados para o PDF
+            pedido.preenchimentos = preenchimentos
+            db.session.add(pedido)
+
+            for preenchimento in preenchimentos:
+                preenchimento.status = 'Em Processamento'
+
+            db.session.commit()
+
+            # ==========================
+            # PDF
+            # ==========================
+
             materiais_por_fornecedor = {}
+            fornecedor_ids = {p.fornecedor_id for p in preenchimentos}
+
+            fornecedores_info = {}
+            if fornecedor_ids:
+                conn = get_db_connection(DB_PATH_FORNECEDORES)
+                if conn:
+                    try:
+                        cursor = conn.cursor()
+                        cursor.execute(f'''
+                            SELECT id, nome_fantasia, cnpj, telefone, email, endereco, cidade, estado 
+                            FROM fornecedores 
+                            WHERE id IN ({",".join("?"*len(fornecedor_ids))})
+                        ''', list(fornecedor_ids))
+
+                        for row in cursor.fetchall():
+                            fornecedores_info[row[0]] = {
+                                'nome': row[1],
+                                'cnpj': format_cnpj(row[2]) if row[2] else 'N/A',
+                                'telefone': row[3],
+                                'email': row[4],
+                                'endereco': f"{row[5]}, {row[6]}/{row[7]}"
+                            }
+                    finally:
+                        conn.close()
+
             for preenchimento in preenchimentos:
                 fornecedor_id = preenchimento.fornecedor_id
+
                 if fornecedor_id not in materiais_por_fornecedor:
                     materiais_por_fornecedor[fornecedor_id] = {
                         'info': fornecedores_info.get(fornecedor_id, {
@@ -3581,7 +3570,7 @@ def gerar_pedido_compra():
                         }),
                         'itens': []
                     }
-                
+
                 materiais_por_fornecedor[fornecedor_id]['itens'].append({
                     'material': preenchimento.solicitacao.material.DescricaoMaterial,
                     'marca': preenchimento.solicitacao.marca or 'Não especificado',
@@ -3594,137 +3583,64 @@ def gerar_pedido_compra():
                     'prioridade': preenchimento.solicitacao.prioridade
                 })
 
-            # Geração do PDF - Versão robusta
-            try:
-                # 1. Verificar/Criar diretório de upload
-                upload_dir = app.config['UPLOAD_FOLDER']
-                if not os.path.exists(upload_dir):
-                    os.makedirs(upload_dir)
-                    logging.info(f"Diretório de upload criado: {upload_dir}")
+            upload_dir = app.config['UPLOAD_FOLDER']
+            if not os.path.exists(upload_dir):
+                os.makedirs(upload_dir)
 
-                # 2. Gerar nome único para o PDF
-                pdf_filename = f"pedido_{numero_pedido}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
-                pdf_path = os.path.join(upload_dir, pdf_filename)
+            pdf_filename = f"pedido_{numero_pedido}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+            pdf_path = os.path.join(upload_dir, pdf_filename)
 
-                # 3. Renderizar HTML
-                html_content = render_template(
-                    'pedido_compra_pdf.html',
-                    pedido=pedido,
-                    materiais_por_fornecedor=materiais_por_fornecedor,
-                    data_criacao=datetime.now().strftime('%d/%m/%Y %H:%M:%S'),
-                    usuario=session['usuario'],
-                    total_itens=len(preenchimento_ids),
-                    fornecedores_count=len(materiais_por_fornecedor),
-                    # ADICIONE ESTA LINHA PARA PASSAR AS OBSERVAÇÕES PARA O TEMPLATE
-                    observacoes=observacoes
-                )
+            html_content = render_template(
+                'pedido_compra_pdf.html',
+                pedido=pedido,
+                materiais_por_fornecedor=materiais_por_fornecedor,
+                data_criacao=datetime.now().strftime('%d/%m/%Y %H:%M:%S'),
+                usuario=session['usuario'],
+                total_itens=len(preenchimento_ids),
+                fornecedores_count=len(materiais_por_fornecedor),
+                observacoes=observacoes
+            )
 
-               # 4. Configurar wkhtmltopdf (Windows e Linux)
-                wkhtmltopdf_paths = [
-                    r'C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe',
-                    r'C:\Program Files (x86)\wkhtmltopdf\bin\wkhtmltopdf.exe',
-                    '/usr/local/bin/wkhtmltopdf',
-                    '/usr/bin/wkhtmltopdf'
-                ]
+            wkhtmltopdf_path = shutil.which('wkhtmltopdf')
+            if not wkhtmltopdf_path:
+                raise FileNotFoundError("wkhtmltopdf não encontrado no sistema.")
 
-                # Verifica se o executável existe em um dos caminhos fixos
-                config = None
-                for path in wkhtmltopdf_paths:
-                    if os.path.exists(path):
-                        config = pdfkit.configuration(wkhtmltopdf=path)
-                        break
+            config = pdfkit.configuration(wkhtmltopdf=wkhtmltopdf_path)
 
-                # Fallback: tenta localizar no PATH do sistema
-                if config is None:
-                    found_path = shutil.which('wkhtmltopdf')
-                    if found_path:
-                        config = pdfkit.configuration(wkhtmltopdf=found_path)
+            options = {
+                'encoding': 'UTF-8',
+                'enable-local-file-access': '',
+                'margin-top': '10mm',
+                'margin-right': '10mm',
+                'margin-bottom': '10mm',
+                'margin-left': '10mm'
+            }
 
-                # Se ainda não encontrado, lança erro
-                if config is None:
-                    raise FileNotFoundError("wkhtmltopdf não encontrado. Verifique se está instalado e no PATH do sistema.")
+            pdfkit.from_string(html_content, pdf_path, configuration=config, options=options)
 
-                # 5. Configurações de conversão
-                options = {
-                    'encoding': 'UTF-8',
-                    'quiet': '',
-                    'enable-local-file-access': '',
-                    'margin-top': '10mm',
-                    'margin-right': '10mm',
-                    'margin-bottom': '10mm',
-                    'margin-left': '10mm',
-                    'footer-center': f'Página [page] de [topage] - {numero_pedido}',
-                    'footer-font-size': '8'
-                }
+            pedido.pdf_path = pdf_path
+            db.session.commit()
 
-                # 6. Gerar PDF
-                pdfkit.from_string(html_content, pdf_path, configuration=config, options=options)
+            flash(f'Pedido {numero_pedido} gerado com sucesso!', 'success')
+            return redirect(url_for('routes_bp.auditoria_solicitacoes'))
 
-                # 7. Verificar se o PDF foi criado
-                if not os.path.exists(pdf_path):
-                    raise Exception("Arquivo PDF não foi gerado")
+        # ==========================
+        # GET
+        # ==========================
 
-                # 8. Atualizar pedido com caminho do PDF
-                pedido.pdf_path = pdf_path
-                db.session.commit()
-
-                flash(f'Pedido {numero_pedido} gerado com sucesso!', 'success')
-                return redirect(url_for('routes_bp.auditoria_solicitacoes'))
-
-            except Exception as e:
-                logging.error(f"Erro ao gerar PDF: {str(e)}", exc_info=True)
-                
-                # Salvar HTML para debug
-                try:
-                    debug_path = os.path.join(upload_dir, f"debug_{numero_pedido}.html")
-                    with open(debug_path, 'w', encoding='utf-8') as f:
-                        f.write(html_content)
-                    logging.info(f"HTML de debug salvo em: {debug_path}")
-                except Exception as debug_error:
-                    logging.error(f"Erro ao salvar HTML: {str(debug_error)}")
-
-                flash('Pedido criado, mas ocorreu um erro ao gerar o PDF. Consulte os logs.', 'warning')
-                return redirect(url_for('routes_bp.auditoria_solicitacoes'))
-
-        # Método GET - mostrar formulário
         preenchimentos = SolicitacoesPreenchidas.query.filter_by(status='Aprovado')\
             .join(SolicitacoesCompra)\
             .join(Materiais)\
             .order_by(Materiais.DescricaoMaterial)\
             .all()
 
-        # Obter informações dos fornecedores
-        fornecedor_ids = {p.fornecedor_id for p in preenchimentos}
-        fornecedores = {}
-        if fornecedor_ids:
-            conn = get_db_connection(DB_PATH_FORNECEDORES)
-            if conn:
-                try:
-                    cursor = conn.cursor()
-                    cursor.execute(f'''
-                        SELECT id, nome_fantasia, cnpj, telefone, email 
-                        FROM fornecedores 
-                        WHERE id IN ({",".join("?"*len(fornecedor_ids))})
-                    ''', list(fornecedor_ids))
-                    
-                    for row in cursor.fetchall():
-                        fornecedores[row[0]] = {
-                            'nome': row[1],
-                            'cnpj': format_cnpj(row[2]) if row[2] else 'N/A',
-                            'telefone': row[3],
-                            'email': row[4]
-                        }
-                finally:
-                    conn.close()
+        # 🔥 PUXA AUTOMÁTICO PARA O INPUT (editável)
+        condicao_pagamento_padrao = ''
+        if preenchimentos:
+            condicao_pagamento_padrao = preenchimentos[0].condicao_pagamento or ''
 
-        # Organizar preenchimentos por material
         preenchimentos_por_material = {}
         for preenchimento in preenchimentos:
-            fornecedor_info = fornecedores.get(preenchimento.fornecedor_id, {})
-            preenchimento.fornecedor_nome = fornecedor_info.get('nome', 'Fornecedor não encontrado')
-            preenchimento.fornecedor_cnpj = fornecedor_info.get('cnpj', 'N/A')
-            preenchimento.fornecedor_telefone = fornecedor_info.get('telefone', 'N/A')
-            
             material_nome = preenchimento.solicitacao.material.DescricaoMaterial
             if material_nome not in preenchimentos_por_material:
                 preenchimentos_por_material[material_nome] = []
@@ -3733,7 +3649,8 @@ def gerar_pedido_compra():
         return render_template(
             'gerar_pedido_compra.html',
             preenchimentos_por_material=preenchimentos_por_material,
-            formas_pagamento=['À Vista', 'A Prazo', 'Boleto', 'Cartão de Crédito', 'Transferência Bancária']
+            formas_pagamento=['À Vista', 'A Prazo', 'Boleto', 'Cartão de Crédito', 'Transferência Bancária'],
+            condicao_pagamento_padrao=condicao_pagamento_padrao
         )
 
     except Exception as e:
@@ -3741,7 +3658,8 @@ def gerar_pedido_compra():
         logging.error(f"Erro em gerar_pedido_compra: {str(e)}", exc_info=True)
         flash(f'Erro ao gerar pedido: {str(e)}', 'error')
         return redirect(url_for('routes_bp.listar_solicitacoes_preenchidas'))
-    
+
+
 #testeaqui
 @routes_bp.route('/pedido/<int:pedido_id>/view')
 def view_pedido_pdf(pedido_id):
