@@ -551,7 +551,7 @@
 
             body {
                 padding: 0 !important;
-                font-size: 8pt !important;
+                font-size: 11pt !important;
                 line-height: 1.1 !important;
                 color: #000000 !important;
                 background: #fff !important;
@@ -696,24 +696,6 @@
         <button class="btn-impressao" onclick="window.print()">
             🖨️ Imprimir
         </button>
-
-        <div class="header">
-            <h1>
-                {% if modo_grupo %}
-                COMPARATIVO DE COTAÇÕES - GRUPO ({{ solicitacoes_grupo|length }} SOLICITAÇÕES)
-                {% else %}
-                COMPARATIVO DE COTAÇÕES - SOLICITAÇÃO #{{ solicitacao.id }}
-                {% endif %}
-            </h1>
-            <p>
-                {% if modo_grupo %}
-                Agrupamento por aplicação: {{ solicitacoes_grupo[0].aplicacao or
-                solicitacoes_grupo[0].material.Aplicacao or 'Sem Aplicação' }}
-                {% else %}
-                {{ solicitacao.material.DescricaoMaterial }}
-                {% endif %}
-            </p>
-        </div>
 
         <!-- Tabela principal -->
         <div class="table-container">

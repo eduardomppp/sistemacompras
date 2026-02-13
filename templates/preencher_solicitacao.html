@@ -8,635 +8,670 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
-<style>
-    /* RESET LEVE E OTIMIZADO */
-    * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-    }
-
-    html, body {
-        height: 100%;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        background-color: #f8f9fa;
-        color: #333;
-        overflow-x: auto;
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-    }
-
-    /* HEADER SIMPLIFICADO */
-    .header {
-        background: linear-gradient(135deg, #022855 0%, #0345a0 100%);
-        color: white;
-        padding: 12px 20px;
-        border-radius: 6px;
-        margin: 0 0 12px 0;
-        box-shadow: 0 2px 8px rgba(2, 40, 85, 0.1);
-    }
-
-    .header h1 {
-        margin: 0;
-        font-size: 18px;
-        font-weight: 600;
-        letter-spacing: 0.3px;
-    }
-
-    .header p {
-        margin: 4px 0 0;
-        font-size: 11px;
-        opacity: 0.9;
-    }
-
-    /* LAYOUT PRINCIPAL - OTIMIZADO */
-    .main-container {
-        display: flex;
-        gap: 12px;
-        align-items: flex-start;
-        margin: 0;
-        min-height: calc(100vh - 120px);
-    }
-
-    /* COLUNA ESQUERDA - COMPACTA */
-    .left-column {
-        flex: 0 0 300px;
-        background: linear-gradient(180deg, #022855 0%, #0A2C5C 100%);
-        color: white;
-        padding: 12px;
-        border-radius: 6px;
-        display: flex;
-        flex-direction: column;
-        position: sticky;
-        top: 0;
-        max-height: calc(100vh - 120px);
-        overflow-y: auto;
-    }
-
-    .left-column h2 {
-        color: #FFD700;
-        font-size: 13px;
-        margin: 0 0 8px 0;
-        font-weight: 600;
-    }
-
-    /* TABELA DE INFO - MAIS LEVE */
-    .info-pedido {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 11px;
-        margin-bottom: 15px;
-    }
-
-    .info-pedido td {
-        padding: 5px 3px;
-        vertical-align: top;
-        line-height: 1.3;
-    }
-
-    .info-pedido .label {
-        color: #FFD700;
-        font-weight: 600;
-        width: 40%;
-        white-space: nowrap;
-    }
-
-    .info-pedido .value {
-        width: 60%;
-        word-break: break-word;
-    }
-
-    /* MINI TABELA - PERFORMANCE */
-    .mini-table-container {
-        margin: 8px 0 12px 0;
-        will-change: transform;
-    }
-
-    .mini-table {
-        width: 100%;
-        border-collapse: separate;
-        border-spacing: 0;
-        font-size: 9px;
-        background: #0A2C5C;
-        border-radius: 4px;
-        overflow: hidden;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-
-    .mini-table th {
-        background: #144288;
-        color: white;
-        padding: 4px 5px;
-        font-weight: 600;
-        border: none;
-        position: sticky;
-        top: 0;
-        backdrop-filter: blur(10px);
-    }
-
-    .mini-table td {
-        padding: 4px 5px;
-        border-top: 1px solid rgba(255, 255, 255, 0.1);
-    }
-
-    .mini-table .desc {
-        font-size: 8.5px;
-        line-height: 1.2;
-        max-width: 140px;
-    }
-
-    /* SEÇÕES DESTAQUE */
-    .destaque-section {
-        background: rgba(10, 44, 92, 0.9);
-        padding: 8px;
-        border-radius: 4px;
-        margin-top: 8px;
-    }
-
-    .destaque-section h2 {
-        text-align: center;
-        margin-bottom: 6px;
-        font-size: 12px;
-    }
-
-    /* FORMULÁRIOS COMPACTOS */
-    .checkbox-item,
-    .pagamento-item {
-        font-size: 10px;
-        margin: 2px 0;
-    }
-
-    .justificativa textarea {
-        height: 45px;
-        font-size: 10px;
-        padding: 4px;
-        resize: vertical;
-    }
-
-    /* COLUNA DIREITA - COTAÇÕES */
-    .right-column {
-        flex: 1;
-        min-width: 0;
-        overflow: visible;
-    }
-
-    .cotacoes-container {
-        min-width: 0;
-    }
-
-    .cotacoes-dinamicas {
-        display: flex;
-        flex-wrap: nowrap;
-        gap: 15px;
-        padding: 5px 0 15px;
-        overflow-x: auto;
-        scroll-behavior: smooth;
-        -webkit-overflow-scrolling: touch;
-    }
-
-    /* SCROLLBAR PERSONALIZADA */
-    .cotacoes-dinamicas::-webkit-scrollbar {
-        height: 6px;
-    }
-    
-    .cotacoes-dinamicas::-webkit-scrollbar-track {
-        background: #f1f1f1;
-        border-radius: 3px;
-    }
-    
-    .cotacoes-dinamicas::-webkit-scrollbar-thumb {
-        background: #c1c1c1;
-        border-radius: 3px;
-    }
-
-    /* CARDS DE COTAÇÃO - OTIMIZADOS */
-    .cotacao-card {
-        background: white;
-        border: 1px solid #e1e5eb;
-        border-radius: 8px;
-        padding: 15px;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-        width: 500px;
-        min-width: 500px;
-        flex-shrink: 0;
-        position: relative;
-        transition: transform 0.2s, box-shadow 0.2s;
-        will-change: transform;
-    }
-
-    .cotacao-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
-    }
-
-    .cotacao-card::before {
-        content: attr(data-cotacao-numero);
-        position: absolute;
-        top: 0;
-        left: 0;
-        background: #022855;
-        color: white;
-        font-size: 11px;
-        font-weight: 600;
-        padding: 4px 10px;
-        border-radius: 8px 0 8px 0;
-    }
-
-    /* BOTÕES OTIMIZADOS */
-    .btn-remove-cotacao {
-        width: 22px;
-        height: 22px;
-        font-size: 11px;
-        background: #dc3545;
-        border: none;
-        border-radius: 50%;
-        color: white;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        transition: transform 0.2s;
-    }
-
-    .btn-remove-cotacao:hover {
-        transform: scale(1.1);
-    }
-
-    /* INFORMAÇÕES DO FORNECEDOR */
-    .fornecedor-info {
-        font-size: 12px;
-        margin: 25px 0 15px;
-        padding: 10px;
-        background: #f8fafc;
-        border-radius: 4px;
-        border-left: 3px solid #022855;
-    }
-
-    /* TABELA DE MATERIAIS - SUPER OTIMIZADA */
-    .materiais-container {
-        border: 1px solid #e1e5eb;
-        border-radius: 4px;
-        margin: 10px 0;
-        overflow: hidden;
-        background: white;
-    }
-
-    .materiais-table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 10px;
-        table-layout: fixed;
-    }
-
-    /* CABEÇALHO FIXO COM PERFORMANCE */
-    .materiais-table thead {
-        position: sticky;
-        top: 0;
-        z-index: 10;
-    }
-
-    .materiais-table th {
-        background: #022855;
-        color: white;
-        padding: 6px 4px;
-        font-weight: 600;
-        font-size: 9.5px;
-        border: 1px solid #e1e5eb;
-        text-align: center;
-        height: 30px;
-    }
-
-    /* CÉLULAS OTIMIZADAS */
-    .materiais-table td {
-        padding: 4px;
-        border: 1px solid #e1e5eb;
-        text-align: center;
-        vertical-align: middle;
-        height: 32px;
-    }
-
-    /* LARGURAS OTIMIZADAS */
-    .materiais-table .descricao {
-        width: 45%;
-        text-align: left;
-        padding: 4px 6px !important;
-        font-size: 9.5px;
-        line-height: 1.3;
-        word-break: break-word;
-    }
-
-    .materiais-table .quantidade,
-    .materiais-table .unidade {
-        width: 7%;
-        font-size: 9.5px;
-    }
-
-    .materiais-table .unitario,
-    .materiais-table .total {
-        width: 15%;
-        font-size: 10px;
-    }
-
-    .materiais-table .acoes {
-        width: 8%;
-    }
-
-    /* INPUTS OTIMIZADOS */
-    .materiais-table input {
-        width: 100%;
-        height: 26px;
-        padding: 2px 4px;
-        border: 1px solid #d1d5db;
-        border-radius: 3px;
-        font-size: 9.5px;
-        text-align: center;
-        background: white;
-        transition: border-color 0.15s;
-        box-sizing: border-box;
-    }
-
-    .materiais-table input:focus {
-        outline: none;
-        border-color: #022855;
-        box-shadow: 0 0 0 2px rgba(2, 40, 85, 0.1);
-    }
-
-    .materiais-table .descricao input {
-        text-align: left;
-        height: auto;
-        min-height: 26px;
-        white-space: normal;
-        word-break: break-word;
-        font-size: 9.5px;
-        line-height: 1.3;
-        padding: 4px 6px;
-    }
-
-    /* INPUTS READONLY */
-    .materiais-table input[readonly] {
-        background: #f8f9fa;
-        cursor: not-allowed;
-        border-color: #e9ecef;
-    }
-
-    /* BOTÕES DE AÇÃO */
-    .btn-add-material,
-    .btn-add-all {
-        font-size: 10px;
-        padding: 4px 8px;
-        height: 26px;
-        border: none;
-        border-radius: 3px;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        margin: 5px 5px 0 0;
-        transition: all 0.2s;
-    }
-
-    .btn-add-material {
-        background: #28a745;
-        color: white;
-    }
-
-    .btn-add-all {
-        background: #17a2b8;
-        color: white;
-    }
-
-    /* TOTAL DO FORNECEDOR */
-    .total-fornecedor {
-        background: #f8fafc;
-        border: 1px solid #e1e5eb;
-        border-radius: 6px;
-        padding: 10px;
-        font-size: 11px;
-        margin-top: 10px;
-    }
-
-    .total-line {
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 3px;
-        padding: 2px 0;
-    }
-
-    .total-geral-fornecedor {
-        background: #022855;
-        color: white;
-        padding: 6px;
-        border-radius: 4px;
-        font-weight: 700;
-        font-size: 11px;
-        margin-top: 6px;
-        text-align: center;
-    }
-
-    /* BOTÕES PRINCIPAIS */
-    .action-buttons {
-        display: flex;
-        gap: 8px;
-        margin-top: 15px;
-        padding-top: 15px;
-        border-top: 1px solid #e1e5eb;
-    }
-
-    .btn {
-        flex: 1;
-        padding: 6px 12px;
-        font-size: 11px;
-        font-weight: 600;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        transition: all 0.2s;
-        text-align: center;
-    }
-
-    .btn-primary {
-        background: #022855;
-        color: white;
-    }
-
-    .btn-success {
-        background: #198754;
-        color: white;
-    }
-
-    .btn-warning {
-        background: #ffc107;
-        color: #000;
-    }
-
-    /* ADICIONAR COTAÇÃO */
-    .add-cotacao-container {
-        margin-top: 10px;
-    }
-
-    .btn-add-cotacao {
-        background: #6c757d;
-        color: white;
-        border: none;
-        padding: 6px 12px;
-        border-radius: 4px;
-        font-size: 11px;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        transition: background 0.2s;
-    }
-
-    /* FOOTER */
-    .footer {
-        margin: 10px 0;
-        text-align: center;
-        font-size: 9px;
-        color: #6c757d;
-    }
-
-    .assinaturas {
-        display: flex;
-        justify-content: center;
-        gap: 60px;
-        margin-top: 15px;
-    }
-
-    .assinatura {
-        font-size: 10px;
-        text-align: center;
-        color: #022855;
-    }
-
-    /* CAMPO EDITÁVEL */
-    .campo-editavel-empresa {
-        width: 100%;
-        background: transparent;
-        border: none;
-        border-bottom: 1px dashed rgba(255, 215, 0, 0.5);
-        color: white;
-        font-size: 11px;
-        padding: 2px 4px;
-        outline: none;
-    }
-
-    /* MEDIA QUERIES OTIMIZADAS */
-    @media (max-width: 1400px) {
-        .cotacao-card {
-            width: 480px;
-            min-width: 480px;
+    <style>
+        /* RESET LEVE E OTIMIZADO */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-    }
 
-    @media (max-width: 1200px) {
-        .main-container {
-            flex-direction: column;
+        html, body {
+            height: 100%;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+            overflow-x: auto;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
-        
-        .left-column {
-            flex: 0 0 auto;
-            width: 100%;
-            max-height: none;
-            position: static;
-        }
-        
-        .cotacao-card {
-            width: 100%;
-            min-width: 100%;
-        }
-    }
 
-    @media (max-width: 768px) {
-        body {
-            padding: 8px;
-        }
-        
+        /* HEADER SIMPLIFICADO */
         .header {
-            padding: 10px 15px;
+            background: linear-gradient(135deg, #022855 0%, #0345a0 100%);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 6px;
+            margin: 0 0 12px 0;
+            box-shadow: 0 2px 8px rgba(2, 40, 85, 0.1);
         }
-        
+
         .header h1 {
-            font-size: 16px;
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
         }
-        
-        .materiais-table {
+
+        .header p {
+            margin: 4px 0 0;
+            font-size: 11px;
+            opacity: 0.9;
+        }
+
+        /* LAYOUT PRINCIPAL - OTIMIZADO */
+        .main-container {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            margin: 0;
+            min-height: calc(100vh - 120px);
+        }
+
+        /* COLUNA ESQUERDA - COMPACTA */
+        .left-column {
+            flex: 0 0 300px;
+            background: linear-gradient(180deg, #022855 0%, #0A2C5C 100%);
+            color: white;
+            padding: 12px;
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            position: sticky;
+            top: 0;
+            max-height: calc(100vh - 120px);
+            overflow-y: auto;
+        }
+
+        .left-column h2 {
+            color: #FFD700;
+            font-size: 13px;
+            margin: 0 0 8px 0;
+            font-weight: 600;
+        }
+
+        /* TABELA DE INFO - MAIS LEVE */
+        .info-pedido {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+            margin-bottom: 15px;
+        }
+
+        .info-pedido td {
+            padding: 5px 3px;
+            vertical-align: top;
+            line-height: 1.3;
+        }
+
+        .info-pedido .label {
+            color: #FFD700;
+            font-weight: 600;
+            width: 40%;
+            white-space: nowrap;
+        }
+
+        .info-pedido .value {
+            width: 60%;
+            word-break: break-word;
+        }
+
+        /* MINI TABELA - PERFORMANCE */
+        .mini-table-container {
+            margin: 8px 0 12px 0;
+            will-change: transform;
+        }
+
+        .mini-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
             font-size: 9px;
+            background: #0A2C5C;
+            border-radius: 4px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .mini-table th {
+            background: #144288;
+            color: white;
+            padding: 4px 5px;
+            font-weight: 600;
+            border: none;
+            position: sticky;
+            top: 0;
+            backdrop-filter: blur(10px);
+        }
+
+        .mini-table td {
+            padding: 4px 5px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .mini-table .desc {
+            font-size: 8.5px;
+            line-height: 1.2;
+            max-width: 140px;
+        }
+
+        /* SEÇÕES DESTAQUE */
+        .destaque-section {
+            background: rgba(10, 44, 92, 0.9);
+            padding: 8px;
+            border-radius: 4px;
+            margin-top: 8px;
+        }
+
+        .destaque-section h2 {
+            text-align: center;
+            margin-bottom: 6px;
+            font-size: 12px;
+        }
+
+        /* FORMULÁRIOS COMPACTOS */
+        .checkbox-item,
+        .pagamento-item {
+            font-size: 10px;
+            margin: 2px 0;
+        }
+
+        .justificativa textarea {
+            height: 45px;
+            font-size: 10px;
+            padding: 4px;
+            resize: vertical;
+        }
+
+        /* COLUNA DIREITA - COTAÇÕES */
+        .right-column {
+            flex: 1;
+            min-width: 0;
+            overflow: visible;
+        }
+
+        .cotacoes-container {
+            min-width: 0;
+        }
+
+        .cotacoes-dinamicas {
+            display: flex;
+            flex-wrap: nowrap;
+            gap: 15px;
+            padding: 5px 0 15px;
+            overflow-x: auto;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* SCROLLBAR PERSONALIZADA */
+        .cotacoes-dinamicas::-webkit-scrollbar {
+            height: 6px;
         }
         
-        .materiais-table th,
-        .materiais-table td {
-            padding: 3px;
-        }
-    }
-
-    /* ANIMAÇÕES LEVES */
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-
-    .cotacao-card {
-        animation: fadeIn 0.3s ease-out;
-    }
-
-    /* IMPRESSÃO */
-    @media print {
-        .btn-remove-cotacao,
-        .btn-add-material,
-        .btn-add-all,
-        .btn-add-cotacao,
-        .action-buttons {
-            display: none !important;
+        .cotacoes-dinamicas::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
         }
         
+        .cotacoes-dinamicas::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
+
+        /* CARDS DE COTAÇÃO - OTIMIZADOS */
         .cotacao-card {
-            break-inside: avoid;
-            box-shadow: none;
-            border: 1px solid #ccc;
+            background: white;
+            border: 1px solid #e1e5eb;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+            width: 500px;
+            min-width: 500px;
+            flex-shrink: 0;
+            position: relative;
+            transition: transform 0.2s, box-shadow 0.2s;
+            will-change: transform;
+        }
+
+        .cotacao-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+        }
+
+        .cotacao-card::before {
+            content: attr(data-cotacao-numero);
+            position: absolute;
+            top: 0;
+            left: 0;
+            background: #022855;
+            color: white;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 8px 0 8px 0;
+        }
+
+        /* BOTÕES OTIMIZADOS */
+        .btn-remove-cotacao {
+            width: 22px;
+            height: 22px;
+            font-size: 11px;
+            background: #dc3545;
+            border: none;
+            border-radius: 50%;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            transition: transform 0.2s;
+            z-index: 100;
+        }
+
+        .btn-remove-cotacao:hover {
+            transform: scale(1.1);
+        }
+
+        /* INFORMAÇÕES DO FORNECEDOR */
+        .fornecedor-info {
+            font-size: 12px;
+            margin: 25px 0 15px;
+            padding: 10px;
+            background: #f8fafc;
+            border-radius: 4px;
+            border-left: 3px solid #022855;
+        }
+
+        /* TABELA DE MATERIAIS - SUPER OTIMIZADA */
+        .materiais-container {
+            border: 1px solid #e1e5eb;
+            border-radius: 4px;
+            margin: 10px 0;
+            overflow: hidden;
+            background: white;
+        }
+
+        .materiais-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 10px;
+            table-layout: fixed;
+        }
+
+        /* CABEÇALHO FIXO COM PERFORMANCE */
+        .materiais-table thead {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .materiais-table th {
+            background: #022855;
+            color: white;
+            padding: 6px 4px;
+            font-weight: 600;
+            font-size: 9.5px;
+            border: 1px solid #e1e5eb;
+            text-align: center;
+            height: 30px;
+        }
+
+        /* CÉLULAS OTIMIZADAS */
+        .materiais-table td {
+            padding: 4px;
+            border: 1px solid #e1e5eb;
+            text-align: center;
+            vertical-align: middle;
+            height: 32px;
+        }
+
+        /* LARGURAS OTIMIZADAS */
+        .materiais-table .descricao {
+            width: 45%;
+            text-align: left;
+            padding: 4px 6px !important;
+            font-size: 9.5px;
+            line-height: 1.3;
+            word-break: break-word;
+        }
+
+        .materiais-table .quantidade,
+        .materiais-table .unidade {
+            width: 7%;
+            font-size: 9.5px;
+        }
+
+        .materiais-table .unitario,
+        .materiais-table .total {
+            width: 15%;
+            font-size: 10px;
+        }
+
+        .materiais-table .acoes {
+            width: 8%;
+        }
+
+        /* INPUTS OTIMIZADOS */
+        .materiais-table input {
+            width: 100%;
+            height: 26px;
+            padding: 2px 4px;
+            border: 1px solid #d1d5db;
+            border-radius: 3px;
+            font-size: 9.5px;
+            text-align: center;
+            background: white;
+            transition: border-color 0.15s;
+            box-sizing: border-box;
+        }
+
+        .materiais-table input:focus {
+            outline: none;
+            border-color: #022855;
+            box-shadow: 0 0 0 2px rgba(2, 40, 85, 0.1);
+        }
+
+        .materiais-table .descricao input {
+            text-align: left;
+            height: auto;
+            min-height: 26px;
+            white-space: normal;
+            word-break: break-word;
+            font-size: 9.5px;
+            line-height: 1.3;
+            padding: 4px 6px;
+        }
+
+        /* INPUTS READONLY */
+        .materiais-table input[readonly] {
+            background: #f8f9fa;
+            cursor: not-allowed;
+            border-color: #e9ecef;
+        }
+
+        /* BOTÕES DE AÇÃO */
+        .btn-add-material,
+        .btn-add-all {
+            font-size: 10px;
+            padding: 4px 8px;
+            height: 26px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            margin: 5px 5px 0 0;
+            transition: all 0.2s;
+        }
+
+        .btn-add-material {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-add-all {
+            background: #17a2b8;
+            color: white;
+        }
+
+        /* TOTAL DO FORNECEDOR */
+        .total-fornecedor {
+            background: #f8fafc;
+            border: 1px solid #e1e5eb;
+            border-radius: 6px;
+            padding: 10px;
+            font-size: 11px;
+            margin-top: 10px;
+        }
+
+        .total-line {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 3px;
+            padding: 2px 0;
+        }
+
+        .total-geral-fornecedor {
+            background: #022855;
+            color: white;
+            padding: 6px;
+            border-radius: 4px;
+            font-weight: 700;
+            font-size: 11px;
+            margin-top: 6px;
+            text-align: center;
+        }
+
+        /* BOTÕES PRINCIPAIS */
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #e1e5eb;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 6px 12px;
+            font-size: 11px;
+            font-weight: 600;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background: #022855;
+            color: white;
+        }
+
+        .btn-success {
+            background: #198754;
+            color: white;
+        }
+
+        .btn-warning {
+            background: #ffc107;
+            color: #000;
+        }
+
+        /* ADICIONAR COTAÇÃO */
+        .add-cotacao-container {
+            margin-top: 10px;
+        }
+
+        .btn-add-cotacao {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 11px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: background 0.2s;
+        }
+
+        /* FOOTER */
+        .footer {
+            margin: 10px 0;
+            text-align: center;
+            font-size: 9px;
+            color: #6c757d;
+        }
+
+        .assinaturas {
+            display: flex;
+            justify-content: center;
+            gap: 60px;
+            margin-top: 15px;
+        }
+
+        .assinatura {
+            font-size: 10px;
+            text-align: center;
+            color: #022855;
+        }
+
+        /* CAMPO EDITÁVEL */
+        .campo-editavel-empresa {
+            width: 100%;
+            background: transparent;
+            border: none;
+            border-bottom: 1px dashed rgba(255, 215, 0, 0.5);
+            color: white;
+            font-size: 11px;
+            padding: 2px 4px;
+            outline: none;
+        }
+
+        /* MEDIA QUERIES OTIMIZADAS */
+        @media (max-width: 1400px) {
+            .cotacao-card {
+                width: 480px;
+                min-width: 480px;
+            }
+        }
+
+        @media (max-width: 1200px) {
+            .main-container {
+                flex-direction: column;
+            }
+            
+            .left-column {
+                flex: 0 0 auto;
+                width: 100%;
+                max-height: none;
+                position: static;
+            }
+            
+            .cotacao-card {
+                width: 100%;
+                min-width: 100%;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 8px;
+            }
+            
+            .header {
+                padding: 10px 15px;
+            }
+            
+            .header h1 {
+                font-size: 16px;
+            }
+            
+            .materiais-table {
+                font-size: 9px;
+            }
+            
+            .materiais-table th,
+            .materiais-table td {
+                padding: 3px;
+            }
+        }
+
+        /* ANIMAÇÕES LEVES */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .cotacao-card {
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        /* IMPRESSÃO */
+        @media print {
+            .btn-remove-cotacao,
+            .btn-add-material,
+            .btn-add-all,
+            .btn-add-cotacao,
+            .action-buttons {
+                display: none !important;
+            }
+            
+            .cotacao-card {
+                break-inside: avoid;
+                box-shadow: none;
+                border: 1px solid #ccc;
+            }
+            
+            .materiais-table th {
+                background: #ccc !important;
+                color: #000 !important;
+            }
+        }
+
+        /* CLASSES UTILITÁRIAS PARA PERFORMANCE */
+        .will-change-transform {
+            will-change: transform;
         }
         
-        .materiais-table th {
-            background: #ccc !important;
-            color: #000 !important;
+        .contain-paint {
+            contain: paint;
         }
-    }
+        
+        .backface-hidden {
+            backface-visibility: hidden;
+        }
 
-    /* CLASSES UTILITÁRIAS PARA PERFORMANCE */
-    .will-change-transform {
-        will-change: transform;
-    }
-    
-    .contain-paint {
-        contain: paint;
-    }
-    
-    .backface-hidden {
-        backface-visibility: hidden;
-    }
+        /* MENSAGENS DE ERRO */
+        .error-message {
+            color: #dc3545;
+            font-size: 9px;
+            margin-top: 2px;
+            display: block;
+        }
 
-    /* MENSAGENS DE ERRO */
-    .error-message {
-        color: #dc3545;
-        font-size: 9px;
-        margin-top: 2px;
-        display: block;
-    }
+        .border-danger {
+            border-color: #dc3545 !important;
+            animation: shake 0.5s;
+        }
 
-    .border-danger {
-        border-color: #dc3545 !important;
-        animation: shake 0.5s;
-    }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
 
-    @keyframes shake {
-        0%, 100% { transform: translateX(0); }
-        25% { transform: translateX(-5px); }
-        75% { transform: translateX(5px); }
-    }
-</style>
+        /* VALOR INPUT SYMBOL */
+        .valor-input {
+            position: relative;
+        }
+        
+        .valor-simbolo {
+            position: absolute;
+            left: 6px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6c757d;
+            font-size: 9px;
+            pointer-events: none;
+        }
+        
+        .valor-input input {
+            padding-left: 22px !important;
+            text-align: right !important;
+        }
+        
+        .material-descricao {
+            width: 100%;
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 3px;
+            font-size: 9.5px;
+            line-height: 1.3;
+            padding: 4px 6px;
+            resize: none;
+            overflow: hidden;
+            word-break: break-word;
+            white-space: pre-wrap;
+        }
+    </style>
 </head>
 
 <body>
@@ -659,13 +694,11 @@
                     {% endif %}
                 </p>
             </div>
-           <div class="d-flex gap-2">
-       
-            <!-- Botão Voltar -->
-            <a href="{{ url_for('routes_bp.listar_solicitacoes_comprador') }}" class="btn btn-light btn-sm">
-                <i class="bi bi-arrow-left"></i> Voltar
-            </a>
-        </div>
+            <div class="d-flex gap-2">
+                <a href="{{ url_for('routes_bp.listar_solicitacoes_comprador') }}" class="btn btn-light btn-sm">
+                    <i class="bi bi-arrow-left"></i> Voltar
+                </a>
+            </div>
         </div>
     </div>
 
@@ -678,6 +711,9 @@
 
         <!-- Campo oculto para JSON de materiais -->
         <input type="hidden" name="materiais_json" id="materiais_json">
+        
+        <!-- Campo oculto para IDs de FORNECEDORES removidos -->
+        <input type="hidden" name="fornecedores_removidos" id="fornecedores_removidos" value="[]">
 
         <div class="main-container">
             <!-- Coluna esquerda -->
@@ -809,25 +845,23 @@ Grupo de {{ solicitacoes_grupo|length }} solicitações para {{ solicitacoes_gru
                     {% set cotacao_num = loop.index %}
                     {% set cotacao = cotacoes_salvas[i] if cotacoes_salvas and i < cotacoes_salvas|length else None %}
                     
-                    <div class="cotacao-card" id="cotacao-{{ cotacao_num }}">
-                        <button type="button" class="btn-remove-cotacao" onclick="removerCotacao({{ cotacao_num }})" 
+                    <div class="cotacao-card" id="cotacao-{{ cotacao_num }}" data-cotacao-numero="Cotação #{{ cotacao_num }}"
+                         {% if cotacao and cotacao.fornecedor_id %}data-fornecedor-id="{{ cotacao.fornecedor_id }}"{% endif %}>
+                        <button type="button" class="btn-remove-cotacao" 
+                                onclick="removerCotacao({{ cotacao_num }}, '{{ cotacao.fornecedor_id if cotacao and cotacao.fornecedor_id else '' }}')" 
                                 id="btn-remove-{{ cotacao_num }}"
                                 style="display: {% if cotacao_num == 1 and total_cotacoes <= 1 %}none{% else %}block{% endif %};">
                             <i class="bi bi-x"></i>
                         </button>
 
                         <div class="fornecedor-info">
-                            <div><strong>Nome:</strong> <span id="fornecedor-nome-display-{{ cotacao_num }}">
-                                {{ cotacao.fornecedor_nome_fantasia if cotacao else '' }}</span></div>
-                            <div><strong>CNPJ:</strong> <span id="fornecedor-cnpj-display-{{ cotacao_num }}">
-                                {{ cotacao.fornecedor_cnpj if cotacao else '' }}</span></div>
-                            <div><strong>Telefone:</strong> <span id="fornecedor-telefone-display-{{ cotacao_num }}">
-                                {{ cotacao.fornecedor_telefone if cotacao else '' }}</span></div>
-                            <div><strong>Endereço:</strong> <span id="fornecedor-endereco-display-{{ cotacao_num }}">
-                                {{ cotacao.fornecedor_endereco if cotacao else '' }}</span></div>
+                            <div><strong>Nome:</strong> <span id="fornecedor-nome-display-{{ cotacao_num }}">{{ cotacao.fornecedor_nome_fantasia if cotacao else '' }}</span></div>
+                            <div><strong>CNPJ:</strong> <span id="fornecedor-cnpj-display-{{ cotacao_num }}">{{ cotacao.fornecedor_cnpj if cotacao else '' }}</span></div>
+                            <div><strong>Telefone:</strong> <span id="fornecedor-telefone-display-{{ cotacao_num }}">{{ cotacao.fornecedor_telefone if cotacao else '' }}</span></div>
+                            <div><strong>Endereço:</strong> <span id="fornecedor-endereco-display-{{ cotacao_num }}">{{ cotacao.fornecedor_endereco if cotacao else '' }}</span></div>
                         </div>
 
-                        <!-- Seleção de Fornecedor -->
+                        <!-- Seleção de Fornecedor - CORRIGIDO COM PREENCHIMENTO_ID -->
                         <div class="cotacao-form">
                             <div class="form-group">
                                 <label class="form-label">Fornecedor *</label>
@@ -835,14 +869,16 @@ Grupo de {{ solicitacoes_grupo|length }} solicitações para {{ solicitacoes_gru
                                     <option value="">Selecione um fornecedor</option>
                                 </select>
                                 <input type="hidden" id="fornecedor_id_{{ cotacao_num }}" name="fornecedor_id[]"
-                                    value="{{ cotacao.fornecedor_id if cotacao else '' }}">
-                                <input type="hidden" name="preenchimento_id[]" value="{{ cotacao.id if cotacao else '' }}">
+                                    value="{{ cotacao.fornecedor_id if cotacao and cotacao.fornecedor_id else '' }}">
+                                <!-- 🔴 CAMPO OCULTO PARA O ID DO PREENCHIMENTO (PRIMEIRO MATERIAL) -->
+                                <input type="hidden" id="preenchimento_id_{{ cotacao_num }}" name="preenchimento_id[]"
+                                       value="{{ cotacao.materiais[0].preenchimento_id if cotacao and cotacao.materiais and cotacao.materiais[0] else '' }}">
                             </div>
                         </div>
 
                         <!-- Tabela de Materiais -->
                         <div class="materiais-container" id="materiais-container-{{ cotacao_num }}" 
-                             style="display: {% if cotacao %}block{% else %}none{% endif %};">
+                             style="display: {% if cotacao and cotacao.fornecedor_id %}block{% else %}none{% endif %};">
                             <table class="materiais-table" id="materiais-table-{{ cotacao_num }}">
                                 <thead>
                                     <tr>
@@ -861,22 +897,23 @@ Grupo de {{ solicitacoes_grupo|length }} solicitações para {{ solicitacoes_gru
                         </div>
 
                         <!-- Botões de Materiais -->
-                        {% if not modo_grupo %}
                         <div id="botoes-materiais-{{ cotacao_num }}" 
-                             style="display: {% if cotacao %}block{% else %}none{% endif %};">
-                           
+                             style="display: {% if cotacao and cotacao.fornecedor_id %}block{% else %}none{% endif %};">
+                            <button type="button" class="btn-add-all" onclick="adicionarTodosMateriais({{ cotacao_num }})">
+                                <i class="bi bi-list-check"></i> Adicionar Todos os Materiais
+                            </button>
                         </div>
-                        {% endif %}
 
                         <!-- Informações Gerais da Cotação -->
                         <div class="cotacao-form mt-3">
+                            <!-- CAMPO DE FRETE -->
                             <div class="form-group">
                                 <label class="form-label">Valor do Frete (R$)</label>
                                 <div class="input-group valor-input">
                                     <span class="input-group-text">R$</span>
                                     <input type="text" class="form-control valor-frete" id="valor_frete_{{ cotacao_num }}"
                                         name="valor_frete[]" placeholder="0,00"
-                                        value="{{ '{:.2f}'.format(cotacao.valor_frete).replace('.', ',') if cotacao and cotacao.valor_frete else '' }}">
+                                        value="{% if cotacao and cotacao.valor_frete %}{% if cotacao.valor_frete is number %}{{ '{:.2f}'.format(cotacao.valor_frete).replace('.', ',') }}{% else %}{{ cotacao.valor_frete | replace('.', ',') }}{% endif %}{% endif %}">
                                 </div>
                             </div>
 
@@ -887,12 +924,15 @@ Grupo de {{ solicitacoes_grupo|length }} solicitações para {{ solicitacoes_gru
                                        value="{{ cotacao.prazo_entrega if cotacao else '' }}">
                             </div>
 
-                            <!-- CAMPO DE DESCONTO ORIGINAL (sem input-group) -->
+                            <!-- CAMPO DE DESCONTO -->
                             <div class="form-group">
-                                <label class="form-label">Valor do Desconto</label>
-                                <input type="text" class="form-control" id="condicao_pagamento_{{ cotacao_num }}"
-                                    name="condicao_pagamento[]" placeholder="Ex.: 100"
-                                    value="{{ cotacao.condicao_pagamento if cotacao else '' }}">
+                                <label class="form-label">Valor do Desconto (R$)</label>
+                                <div class="input-group valor-input">
+                                    <span class="input-group-text">R$</span>
+                                    <input type="text" class="form-control" id="condicao_pagamento_{{ cotacao_num }}"
+                                        name="condicao_pagamento[]" placeholder="0,00"
+                                        value="{% if cotacao and cotacao.condicao_pagamento %}{% if cotacao.condicao_pagamento is number %}{{ '{:.2f}'.format(cotacao.condicao_pagamento).replace('.', ',') }}{% else %}{{ cotacao.condicao_pagamento | replace('.', ',') }}{% endif %}{% endif %}">
+                                </div>
                             </div>
 
                             <!-- PDF -->
@@ -931,7 +971,7 @@ Grupo de {{ solicitacoes_grupo|length }} solicitações para {{ solicitacoes_gru
 
                         <!-- Campo oculto para dados dos materiais salvos -->
                         <input type="hidden" id="materiais_salvos_{{ cotacao_num }}" 
-                               value="{{ cotacao.materiais | tojson | safe }}">
+                               value='{{ cotacao.materiais | tojson | safe if cotacao and cotacao.materiais else "[]" }}'>
                     </div>
                     {% endfor %}
                 </div>
@@ -974,1045 +1014,960 @@ Grupo de {{ solicitacoes_grupo|length }} solicitações para {{ solicitacoes_gru
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     
-    <!-- JavaScript COMPLETO E MODIFICADO PARA 4 CASAS DECIMAIS -->
-<script>
-    // Variável global para contar cotações
-    let contadorCotacoes = {{ cotacoes_salvas|length if cotacoes_salvas else 1 }};
-    const MAX_COTACOES = 5;
+    <script>
+        // ============================================
+        // VARIÁVEIS GLOBAIS
+        // ============================================
+        let contadorCotacoes = {{ cotacoes_salvas|length if cotacoes_salvas else 1 }};
+        const MAX_COTACOES = 5;
+        let fornecedoresRemovidos = [];
 
-    // Dados dos materiais
-    const materiaisSolicitacao = [
-        {% if modo_grupo %}
-        {% for sol in solicitacoes_grupo %}
-        {
-            id: {{ sol.id }},
-            descricao: `{{ sol.material.DescricaoMaterial | replace("'", "\\'") | replace('"', '\\"') | replace('`', '\\`') }}`,
-            quantidade: {{ sol.quantidade }},
-            unidade: "{{ sol.unidade_medida | default('un') }}",
-            especificacao: `{{ sol.especificacao or '' | replace("'", "\\'") | replace('"', '\\"') | replace('`', '\\`') }}`
-        }{% if not loop.last %},{% endif %}
-        {% endfor %}
-        {% else %}
-        {
-            id: {{ solicitacao.id }},
-            descricao: `{{ solicitacao.material.DescricaoMaterial | replace("'", "\\'") | replace('"', '\\"') | replace('`', '\\`') }}`,
-            quantidade: {{ solicitacao.quantidade }},
-            unidade: "{{ solicitacao.unidade_medida | default('un') }}",
-            especificacao: `{{ solicitacao.especificacao or '' | replace("'", "\\'") | replace('"', '\\"') | replace('`', '\\`') }}`
-        }
-        {% endif %}
-    ];
-
-    // ============================================
-    // FUNÇÕES PRINCIPAIS MODIFICADAS
-    // ============================================
-
-    // FUNÇÃO para formatar número para exibição (Brasil: 1.234,5678)
-    function formatarNumero(numero, casasDecimais = 2) {
-        if (isNaN(numero)) numero = 0;
-        return numero.toLocaleString('pt-BR', {
-            minimumFractionDigits: casasDecimais,
-            maximumFractionDigits: casasDecimais
-        });
-    }
-
-    // FUNÇÃO para aplicar máscara monetária em um input
-function aplicarMascaraMonetaria(input) {
-    let valor = input.val();
-    const isUnitario = input.hasClass('material-unitario');
-    const casasDecimais = isUnitario ? 4 : 2; // 4 casas para unitário, 2 para outros
-
-    // Se estiver vazio, define como vazio
-    if (valor === '') {
-        input.val('');
-        return '';
-    }
-
-    // **CORREÇÃO**: Se já estiver no formato correto com vírgula, não faz nada
-    if (valor.includes(',') && valor.split(',')[1]?.length === casasDecimais) {
-        // Verifica se já está formatado corretamente
-        return valor;
-    }
-
-    // Remove tudo que não é número
-    valor = valor.replace(/\D/g, '');
-
-    // Se estiver vazio após limpar, define como vazio
-    if (valor === '') {
-        input.val('');
-        return '';
-    }
-
-    // Converte para número (considerando decimais)
-    const divisor = Math.pow(10, casasDecimais);
-    const numero = parseInt(valor) / divisor;
-
-    // Formata para exibição
-    const formatado = formatarNumero(numero, casasDecimais);
-    input.val(formatado);
-
-    return numero.toString();
-}
-
-   // FUNÇÃO para formatar número para envio (Python: 1234.5678)
-function formatarNumeroParaEnvio(numero) {
-    // Se for string, converte para número
-    if (typeof numero === 'string') {
-        // Se já estiver no formato numérico com ponto, converte diretamente
-        if (numero.includes('.') && !numero.includes(',')) {
-            const resultado = parseFloat(numero);
-            return isNaN(resultado) ? 0 : resultado;
-        }
-        
-        // Remove símbolos e espaços (mantém números, vírgulas e pontos)
-        let limpo = numero.toString().replace(/[^\d,.-]/g, '');
-
-        // Se estiver vazio, retorna 0
-        if (!limpo) return 0;
-
-        // Se tiver vírgula como separador decimal
-        if (limpo.includes(',')) {
-            // Verifica se tem ponto como separador de milhar
-            const ultimoPonto = limpo.lastIndexOf('.');
-            const ultimaVirgula = limpo.lastIndexOf(',');
-            
-            // Se a vírgula vem depois do ponto, ponto é separador de milhar
-            if (ultimaVirgula > ultimoPonto) {
-                // Remove pontos (separadores de milhar)
-                limpo = limpo.replace(/\./g, '');
-                // Substitui vírgula por ponto
-                limpo = limpo.replace(',', '.');
+        // Dados dos materiais
+        const materiaisSolicitacao = [
+            {% if modo_grupo %}
+            {% for sol in solicitacoes_grupo %}
+            {
+                id: {{ sol.id }},
+                descricao: `{{ sol.material.DescricaoMaterial | replace("'", "\\'") | replace('"', '\\"') | replace('`', '\\`') }}`,
+                quantidade: {{ sol.quantidade }},
+                unidade: "{{ sol.unidade_medida | default('un') }}",
+                especificacao: `{{ sol.especificacao or '' | replace("'", "\\'") | replace('"', '\\"') | replace('`', '\\`') }}`
+            }{% if not loop.last %},{% endif %}
+            {% endfor %}
+            {% else %}
+            {
+                id: {{ solicitacao.id }},
+                descricao: `{{ solicitacao.material.DescricaoMaterial | replace("'", "\\'") | replace('"', '\\"') | replace('`', '\\`') }}`,
+                quantidade: {{ solicitacao.quantidade }},
+                unidade: "{{ solicitacao.unidade_medida | default('un') }}",
+                especificacao: `{{ solicitacao.especificacao or '' | replace("'", "\\'") | replace('"', '\\"') | replace('`', '\\`') }}`
             }
-            // Se o ponto vem depois da vírgula, vírgula é separador de milhar
-            else if (ultimoPonto > ultimaVirgula) {
-                // Remove vírgulas (separadores de milhar)
-                limpo = limpo.replace(/,/g, '');
-            }
-        }
+            {% endif %}
+        ];
 
-        // Converte para número
-        const resultado = parseFloat(limpo);
-        return isNaN(resultado) ? 0 : resultado;
-    }
-
-    // Se já for número, retorna como está
-    return numero;
-}
-
-// FUNÇÃO para converter número para string com 4 casas decimais
-function numeroParaString4Decimais(numero) {
-    if (typeof numero === 'string') {
-        // Se já for string, verifica se precisa ajustar
-        const num = parseFloat(numero);
-        if (!isNaN(num)) {
-            // Garante 4 casas decimais
-            return num.toFixed(4);
-        }
-        return '0.0000';
-    }
-    
-    // Se for número, formata com 4 casas decimais
-    return numero.toFixed(4);
-}
-
-    // FUNÇÃO para gerar JSON de materiais por cotação
-    function gerarJsonMateriais() {
-        const materiaisPorCotacao = {};
-
-        // Para cada cotação
-        $('.cotacao-card').each(function () {
-            const cotacaoId = $(this).attr('id').replace('cotacao-', '');
-            const fornecedorId = $('#fornecedor_id_' + cotacaoId).val();
-
-            if (!fornecedorId) return; // Ignora cotações sem fornecedor
-
-            materiaisPorCotacao[cotacaoId] = [];
-
-            // Para cada material na cotação
-            $('#materiais-body-' + cotacaoId + ' tr').each(function (index) {
-                const solicitacaoId = $(this).find('input[name^="solicitacao_id"]').val();
-                const unitario = $(this).find('.material-unitario').val();
-                const totalText = $(this).find('.material-total-display').val();
-
-                if (solicitacaoId && unitario) {
-                    materiaisPorCotacao[cotacaoId].push({
-                        solicitacao_id: parseInt(solicitacaoId),
-                        unitario: formatarNumeroParaEnvio(unitario),
-                        total: formatarNumeroParaEnvio(totalText)
-                    });
-                }
+        // ============================================
+        // FUNÇÕES DE FORMATAÇÃO
+        // ============================================
+        function formatarNumero(numero, casasDecimais = 2) {
+            if (isNaN(numero)) numero = 0;
+            return numero.toLocaleString('pt-BR', {
+                minimumFractionDigits: casasDecimais,
+                maximumFractionDigits: casasDecimais
             });
-        });
-
-        return JSON.stringify(materiaisPorCotacao);
-    }
-
-    // ============================================
-    // FUNÇÕES DE GERENCIAMENTO DE COTAÇÕES
-    // ============================================
-
-    // Função para adicionar nova cotação
-    function adicionarNovaCotacao() {
-        console.log('Clicou no botão para adicionar nova cotação!');
-
-        // Contar cotações atuais
-        const cotacoesAtuais = $('.cotacao-card').length;
-        console.log('Cotações atuais:', cotacoesAtuais);
-
-        if (cotacoesAtuais >= MAX_COTACOES) {
-            alert(`Limite máximo de ${MAX_COTACOES} cotações atingido.`);
-            return;
         }
 
-        // Calcular próximo ID
-        const novoId = contadorCotacoes + 1;
-        console.log('Novo ID da cotação:', novoId);
-
-        // Criar HTML da nova cotação
-        const novaCotacaoHTML = `
-            <div class="cotacao-card" id="cotacao-${novoId}">
-                <button type="button" class="btn-remove-cotacao" onclick="removerCotacao(${novoId})">
-                    <i class="bi bi-x"></i>
-                </button>
+        function formatarNumeroParaEnvio(numero) {
+            if (typeof numero === 'string') {
+                if (numero.includes('.') && !numero.includes(',')) {
+                    const resultado = parseFloat(numero);
+                    return isNaN(resultado) ? 0 : resultado;
+                }
                 
-                <div class="fornecedor-info">
-                    <div><strong>Nome:</strong> <span id="fornecedor-nome-display-${novoId}"></span></div>
-                    <div><strong>CNPJ:</strong> <span id="fornecedor-cnpj-display-${novoId}"></span></div>
-                    <div><strong>Telefone:</strong> <span id="fornecedor-telefone-display-${novoId}"></span></div>
-                    <div><strong>Endereço:</strong> <span id="fornecedor-endereco-display-${novoId}"></span></div>
-                </div>
+                let limpo = numero.toString().replace(/[^\d,.-]/g, '');
 
-                <div class="cotacao-form">
-                    <div class="form-group">
-                        <label class="form-label">Fornecedor *</label>
-                        <select class="form-select fornecedor-select" id="fornecedor_${novoId}" name="fornecedor[]">
-                            <option value="">Selecione um fornecedor</option>
-                        </select>
-                        <input type="hidden" id="fornecedor_id_${novoId}" name="fornecedor_id[]" value="">
-                        <input type="hidden" name="preenchimento_id[]" value="">
-                    </div>
-                </div>
+                if (!limpo) return 0;
 
-                <div class="materiais-container" id="materiais-container-${novoId}" style="display: none;">
-                    <table class="materiais-table" id="materiais-table-${novoId}">
-                        <thead>
-                            <tr>
-                                <th class="descricao">Descrição</th>
-                                <th class="quantidade">Qtd</th>
-                                <th class="unidade">Unidade</th>
-                                <th class="unitario">Unitário (R$)</th>
-                                <th class="total">Total (R$)</th>
-                                <th class="acoes">ID</th>
-                            </tr>
-                        </thead>
-                        <tbody id="materiais-body-${novoId}"></tbody>
-                    </table>
-                </div>
+                if (limpo.includes(',')) {
+                    const ultimoPonto = limpo.lastIndexOf('.');
+                    const ultimaVirgula = limpo.lastIndexOf(',');
+                    
+                    if (ultimaVirgula > ultimoPonto) {
+                        limpo = limpo.replace(/\./g, '');
+                        limpo = limpo.replace(',', '.');
+                    }
+                    else if (ultimoPonto > ultimaVirgula) {
+                        limpo = limpo.replace(/,/g, '');
+                    }
+                }
 
-                <div id="botoes-materiais-${novoId}" style="display: none;">
-                    <button type="button" class="btn-add-all" onclick="adicionarTodosMateriais(${novoId})">
-                        <i class="bi bi-list-check"></i> Adicionar Todos os Materiais
-                    </button>
-                </div>
-
-                <div class="cotacao-form mt-3">
-                    <div class="form-group">
-                        <label class="form-label">Valor do Frete (R$)</label>
-                        <div class="input-group valor-input">
-                            <span class="input-group-text">R$</span>
-                            <input type="text" class="form-control valor-frete" id="valor_frete_${novoId}" name="valor_frete[]" placeholder="0,00">
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Prazo de Entrega</label>
-                        <input type="text" class="form-control" id="prazo_entrega_${novoId}" name="prazo_entrega[]" placeholder="Ex.: 10 dias úteis">
-                    </div>
-
-                    <!-- CAMPO DE DESCONTO ORIGINAL (sem input-group) -->
-                    <div class="form-group">
-                        <label class="form-label">Valor do Desconto</label>
-                        <input type="text" class="form-control" id="condicao_pagamento_${novoId}"
-                            name="condicao_pagamento[]" placeholder="Digite valor do desconto!">
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Anexar PDF da Cotação</label>
-                        <input type="file" class="form-control" id="pdf_file_${novoId}" name="pdf_file[]" accept=".pdf">
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Observações</label>
-                        <textarea class="form-control" id="observacao_${novoId}" name="observacao[]" rows="2" placeholder="Informações adicionais..."></textarea>
-                    </div>
-                </div>
-
-                <div class="total-fornecedor">
-                    <div class="total-line"><span>Total Produtos:</span><span class="total-produtos" id="total-produtos-${novoId}">R$ 0,00</span></div>
-                    <div class="total-line frete-line"><span>Frete:</span><span class="total-frete" id="total-frete-display-${novoId}">R$ 0,00</span></div>
-                    <div class="total-line desconto-line"><span>Desconto:</span><span class="total-desconto" id="total-desconto-display-${novoId}">R$ 0,00</span></div>
-                    <div class="total-geral-fornecedor" id="total-geral-fornecedor-${novoId}">Total Geral: R$ 0,00</div>
-                </div>
-                
-                <!-- Campo oculto para dados dos materiais salvos -->
-                <input type="hidden" id="materiais_salvos_${novoId}" value="">
-            </div>
-        `;
-
-        // Adicionar ao container
-        $('#cotacoes-dinamicas').append(novaCotacaoHTML);
-        console.log('Cotação ' + novoId + ' adicionada ao DOM');
-
-        // Atualizar contador GLOBAL
-        contadorCotacoes = novoId;
-
-        // Mostrar botão de remover na primeira cotação se tiver mais de uma
-        if (novoId > 1) {
-            $('#btn-remove-1').show();
-        }
-
-        // Inicializar Select2 para a nova cotação
-        setTimeout(function () {
-            initSelect2ForCotacao(novoId);
-            configurarEventosCotacao(novoId);
-        }, 100);
-
-        // Rolar para nova cotação
-        setTimeout(function () {
-            const elemento = document.getElementById('cotacao-' + novoId);
-            if (elemento) {
-                elemento.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                const resultado = parseFloat(limpo);
+                return isNaN(resultado) ? 0 : resultado;
             }
-        }, 200);
-    }
-
-    // Função para configurar eventos de uma cotação
-    function configurarEventosCotacao(id) {
-        console.log('Configurando eventos para cotação', id);
-        
-        // Configurar máscara para campo de frete
-        $('#valor_frete_' + id).on('input', function () {
-            aplicarMascaraMonetaria($(this));
-            calcularTotalCotacao(id);
-        });
-        
-        // Configurar máscara para campo de desconto (condicao_pagamento)
-        $('#condicao_pagamento_' + id).on('input', function () {
-            aplicarMascaraMonetaria($(this));
-            calcularTotalCotacao(id);
-        });
-    }
-
-    // Função para remover cotação
-    function removerCotacao(id) {
-        if ($('.cotacao-card').length <= 1) {
-            alert('Não é possível remover a única cotação.');
-            return;
+            return numero;
         }
 
-        if (confirm('Tem certeza que deseja remover esta cotação?')) {
-            $('#cotacao-' + id).remove();
+        function numeroParaString4Decimais(numero) {
+            if (typeof numero === 'string') {
+                const num = parseFloat(numero);
+                if (!isNaN(num)) {
+                    return num.toFixed(4);
+                }
+                return '0.0000';
+            }
+            return numero.toFixed(4);
+        }
+
+        function aplicarMascaraMonetaria(input) {
+            let valor = input.val();
+            const isUnitario = input.hasClass('material-unitario');
+            const casasDecimais = isUnitario ? 4 : 2;
+
+            if (valor === '') {
+                input.val('');
+                return '';
+            }
+
+            if (valor.includes(',') && valor.split(',')[1]?.length === casasDecimais) {
+                return valor;
+            }
+
+            valor = valor.replace(/\D/g, '');
+
+            if (valor === '') {
+                input.val('');
+                return '';
+            }
+
+            const divisor = Math.pow(10, casasDecimais);
+            const numero = parseInt(valor) / divisor;
+            const formatado = formatarNumero(numero, casasDecimais);
+            input.val(formatado);
+
+            return numero.toString();
+        }
+
+        function formatCNPJ(cnpj) {
+            if (!cnpj) return '';
+            const apenasNumeros = cnpj.replace(/\D/g, '');
+            if (apenasNumeros.length !== 14) return cnpj;
+            return apenasNumeros.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5");
+        }
+
+        // ============================================
+        // FUNÇÕES DE GERENCIAMENTO DE COTAÇÕES - CORRIGIDAS
+        // ============================================
+        
+        function removerCotacao(id, fornecedorId = null) {
+            console.log(`Removendo cotação ${id}, Fornecedor ID: ${fornecedorId}`);
+            
+            const totalCotacoes = $('.cotacao-card').length;
+            if (totalCotacoes <= 1) {
+                alert('Não é possível remover a única cotação.');
+                return;
+            }
+
+            if (!confirm('Tem certeza que deseja remover esta cotação?')) {
+                return;
+            }
+
+            // Se a cotação tem um fornecedor_id no banco de dados, adicionar à lista de removidos
+            if (fornecedorId && fornecedorId !== '') {
+                if (!fornecedoresRemovidos.includes(fornecedorId)) {
+                    fornecedoresRemovidos.push(fornecedorId);
+                    console.log('✅ Fornecedor ID adicionado para exclusão:', fornecedorId);
+                }
+            }
+
+            // Remover o elemento do DOM
+            $(`#cotacao-${id}`).remove();
 
             // Atualizar contador
             contadorCotacoes = $('.cotacao-card').length;
-
-            // Reorganizar IDs se necessário
-            reorganizarIdsCotacoes();
-
+            
             // Esconder botão de remover da primeira se só tiver uma
-            if (contadorCotacoes === 1) {
+            if ($('.cotacao-card').length === 1) {
                 $('#btn-remove-1').hide();
+            } else {
+                $('#btn-remove-1').show();
             }
 
-            console.log('Cotação ' + id + ' removida. Total: ' + contadorCotacoes);
-        }
-    }
-
-    // Função para reorganizar IDs das cotações
-    function reorganizarIdsCotacoes() {
-        $('.cotacao-card').each(function(index) {
-            const novoId = index + 1;
-            const oldId = $(this).attr('id').replace('cotacao-', '');
+            // Atualizar o campo hidden com todos os fornecedores removidos
+            $('#fornecedores_removidos').val(JSON.stringify(fornecedoresRemovidos));
             
-            if (oldId != novoId) {
-                console.log('Reorganizando: ' + oldId + ' -> ' + novoId);
-                // Atualizar ID do card
-                $(this).attr('id', 'cotacao-' + novoId);
-                
-                // Atualizar botão de remover
-                $(this).find('.btn-remove-cotacao').attr('onclick', 'removerCotacao(' + novoId + ')');
-                
-                // Atualizar todos os IDs internos
-                $(this).find('[id*="' + oldId + '"]').each(function() {
-                    const oldAttr = $(this).attr('id');
-                    const newAttr = oldAttr.replace('_' + oldId, '_' + novoId);
-                    $(this).attr('id', newAttr);
-                });
-                
-                // Atualizar fornecedor_id
-                $(this).find('[id^="fornecedor_id_"]').attr('id', 'fornecedor_id_' + novoId);
-                $(this).find('[id^="fornecedor_"]').attr('id', 'fornecedor_' + novoId);
-                
-                // Atualizar nomes dos campos
-                $(this).find('[name*="fornecedor_id"]').attr('name', 'fornecedor_id[]');
-                $(this).find('[name*="valor_frete"]').attr('name', 'valor_frete[]');
-                $(this).find('[name*="condicao_pagamento"]').attr('name', 'condicao_pagamento[]');
-                $(this).find('[name*="prazo_entrega"]').attr('name', 'prazo_entrega[]');
-                $(this).find('[name*="pdf_file"]').attr('name', 'pdf_file[]');
-                $(this).find('[name*="observacao"]').attr('name', 'observacao[]');
-            }
-        });
-        
-        // Atualizar contador global
-        contadorCotacoes = $('.cotacao-card').length;
-    }
-
-    // ============================================
-    // FUNÇÕES DE FORNECEDORES
-    // ============================================
-
-    // Função para inicializar Select2 de uma cotação
-    function initSelect2ForCotacao(id) {
-        console.log('Inicializando Select2 para cotação', id);
-
-        // Destruir Select2 se já existir
-        if ($('#fornecedor_' + id).hasClass('select2-hidden-accessible')) {
-            $('#fornecedor_' + id).select2('destroy');
+            console.log('🗑️ Cotação removida. Restam:', $('.cotacao-card').length);
+            console.log('📋 Fornecedores para excluir no servidor:', fornecedoresRemovidos);
         }
 
-        $('#fornecedor_' + id).select2({
-            placeholder: 'Digite nome ou CNPJ do fornecedor',
-            allowClear: true,
-            minimumInputLength: 2,
-            width: '100%',
-            ajax: {
-                url: '{{ url_for("routes_bp.search_fornecedores") }}',
-                dataType: 'json',
-                delay: 250,
-                data: function (params) {
-                    return { q: params.term };
-                },
-                processResults: function (data) {
-                    return {
-                        results: data.map(function (fornecedor) {
-                            return {
-                                id: fornecedor.id,
-                                text: fornecedor.nome_fantasia + ' - CNPJ: ' + formatCNPJ(fornecedor.cnpj),
-                                nome_fantasia: fornecedor.nome_fantasia,
-                                cnpj: fornecedor.cnpj,
-                                telefone: fornecedor.telefone || '',
-                                endereco: fornecedor.endereco || '',
-                                bairro: fornecedor.bairro || '',
-                                cidade: fornecedor.cidade || '',
-                                estado: fornecedor.estado || ''
-                            };
-                        })
-                    };
-                },
-                cache: true
+        function adicionarNovaCotacao() {
+            console.log('Adicionando nova cotação...');
+
+            const cotacoesAtuais = $('.cotacao-card').length;
+            if (cotacoesAtuais >= MAX_COTACOES) {
+                alert(`Limite máximo de ${MAX_COTACOES} cotações atingido.`);
+                return;
             }
-        }).on('select2:select', function (e) {
-            const data = e.params.data;
-            $('#fornecedor_id_' + id).val(data.id);
 
-            // Atualizar informações do fornecedor
-            $('#fornecedor-nome-display-' + id).text(data.nome_fantasia || '');
-            $('#fornecedor-cnpj-display-' + id).text(formatCNPJ(data.cnpj) || '');
-            $('#fornecedor-telefone-display-' + id).text(data.telefone || '');
-
-            const enderecoCompleto = [
-                data.endereco || '',
-                data.bairro ? data.bairro : '',
-                data.cidade ? data.cidade : '',
-                data.estado ? data.estado : ''
-            ].filter(part => part).join(', ');
-
-            $('#fornecedor-endereco-display-' + id).text(enderecoCompleto);
-
-            console.log('Fornecedor selecionado na cotação ' + id + ':', data.text);
-
-            // Mostrar materiais
-            $('#materiais-container-' + id).show();
-            $('#botoes-materiais-' + id).show();
-
-            // Adicionar materiais
-            console.log('Adicionando materiais para cotação ' + id + '...');
-            adicionarTodosMateriais(id);
-        }).on('select2:clear', function () {
-            $('#fornecedor_id_' + id).val('');
-            $('#materiais-container-' + id).hide();
-            $('#botoes-materiais-' + id).hide();
-            $('#materiais-body-' + id).empty();
-            calcularTotalCotacao(id);
-
-            // Limpar informações do fornecedor
-            $('#fornecedor-nome-display-' + id).text('');
-            $('#fornecedor-cnpj-display-' + id).text('');
-            $('#fornecedor-telefone-display-' + id).text('');
-            $('#fornecedor-endereco-display-' + id).text('');
-        });
-    }
-
-    // ============================================
-    // FUNÇÕES DE MATERIAIS
-    // ============================================
-
-    // FUNÇÃO para adicionar todos os materiais
-// Função para adicionar todos os materiais (VERSÃO CORRIGIDA)
-function adicionarTodosMateriais(cotacaoId) {
-    console.log('Adicionando materiais para cotação ' + cotacaoId + '...');
-
-    // Verificar se há materiais
-    if (!materiaisSolicitacao || materiaisSolicitacao.length === 0) {
-        console.error('Nenhum material encontrado!');
-        alert('Erro: Nenhum material encontrado para esta solicitação.');
-        return;
-    }
-
-    // Limpar tabela
-    $('#materiais-body-' + cotacaoId).empty();
-
-    // Adicionar cada material
-    materiaisSolicitacao.forEach(function (material, index) {
-        const materialId = index + 1;
-
-        // Criar linha HTML SEM o oninput inline
-        const rowHTML = `
-            <tr id="material-${cotacaoId}-${materialId}">
-                <td class="descricao">
-                    <textarea class="material-descricao"
-                           name="material_descricao_${cotacaoId}[]"
-                           title="${material.descricao || ''}"
-                           readonly
-                           style="white-space: normal; word-break: break-word; overflow-wrap: break-word; height: auto; min-height: 38px; padding: 4px 6px; resize: none; border: 1px solid #e0e0e0; border-radius: 3px; font-size: 9.5px; line-height: 1.3; width: 100%; box-sizing: border-box;">${material.descricao || ''}</textarea>
-                    <input type="hidden" name="solicitacao_id[]" value="${material.id}">
-                </td>
-                <td class="quantidade">
-                    <input type="text" class="material-quantidade"
-                           name="quantidade[]"
-                           value="${material.quantidade}" 
-                           readonly
-                           style="background: #f5f5f5; cursor: not-allowed;">
-                </td>
-                <td class="unidade">
-                    <input type="text" class="material-unidade"
-                           name="material_unidade_${cotacaoId}[]"
-                           value="${material.unidade}" readonly
-                           style="background: #f5f5f5; cursor: not-allowed;">
-                </td>
-                <td class="unitario">
-                    <div class="valor-input" style="position: relative;">
-                        <input type="text" class="material-unitario"
-                               name="valor_unitario[]"
-                               placeholder="0,0000"
-                               required
-                               data-cotacao-id="${cotacaoId}"
-                               data-material-id="${materialId}">
-                        <span class="valor-simbolo">R$</span>
+            const novoId = contadorCotacoes + 1;
+            
+            const novaCotacaoHTML = `
+                <div class="cotacao-card" id="cotacao-${novoId}" data-cotacao-numero="Cotação #${novoId}">
+                    <button type="button" class="btn-remove-cotacao" onclick="removerCotacao(${novoId}, '')" 
+                            id="btn-remove-${novoId}" style="display: block;">
+                        <i class="bi bi-x"></i>
+                    </button>
+                    
+                    <div class="fornecedor-info">
+                        <div><strong>Nome:</strong> <span id="fornecedor-nome-display-${novoId}"></span></div>
+                        <div><strong>CNPJ:</strong> <span id="fornecedor-cnpj-display-${novoId}"></span></div>
+                        <div><strong>Telefone:</strong> <span id="fornecedor-telefone-display-${novoId}"></span></div>
+                        <div><strong>Endereço:</strong> <span id="fornecedor-endereco-display-${novoId}"></span></div>
                     </div>
-                </td>
-                <td class="total">
-                    <input type="text" class="material-total-display" 
-                           id="material-total-${cotacaoId}-${materialId}"
-                           value="R$ 0,00" readonly
-                           style="background: #f0f8ff; cursor: not-allowed;">
-                </td>
-                <td class="acoes">
-                    #${material.id}
-                </td>
-            </tr>
-        `;
 
-        // Adicionar linha à tabela
-        $('#materiais-body-' + cotacaoId).append(rowHTML);
+                    <div class="cotacao-form">
+                        <div class="form-group">
+                            <label class="form-label">Fornecedor *</label>
+                            <select class="form-select fornecedor-select" id="fornecedor_${novoId}" name="fornecedor[]">
+                                <option value="">Selecione um fornecedor</option>
+                            </select>
+                            <input type="hidden" id="fornecedor_id_${novoId}" name="fornecedor_id[]" value="">
+                            <!-- 🔴 CAMPO OCULTO PARA PREENCHIMENTO_ID (VAZIO NA NOVA COTAÇÃO) -->
+                            <input type="hidden" id="preenchimento_id_${novoId}" name="preenchimento_id[]" value="">
+                        </div>
+                    </div>
 
-        // Configurar evento de input PARA O CAMPO UNITÁRIO
-        const unitarioInput = $(`#material-${cotacaoId}-${materialId} .material-unitario`);
-        
-        // Configurar evento de input (CORREÇÃO AQUI)
-        unitarioInput.off('input').on('input', function () {
-            // Primeiro, aplicar a máscara monetária
-            aplicarMascaraMonetaria($(this));
-            
-            // Depois, calcular o total da linha
-            calcularTotalLinha(this, cotacaoId);
-        });
+                    <div class="materiais-container" id="materiais-container-${novoId}" style="display: none;">
+                        <table class="materiais-table" id="materiais-table-${novoId}">
+                            <thead>
+                                <tr>
+                                    <th class="descricao">Descrição</th>
+                                    <th class="quantidade">Qtd</th>
+                                    <th class="unidade">Unidade</th>
+                                    <th class="unitario">Unitário (R$)</th>
+                                    <th class="total">Total (R$)</th>
+                                    <th class="acoes">ID</th>
+                                </tr>
+                            </thead>
+                            <tbody id="materiais-body-${novoId}"></tbody>
+                        </table>
+                    </div>
 
-        // Configurar evento de blur para garantir o cálculo final
-        unitarioInput.off('blur').on('blur', function () {
-            aplicarMascaraMonetaria($(this));
-            calcularTotalLinha(this, cotacaoId);
-        });
+                    <div id="botoes-materiais-${novoId}" style="display: none;">
+                        <button type="button" class="btn-add-all" onclick="adicionarTodosMateriais(${novoId})">
+                            <i class="bi bi-list-check"></i> Adicionar Todos os Materiais
+                        </button>
+                    </div>
 
-        // Ajustar altura do textarea de descrição
-        const descricaoTextarea = $(`#material-${cotacaoId}-${materialId} .material-descricao`);
-        if (descricaoTextarea.length) {
-            // Forçar altura baseada no conteúdo
-            setTimeout(() => {
-                descricaoTextarea.css('height', 'auto');
-                const scrollHeight = descricaoTextarea[0].scrollHeight;
-                if (scrollHeight > 38) {
-                    descricaoTextarea.css('height', scrollHeight + 'px');
+                    <div class="cotacao-form mt-3">
+                        <div class="form-group">
+                            <label class="form-label">Valor do Frete (R$)</label>
+                            <div class="input-group valor-input">
+                                <span class="input-group-text">R$</span>
+                                <input type="text" class="form-control valor-frete" id="valor_frete_${novoId}" 
+                                       name="valor_frete[]" placeholder="0,00">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Prazo de Entrega</label>
+                            <input type="text" class="form-control" id="prazo_entrega_${novoId}" 
+                                   name="prazo_entrega[]" placeholder="Ex.: 10 dias úteis">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Valor do Desconto (R$)</label>
+                            <div class="input-group valor-input">
+                                <span class="input-group-text">R$</span>
+                                <input type="text" class="form-control" id="condicao_pagamento_${novoId}"
+                                    name="condicao_pagamento[]" placeholder="0,00">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Anexar PDF da Cotação</label>
+                            <input type="file" class="form-control" id="pdf_file_${novoId}" 
+                                   name="pdf_file[]" accept=".pdf">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Observações</label>
+                            <textarea class="form-control" id="observacao_${novoId}" name="observacao[]" 
+                                      rows="2" placeholder="Informações adicionais..."></textarea>
+                        </div>
+                    </div>
+
+                    <div class="total-fornecedor">
+                        <div class="total-line"><span>Total Produtos:</span><span class="total-produtos" 
+                             id="total-produtos-${novoId}">R$ 0,00</span></div>
+                        <div class="total-line frete-line"><span>Frete:</span><span class="total-frete" 
+                             id="total-frete-display-${novoId}">R$ 0,00</span></div>
+                        <div class="total-line desconto-line"><span>Desconto:</span><span class="total-desconto" 
+                             id="total-desconto-display-${novoId}">R$ 0,00</span></div>
+                        <div class="total-geral-fornecedor" id="total-geral-fornecedor-${novoId}">Total Geral: R$ 0,00</div>
+                    </div>
+                    
+                    <input type="hidden" id="materiais_salvos_${novoId}" value="[]">
+                </div>
+            `;
+
+            $('#cotacoes-dinamicas').append(novaCotacaoHTML);
+            contadorCotacoes = novoId;
+
+            if (novoId > 1) {
+                $('#btn-remove-1').show();
+            }
+
+            setTimeout(function() {
+                initSelect2ForCotacao(novoId);
+                configurarEventosCotacao(novoId);
+            }, 100);
+
+            setTimeout(function() {
+                const elemento = document.getElementById('cotacao-' + novoId);
+                if (elemento) {
+                    elemento.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                 }
-            }, 10);
+            }, 200);
         }
-    });
 
-    console.log('Materiais adicionados: ' + materiaisSolicitacao.length + ' linhas');
+        // ============================================
+        // FUNÇÕES DE FORNECEDORES
+        // ============================================
+        
+        function initSelect2ForCotacao(id) {
+            console.log('Inicializando Select2 para cotação', id);
 
-    // Recalcular totais após adicionar todos os materiais
-    setTimeout(() => {
-        calcularTotalCotacao(cotacaoId);
-    }, 100);
-}
+            if ($('#fornecedor_' + id).hasClass('select2-hidden-accessible')) {
+                $('#fornecedor_' + id).select2('destroy');
+            }
 
- // Função para adicionar materiais com valores salvos (VERSÃO CORRIGIDA)
-function adicionarMateriaisComValores(cotacaoId, materiaisSalvos) {
-    console.log('Adicionando materiais com valores para cotação ' + cotacaoId + ':', materiaisSalvos);
-    
-    // Limpar tabela
-    $('#materiais-body-' + cotacaoId).empty();
-    
-    // Criar um mapa de materiais salvos por ID de solicitação
-    const materiaisPorSolicitacao = {};
-    materiaisSalvos.forEach(material => {
-        materiaisPorSolicitacao[material.solicitacao_id] = material;
-    });
-    
-    // Adicionar cada material da solicitação
-    materiaisSolicitacao.forEach(function (material, index) {
-        const materialId = index + 1;
-        
-        // Verificar se temos valor salvo para este material
-        const materialSalvo = materiaisPorSolicitacao[material.id];
-        const valorUnitarioSalvo = materialSalvo ? materialSalvo.valor_unitario : 0;
-        
-        // **CORREÇÃO AQUI**: Converter o valor salvo para string com 4 casas decimais
-        const valorUnitarioParaInput = valorUnitarioSalvo > 0 ? 
-            formatarNumero(valorUnitarioSalvo, 4) : '';
-        
-        const valorTotal = valorUnitarioSalvo > 0 ? 
-            valorUnitarioSalvo * material.quantidade : 0;
-        
-        const descricaoSegura = material.descricao || '';
+            $('#fornecedor_' + id).select2({
+                placeholder: 'Digite nome ou CNPJ do fornecedor',
+                allowClear: true,
+                minimumInputLength: 2,
+                width: '100%',
+                ajax: {
+                    url: '{{ url_for("routes_bp.search_fornecedores") }}',
+                    dataType: 'json',
+                    delay: 250,
+                    data: function (params) {
+                        return { q: params.term };
+                    },
+                    processResults: function (data) {
+                        return {
+                            results: data.map(function (fornecedor) {
+                                return {
+                                    id: fornecedor.id,
+                                    text: fornecedor.nome_fantasia + ' - CNPJ: ' + formatCNPJ(fornecedor.cnpj),
+                                    nome_fantasia: fornecedor.nome_fantasia,
+                                    cnpj: fornecedor.cnpj,
+                                    telefone: fornecedor.telefone || '',
+                                    endereco: fornecedor.endereco || '',
+                                    bairro: fornecedor.bairro || '',
+                                    cidade: fornecedor.cidade || '',
+                                    estado: fornecedor.estado || ''
+                                };
+                            })
+                        };
+                    },
+                    cache: true
+                }
+            }).on('select2:select', function (e) {
+                const data = e.params.data;
+                $('#fornecedor_id_' + id).val(data.id);
+                $('#fornecedor-nome-display-' + id).text(data.nome_fantasia || '');
+                $('#fornecedor-cnpj-display-' + id).text(formatCNPJ(data.cnpj) || '');
+                $('#fornecedor-telefone-display-' + id).text(data.telefone || '');
 
-        const rowHTML = `
-            <tr id="material-${cotacaoId}-${materialId}">
-                <td class="descricao">
-                    <input type="text" class="material-descricao"
-                           name="material_descricao_${cotacaoId}[]"
-                           value="${descricaoSegura}" 
-                           title="${descricaoSegura}"
-                           readonly
-                           style="white-space: normal; word-break: break-word; overflow-wrap: break-word;">
-                    <input type="hidden" name="solicitacao_id[]" value="${material.id}">
-                </td>
-                <td class="quantidade">
-                    <input type="number" class="material-quantidade"
-                           name="quantidade[]"
-                           value="${material.quantidade}" 
-                           min="0" step="0.001" readonly>
-                </td>
-                <td class="unidade">
-                    <input type="text" class="material-unidade"
-                           name="material_unidade_${cotacaoId}[]"
-                           value="${material.unidade}" readonly>
-                </td>
-                <td class="unitario">
-                    <div class="valor-input" style="position: relative;">
-                        <input type="text" class="material-unitario"
-                               name="valor_unitario[]"
-                               placeholder="0,0000"
-                               value="${valorUnitarioParaInput}"
-                               required>
-                        <span class="valor-simbolo">R$</span>
-                    </div>
-                </td>
-                <td class="total">
-                    <input type="text" class="material-total-display" 
-                           id="material-total-${cotacaoId}-${materialId}"
-                           value="${valorUnitarioSalvo > 0 ? 'R$ ' + formatarNumero(valorTotal, 2) : 'R$ 0,00'}" 
-                           readonly>
-                </td>
-                <td class="acoes">
-                    #${material.id}
-                </td>
-            </tr>
-        `;
+                const enderecoCompleto = [
+                    data.endereco || '',
+                    data.bairro || '',
+                    data.cidade || '',
+                    data.estado || ''
+                ].filter(part => part).join(', ');
 
-        $('#materiais-body-' + cotacaoId).append(rowHTML);
+                $('#fornecedor-endereco-display-' + id).text(enderecoCompleto);
 
-        const unitarioInput = $(`#material-${cotacaoId}-${materialId} .material-unitario`);
+                $('#materiais-container-' + id).show();
+                $('#botoes-materiais-' + id).show();
+
+                adicionarTodosMateriais(id);
+            }).on('select2:clear', function () {
+                $('#fornecedor_id_' + id).val('');
+                $('#materiais-container-' + id).hide();
+                $('#botoes-materiais-' + id).hide();
+                $('#materiais-body-' + id).empty();
+                calcularTotalCotacao(id);
+
+                $('#fornecedor-nome-display-' + id).text('');
+                $('#fornecedor-cnpj-display-' + id).text('');
+                $('#fornecedor-telefone-display-' + id).text('');
+                $('#fornecedor-endereco-display-' + id).text('');
+            });
+        }
+
+        // ============================================
+        // FUNÇÕES DE MATERIAIS
+        // ============================================
         
-        // Configurar eventos para o campo unitário
-        unitarioInput.off('input').on('input', function () {
-            aplicarMascaraMonetaria($(this));
-            calcularTotalLinha(this, cotacaoId);
-        });
-        
-        // Adicionar evento de blur também
-        unitarioInput.off('blur').on('blur', function () {
-            aplicarMascaraMonetaria($(this));
-            calcularTotalLinha(this, cotacaoId);
-        });
-        
-        // Ajustar altura do campo de descrição
-        const descricaoInput = $(`#material-${cotacaoId}-${materialId} .material-descricao`);
-        if (descricaoInput.length) {
-            descricaoInput.css({
-                'white-space': 'normal',
-                'word-break': 'break-word',
-                'overflow-wrap': 'break-word',
-                'height': 'auto',
-                'min-height': '38px'
+        function adicionarTodosMateriais(cotacaoId) {
+            console.log('Adicionando materiais para cotação ' + cotacaoId + '...');
+
+            if (!materiaisSolicitacao || materiaisSolicitacao.length === 0) {
+                console.error('Nenhum material encontrado!');
+                alert('Erro: Nenhum material encontrado para esta solicitação.');
+                return;
+            }
+
+            $('#materiais-body-' + cotacaoId).empty();
+
+            materiaisSolicitacao.forEach(function (material, index) {
+                const materialId = index + 1;
+
+                const rowHTML = `
+                    <tr id="material-${cotacaoId}-${materialId}">
+                        <td class="descricao">
+                            <textarea class="material-descricao"
+                                   name="material_descricao_${cotacaoId}[]"
+                                   title="${material.descricao || ''}"
+                                   readonly
+                                   style="white-space: normal; word-break: break-word; overflow-wrap: break-word; height: auto; min-height: 38px; padding: 4px 6px; resize: none; border: 1px solid #e0e0e0; border-radius: 3px; font-size: 9.5px; line-height: 1.3; width: 100%; box-sizing: border-box;">${material.descricao || ''}</textarea>
+                            <input type="hidden" name="solicitacao_id[]" value="${material.id}">
+                        </td>
+                        <td class="quantidade">
+                            <input type="text" class="material-quantidade"
+                                   name="quantidade[]"
+                                   value="${material.quantidade}" 
+                                   readonly
+                                   style="background: #f5f5f5; cursor: not-allowed;">
+                        </td>
+                        <td class="unidade">
+                            <input type="text" class="material-unidade"
+                                   name="material_unidade_${cotacaoId}[]"
+                                   value="${material.unidade}" readonly
+                                   style="background: #f5f5f5; cursor: not-allowed;">
+                        </td>
+                        <td class="unitario">
+                            <div class="valor-input" style="position: relative;">
+                                <input type="text" class="material-unitario"
+                                       name="valor_unitario[]"
+                                       placeholder="0,0000"
+                                       required
+                                       data-cotacao-id="${cotacaoId}"
+                                       data-material-id="${materialId}">
+                                <span class="valor-simbolo">R$</span>
+                            </div>
+                        </td>
+                        <td class="total">
+                            <input type="text" class="material-total-display" 
+                                   id="material-total-${cotacaoId}-${materialId}"
+                                   value="R$ 0,00" readonly
+                                   style="background: #f0f8ff; cursor: not-allowed;">
+                        </td>
+                        <td class="acoes">
+                            #${material.id}
+                        </td>
+                    </tr>
+                `;
+
+                $('#materiais-body-' + cotacaoId).append(rowHTML);
+
+                const unitarioInput = $(`#material-${cotacaoId}-${materialId} .material-unitario`);
+                
+                unitarioInput.off('input').on('input', function () {
+                    aplicarMascaraMonetaria($(this));
+                    calcularTotalLinha(this, cotacaoId);
+                });
+
+                unitarioInput.off('blur').on('blur', function () {
+                    aplicarMascaraMonetaria($(this));
+                    calcularTotalLinha(this, cotacaoId);
+                });
+
+                const descricaoTextarea = $(`#material-${cotacaoId}-${materialId} .material-descricao`);
+                if (descricaoTextarea.length) {
+                    setTimeout(() => {
+                        descricaoTextarea.css('height', 'auto');
+                        const scrollHeight = descricaoTextarea[0].scrollHeight;
+                        if (scrollHeight > 38) {
+                            descricaoTextarea.css('height', scrollHeight + 'px');
+                        }
+                    }, 10);
+                }
+            });
+
+            console.log('Materiais adicionados: ' + materiaisSolicitacao.length + ' linhas');
+
+            // Verificar se há valores salvos para carregar
+            const materiaisSalvos = $('#materiais_salvos_' + cotacaoId).val();
+            if (materiaisSalvos && materiaisSalvos !== '[]') {
+                try {
+                    const dados = JSON.parse(materiaisSalvos);
+                    if (dados && dados.length > 0) {
+                        setTimeout(() => {
+                            carregarValoresMateriais(cotacaoId, dados);
+                        }, 200);
+                    }
+                } catch (e) {
+                    console.error('Erro ao carregar materiais salvos:', e);
+                }
+            }
+        }
+
+        function carregarValoresMateriais(cotacaoId, materiaisSalvos) {
+            console.log('Carregando valores salvos para cotação', cotacaoId, materiaisSalvos);
+            
+            const materiaisPorSolicitacao = {};
+            materiaisSalvos.forEach(material => {
+                materiaisPorSolicitacao[material.solicitacao_id] = material;
             });
             
-            setTimeout(() => {
-                const scrollHeight = descricaoInput[0].scrollHeight;
-                if (scrollHeight > 38) {
-                    descricaoInput.css('height', scrollHeight + 'px');
+            $('#materiais-body-' + cotacaoId + ' tr').each(function() {
+                const solicitacaoId = $(this).find('input[name="solicitacao_id[]"]').val();
+                const materialSalvo = materiaisPorSolicitacao[parseInt(solicitacaoId)];
+                
+                if (materialSalvo && materialSalvo.valor_unitario > 0) {
+                    const unitarioInput = $(this).find('.material-unitario');
+                    const valorFormatado = formatarNumero(materialSalvo.valor_unitario, 4);
+                    unitarioInput.val(valorFormatado);
+                    calcularTotalLinha(unitarioInput[0], cotacaoId);
                 }
-            }, 10);
+            });
         }
-        
-        // Se tiver valor salvo, calcular total da linha
-        if (valorUnitarioSalvo > 0) {
-            setTimeout(function() {
-                const input = $(`#material-${cotacaoId}-${materialId} .material-unitario`)[0];
-                if (input) {
-                    calcularTotalLinha(input, cotacaoId);
+
+        function adicionarMateriaisComValores(cotacaoId, materiaisSalvos) {
+            console.log('Adicionando materiais com valores para cotação ' + cotacaoId + ':', materiaisSalvos);
+            
+            $('#materiais-body-' + cotacaoId).empty();
+            
+            const materiaisPorSolicitacao = {};
+            materiaisSalvos.forEach(material => {
+                materiaisPorSolicitacao[material.solicitacao_id] = material;
+            });
+            
+            materiaisSolicitacao.forEach(function (material, index) {
+                const materialId = index + 1;
+                
+                const materialSalvo = materiaisPorSolicitacao[material.id];
+                const valorUnitarioSalvo = materialSalvo ? materialSalvo.valor_unitario : 0;
+                
+                const valorUnitarioParaInput = valorUnitarioSalvo > 0 ? 
+                    formatarNumero(valorUnitarioSalvo, 4) : '';
+                
+                const valorTotal = valorUnitarioSalvo > 0 ? 
+                    valorUnitarioSalvo * material.quantidade : 0;
+                
+                const rowHTML = `
+                    <tr id="material-${cotacaoId}-${materialId}">
+                        <td class="descricao">
+                            <textarea class="material-descricao"
+                                   name="material_descricao_${cotacaoId}[]"
+                                   title="${material.descricao || ''}"
+                                   readonly
+                                   style="white-space: normal; word-break: break-word; overflow-wrap: break-word; height: auto; min-height: 38px; padding: 4px 6px; resize: none; border: 1px solid #e0e0e0; border-radius: 3px; font-size: 9.5px; line-height: 1.3; width: 100%; box-sizing: border-box;">${material.descricao || ''}</textarea>
+                            <input type="hidden" name="solicitacao_id[]" value="${material.id}">
+                        </td>
+                        <td class="quantidade">
+                            <input type="text" class="material-quantidade"
+                                   name="quantidade[]"
+                                   value="${material.quantidade}" 
+                                   readonly
+                                   style="background: #f5f5f5; cursor: not-allowed;">
+                        </td>
+                        <td class="unidade">
+                            <input type="text" class="material-unidade"
+                                   name="material_unidade_${cotacaoId}[]"
+                                   value="${material.unidade}" readonly
+                                   style="background: #f5f5f5; cursor: not-allowed;">
+                        </td>
+                        <td class="unitario">
+                            <div class="valor-input" style="position: relative;">
+                                <input type="text" class="material-unitario"
+                                       name="valor_unitario[]"
+                                       placeholder="0,0000"
+                                       value="${valorUnitarioParaInput}"
+                                       required
+                                       data-cotacao-id="${cotacaoId}"
+                                       data-material-id="${materialId}">
+                                <span class="valor-simbolo">R$</span>
+                            </div>
+                        </td>
+                        <td class="total">
+                            <input type="text" class="material-total-display" 
+                                   id="material-total-${cotacaoId}-${materialId}"
+                                   value="${valorUnitarioSalvo > 0 ? 'R$ ' + formatarNumero(valorTotal, 2) : 'R$ 0,00'}" 
+                                   readonly
+                                   style="background: #f0f8ff; cursor: not-allowed;">
+                        </td>
+                        <td class="acoes">
+                            #${material.id}
+                        </td>
+                    </tr>
+                `;
+
+                $('#materiais-body-' + cotacaoId).append(rowHTML);
+
+                const unitarioInput = $(`#material-${cotacaoId}-${materialId} .material-unitario`);
+                
+                unitarioInput.off('input').on('input', function () {
+                    aplicarMascaraMonetaria($(this));
+                    calcularTotalLinha(this, cotacaoId);
+                });
+                
+                unitarioInput.off('blur').on('blur', function () {
+                    aplicarMascaraMonetaria($(this));
+                    calcularTotalLinha(this, cotacaoId);
+                });
+                
+                if (valorUnitarioSalvo > 0) {
+                    setTimeout(function() {
+                        calcularTotalLinha(unitarioInput[0], cotacaoId);
+                    }, 50);
                 }
-            }, 50);
+            });
         }
-    });
 
-    console.log('Materiais adicionados com valores: ' + materiaisSolicitacao.length + ' linhas');
-}
-
-    // ============================================
-    // FUNÇÕES DE CÁLCULO
-    // ============================================
-
-    // Função para calcular total de uma linha
-    function calcularTotalLinha(input, cotacaoId) {
-        const row = $(input).closest('tr');
-        const quantidade = parseFloat(row.find('.material-quantidade').val()) || 0;
-        const unitarioStr = $(input).val();
-        const unitario = formatarNumeroParaEnvio(unitarioStr);
-        const total = quantidade * unitario;
-
-        // Total com 2 casas decimais
-        const totalFormatado = 'R$ ' + formatarNumero(total, 2);
-        row.find('.material-total-display').val(totalFormatado);
-
-        calcularTotalCotacao(cotacaoId);
-    }
-
-    // Função para calcular total da cotação
-    function calcularTotalCotacao(cotacaoId) {
-        let totalProdutos = 0;
-
-        $('#materiais-body-' + cotacaoId + ' tr').each(function () {
-            const totalText = $(this).find('.material-total-display').val();
-            if (totalText) {
-                const total = formatarNumeroParaEnvio(totalText);
-                totalProdutos += total;
-            }
-        });
-
-        const freteStr = $('#valor_frete_' + cotacaoId).val() || '0';
-        const frete = formatarNumeroParaEnvio(freteStr);
+        // ============================================
+        // FUNÇÕES DE CÁLCULO
+        // ============================================
         
-        // O desconto está no campo condicao_pagamento
-        const descontoStr = $('#condicao_pagamento_' + cotacaoId).val() || '0';
-        const desconto = formatarNumeroParaEnvio(descontoStr);
-        
-        const totalGeral = totalProdutos + frete - desconto;
+        function calcularTotalLinha(input, cotacaoId) {
+            const row = $(input).closest('tr');
+            const quantidade = parseFloat(row.find('.material-quantidade').val()) || 0;
+            const unitarioStr = $(input).val();
+            const unitario = formatarNumeroParaEnvio(unitarioStr);
+            const total = quantidade * unitario;
 
-        $('#total-produtos-' + cotacaoId).text('R$ ' + formatarNumero(totalProdutos, 2));
-        $('#total-frete-display-' + cotacaoId).text('R$ ' + formatarNumero(frete, 2));
-        $('#total-desconto-display-' + cotacaoId).text('R$ ' + formatarNumero(desconto, 2));
-        $('#total-geral-fornecedor-' + cotacaoId).text('Total Geral: R$ ' + formatarNumero(totalGeral, 2));
-    }
+            const totalFormatado = 'R$ ' + formatarNumero(total, 2);
+            row.find('.material-total-display').val(totalFormatado);
 
-    // ============================================
-    // FUNÇÕES AUXILIARES
-    // ============================================
-
-    // Funções auxiliares
-    function formatCNPJ(cnpj) {
-        if (!cnpj) return '';
-        const apenasNumeros = cnpj.replace(/\D/g, '');
-        if (apenasNumeros.length !== 14) return cnpj;
-        return apenasNumeros.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5");
-    }
-
-    // Função para preencher cotação com dados salvos
-    function preencherCotacaoSalva(cotacaoId, dados) {
-        console.log('Preenchendo cotação ' + cotacaoId + ' com dados salvos:', dados);
-        
-        if (!dados.fornecedor_id) return;
-        
-        // Adicionar opção ao Select2
-        const option = new Option(dados.fornecedor_nome_fantasia + ' - CNPJ: ' + formatCNPJ(dados.fornecedor_cnpj), dados.fornecedor_id, true, true);
-        $('#fornecedor_' + cotacaoId).append(option).trigger('change');
-        $('#fornecedor_id_' + cotacaoId).val(dados.fornecedor_id);
-        
-        // Atualizar informações do fornecedor
-        $('#fornecedor-nome-display-' + cotacaoId).text(dados.fornecedor_nome_fantasia || '');
-        $('#fornecedor-cnpj-display-' + cotacaoId).text(formatCNPJ(dados.fornecedor_cnpj) || '');
-        $('#fornecedor-telefone-display-' + cotacaoId).text(dados.fornecedor_telefone || '');
-        $('#fornecedor-endereco-display-' + cotacaoId).text(dados.fornecedor_endereco || '');
-        
-        // Mostrar materiais
-        $('#materiais-container-' + cotacaoId).show();
-        $('#botoes-materiais-' + cotacaoId).show();
-        
-        // Adicionar materiais COM VALORES SALVOS
-        setTimeout(function() {
-            adicionarMateriaisComValores(cotacaoId, dados.materiais || []);
-            
-            // Preencher outros campos
-            if (dados.valor_frete && dados.valor_frete > 0) {
-                $('#valor_frete_' + cotacaoId).val(formatarNumero(dados.valor_frete, 2));
-            }
-            
-            // O desconto agora está em condicao_pagamento
-            if (dados.condicao_pagamento) {
-                $('#condicao_pagamento_' + cotacaoId).val(dados.condicao_pagamento);
-            }
-            
-            if (dados.prazo_entrega) {
-                $('#prazo_entrega_' + cotacaoId).val(dados.prazo_entrega);
-            }
-            
-            if (dados.observacoes) {
-                $('#observacao_' + cotacaoId).val(dados.observacoes);
-            }
-            
             calcularTotalCotacao(cotacaoId);
-        }, 200);
-    }
-
-    // ============================================
-    // INICIALIZAÇÃO DA PÁGINA
-    // ============================================
-
-    // Inicializar quando a página carregar
-    $(document).ready(function () {
-        console.log('Página carregada!');
-        console.log('Materiais disponíveis:', materiaisSolicitacao);
-        
-        // Dados salvos para cada cotação
-        const cotacoesSalvasData = [
-            {% for cotacao in cotacoes_salvas %}
-            {
-                id: {{ cotacao.id if cotacao.id else 'null' }},
-                fornecedor_id: {{ cotacao.fornecedor_id if cotacao.fornecedor_id else 'null' }},
-                fornecedor_nome_fantasia: '{{ cotacao.fornecedor_nome_fantasia | replace("'", "\\'") if cotacao.fornecedor_nome_fantasia else '' }}',
-                fornecedor_cnpj: '{{ cotacao.fornecedor_cnpj if cotacao.fornecedor_cnpj else '' }}',
-                fornecedor_telefone: '{{ cotacao.fornecedor_telefone or "" }}',
-                fornecedor_endereco: '{{ cotacao.fornecedor_endereco or "" }}',
-                valor_frete: {{ cotacao.valor_frete if cotacao.valor_frete else 0 }},
-                condicao_pagamento: '{{ cotacao.condicao_pagamento or "" }}',
-                prazo_entrega: '{{ cotacao.prazo_entrega or "" }}',
-                observacoes: '{{ cotacao.observacoes or "" }}',
-                materiais: {{ cotacao.materiais | tojson | safe if cotacao.materiais else '[]' }}
-            }{% if not loop.last %},{% endif %}
-            {% endfor %}
-        ];
-        
-        console.log('Dados das cotações carregadas:', cotacoesSalvasData);
-        
-        // Inicializar Select2 para TODAS as cotações existentes
-        const totalCotacoes = {{ cotacoes_salvas|length if cotacoes_salvas else 1 }};
-        console.log('Total de cotações a inicializar:', totalCotacoes);
-        
-        for (let i = 1; i <= totalCotacoes; i++) {
-            initSelect2ForCotacao(i);
-            configurarEventosCotacao(i);
-            
-            // Se tiver dados salvos para esta cotação, preencher
-            const cotacaoIndex = i - 1;
-            if (cotacoesSalvasData[cotacaoIndex] && cotacoesSalvasData[cotacaoIndex].fornecedor_id) {
-                setTimeout(function() {
-                    preencherCotacaoSalva(i, cotacoesSalvasData[cotacaoIndex]);
-                }, i * 200);
-            }
         }
-        
-        // Atualizar contador global
-        contadorCotacoes = totalCotacoes;
-        
-        // Configurar evento para máscara de valores ao digitar
-        $(document).on('input', '.material-unitario, .valor-frete, [id^="condicao_pagamento_"]', function () {
-            aplicarMascaraMonetaria($(this));
+
+        function calcularTotalCotacao(cotacaoId) {
+            let totalProdutos = 0;
+
+            $('#materiais-body-' + cotacaoId + ' tr').each(function () {
+                const totalText = $(this).find('.material-total-display').val();
+                if (totalText) {
+                    const total = formatarNumeroParaEnvio(totalText);
+                    totalProdutos += total;
+                }
+            });
+
+            const freteStr = $('#valor_frete_' + cotacaoId).val() || '0';
+            const frete = formatarNumeroParaEnvio(freteStr);
             
-            // Se for campo de materiais, calcular linha
-            if ($(this).hasClass('material-unitario')) {
-                const cotacaoId = $(this).closest('.cotacao-card').attr('id').replace('cotacao-', '');
-                calcularTotalLinha(this, cotacaoId);
-            }
+            const descontoStr = $('#condicao_pagamento_' + cotacaoId).val() || '0';
+            const desconto = formatarNumeroParaEnvio(descontoStr);
             
-            // Se for campo de frete ou desconto, calcular total da cotação
-            if ($(this).hasClass('valor-frete') || $(this).attr('id')?.startsWith('condicao_pagamento_')) {
-                const cotacaoId = $(this).closest('.cotacao-card').attr('id').replace('cotacao-', '');
+            const totalGeral = totalProdutos + frete - desconto;
+
+            $('#total-produtos-' + cotacaoId).text('R$ ' + formatarNumero(totalProdutos, 2));
+            $('#total-frete-display-' + cotacaoId).text('R$ ' + formatarNumero(frete, 2));
+            $('#total-desconto-display-' + cotacaoId).text('R$ ' + formatarNumero(desconto, 2));
+            $('#total-geral-fornecedor-' + cotacaoId).text('Total Geral: R$ ' + formatarNumero(totalGeral, 2));
+        }
+
+        function configurarEventosCotacao(id) {
+            console.log('Configurando eventos para cotação', id);
+            
+            $('#valor_frete_' + id).off('input').on('input', function () {
+                aplicarMascaraMonetaria($(this));
+                calcularTotalCotacao(id);
+            });
+            
+            $('#condicao_pagamento_' + id).off('input').on('input', function () {
+                aplicarMascaraMonetaria($(this));
+                calcularTotalCotacao(id);
+            });
+        }
+
+        // ============================================
+        // FUNÇÕES DE PREENCHIMENTO DE DADOS SALVOS
+        // ============================================
+        
+        function preencherCotacaoSalva(cotacaoId, dados) {
+            console.log('Preenchendo cotação ' + cotacaoId + ' com dados salvos:', dados);
+            
+            if (!dados.fornecedor_id) return;
+            
+            const option = new Option(dados.fornecedor_nome_fantasia + ' - CNPJ: ' + formatCNPJ(dados.fornecedor_cnpj), dados.fornecedor_id, true, true);
+            $('#fornecedor_' + cotacaoId).append(option).trigger('change');
+            $('#fornecedor_id_' + cotacaoId).val(dados.fornecedor_id);
+            
+            $('#fornecedor-nome-display-' + cotacaoId).text(dados.fornecedor_nome_fantasia || '');
+            $('#fornecedor-cnpj-display-' + cotacaoId).text(formatCNPJ(dados.fornecedor_cnpj) || '');
+            $('#fornecedor-telefone-display-' + cotacaoId).text(dados.fornecedor_telefone || '');
+            $('#fornecedor-endereco-display-' + cotacaoId).text(dados.fornecedor_endereco || '');
+            
+            $('#materiais-container-' + cotacaoId).show();
+            $('#botoes-materiais-' + cotacaoId).show();
+            
+            setTimeout(function() {
+                adicionarMateriaisComValores(cotacaoId, dados.materiais || []);
+                
+                if (dados.valor_frete && dados.valor_frete > 0) {
+                    $('#valor_frete_' + cotacaoId).val(formatarNumero(dados.valor_frete, 2));
+                }
+                
+                if (dados.condicao_pagamento && dados.condicao_pagamento > 0) {
+                    $('#condicao_pagamento_' + cotacaoId).val(formatarNumero(dados.condicao_pagamento, 2));
+                }
+                
+                if (dados.prazo_entrega) {
+                    $('#prazo_entrega_' + cotacaoId).val(dados.prazo_entrega);
+                }
+                
+                if (dados.observacoes) {
+                    $('#observacao_' + cotacaoId).val(dados.observacoes);
+                }
+                
                 calcularTotalCotacao(cotacaoId);
+            }, 200);
+        }
+
+        // ============================================
+        // FUNÇÕES DE GERAÇÃO DE JSON
+        // ============================================
+        
+        function gerarJsonMateriais() {
+            const materiaisPorCotacao = {};
+
+            $('.cotacao-card').each(function() {
+                const cotacaoId = $(this).attr('id').replace('cotacao-', '');
+                const fornecedorId = $('#fornecedor_id_' + cotacaoId).val();
+                
+                // Pular cotações com fornecedor na lista de removidos
+                if (fornecedoresRemovidos.includes(fornecedorId)) {
+                    return;
+                }
+
+                if (!fornecedorId) {
+                    return;
+                }
+
+                materiaisPorCotacao[cotacaoId] = [];
+
+                $('#materiais-body-' + cotacaoId + ' tr').each(function(index) {
+                    const solicitacaoId = $(this).find('input[name="solicitacao_id[]"]').val();
+                    const unitario = $(this).find('.material-unitario').val();
+
+                    if (solicitacaoId && unitario && unitario !== '' && unitario !== '0,0000') {
+                        materiaisPorCotacao[cotacaoId].push({
+                            solicitacao_id: parseInt(solicitacaoId),
+                            unitario: formatarNumeroParaEnvio(unitario)
+                        });
+                    }
+                });
+            });
+
+            return JSON.stringify(materiaisPorCotacao);
+        }
+
+        // ============================================
+        // SUBMISSÃO DO FORMULÁRIO - CORRIGIDA
+        // ============================================
+        
+        $('#cotacoes-form').on('submit', function (e) {
+            e.preventDefault();
+            
+            const clickedButton = $(e.originalEvent.submitter || document.activeElement);
+            let actionValue = clickedButton.val();
+            
+            console.log('Botão clicado:', clickedButton.attr('name'));
+            
+            // Determinar ação
+            let finalAction = actionValue;
+            if (!finalAction) {
+                if (clickedButton.attr('name') === 'salvar_finalizar') {
+                    finalAction = 'salvar_finalizar';
+                } else if (clickedButton.attr('name') === 'salvar_rascunho') {
+                    finalAction = 'salvar_rascunho';
+                } else {
+                    const userChoice = confirm('Deseja salvar como rascunho ou finalizar?\n\nClique OK para finalizar e enviar para aprovação.\nClique Cancelar para salvar como rascunho.');
+                    finalAction = userChoice ? 'salvar_finalizar' : 'salvar_rascunho';
+                }
             }
-        });
-    });
+            
+            console.log('Action final:', finalAction);
+            const isFinalizar = finalAction === 'salvar_finalizar';
+            
+            // Garantir que fornecedores removidos estão no campo hidden
+            $('#fornecedores_removidos').val(JSON.stringify(fornecedoresRemovidos));
+            
+            // Gerar JSON de materiais APENAS das cotações válidas
+            const materiaisJson = gerarJsonMateriais();
+            $('#materiais_json').val(materiaisJson);
+            
+            // Formatar valores para envio
+            $('.material-unitario').each(function() {
+                const valor = $(this).val();
+                if (valor) {
+                    const valorParaEnvio = formatarNumeroParaEnvio(valor);
+                    $(this).val(numeroParaString4Decimais(valorParaEnvio));
+                }
+            });
 
-   // ============================================
-// VALIDAÇÃO DO FORMULÁRIO - VERSÃO CORRIGIDA
-// ============================================
+            $('.valor-frete').each(function() {
+                const valor = $(this).val();
+                if (valor) {
+                    const valorParaEnvio = formatarNumeroParaEnvio(valor);
+                    $(this).val(valorParaEnvio.toFixed(2));
+                }
+            });
+            
+            $('[id^="condicao_pagamento_"]').each(function() {
+                const valor = $(this).val();
+                if (valor) {
+                    const valorParaEnvio = formatarNumeroParaEnvio(valor);
+                    $(this).val(valorParaEnvio.toFixed(2));
+                }
+            });
 
-// Validação do formulário - VERSÃO SIMPLIFICADA
-$('#cotacoes-form').on('submit', function (e) {
-    e.preventDefault();
-    
-    // Determinar qual botão foi clicado
-    const clickedButton = $(e.originalEvent.submitter || document.activeElement);
-    const actionValue = clickedButton.val();
-    
-    console.log('DEBUG JS - Botão clicado:', clickedButton);
-    console.log('DEBUG JS - Valor do botão:', actionValue);
-    
-    // Garantir que temos um action
-    let finalAction = actionValue;
-    if (!finalAction) {
-        // Tentar encontrar o action de outras formas
-        if (clickedButton.attr('name') === 'salvar_finalizar') {
-            finalAction = 'salvar_finalizar';
-        } else if (clickedButton.attr('name') === 'salvar_rascunho') {
-            finalAction = 'salvar_rascunho';
-        } else {
-            // Se não conseguir determinar, pedir confirmação
-            const userChoice = confirm('Deseja salvar como rascunho ou finalizar?\n\nClique OK para finalizar e enviar para aprovação.\nClique Cancelar para salvar como rascunho.');
-            finalAction = userChoice ? 'salvar_finalizar' : 'salvar_rascunho';
-        }
-    }
-    
-    console.log('DEBUG JS - Action final:', finalAction);
-    const isFinalizar = finalAction === 'salvar_finalizar';
-    
-    // Gerar JSON de materiais
-    const materiaisJson = gerarJsonMateriais();
-    $('#materiais_json').val(materiaisJson);
-    console.log('DEBUG JS - JSON gerado:', materiaisJson);
+            // VALIDAÇÃO - IGNORAR FORNECEDORES NA LISTA DE REMOÇÃO
+            let isValid = true;
+            let hasValidCotacao = false;
+            let errorMessage = '';
 
-    // Formatar todos os valores para o padrão de envio
-    $('.material-unitario').each(function () {
-        const valor = $(this).val();
-        if (valor) {
-            const valorParaEnvio = formatarNumeroParaEnvio(valor);
-            $(this).val(numeroParaString4Decimais(valorParaEnvio));
-        }
-    });
+            $('.cotacao-card').each(function() {
+                const cotacaoId = $(this).attr('id').replace('cotacao-', '');
+                const fornecedorId = $('#fornecedor_id_' + cotacaoId).val();
+                
+                // Pular cotações com fornecedor na lista de removidos
+                if (fornecedoresRemovidos.includes(fornecedorId)) {
+                    return;
+                }
 
-    $('.valor-frete').each(function () {
-        const valor = $(this).val();
-        if (valor) {
-            const valorParaEnvio = formatarNumeroParaEnvio(valor);
-            $(this).val(valorParaEnvio.toFixed(2));
-        }
-    });
-    
-    // Formatar também os valores de desconto (condicao_pagamento)
-    $('[id^="condicao_pagamento_"]').each(function () {
-        const valor = $(this).val();
-        if (valor) {
-            const valorParaEnvio = formatarNumeroParaEnvio(valor);
-            $(this).val(valorParaEnvio.toFixed(2));
-        }
-    });
+                if (fornecedorId) {
+                    hasValidCotacao = true;
 
-    // Validação dos campos
-    let isValid = true;
-    let hasValidCotacao = false;
+                    const hasMateriais = $('#materiais-body-' + cotacaoId + ' tr').length > 0;
+                    
+                    if (!hasMateriais) {
+                        isValid = false;
+                        errorMessage = 'Cotação ' + cotacaoId + ': É necessário adicionar materiais quando um fornecedor é selecionado.';
+                        return false;
+                    }
 
-    // Verificar todas as cotações existentes
-    $('.cotacao-card').each(function () {
-        const cotacaoId = $(this).attr('id').replace('cotacao-', '');
-        const fornecedor = $('#fornecedor_id_' + cotacaoId).val();
-        const hasMateriais = $('#materiais-body-' + cotacaoId + ' tr').length > 0;
+                    // Validar valores unitários
+                    $('#materiais-body-' + cotacaoId + ' tr').each(function() {
+                        const unitario = $(this).find('.material-unitario').val();
+                        
+                        if (!unitario || unitario === '' || unitario === '0' || unitario === '0,0000') {
+                            isValid = false;
+                            $(this).addClass('border border-danger');
+                            errorMessage = 'Cotação ' + cotacaoId + ': Preencha todos os valores unitários.';
+                            return false;
+                        }
+                    });
+                    
+                    if (!isValid) return false;
 
-        if (fornecedor) {
-            hasValidCotacao = true;
+                    if (isFinalizar) {
+                        const prazoEntrega = $('#prazo_entrega_' + cotacaoId).val();
+                        const condicaoPagamento = $('#condicao_pagamento_' + cotacaoId).val();
 
-            if (!hasMateriais) {
-                isValid = false;
-                alert('Cotação ' + cotacaoId + ': É necessário adicionar materiais quando um fornecedor é selecionado.');
+                        if (!prazoEntrega || prazoEntrega.trim() === '') {
+                            isValid = false;
+                            errorMessage = 'Cotação ' + cotacaoId + ': Prazo de entrega é obrigatório para finalizar.';
+                            return false;
+                        }
+
+                        if (!condicaoPagamento || condicaoPagamento.trim() === '' || condicaoPagamento === '0,00') {
+                            isValid = false;
+                            errorMessage = 'Cotação ' + cotacaoId + ': Valor do desconto é obrigatório para finalizar.';
+                            return false;
+                        }
+                    }
+                }
+            });
+
+            if (!hasValidCotacao) {
+                alert('É necessário preencher pelo menos UMA cotação com fornecedor e materiais.');
                 return false;
             }
 
-            // Verificar se todos os materiais têm valores unitários preenchidos
-            $('#materiais-body-' + cotacaoId + ' tr').each(function () {
-                const unitario = $(this).find('.material-unitario').val();
+            if (!isValid) {
+                alert(errorMessage || 'Por favor, corrija os erros indicados antes de enviar.');
+                return false;
+            }
 
-                if (!unitario || unitario === '0' || unitario === '0,0000') {
-                    isValid = false;
-                    $(this).addClass('border border-danger');
-                    alert('Cotação ' + cotacaoId + ': Preencha todos os valores unitários.');
-                    return false;
-                }
-            });
-
-            // VALIDAÇÃO EXTRA PARA FINALIZAR
+            let confirmMessage = '';
             if (isFinalizar) {
-                const prazoEntrega = $('#prazo_entrega_' + cotacaoId).val();
-                const condicaoPagamento = $('#condicao_pagamento_' + cotacaoId).val();
+                confirmMessage = 'Tem certeza de que deseja FINALIZAR e enviar para aprovação?\n\nEsta ação não pode ser desfeita.';
+            } else {
+                confirmMessage = 'Tem certeza de que deseja salvar como RASCUNHO?';
+            }
 
-                if (!prazoEntrega || prazoEntrega.trim() === '') {
-                    isValid = false;
-                    alert('Cotação ' + cotacaoId + ': Prazo de entrega é obrigatório para finalizar.');
-                    return false;
-                }
+            if (!confirm(confirmMessage)) {
+                return false;
+            }
 
-                if (!condicaoPagamento || condicaoPagamento.trim() === '') {
-                    isValid = false;
-                    alert('Cotação ' + cotacaoId + ': Condição de pagamento é obrigatória para finalizar.');
-                    return false;
+            // Adicionar o action ao formulário
+            $('<input>').attr({
+                type: 'hidden',
+                name: 'action',
+                value: finalAction
+            }).appendTo('#cotacoes-form');
+
+            console.log('🚀 ENVIANDO FORMULÁRIO');
+            console.log('📋 Fornecedores para exclusão (IDs):', fornecedoresRemovidos);
+            console.log('📦 JSON de materiais:', $('#materiais_json').val());
+            
+            // Remover event handler e submeter
+            $(this).off('submit');
+            this.submit();
+        });
+
+        // ============================================
+        // INICIALIZAÇÃO DA PÁGINA
+        // ============================================
+        
+        $(document).ready(function () {
+            console.log('Página carregada!');
+            console.log('Materiais disponíveis:', materiaisSolicitacao);
+            
+            // Dados salvos para cada cotação - CORRIGIDO COM PREENCHIMENTO_ID
+            const cotacoesSalvasData = [
+                {% for cotacao in cotacoes_salvas %}
+                {
+                    fornecedor_id: {{ cotacao.fornecedor_id if cotacao.fornecedor_id else 'null' }},
+                    fornecedor_nome_fantasia: '{{ cotacao.fornecedor_nome_fantasia | replace("'", "\\'") if cotacao.fornecedor_nome_fantasia else '' }}',
+                    fornecedor_cnpj: '{{ cotacao.fornecedor_cnpj if cotacao.fornecedor_cnpj else '' }}',
+                    fornecedor_telefone: '{{ cotacao.fornecedor_telefone or "" }}',
+                    fornecedor_endereco: '{{ cotacao.fornecedor_endereco or "" }}',
+                    valor_frete: {{ cotacao.valor_frete if cotacao.valor_frete else 0 }},
+                    condicao_pagamento: {{ cotacao.condicao_pagamento if cotacao.condicao_pagamento else 0 }},
+                    prazo_entrega: '{{ cotacao.prazo_entrega or "" }}',
+                    observacoes: '{{ cotacao.observacoes or "" }}',
+                    materiais: [
+                        {% for material in cotacao.materiais %}
+                        {
+                            preenchimento_id: {{ material.preenchimento_id if material.preenchimento_id else 'null' }},
+                            solicitacao_id: {{ material.solicitacao_id }},
+                            valor_unitario: {{ material.valor_unitario }},
+                            valor_total: {{ material.valor_total }}
+                        }{% if not loop.last %},{% endif %}
+                        {% endfor %}
+                    ]
+                }{% if not loop.last %},{% endif %}
+                {% endfor %}
+            ];
+            
+            console.log('Dados das cotações carregadas:', cotacoesSalvasData);
+            
+            const totalCotacoes = {{ cotacoes_salvas|length if cotacoes_salvas else 1 }};
+            console.log('Total de cotações a inicializar:', totalCotacoes);
+            
+            for (let i = 1; i <= totalCotacoes; i++) {
+                initSelect2ForCotacao(i);
+                configurarEventosCotacao(i);
+                
+                const cotacaoIndex = i - 1;
+                if (cotacoesSalvasData[cotacaoIndex] && cotacoesSalvasData[cotacaoIndex].fornecedor_id) {
+                    setTimeout(function() {
+                        preencherCotacaoSalva(i, cotacoesSalvasData[cotacaoIndex]);
+                    }, i * 200);
                 }
             }
-        }
-    });
-
-    if (!hasValidCotacao) {
-        alert('É necessário preencher pelo menos UMA cotação com fornecedor e materiais.');
-        return false;
-    }
-
-    if (!isValid) {
-        alert('Por favor, corrija os erros indicados antes de enviar.');
-        return false;
-    }
-
-    // Confirmar com o usuário
-    let confirmMessage = '';
-    if (isFinalizar) {
-        confirmMessage = 'Tem certeza de que deseja FINALIZAR e enviar para aprovação?\n\nEsta ação não pode ser desfeita.';
-    } else {
-        confirmMessage = 'Tem certeza de que deseja salvar como RASCUNHO?';
-    }
-
-    if (!confirm(confirmMessage)) {
-        return false;
-    }
-
-    // Adicionar o action ao formulário de forma explícita
-    $('<input>').attr({
-        type: 'hidden',
-        name: 'action',
-        value: finalAction
-    }).appendTo('#cotacoes-form');
-
-    // Remover o event listener para evitar loop infinito
-    $(this).off('submit');
-    
-    // Enviar o formulário
-    console.log('DEBUG JS - Enviando formulário com action:', finalAction);
-    this.submit();
-});
-</script>
+            
+            contadorCotacoes = totalCotacoes;
+            
+            // Eventos globais
+            $(document).on('input', '.material-unitario, .valor-frete, [id^="condicao_pagamento_"]', function () {
+                aplicarMascaraMonetaria($(this));
+                
+                if ($(this).hasClass('material-unitario')) {
+                    const cotacaoId = $(this).closest('.cotacao-card').attr('id').replace('cotacao-', '');
+                    calcularTotalLinha(this, cotacaoId);
+                }
+                
+                if ($(this).hasClass('valor-frete') || $(this).attr('id')?.startsWith('condicao_pagamento_')) {
+                    const cotacaoId = $(this).closest('.cotacao-card').attr('id').replace('cotacao-', '');
+                    calcularTotalCotacao(cotacaoId);
+                }
+            });
+        });
+    </script>
 </body>
 </html>
