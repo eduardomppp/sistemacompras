@@ -2317,105 +2317,60 @@ def preencher_solicitacao(id):
     
     # === FUNÇÃO AUXILIAR PARA CONVERSÃO DE VALORES ===
     def parse_br_currency_final(value_str):
-        """
-        Converte string de valor monetário brasileiro para float.
-        Suporta: "15,00", "15.00", "15", "1.234,56", "1234,56", etc.
-        
-        CORREÇÃO: Não arredonda automaticamente para 2 casas decimais,
-        mantém a precisão original.
-        """
         if not value_str:
             return 0.0
         
-        # Converte para string
         valor = str(value_str)
-        
-        # Remove espaços e R$
         valor = valor.strip()
         valor = valor.replace('R$', '').replace('r$', '').strip()
         
-        # Remove caracteres não numéricos exceto . , -
         import re
         valor = re.sub(r'[^\d,\.\-]', '', valor)
         
         if not valor or valor == '-':
             return 0.0
         
-        # Verifica se é negativo
         negativo = False
         if valor.startswith('-'):
             negativo = True
             valor = valor[1:]
         
-        # Remove zeros à esquerda que não são significativos
         valor = valor.lstrip('0')
         if valor == '' or valor.startswith(('.', ',')):
             valor = '0' + valor
         
         try:
-            # Se não tem nem vírgula nem ponto
             if ',' not in valor and '.' not in valor:
-                # "15" → 15.0 (não 15.00)
                 resultado = float(valor)
             else:
-                # Tem vírgula ou ponto
-                # Conta quantas vírgulas e pontos
                 num_virgulas = valor.count(',')
                 num_pontos = valor.count('.')
                 
-                # CASO 1: "1.234,56" (tem ponto como separador de milhar e vírgula decimal)
                 if num_pontos >= 1 and num_virgulas == 1:
-                    # Remove pontos (separadores de milhar)
                     valor_sem_pontos = valor.replace('.', '')
-                    # Substitui vírgula por ponto
                     valor_final = valor_sem_pontos.replace(',', '.')
                     resultado = float(valor_final)
-                
-                # CASO 2: "15,00" ou "15,5" ou "15,0680" (apenas vírgula como decimal)
                 elif num_virgulas == 1 and num_pontos == 0:
                     partes = valor.split(',')
-                    # Verifica se a parte decimal tem dígitos
                     if len(partes) == 2:
-                        # "15,0680" → 15.0680 (mantém todas as casas)
-                        # "15,00" → 15.00
                         resultado = float(f"{partes[0]}.{partes[1]}")
                     else:
                         resultado = float(valor.replace(',', '.'))
-                
-                # CASO 3: "15.00" ou "15.5" ou "15.0680" (apenas ponto como decimal)
                 elif num_pontos == 1 and num_virgulas == 0:
-                    partes = valor.split('.')
-                    if len(partes) == 2:
-                        # "15.0680" → 15.0680 (mantém todas as casas)
-                        resultado = float(valor)
-                    else:
-                        resultado = float(valor)
-                
-                # CASO 4: "1,234.56" (vírgula como separador de milhar, ponto decimal) - formato americano
+                    resultado = float(valor)
                 elif num_virgulas >= 1 and num_pontos == 1:
-                    # Remove vírgulas (separadores de milhar)
                     valor_sem_virgulas = valor.replace(',', '')
                     resultado = float(valor_sem_virgulas)
-                
-                # CASO 5: Outros formatos (múltiplos separadores)
                 else:
-                    # Remove todos os separadores e trata como número inteiro
                     valor_limpo = valor.replace('.', '').replace(',', '')
                     resultado = float(valor_limpo)
-        
-        except ValueError as e:
-            print(f"DEBUG - Erro na conversão de '{value_str}' para float: {e}")
+        except ValueError:
             resultado = 0.0
         
-        # Aplica sinal negativo se necessário
         if negativo:
             resultado = -resultado
         
-        # NÃO ARREDONDA - mantém a precisão original
-        # resultado = round(resultado, 2)  # REMOVIDO
-        
         return resultado
-    # === FIM DA FUNÇÃO AUXILIAR ===
     
     # === MODO GRUPO ===
     grupo_ids_param = request.args.get('grupo_ids', '')
@@ -2443,28 +2398,16 @@ def preencher_solicitacao(id):
             grupo_ids.append(id)
     
     todas_solicitacoes = solicitacoes_grupo if modo_grupo else [solicitacao]
+    todas_solicitacoes_ids = [s.id for s in todas_solicitacoes]
     
     if request.method == 'POST':
         action = request.form.get('action')
-        print(f"DEBUG - Action recebido: {action}")
-        
-        if not action:
-            action = request.form.get('action[]')
-            print(f"DEBUG - Action[] recebido: {action}")
         
         if not action:
             if 'salvar_rascunho' in request.form:
                 action = 'salvar_rascunho'
             elif 'salvar_finalizar' in request.form:
                 action = 'salvar_finalizar'
-            else:
-                for key in request.form.keys():
-                    print(f"DEBUG - Chave no form: {key}")
-                    if 'salvar' in key.lower():
-                        action = key
-                        break
-        
-        print(f"DEBUG - Action final: {action}")
         
         is_rascunho = action == 'salvar_rascunho'
         is_finalizar = action == 'salvar_finalizar'
@@ -2476,25 +2419,58 @@ def preencher_solicitacao(id):
         try:
             usuario = session['usuario']
             
+            # ============================================
+            # PROCESSAR FORNECEDORES REMOVIDOS
+            # ============================================
+            fornecedores_removidos_json = request.form.get('fornecedores_removidos', '[]')
+            fornecedores_ids_remover = []
+            
+            if fornecedores_removidos_json and fornecedores_removidos_json != '[]':
+                try:
+                    import json
+                    fornecedores_ids_remover = json.loads(fornecedores_removidos_json)
+                    
+                    if fornecedores_ids_remover:
+                        print(f"🚨 Processando exclusão de fornecedores: {fornecedores_ids_remover}")
+                        
+                        for fornecedor_id in fornecedores_ids_remover:
+                            if fornecedor_id and fornecedor_id != '':
+                                preenchimentos = SolicitacoesPreenchidas.query.filter(
+                                    SolicitacoesPreenchidas.solicitacao_id.in_(todas_solicitacoes_ids),
+                                    SolicitacoesPreenchidas.fornecedor_id == int(fornecedor_id),
+                                    SolicitacoesPreenchidas.status == 'Rascunho'
+                                ).all()
+                                
+                                for preenchimento in preenchimentos:
+                                    HistoricoDescontos.query.filter_by(
+                                        preenchimento_id=preenchimento.id
+                                    ).delete()
+                                    db.session.delete(preenchimento)
+                                    print(f"✅ Preenchimento ID {preenchimento.id} do fornecedor {fornecedor_id} excluído")
+                        
+                        db.session.commit()
+                        print(f"✅ Todos os preenchimentos dos fornecedores {fornecedores_ids_remover} foram removidos")
+                        
+                except Exception as e:
+                    db.session.rollback()
+                    print(f"❌ Erro ao remover cotações: {str(e)}")
+            
             # === Captura de dados em listas ===
             fornecedores_ids = request.form.getlist('fornecedor_id[]')
             valores_frete = request.form.getlist('valor_frete[]')
             prazos = request.form.getlist('prazo_entrega[]')
             condicoes = request.form.getlist('condicao_pagamento[]')
             observacoes = request.form.getlist('observacao[]')
-            preenchimento_ids = request.form.getlist('preenchimento_id[]')
+            preenchimento_ids = request.form.getlist('preenchimento_id[]')  # 🔴 IMPORTANTE!
             pdf_files = request.files.getlist('pdf_file[]')
-            
-            print(f"DEBUG - Fornecedores IDs recebidos: {fornecedores_ids}")
-            print(f"DEBUG - Valores frete recebidos: {valores_frete}")
-            print(f"DEBUG - Qtde fornecedores: {len(fornecedores_ids)}")
             
             # === Captura de dados dos materiais ===
             todos_valores_unitarios = request.form.getlist('valor_unitario[]')
             todos_ids_solicitacao = request.form.getlist('solicitacao_id[]')
             
-            print(f"DEBUG - Todos valores unitários: {todos_valores_unitarios}")
-            print(f"DEBUG - Todos IDs solicitação: {todos_ids_solicitacao}")
+            print(f"📋 Preenchimento IDs recebidos: {preenchimento_ids}")
+            print(f"📋 Fornecedores IDs recebidos: {fornecedores_ids}")
+            print(f"📋 Valores unitários: {len(todos_valores_unitarios)}")
             
             # === Processar cada cotação ===
             cotacoes_salvas = 0
@@ -2504,7 +2480,12 @@ def preencher_solicitacao(id):
             for idx, fornecedor_id in enumerate(fornecedores_ids):
                 fornecedor_id = fornecedor_id.strip()
                 if not fornecedor_id:
-                    continue  # Ignora cotação vazia
+                    continue
+                
+                # PULAR se este fornecedor está na lista de removidos
+                if fornecedor_id in fornecedores_ids_remover:
+                    print(f"⏭️ Pulando fornecedor {fornecedor_id} (marcado para exclusão)")
+                    continue
                 
                 total_cotacoes += 1
                 
@@ -2515,6 +2496,8 @@ def preencher_solicitacao(id):
                 obs = observacoes[idx].strip() if idx < len(observacoes) else ''
                 preenchimento_id = preenchimento_ids[idx] if idx < len(preenchimento_ids) and preenchimento_ids[idx] else None
                 
+                print(f"🔍 Processando cotação {idx+1}: fornecedor {fornecedor_id}, preenchimento_id {preenchimento_id}")
+                
                 # === VALIDAÇÃO EXTRA PARA FINALIZAR ===
                 if is_finalizar:
                     if not prazo:
@@ -2522,18 +2505,18 @@ def preencher_solicitacao(id):
                     if not condicao:
                         erros_validacao.append(f'Cotação {idx+1}: Condição de pagamento é obrigatória.')
                 
-                # === CONVERSÃO SEGURA USANDO FUNÇÃO AUXILIAR ===
+                # === CONVERSÃO SEGURA ===
                 valor_frete = parse_br_currency_final(vf_str)
-                print(f"DEBUG - Cotação {idx+1}: '{vf_str}' -> {valor_frete}")
                 
                 # === Processar cada material desta cotação ===
                 num_materiais_por_cotacao = len(todas_solicitacoes)
                 inicio_idx = idx * num_materiais_por_cotacao
                 
-                # Verificar se há dados suficientes
                 if inicio_idx >= len(todos_valores_unitarios):
                     erros_validacao.append(f'Cotação {idx+1}: Dados dos materiais incompletos.')
                     continue
+                
+                primeiro_material_desta_cotacao = True
                 
                 for i, sol in enumerate(todas_solicitacoes):
                     material_idx = inicio_idx + i
@@ -2544,84 +2527,39 @@ def preencher_solicitacao(id):
                     
                     valor_unitario_str = todos_valores_unitarios[material_idx].strip()
                     
-                    # Validar valor unitário
                     if not valor_unitario_str or valor_unitario_str in ['0', '0.00', '0,00']:
                         erros_validacao.append(f'Cotação {idx+1}, Material {i+1}: Valor unitário é obrigatório.')
                         continue
                     
-                    # USANDO A NOVA FUNÇÃO PARA CONVERSÃO
                     valor_unitario = parse_br_currency_final(valor_unitario_str)
-                    
-                    # DEBUG
-                    print(f"DEBUG - Material {i+1}: '{valor_unitario_str}' -> {valor_unitario}")
                     
                     if valor_unitario <= 0:
                         erros_validacao.append(f'Cotação {idx+1}, Material {i+1}: Valor unitário deve ser maior que zero.')
                         continue
                     
-                    # Calcular valor total - arredonda apenas para cálculo total
                     valor_total = round(valor_unitario * sol.quantidade, 2)
                     
-                    # Buscar ou criar preenchimento
+                    # 🔴 BUSCAR PREENCHIMENTO - PRIORIDADE 1: PELO ID ESPECÍFICO
                     preenchimento = None
-                    if preenchimento_id and i == 0:  # Usar o ID apenas para o primeiro material
-                        preenchimento = SolicitacoesPreenchidas.query.get(preenchimento_id)
                     
+                    if primeiro_material_desta_cotacao and preenchimento_id and preenchimento_id != '':
+                        try:
+                            preenchimento = SolicitacoesPreenchidas.query.get(int(preenchimento_id))
+                            print(f"   🔍 Busca por ID {preenchimento_id}: {'Encontrado' if preenchimento else 'Não encontrado'}")
+                        except:
+                            pass
+                    
+                    # 🔴 BUSCAR PREENCHIMENTO - PRIORIDADE 2: PELA COMBINAÇÃO
                     if not preenchimento:
-                        # Verificar se já existe um registro para esta combinação
                         preenchimento = SolicitacoesPreenchidas.query.filter_by(
                             solicitacao_id=sol.id,
                             fornecedor_id=int(fornecedor_id),
                             status='Rascunho'
                         ).first()
+                        print(f"   🔍 Busca por fornecedor {fornecedor_id} + solicitação {sol.id}: {'Encontrado' if preenchimento else 'Não encontrado'}")
                     
-                    # 🔹 CORREÇÃO: Salvar histórico de descontos mesmo para rascunhos
-                    valor_unitario_anterior = None
-                    valor_frete_anterior = None
-                    
-                    if preenchimento:
-                        # Salvar valores anteriores para comparação
-                        valor_unitario_anterior = float(preenchimento.valor_unitario) if preenchimento.valor_unitario else 0.0
-                        valor_frete_anterior = float(preenchimento.valor_frete) if preenchimento.valor_frete else 0.0
-                        
-                        print(f"DEBUG - Comparando valores para preenchimento {preenchimento.id}:")
-                        print(f"  Valor unitário anterior: {valor_unitario_anterior}")
-                        print(f"  Valor unitário novo: {valor_unitario}")
-                        print(f"  Valor frete anterior: {valor_frete_anterior}")
-                        print(f"  Valor frete novo: {valor_frete}")
-                        
-                        # Comparar valores (com margem de 0.001 para maior precisão)
-                        valor_unitario_mudou = abs(valor_unitario_anterior - valor_unitario) > 0.001
-                        
-                        # Verificar se o frete mudou (tratando casos de None)
-                        valor_frete_mudou = False
-                        if valor_frete > 0:
-                            if valor_frete_anterior is None or abs(valor_frete_anterior - valor_frete) > 0.001:
-                                valor_frete_mudou = True
-                        else:
-                            if valor_frete_anterior is not None and valor_frete_anterior > 0:
-                                valor_frete_mudou = True
-                        
-                        print(f"  Valor unitário mudou: {valor_unitario_mudou}")
-                        print(f"  Valor frete mudou: {valor_frete_mudou}")
-                        
-                        # Se algum valor mudou, registrar no histórico
-                        if valor_unitario_mudou or valor_frete_mudou:
-                            historico = HistoricoDescontos(
-                                preenchimento_id=preenchimento.id,
-                                valor_unitario_anterior=valor_unitario_anterior,
-                                valor_unitario_novo=valor_unitario,
-                                valor_frete_anterior=valor_frete_anterior if valor_frete_anterior != 0 else None,
-                                valor_frete_novo=valor_frete if valor_frete > 0 else None,
-                                data_alteracao=get_local_time(),
-                                usuario=usuario
-                            )
-                            db.session.add(historico)
-                            print(f"📝 Histórico de desconto registrado para preenchimento {preenchimento.id}")
-                            print(f"  Valor unitário: {valor_unitario_anterior} → {valor_unitario}")
-                            print(f"  Valor frete: {valor_frete_anterior} → {valor_frete}")
-                    else:
-                        # Criar novo preenchimento
+                    # 🔴 SE AINDA NÃO TEM, CRIAR NOVO
+                    if not preenchimento:
                         preenchimento = SolicitacoesPreenchidas(
                             solicitacao_id=sol.id,
                             fornecedor_id=int(fornecedor_id),
@@ -2636,17 +2574,48 @@ def preencher_solicitacao(id):
                             status='Rascunho' if is_rascunho else 'Aguardando Aprovacao'
                         )
                         db.session.add(preenchimento)
-                    
-                    # Atualizar dados do preenchimento
-                    preenchimento.valor_unitario = valor_unitario  # Mantém a precisão original
-                    preenchimento.valor_total = valor_total
-                    preenchimento.valor_frete = valor_frete if valor_frete > 0 else None
-                    preenchimento.prazo_entrega = prazo
-                    preenchimento.condicao_pagamento = condicao
-                    preenchimento.observacoes = obs
-                    preenchimento.status = 'Rascunho' if is_rascunho else 'Aguardando Aprovacao'
-                    preenchimento.data_preenchimento = get_local_time()
-                    preenchimento.usuario = usuario
+                        print(f"   ✅ Novo preenchimento criado para solicitação {sol.id}")
+                    else:
+                        # ATUALIZAR PREENCHIMENTO EXISTENTE
+                        print(f"   🔄 Atualizando preenchimento ID {preenchimento.id}")
+                        
+                        # Verificar mudanças para histórico
+                        valor_unitario_anterior = float(preenchimento.valor_unitario) if preenchimento.valor_unitario else 0.0
+                        valor_frete_anterior = float(preenchimento.valor_frete) if preenchimento.valor_frete else 0.0
+                        
+                        valor_unitario_mudou = abs(valor_unitario_anterior - valor_unitario) > 0.001
+                        
+                        valor_frete_mudou = False
+                        if valor_frete > 0:
+                            if valor_frete_anterior is None or abs(valor_frete_anterior - valor_frete) > 0.001:
+                                valor_frete_mudou = True
+                        else:
+                            if valor_frete_anterior is not None and valor_frete_anterior > 0:
+                                valor_frete_mudou = True
+                        
+                        if valor_unitario_mudou or valor_frete_mudou:
+                            historico = HistoricoDescontos(
+                                preenchimento_id=preenchimento.id,
+                                valor_unitario_anterior=valor_unitario_anterior,
+                                valor_unitario_novo=valor_unitario,
+                                valor_frete_anterior=valor_frete_anterior if valor_frete_anterior != 0 else None,
+                                valor_frete_novo=valor_frete if valor_frete > 0 else None,
+                                data_alteracao=get_local_time(),
+                                usuario=usuario
+                            )
+                            db.session.add(historico)
+                            print(f"   📝 Histórico de desconto registrado")
+                        
+                        # Atualizar dados
+                        preenchimento.valor_unitario = valor_unitario
+                        preenchimento.valor_total = valor_total
+                        preenchimento.valor_frete = valor_frete if valor_frete > 0 else None
+                        preenchimento.prazo_entrega = prazo
+                        preenchimento.condicao_pagamento = condicao
+                        preenchimento.observacoes = obs
+                        preenchimento.status = 'Rascunho' if is_rascunho else 'Aguardando Aprovacao'
+                        preenchimento.data_preenchimento = get_local_time()
+                        preenchimento.usuario = usuario
                     
                     # PDF apenas para o primeiro material da cotação
                     if idx < len(pdf_files) and i == 0 and pdf_files[idx] and pdf_files[idx].filename:
@@ -2658,8 +2627,12 @@ def preencher_solicitacao(id):
                             path = os.path.join(app.config['UPLOAD_FOLDER'], unique_name)
                             pdf_file.save(path)
                             preenchimento.pdf_path = unique_name
+                            print(f"   📎 PDF salvo: {unique_name}")
+                    
+                    primeiro_material_desta_cotacao = False
                 
                 cotacoes_salvas += 1
+                print(f"✅ Cotação {idx+1} processada com sucesso")
             
             if erros_validacao:
                 for erro in erros_validacao:
@@ -2670,8 +2643,8 @@ def preencher_solicitacao(id):
                 flash('É necessário preencher pelo menos uma cotação.', 'error')
                 return redirect(request.url)
             
-            # === Commit final ===
             db.session.commit()
+            print(f"💾 COMMIT REALIZADO! {cotacoes_salvas} materiais em {total_cotacoes} cotações")
             
             if is_rascunho:
                 flash(f'{cotacoes_salvas} material(is) em {total_cotacoes} cotação(ões) salvo(s) como rascunho!', 'success')
@@ -2684,18 +2657,16 @@ def preencher_solicitacao(id):
             db.session.rollback()
             flash(f'Erro ao salvar: {str(e)}', 'error')
             import traceback
-            print(f"DEBUG - Erro completo: {traceback.format_exc()}")
+            print(f"❌ Erro completo: {traceback.format_exc()}")
             return redirect(request.url)
     
     # === GET: Carregar rascunhos ===
     if modo_grupo:
-        # Buscar todas as cotações para o grupo
         cotacoes_raw = SolicitacoesPreenchidas.query.filter(
             SolicitacoesPreenchidas.solicitacao_id.in_(grupo_ids),
             SolicitacoesPreenchidas.status == 'Rascunho'
         ).order_by(SolicitacoesPreenchidas.fornecedor_id, SolicitacoesPreenchidas.solicitacao_id).all()
     else:
-        # Buscar cotações para esta solicitação específica
         cotacoes_raw = SolicitacoesPreenchidas.query.filter_by(
             solicitacao_id=id,
             status='Rascunho'
@@ -2715,7 +2686,6 @@ def preencher_solicitacao(id):
         if not cotacoes_fornecedor:
             continue
         
-        # Pegar a primeira cotação como referência para dados gerais
         cotacao_ref = cotacoes_fornecedor[0]
         
         # Buscar dados do fornecedor
@@ -2750,9 +2720,7 @@ def preencher_solicitacao(id):
                     endereco_parts.append(f"{row[5]}/{row[6]}")
                 fornecedor_info['endereco'] = ', '.join(endereco_parts) if endereco_parts else 'Não informado'
         
-        # Criar estrutura da cotação
         cotacao_estruturada = {
-            'id': cotacao_ref.id,
             'fornecedor_id': fornecedor_id,
             'fornecedor_nome_fantasia': fornecedor_info['nome_fantasia'],
             'fornecedor_cnpj': fornecedor_info['cnpj'],
@@ -2766,13 +2734,10 @@ def preencher_solicitacao(id):
             'materiais': []
         }
         
-        # Adicionar materiais com seus valores
         for cotacao in cotacoes_fornecedor:
-            # Encontrar a solicitação correspondente
             solicitacao_match = next((s for s in todas_solicitacoes if s.id == cotacao.solicitacao_id), None)
             
             if solicitacao_match:
-                # Buscar histórico de descontos para esta cotação
                 historico_descontos = []
                 try:
                     historico_query = HistoricoDescontos.query.filter_by(
@@ -2792,22 +2757,21 @@ def preencher_solicitacao(id):
                     print(f"DEBUG - Erro ao buscar histórico de descontos: {str(e)}")
                 
                 material_info = {
+                    'preenchimento_id': cotacao.id,  # 🔴 ADICIONAR ESTE CAMPO!
                     'solicitacao_id': cotacao.solicitacao_id,
                     'valor_unitario': float(cotacao.valor_unitario) if cotacao.valor_unitario else 0.0,
                     'valor_total': float(cotacao.valor_total) if cotacao.valor_total else 0.0,
                     'descricao': solicitacao_match.material.DescricaoMaterial if solicitacao_match.material else '',
                     'quantidade': float(solicitacao_match.quantidade) if solicitacao_match.quantidade else 0.0,
                     'unidade': solicitacao_match.unidade_medida or 'un',
-                    'historico_descontos': historico_descontos  # Adicionar histórico ao material
+                    'historico_descontos': historico_descontos
                 }
                 cotacao_estruturada['materiais'].append(material_info)
         
         cotacoes_estruturadas.append(cotacao_estruturada)
     
-    # Se não houver cotações salvas, criar uma estrutura vazia para o template
     if not cotacoes_estruturadas:
         cotacoes_estruturadas = [{
-            'id': None,
             'fornecedor_id': None,
             'fornecedor_nome_fantasia': '',
             'fornecedor_cnpj': '',
@@ -2820,12 +2784,6 @@ def preencher_solicitacao(id):
             'pdf_path': None,
             'materiais': []
         }]
-    
-    print(f"DEBUG - Cotações estruturadas para template: {len(cotacoes_estruturadas)}")
-    for i, cotacao in enumerate(cotacoes_estruturadas):
-        print(f"DEBUG - Cotação {i+1}: Fornecedor {cotacao.get('fornecedor_id')}, {len(cotacao.get('materiais', []))} materiais")
-        for j, material in enumerate(cotacao.get('materiais', [])):
-            print(f"DEBUG - Material {j+1}: ID {material.get('solicitacao_id')}, Valor R$ {material.get('valor_unitario')}")
     
     return render_template(
         'preencher_solicitacao.html',
