@@ -126,6 +126,73 @@
             border-bottom: none;
         }
 
+        /* Estilo para o campo marca com tooltip */
+        .marca-field {
+            display: inline-block;
+            max-width: 200px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            cursor: pointer;
+            background-color: #f8f9fa;
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid #dee2e6;
+            position: relative;
+        }
+
+        .marca-field:hover {
+            background-color: #e9ecef;
+        }
+
+        .marca-field[data-fulltext] {
+            border-bottom: 1px dashed #024C89;
+        }
+
+        /* Tooltip personalizado */
+        .marca-tooltip {
+            position: absolute;
+            background: #024C89;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            max-width: 400px;
+            word-wrap: break-word;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            pointer-events: none;
+            transition: opacity 0.2s;
+        }
+
+        .marca-tooltip::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 5px 5px 0;
+            border-style: solid;
+            border-color: #024C89 transparent transparent transparent;
+        }
+
+        /* Botão de cópia */
+        .copy-button {
+            background: none;
+            border: none;
+            color: #024C89;
+            cursor: pointer;
+            padding: 0 4px;
+            font-size: 0.8rem;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+
+        .copy-button:hover {
+            opacity: 1;
+            color: #0056b3;
+        }
+
         .error-message {
             display: none;
             color: #dc3545;
@@ -203,6 +270,56 @@
             color: #6c757d;
         }
 
+        /* Estilos para paginação */
+        .pagination-container {
+            margin-top: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .pagination-info {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+
+        .pagination {
+            gap: 5px;
+        }
+
+        .page-item.active .page-link {
+            background-color: #024C89;
+            border-color: #024C89;
+        }
+
+        .page-link {
+            color: #024C89;
+        }
+
+        .page-link:hover {
+            color: #023b6b;
+        }
+
+        .page-link:focus {
+            box-shadow: 0 0 0 0.2rem rgba(2, 76, 137, 0.25);
+        }
+
+        .page-item.disabled .page-link {
+            color: #6c757d;
+        }
+
+        .items-per-page {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .items-per-page select {
+            width: auto;
+            display: inline-block;
+        }
+
         @media (max-width: 768px) {
             .action-buttons {
                 flex-direction: column;
@@ -216,12 +333,15 @@
             .filter-group {
                 min-width: 100%;
             }
+
+            .pagination-container {
+                flex-direction: column;
+                gap: 10px;
+            }
         }
 
-        /* Adicione isso na seção de estilos existente */
         .btn-pulsante {
             background-color: #ffc107;
-            /* Amarelo */
             border-color: #006af4;
             color: #000;
             animation: pulsar 2s infinite;
@@ -238,14 +358,21 @@
             0% {
                 box-shadow: 0 0 0 0 rgba(0, 127, 224, 0.7);
             }
-
             70% {
                 box-shadow: 0 0 0 10px rgba(255, 193, 7, 0);
             }
-
             100% {
                 box-shadow: 0 0 0 0 rgba(255, 193, 7, 0);
             }
+        }
+
+        /* Estilo para destacar linhas na tabela */
+        .table tbody tr {
+            transition: background-color 0.2s;
+        }
+
+        .table tbody tr:hover {
+            background-color: rgba(2, 76, 137, 0.05);
         }
     </style>
 </head>
@@ -330,14 +457,10 @@
                                 Gerado</option>
                             <option value="Aprovado" {% if request.args.get('status')=='Aprovado' %}selected{% endif %}>
                                 Aprovado</option>
-                            <option value="AgPagamento" {% if request.args.get('status')=='AgPagamento' %}selected{%
-                                endif %}>Aguardando Pagamento</option>
-                            <option value="AgEntrega" {% if request.args.get('status')=='AgEntrega' %}selected{% endif
-                                %}>Aguardando Entrega</option>
-                            <option value="Entregue" {% if request.args.get('status')=='Entregue' %}selected{% endif %}>
-                                Entregue</option>
-                            <option value="Reprovado" {% if request.args.get('status')=='Reprovado' %}selected{% endif
-                                %}>Reprovado</option>
+                            <option value="AgPagamento" {% if request.args.get('status')=='AgPagamento' %}selected{% endif %}>Aguardando Pagamento</option>
+                            <option value="AgEntrega" {% if request.args.get('status')=='AgEntrega' %}selected{% endif %}>Aguardando Entrega</option>
+                            <option value="Entregue" {% if request.args.get('status')=='Entregue' %}selected{% endif %}>Entregue</option>
+                            <option value="Reprovado" {% if request.args.get('status')=='Reprovado' %}selected{% endif %}>Reprovado</option>
                         </select>
                     </div>
                 </div>
@@ -367,147 +490,296 @@
                 class="btn btn-primary">Entregues</a>
         </div>
 
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Número</th>
-                    <th>Data</th>
-                    <th>Usuário</th>
-                    <th>Valor (R$)</th>
-                    <th>Pagamento</th>
-                    <th>Itens</th>
-                    <th>Status</th>
-                    <th>PDF</th>
-                    <th>Comprovante</th>
-                    <th>Ações</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for item in pedidos_completos %}
-                <tr>
-                    <td>{{ item.pedido.numero_pedido }}</td>
-                    <td>{{ item.pedido.data_criacao.strftime('%d/%m/%Y %H:%M:%S') }}</td>
-                    <td>{{ item.pedido.usuario }}</td>
-                    <td>{{ "%.2f" | format(item.pedido.valor_total) }}</td>
-                    <td>{{ item.pedido.forma_pagamento or 'Não informado' }}</td>
-                    <td>
-                        <ul class="material-info">
-                            {% for preenchimento in item.preenchimentos %}
-                            <li>
-                                <strong>Material:</strong> {{ preenchimento.material }}<br>
-                                <strong>Marca:</strong> {{ preenchimento.marca }}<br>
-                                <strong>Fornecedor:</strong> {{ preenchimento.fornecedor_nome }} ({{
-                                preenchimento.fornecedor_cnpj }})<br>
-                                <strong>Empresa:</strong> {{ preenchimento.empresa }}
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Número</th>
+                        <th>Data</th>
+                        <th>Usuário</th>
+                        <th>Valor (R$)</th>
+                        <th>Pagamento</th>
+                        <th>Itens</th>
+                        <th>Status</th>
+                        <th>PDF</th>
+                        <th>Comprovante</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in pedidos_completos %}
+                    <tr>
+                        <td>{{ item.pedido.numero_pedido }}</td>
+                        <td>{{ item.pedido.data_criacao.strftime('%d/%m/%Y %H:%M:%S') }}</td>
+                        <td>{{ item.pedido.usuario }}</td>
+                        <td>{{ "%.2f" | format(item.pedido.valor_total) }}</td>
+                        <td>{{ item.pedido.forma_pagamento or 'Não informado' }}</td>
+                        <td>
+                            <ul class="material-info">
+                                {% for preenchimento in item.preenchimentos %}
+                                <li>
+                                    <strong>Material:</strong> {{ preenchimento.material }}<br>
+                                    <strong>Marca:</strong> 
+                                    <span class="marca-field" 
+                                          data-fulltext="{{ preenchimento.marca }}"
+                                          data-marca="{{ preenchimento.marca }}"
+                                          onclick="copyToClipboard(this)">
+                                        {{ preenchimento.marca[:20] }}{% if preenchimento.marca|length > 20 %}...{% endif %}
+                                    </span>
+                                    <br>
+                                    <strong>Fornecedor:</strong> {{ preenchimento.fornecedor_nome }} ({{ preenchimento.fornecedor_cnpj }})<br>
+                                    <strong>Empresa:</strong> {{ preenchimento.empresa }}
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </td>
+                        <td>
+                            <span class="status-badge status-{{ item.pedido.status }}">
+                                {{ item.pedido.status }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if item.pedido %}
+                            <a href="{{ url_for('routes_bp.view_pedido_pdf', pedido_id=item.pedido.id) }}"
+                                class="btn btn-sm btn-primary" target="_blank">
+                                <i class="bi bi-file-earmark-pdf"></i> Ver Pedido
+                            </a>
+                            {% else %}
+                            Sem Pedido
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if item.pedido.comprovante_pagamento %}
+                            <a href="{{ url_for('routes_bp.download_comprovante', pedido_id=item.pedido.id) }}"
+                                class="btn btn-sm btn-comprovante" title="Baixar comprovante" download>
+                                <i class="bi bi-receipt"></i> Comprovante
+                            </a>
+                            {% else %}
+                            Sem comprovante
+                            {% endif %}
+                        </td>
+                        <td>
+                            <form id="form-{{ item.pedido.id }}" method="POST"
+                                action="{{ url_for('routes_bp.atualizar_status_pedido', id=item.pedido.id) }}"
+                                enctype="multipart/form-data">
+                                <div class="action-buttons">
+                                    <select name="status" class="status-select form-select form-select-sm"
+                                        data-pedido-id="{{ item.pedido.id }}" aria-label="Selecionar status do pedido" {% if
+                                        item.pedido.status=='Entregue' %}disabled{% endif %}>
+                                        <option value="" disabled selected>Selecione</option>
+                                        <option value="Gerado" {% if item.pedido.status=='Gerado' %}selected{% endif %}>
+                                            Gerado</option>
+                                        <option value="Aprovado" {% if item.pedido.status=='Aprovado' %}selected{% endif %}>
+                                            Aprovado</option>
+                                        <option value="Reprovado" {% if item.pedido.status=='Reprovado' %}selected{% endif %}>Reprovado</option>
+                                        <option value="Entregue" {% if item.pedido.status=='Entregue' %}selected{% endif %}>
+                                            Entregue</option>
+                                    </select>
+                                    {% if item.pedido.status != 'Entregue' %}
+                                    <button type="submit" class="btn btn-sm btn-primary">Salvar</button>
+                                    {% endif %}
+                                </div>
+
+                                <div class="pagamento-container" id="pagamento-container-{{ item.pedido.id }}"
+                                    style="display: none;">
+                                    <input type="text" name="comprovante" class="form-control form-control-sm mt-2"
+                                        placeholder="Nº Comprovante" value="{{ item.pedido.comprovante_pagamento or '' }}"
+                                        aria-describedby="comprovante-error-{{ item.pedido.id }}">
+                                    <div id="comprovante-error-{{ item.pedido.id }}" class="error-message">
+                                        Informe o número do comprovante de pagamento!
+                                    </div>
+                                </div>
+                                <div class="pdf-container" id="pdf-container-{{ item.pedido.id }}" style="display: none;">
+                                    <input type="file" name="pdf_file" class="form-control form-control-sm mt-2"
+                                        accept="application/pdf" aria-describedby="pdf-error-{{ item.pedido.id }}">
+                                    {% if item.pedido.pdf_path %}
+                                    <small class="form-text text-muted">PDF atual: {{ item.pedido.pdf_path.split('/')[-1] }}</small>
+                                    {% endif %}
+                                    <div id="pdf-error-{{ item.pedido.id }}" class="error-message">
+                                        Anexe um comprovante em PDF (máximo 5MB)!
+                                    </div>
+                                </div>
+                                <div class="fornecedor-container" id="fornecedor-container-{{ item.pedido.id }}"
+                                    style="display: none;">
+                                    <div class="input-group input-group-sm mt-2">
+                                        <input type="text" name="fornecedor" class="form-control fornecedor-input"
+                                            placeholder="Fornecedor"
+                                            value="{% if item.preenchimentos and item.preenchimentos[0].fornecedor_nome %}{{ item.preenchimentos[0].fornecedor_nome }} ({{ item.preenchimentos[0].fornecedor_cnpj }}){% endif %}"
+                                            aria-label="Selecionar fornecedor"
+                                            aria-describedby="fornecedor-error-{{ item.pedido.id }}">
+                                        <input type="hidden" name="fornecedor_id" class="fornecedor-id"
+                                            value="{% if item.preenchimentos and item.preenchimentos[0].fornecedor_id %}{{ item.preenchimentos[0].fornecedor_id }}{% endif %}">
+                                    </div>
+                                    <div id="fornecedor-error-{{ item.pedido.id }}" class="error-message">
+                                        Selecione um fornecedor!
+                                    </div>
+                                </div>
+                                <div class="nf-container" id="nf-container-{{ item.pedido.id }}" style="display: none;">
+                                    <input type="text" name="numero_nf" class="form-control form-control-sm mt-2"
+                                        placeholder="Número NF"
+                                        value="{% if item.preenchimentos and item.preenchimentos[0].numero_nf %}{{ item.preenchimentos[0].numero_nf }}{% endif %}"
+                                        aria-describedby="nf-error-{{ item.pedido.id }}">
+                                    <div id="nf-error-{{ item.pedido.id }}" class="error-message">
+                                        Informe o número da NF!
+                                    </div>
+                                </div>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Seção de Paginação -->
+        {% if total_paginas > 1 %}
+        <div class="pagination-container">
+            <div class="items-per-page">
+                <label for="items-per-page">Itens por página:</label>
+                <select id="items-per-page" class="form-select form-select-sm" onchange="changeItemsPerPage(this)">
+                    <option value="10" {% if request.args.get('por_pagina', '10') == '10' %}selected{% endif %}>10</option>
+                    <option value="20" {% if request.args.get('por_pagina', '10') == '20' %}selected{% endif %}>20</option>
+                    <option value="50" {% if request.args.get('por_pagina', '10') == '50' %}selected{% endif %}>50</option>
+                    <option value="100" {% if request.args.get('por_pagina', '10') == '100' %}selected{% endif %}>100</option>
+                </select>
+            </div>
+
+            <nav aria-label="Navegação de páginas">
+                <ul class="pagination">
+                    <!-- Botão Anterior -->
+                    <li class="page-item {% if pagina_atual == 1 %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('routes_bp.listar_pedidos_compra', pagina=pagina_atual-1, por_pagina=request.args.get('por_pagina', 10), **request.args) }}" aria-label="Anterior">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+
+                    <!-- Números das páginas -->
+                    {% for num in range(1, total_paginas + 1) %}
+                        {% if num == pagina_atual %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
                             </li>
-                            {% endfor %}
-                        </ul>
-                    </td>
-                    <td>
-                        <span class="status-badge status-{{ item.pedido.status }}">
-                            {{ item.pedido.status }}
-                        </span>
-                    </td>
-                    <td>
-                        {% if item.pedido %}
-                        <a href="{{ url_for('routes_bp.view_pedido_pdf', pedido_id=item.pedido.id) }}"
-                            class="btn btn-sm btn-primary" target="_blank">
-                            <i class="bi bi-file-earmark-pdf"></i> Ver Pedido
-                        </a>
-                        {% else %}
-                        Sem Pedido
+                        {% elif num >= pagina_atual - 2 and num <= pagina_atual + 2 %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('routes_bp.listar_pedidos_compra', pagina=num, por_pagina=request.args.get('por_pagina', 10), **request.args) }}">{{ num }}</a>
+                            </li>
+                        {% elif num == 1 or num == total_paginas %}
+                            {% if num == pagina_atual - 3 or num == pagina_atual + 3 %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                            {% endif %}
                         {% endif %}
-                    </td>
-                    <td>
-                        {% if item.pedido.comprovante_pagamento %}
-                        <a href="{{ url_for('routes_bp.download_comprovante', pedido_id=item.pedido.id) }}"
-                            class="btn btn-sm btn-comprovante" title="Baixar comprovante" download>
-                            <i class="bi bi-receipt"></i> Comprovante
+                    {% endfor %}
+
+                    <!-- Botão Próximo -->
+                    <li class="page-item {% if pagina_atual == total_paginas %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('routes_bp.listar_pedidos_compra', pagina=pagina_atual+1, por_pagina=request.args.get('por_pagina', 10), **request.args) }}" aria-label="Próximo">
+                            <span aria-hidden="true">&raquo;</span>
                         </a>
-                        {% else %}
-                        Sem comprovante
-                        {% endif %}
-                    </td>
-                    <td>
-                        <form id="form-{{ item.pedido.id }}" method="POST"
-                            action="{{ url_for('routes_bp.atualizar_status_pedido', id=item.pedido.id) }}"
-                            enctype="multipart/form-data">
-                            <div class="action-buttons">
-                                <select name="status" class="status-select form-select form-select-sm"
-                                    data-pedido-id="{{ item.pedido.id }}" aria-label="Selecionar status do pedido" {% if
-                                    item.pedido.status=='Entregue' %}disabled{% endif %}>
-                                    <option value="" disabled selected>Selecione</option>
-                                    <option value="Gerado" {% if item.pedido.status=='Gerado' %}selected{% endif %}>
-                                        Gerado</option>
-                                    <option value="Aprovado" {% if item.pedido.status=='Aprovado' %}selected{% endif %}>
-                                        Aprovado</option>
-                                    <option value="Reprovado" {% if item.pedido.status=='Reprovado' %}selected{% endif
-                                        %}>Reprovado</option>
+                    </li>
+                </ul>
+            </nav>
 
-                                    <option value="Entregue" {% if item.pedido.status=='Entregue' %}selected{% endif %}>
-                                        Entregue</option>
-                                </select>
-                                {% if item.pedido.status != 'Entregue' %}
-                                <button type="submit" class="btn btn-sm btn-primary">Salvar</button>
-                                {% endif %}
-                            </div>
-
-                            <div class="pagamento-container" id="pagamento-container-{{ item.pedido.id }}"
-                                style="display: none;">
-                                <input type="text" name="comprovante" class="form-control form-control-sm mt-2"
-                                    placeholder="Nº Comprovante" value="{{ item.pedido.comprovante_pagamento or '' }}"
-                                    aria-describedby="comprovante-error-{{ item.pedido.id }}">
-                                <div id="comprovante-error-{{ item.pedido.id }}" class="error-message">
-                                    Informe o número do comprovante de pagamento!
-                                </div>
-                            </div>
-                            <div class="pdf-container" id="pdf-container-{{ item.pedido.id }}" style="display: none;">
-                                <input type="file" name="pdf_file" class="form-control form-control-sm mt-2"
-                                    accept="application/pdf" aria-describedby="pdf-error-{{ item.pedido.id }}">
-                                {% if item.pedido.pdf_path %}
-                                <small class="form-text text-muted">PDF atual: {{ item.pedido.pdf_path.split('/')[-1]
-                                    }}</small>
-                                {% endif %}
-                                <div id="pdf-error-{{ item.pedido.id }}" class="error-message">
-                                    Anexe um comprovante em PDF (máximo 5MB)!
-                                </div>
-                            </div>
-                            <div class="fornecedor-container" id="fornecedor-container-{{ item.pedido.id }}"
-                                style="display: none;">
-                                <div class="input-group input-group-sm mt-2">
-                                    <input type="text" name="fornecedor" class="form-control fornecedor-input"
-                                        placeholder="Fornecedor"
-                                        value="{% if item.preenchimentos and item.preenchimentos[0].fornecedor_nome %}{{ item.preenchimentos[0].fornecedor_nome }} ({{ item.preenchimentos[0].fornecedor_cnpj }}){% endif %}"
-                                        aria-label="Selecionar fornecedor"
-                                        aria-describedby="fornecedor-error-{{ item.pedido.id }}">
-                                    <input type="hidden" name="fornecedor_id" class="fornecedor-id"
-                                        value="{% if item.preenchimentos and item.preenchimentos[0].fornecedor_id %}{{ item.preenchimentos[0].fornecedor_id }}{% endif %}">
-                                </div>
-                                <div id="fornecedor-error-{{ item.pedido.id }}" class="error-message">
-                                    Selecione um fornecedor!
-                                </div>
-                            </div>
-                            <div class="nf-container" id="nf-container-{{ item.pedido.id }}" style="display: none;">
-                                <input type="text" name="numero_nf" class="form-control form-control-sm mt-2"
-                                    placeholder="Número NF"
-                                    value="{% if item.preenchimentos and item.preenchimentos[0].numero_nf %}{{ item.preenchimentos[0].numero_nf }}{% endif %}"
-                                    aria-describedby="nf-error-{{ item.pedido.id }}">
-                                <div id="nf-error-{{ item.pedido.id }}" class="error-message">
-                                    Informe o número da NF!
-                                </div>
-                            </div>
-                        </form>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+            <div class="pagination-info">
+                Mostrando {{ (pagina_atual - 1) * request.args.get('por_pagina', 10)|int + 1 }} a 
+                {% if pagina_atual * request.args.get('por_pagina', 10)|int > total_itens %}
+                    {{ total_itens }}
+                {% else %}
+                    {{ pagina_atual * request.args.get('por_pagina', 10)|int }}
+                {% endif %}
+                de {{ total_itens }} resultados
+            </div>
+        </div>
+        {% endif %}
     </div>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Script para cópia e tooltips -->
     <script>
+        // Função para copiar texto para a área de transferência
+        function copyToClipboard(element) {
+            const fullText = element.getAttribute('data-fulltext');
+            if (!fullText) return;
+
+            // Criar elemento temporário
+            const tempInput = document.createElement('input');
+            tempInput.value = fullText;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+
+            // Mostrar feedback visual
+            const originalText = element.innerHTML;
+            element.innerHTML = '✓ Copiado!';
+            element.style.backgroundColor = '#d4edda';
+            element.style.borderColor = '#c3e6cb';
+
+            // Restaurar após 1.5 segundos
+            setTimeout(() => {
+                element.innerHTML = originalText;
+                element.style.backgroundColor = '';
+                element.style.borderColor = '';
+            }, 1500);
+        }
+
+        // Função para mostrar tooltip com o texto completo
+        function showMarcaTooltip(element) {
+            const fullText = element.getAttribute('data-fulltext');
+            if (!fullText || fullText.length <= 20) return;
+
+            // Remover tooltips existentes
+            const existingTooltips = document.querySelectorAll('.marca-tooltip');
+            existingTooltips.forEach(tooltip => tooltip.remove());
+
+            // Criar novo tooltip
+            const tooltip = document.createElement('div');
+            tooltip.className = 'marca-tooltip';
+            tooltip.textContent = fullText;
+
+            // Posicionar tooltip
+            const rect = element.getBoundingClientRect();
+            tooltip.style.left = rect.left + 'px';
+            tooltip.style.top = (rect.top - tooltip.offsetHeight - 10) + 'px';
+            tooltip.style.opacity = '1';
+
+            document.body.appendChild(tooltip);
+
+            // Remover tooltip após 3 segundos
+            setTimeout(() => {
+                tooltip.remove();
+            }, 3000);
+        }
+
+        // Adicionar evento de mouseover para mostrar tooltip
+        document.addEventListener('DOMContentLoaded', function() {
+            const marcaFields = document.querySelectorAll('.marca-field');
+            
+            marcaFields.forEach(field => {
+                field.addEventListener('mouseenter', function() {
+                    showMarcaTooltip(this);
+                });
+
+                // Adicionar título para acessibilidade
+                const fullText = field.getAttribute('data-fulltext');
+                if (fullText && fullText.length > 20) {
+                    field.setAttribute('title', 'Clique para copiar - Passe o mouse para ver completo');
+                }
+            });
+        });
+
+        // Função para alterar itens por página
+        function changeItemsPerPage(select) {
+            const url = new URL(window.location.href);
+            url.searchParams.set('por_pagina', select.value);
+            url.searchParams.set('pagina', '1'); // Resetar para primeira página
+            window.location.href = url.toString();
+        }
+
         $(document).ready(function () {
             // Inicializar o toast do Bootstrap
             const toastEl = document.getElementById('toast-feedback');
