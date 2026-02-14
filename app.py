@@ -3854,7 +3854,7 @@ def listar_pedidos_compra():
         # 1. Captura de parâmetros (consistente com o template)
         # ────────────────────────────────────────────────
         pagina       = request.args.get('pagina', 1, type=int)
-        por_pagina   = request.args.get('por_pagina', 10, type=int)
+        por_pagina   = request.args.get('por_pagina', 50, type=int)
         status       = request.args.get('status')
         empresa      = request.args.get('empresa')
         usuario      = request.args.get('usuario')
@@ -3862,8 +3862,8 @@ def listar_pedidos_compra():
         data_fim     = request.args.get('data_fim')
 
         # Validação básica
-        if por_pagina not in [10, 20, 50, 100]:
-            por_pagina = 10
+        if por_pagina not in [50, 100]:
+            por_pagina = 50
         if pagina < 1:
             pagina = 1
 
@@ -4052,7 +4052,7 @@ def listar_pedidos_compra():
             pagina_atual=1,
             total_paginas=1,
             total_itens=0,
-            por_pagina=10,
+            por_pagina=50,
             request=request
         )
     
