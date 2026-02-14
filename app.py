@@ -5380,66 +5380,124 @@ def auditoria_solicitacoes():
             usuario_logado=session.get('usuario'),
             filtros={}
         )
-    
+
 @routes_bp.route('/exportar_auditoria_xlsx', methods=['GET'])
 def exportar_auditoria_xlsx():
     if 'usuario' not in session:
         return redirect(url_for('routes_bp.login'))
     
     try:
-        # Obter os mesmos filtros da auditoria
-        empresa = request.args.get('empresa')
-        usuario = request.args.get('usuario')
-        ativo = request.args.get('ativo')
-        nome_ativo = request.args.get('nome_ativo')
-        status = request.args.get('status')
+        # ────────────────────────────────────────────────
+        # Parâmetros vindos da URL (mesmos da tela de auditoria)
+        # ────────────────────────────────────────────────
+        empresa         = request.args.get('empresa')
+        usuario         = request.args.get('usuario')
+        ativo           = request.args.get('ativo')
+        nome_ativo      = request.args.get('nome_ativo')
+        status          = request.args.get('status')
         prioridade_filtro = request.args.get('prioridade')
-        data_inicio = request.args.get('data_inicio')
-        data_fim = request.args.get('data_fim')
+        data_inicio     = request.args.get('data_inicio')
+        data_fim        = request.args.get('data_fim')
+
+        # Log para debug
+        app.logger.info(f"=== INÍCIO EXPORTAÇÃO ===")
+        app.logger.info(f"Parâmetro usuario recebido: '{usuario}'")
+        app.logger.info(f"Tipo do parâmetro: {type(usuario)}")
+
+        # CORREÇÃO: Verificar corretamente se é para exportar TODOS os usuários
+        # Se usuario for vazio, None, string vazia ou 'Todos' (case insensitive)
+        exportar_todos = (usuario is None or 
+                         usuario == '' or 
+                         usuario.lower() == 'todos' or 
+                         usuario.lower() == 'todos os usuários')
         
-        # Aplicar a mesma lógica de filtragem
+        app.logger.info(f"exportar_todos: {exportar_todos}")
+
+        # ────────────────────────────────────────────────
+        # Query base
+        # ────────────────────────────────────────────────
         query = db.session.query(SolicitacoesCompra).outerjoin(
             SolicitacoesPreenchidas,
             SolicitacoesCompra.id == SolicitacoesPreenchidas.solicitacao_id
         )
-        
-        # Aplicar filtros
+
+        # Filtros
         if empresa and empresa != '' and empresa != 'Todas':
             query = query.filter(SolicitacoesCompra.empresa == empresa)
-        
-        if usuario and usuario != '' and usuario != 'Todos':
-            query = query.filter(SolicitacoesCompra.usuario == usuario)
-        
+            app.logger.info(f"Aplicando filtro empresa: {empresa}")
+
+        # CORREÇÃO CRÍTICA: Aplicar filtro de usuário APENAS se NÃO for exportar todos
+        if not exportar_todos:
+            # Se não for exportar todos, filtra pelo usuário específico
+            if usuario and usuario.strip():
+                query = query.filter(SolicitacoesCompra.usuario == usuario)
+                app.logger.info(f"Aplicando filtro para usuário específico: '{usuario}'")
+            else:
+                app.logger.warning(f"exportar_todos é False mas usuario está vazio: '{usuario}'")
+        else:
+            app.logger.info("Exportando TODOS os usuários (filtro de usuário ignorado)")
+
         if ativo and ativo != '':
             query = query.filter(SolicitacoesCompra.ativo == ativo)
-        
-        if nome_ativo and nome_ativo != '' and ativo == 'Sim':
+            app.logger.info(f"Aplicando filtro ativo: {ativo}")
+
+        if nome_ativo and nome_ativo.strip() and ativo == 'Sim':
             query = query.filter(SolicitacoesCompra.nome_ativo.ilike(f'%{nome_ativo}%'))
-        
-        if data_inicio and data_inicio != '':
+            app.logger.info(f"Aplicando filtro nome_ativo: {nome_ativo}")
+
+        if data_inicio and data_inicio.strip():
             query = query.filter(SolicitacoesCompra.data_solicitacao >= data_inicio)
-        
-        if data_fim and data_fim != '':
-            data_fim_ajustada = datetime.strptime(data_fim, '%Y-%m-%d') + timedelta(days=1)
-            query = query.filter(SolicitacoesCompra.data_solicitacao <= data_fim_ajustada)
-        
-        # Obter dados (agrupar por solicitacao para evitar duplicatas do outerjoin)
+            app.logger.info(f"Aplicando filtro data_inicio: {data_inicio}")
+
+        if data_fim and data_fim.strip():
+            try:
+                dt_fim = datetime.strptime(data_fim, '%Y-%m-%d')
+                data_fim_ajustada = dt_fim + timedelta(days=1)
+                query = query.filter(SolicitacoesCompra.data_solicitacao < data_fim_ajustada)
+                app.logger.info(f"Aplicando filtro data_fim: {data_fim} (ajustada: {data_fim_ajustada})")
+            except Exception as e:
+                app.logger.error(f"Erro ao processar data_fim: {e}")
+
+        # Busca os registros
         solicitacoes = query.order_by(SolicitacoesCompra.data_solicitacao.desc()).distinct().all()
         
-        # Preparar dados para o Excel
-        dados = []
+        app.logger.info(f"Total de solicitações encontradas: {len(solicitacoes)}")
         
+        # Se não encontrou nada, log mais detalhado
+        if len(solicitacoes) == 0:
+            app.logger.warning("NENHUMA SOLICITAÇÃO ENCONTRADA COM OS FILTROS:")
+            app.logger.warning(f"  - empresa: {empresa}")
+            app.logger.warning(f"  - usuario: {usuario} (exportar_todos: {exportar_todos})")
+            app.logger.warning(f"  - ativo: {ativo}")
+            app.logger.warning(f"  - nome_ativo: {nome_ativo}")
+            app.logger.warning(f"  - status: {status}")
+            app.logger.warning(f"  - prioridade_filtro: {prioridade_filtro}")
+            app.logger.warning(f"  - data_inicio: {data_inicio}")
+            app.logger.warning(f"  - data_fim: {data_fim}")
+
+        # ────────────────────────────────────────────────
+        # Preparar dados para o Excel
+        # ────────────────────────────────────────────────
+        dados = []
+        contador_solicitacoes = 0
+        contador_preenchimentos = 0
+
         for solicitacao in solicitacoes:
+            contador_solicitacoes += 1
             material = db.session.get(Materiais, solicitacao.cod_material)
-            
+
             # Buscar preenchimentos (excluindo rascunhos)
-            preenchimentos = db.session.query(SolicitacoesPreenchidas).filter_by(
+            preenchimentos_query = db.session.query(SolicitacoesPreenchidas).filter_by(
                 solicitacao_id=solicitacao.id
             ).filter(
                 SolicitacoesPreenchidas.status != 'Rascunho'
-            ).all()
+            )
             
-            # Se não houver preenchimentos, tratar como 'Aberta'
+            preenchimentos = preenchimentos_query.all()
+            
+            app.logger.debug(f"Solicitação {solicitacao.id} - {len(preenchimentos)} preenchimentos encontrados")
+
+            # Caso não tenha preenchimento → trata como 'Aberta'
             if not preenchimentos:
                 if status and status.strip() and status != 'Todos' and status != 'Aberta':
                     continue
@@ -5458,11 +5516,10 @@ def exportar_auditoria_xlsx():
                 condicao_pagamento = ''
                 observacoes = ''
                 
-                if prioridade_filtro and prioridade_filtro != '':
+                if prioridade_filtro and prioridade_filtro.strip():
                     if int(prioridade_filtro) != prioridade:
                         continue
                 
-                # Adicionar linha para 'Aberta' COM COMPRADOR ATRIBUÍDO
                 dados.append({
                     'ID_Solicitacao': solicitacao.id,
                     'ID_Cotacao': '',
@@ -5471,7 +5528,7 @@ def exportar_auditoria_xlsx():
                     'Especificacao': solicitacao.especificacao,
                     'Marca': solicitacao.marca or '',
                     'Solicitante': solicitacao.usuario,
-                    'Comprador_Atribuido': solicitacao.comprador_atribuido or '',  # NOVA COLUNA
+                    'Comprador_Atribuido': solicitacao.comprador_atribuido or '',
                     'Empresa': solicitacao.empresa,
                     'Ativo': 'Sim' if solicitacao.ativo == 'Sim' else 'Não',
                     'Nome_Ativo': solicitacao.nome_ativo if solicitacao.ativo == 'Sim' else '',
@@ -5480,7 +5537,7 @@ def exportar_auditoria_xlsx():
                     'Prioridade_Original': solicitacao.prioridade,
                     'Nivel_Prioridade': nivel_prioridade,
                     'Valor_Prioridade': prioridade,
-                    'Data_Solicitacao': solicitacao.data_solicitacao.strftime('%d/%m/%Y %H:%M'),
+                    'Data_Solicitacao': solicitacao.data_solicitacao.strftime('%d/%m/%Y %H:%M') if solicitacao.data_solicitacao else '',
                     'Status': status_formatado,
                     'Fornecedor': fornecedor_nome,
                     'CNPJ_Fornecedor': fornecedor_cnpj,
@@ -5498,12 +5555,15 @@ def exportar_auditoria_xlsx():
                 })
                 continue
             
-            # Se houver preenchimentos, processar cada um
+            # Tem preenchimentos → processa cada um
             for preenchimento in preenchimentos:
+                contador_preenchimentos += 1
+                
                 if status and status.strip() and status != 'Todos':
                     if preenchimento.status != status:
                         continue
                 
+                # Lógica de prioridade (igual ao original)
                 prioridade = 0
                 if preenchimento.status == 'Entregue':
                     prioridade = 3
@@ -5514,31 +5574,30 @@ def exportar_auditoria_xlsx():
                     ).filter(
                         pedido_preenchimento_associacao.c.preenchimento_id == preenchimento.id
                     ).first()
-                    if pedido:
-                        prioridade = 2
-                    else:
-                        prioridade = 1
+                    prioridade = 2 if pedido else 1
                 
-                if prioridade_filtro and prioridade_filtro != '':
+                if prioridade_filtro and prioridade_filtro.strip():
                     if int(prioridade_filtro) != prioridade:
                         continue
                 
+                # Busca fornecedor
                 fornecedor_nome = ''
                 fornecedor_cnpj = ''
                 if preenchimento.fornecedor_id:
                     conn = get_db_connection(DB_PATH_FORNECEDORES)
                     if conn:
                         cursor = conn.cursor()
-                        cursor.execute('SELECT nome_fantasia, cnpj FROM fornecedores WHERE id = ?',
-                                       (preenchimento.fornecedor_id,))
+                        cursor.execute('SELECT nome_fantasia, cnpj FROM fornecedores WHERE id = ?', (preenchimento.fornecedor_id,))
                         result = cursor.fetchone()
                         if result:
-                            fornecedor_nome = result[0]
+                            fornecedor_nome = result[0] or ''
                             fornecedor_cnpj = format_cnpj(result[1]) if result[1] else ''
                         conn.close()
                 
+                # Busca pedido associado
                 pedido = None
                 pedido_numero = ''
+                pedido_status = ''
                 if preenchimento:
                     pedido = db.session.query(PedidosCompra).join(
                         pedido_preenchimento_associacao,
@@ -5548,42 +5607,39 @@ def exportar_auditoria_xlsx():
                     ).first()
                     if pedido:
                         pedido_numero = pedido.numero_pedido
+                        pedido_status = pedido.status or ''
                 
-                status_formatado = 'Aberta'
-                if preenchimento:
-                    if preenchimento.status == 'Rascunho':
-                        status_formatado = 'Rascunho'
-                    elif preenchimento.status == 'Aguardando Aprovação':
-                        status_formatado = 'Aguardando Aprovação'
-                    elif preenchimento.status == 'Aprovado':
-                        status_formatado = 'Aprovado'
-                    elif preenchimento.status == 'Reprovado':
-                        status_formatado = 'Reprovado'
-                    elif preenchimento.status == 'Em Processamento':
-                        status_formatado = 'Em Processamento'
-                    elif preenchimento.status == 'Entregue':
-                        status_formatado = 'Entregue'
+                # Formata status
+                status_formatado = preenchimento.status or 'Aberta'
+                if status_formatado == 'Rascunho':
+                    status_formatado = 'Rascunho'
+                elif status_formatado == 'Aguardando Aprovação':
+                    status_formatado = 'Aguardando Aprovação'
+                elif status_formatado == 'Aprovado':
+                    status_formatado = 'Aprovado'
+                elif status_formatado == 'Reprovado':
+                    status_formatado = 'Reprovado'
+                elif status_formatado == 'Em Processamento':
+                    status_formatado = 'Em Processamento'
+                elif status_formatado == 'Entregue':
+                    status_formatado = 'Entregue'
                 
-                nivel_prioridade = ''
-                if prioridade == 3:
-                    nivel_prioridade = 'Máxima (Entregues)'
-                elif prioridade == 2:
-                    nivel_prioridade = 'Alta (Aprovadas + Pedido)'
-                elif prioridade == 1:
-                    nivel_prioridade = 'Média (Aprovadas)'
-                else:
-                    nivel_prioridade = 'Baixa (Outras)'
+                nivel_prioridade = {
+                    3: 'Máxima (Entregues)',
+                    2: 'Alta (Aprovadas + Pedido)',
+                    1: 'Média (Aprovadas)',
+                    0: 'Baixa (Outras)'
+                }.get(prioridade, 'Baixa (Outras)')
                 
-                # Adicionar linha de dados COM COMPRADOR ATRIBUÍDO
                 dados.append({
                     'ID_Solicitacao': solicitacao.id,
-                    'ID_Cotacao': preenchimento.id if preenchimento else '',
+                    'ID_Cotacao': preenchimento.id,
                     'Material': material.DescricaoMaterial if material else 'Material não encontrado',
                     'Cod_Material': material.CodMaterial if material else '',
                     'Especificacao': solicitacao.especificacao,
                     'Marca': solicitacao.marca or '',
                     'Solicitante': solicitacao.usuario,
-                    'Comprador_Atribuido': solicitacao.comprador_atribuido or '',  # NOVA COLUNA
+                    'Comprador_Atribuido': solicitacao.comprador_atribuido or '',
                     'Empresa': solicitacao.empresa,
                     'Ativo': 'Sim' if solicitacao.ativo == 'Sim' else 'Não',
                     'Nome_Ativo': solicitacao.nome_ativo if solicitacao.ativo == 'Sim' else '',
@@ -5592,120 +5648,134 @@ def exportar_auditoria_xlsx():
                     'Prioridade_Original': solicitacao.prioridade,
                     'Nivel_Prioridade': nivel_prioridade,
                     'Valor_Prioridade': prioridade,
-                    'Data_Solicitacao': solicitacao.data_solicitacao.strftime('%d/%m/%Y %H:%M'),
+                    'Data_Solicitacao': solicitacao.data_solicitacao.strftime('%d/%m/%Y %H:%M') if solicitacao.data_solicitacao else '',
                     'Status': status_formatado,
                     'Fornecedor': fornecedor_nome,
                     'CNPJ_Fornecedor': fornecedor_cnpj,
-                    'Valor_Unitario': preenchimento.valor_unitario if preenchimento else 0,
-                    'Valor_Total': preenchimento.valor_total if preenchimento else 0,
-                    'Valor_Frete': preenchimento.valor_frete if preenchimento else 0,
-                    'Prazo_Entrega': preenchimento.prazo_entrega if preenchimento else '',
-                    'Condicao_Pagamento': preenchimento.condicao_pagamento if preenchimento else '',
+                    'Valor_Unitario': preenchimento.valor_unitario or 0,
+                    'Valor_Total': preenchimento.valor_total or 0,
+                    'Valor_Frete': preenchimento.valor_frete or 0,
+                    'Prazo_Entrega': preenchimento.prazo_entrega or '',
+                    'Condicao_Pagamento': preenchimento.condicao_pagamento or '',
                     'Pedido_Numero': pedido_numero,
-                    'Pedido_Status': pedido.status if pedido else '',
-                    'Observacoes': preenchimento.observacoes if preenchimento and preenchimento.observacoes else '',
+                    'Pedido_Status': pedido_status,
+                    'Observacoes': preenchimento.observacoes or '',
                     'Aprovacao': solicitacao.status_aprovacao or 'Pendente',
                     'Aplicacao': solicitacao.aplicacao or '',
                     'Aplicacao_Geral': solicitacao.aplicacao_geral or ''
                 })
-        
+
+        app.logger.info(f"Total de solicitações processadas: {contador_solicitacoes}")
+        app.logger.info(f"Total de preenchimentos processados: {contador_preenchimentos}")
+        app.logger.info(f"Total de linhas geradas para Excel: {len(dados)}")
+
         if not dados:
+            app.logger.warning("Nenhum dado encontrado para exportar!")
             flash('Nenhum dado encontrado para exportar com os filtros aplicados.', 'warning')
             return redirect(url_for('routes_bp.auditoria_solicitacoes'))
-        
-        # Criar DataFrame
-        df = pd.DataFrame(dados)
-        
-        # Criar arquivo Excel
-        output = BytesIO()
-        
-        # Usar openpyxl para ter mais controle sobre a formatação
+
+        # ────────────────────────────────────────────────
+        # Geração do Excel
+        # ────────────────────────────────────────────────
         wb = Workbook()
         ws = wb.active
         ws.title = "Auditoria Solicitações"
-        
+
         # Estilos
         header_font = Font(bold=True, color="FFFFFF")
         header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
-        header_alignment = Alignment(horizontal="center", vertical="center")
-        
-        # Escrever cabeçalhos COM NOVA COLUNA
+        header_alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+
         headers = [
             'ID Solicitação', 'ID Cotação', 'Material', 'Cód Material', 'Especificação', 'Marca',
-            'Solicitante', 'Comprador Atribuído', 'Empresa', 'Ativo', 'Nome Ativo', 'Quantidade', 'Unidade',
-            'Prioridade Original', 'Nível Prioridade', 'Valor Prioridade', 'Data Solicitação',
-            'Status', 'Fornecedor', 'CNPJ Fornecedor', 'Valor Unitário', 'Valor Total', 'Valor Frete',
-            'Prazo Entrega', 'Condição Pagamento', 'Número Pedido', 'Status Pedido', 'Observações',
-            'Aprovação', 'Aplicação', 'Aplicação Geral'
+            'Solicitante', 'Comprador Atribuído', 'Empresa', 'Ativo', 'Nome Ativo', 'Quantidade',
+            'Unidade', 'Prioridade Original', 'Nível Prioridade', 'Valor Prioridade',
+            'Data Solicitação', 'Status', 'Fornecedor', 'CNPJ Fornecedor', 'Valor Unitário',
+            'Valor Total', 'Valor Frete', 'Prazo Entrega', 'Condição Pagamento',
+            'Número Pedido', 'Status Pedido', 'Observações', 'Aprovação',
+            'Aplicação', 'Aplicação Geral'
         ]
-        
+
         for col_num, header in enumerate(headers, 1):
             cell = ws.cell(row=1, column=col_num, value=header)
             cell.font = header_font
             cell.fill = header_fill
             cell.alignment = header_alignment
-        
-        # Escrever dados COM NOVA COLUNA
+
+        # Dados
         for row_num, item in enumerate(dados, 2):
-            ws.cell(row=row_num, column=1, value=item['ID_Solicitacao'])
-            ws.cell(row=row_num, column=2, value=item['ID_Cotacao'])
-            ws.cell(row=row_num, column=3, value=item['Material'])
-            ws.cell(row=row_num, column=4, value=item['Cod_Material'])
-            ws.cell(row=row_num, column=5, value=item['Especificacao'])
-            ws.cell(row=row_num, column=6, value=item['Marca'])
-            ws.cell(row=row_num, column=7, value=item['Solicitante'])
-            ws.cell(row=row_num, column=8, value=item['Comprador_Atribuido'])  # NOVA COLUNA
-            ws.cell(row=row_num, column=9, value=item['Empresa'])
-            ws.cell(row=row_num, column=10, value=item['Ativo'])
-            ws.cell(row=row_num, column=11, value=item['Nome_Ativo'])
-            ws.cell(row=row_num, column=12, value=item['Quantidade'])
-            ws.cell(row=row_num, column=13, value=item['Unidade_Medida'])
-            ws.cell(row=row_num, column=14, value=item['Prioridade_Original'])
-            ws.cell(row=row_num, column=15, value=item['Nivel_Prioridade'])
-            ws.cell(row=row_num, column=16, value=item['Valor_Prioridade'])
-            ws.cell(row=row_num, column=17, value=item['Data_Solicitacao'])
-            ws.cell(row=row_num, column=18, value=item['Status'])
-            ws.cell(row=row_num, column=19, value=item['Fornecedor'])
-            ws.cell(row=row_num, column=20, value=item['CNPJ_Fornecedor'])
-            ws.cell(row=row_num, column=21, value=item['Valor_Unitario'])
-            ws.cell(row=row_num, column=22, value=item['Valor_Total'])
-            ws.cell(row=row_num, column=23, value=item['Valor_Frete'])
-            ws.cell(row=row_num, column=24, value=item['Prazo_Entrega'])
-            ws.cell(row=row_num, column=25, value=item['Condicao_Pagamento'])
-            ws.cell(row=row_num, column=26, value=item['Pedido_Numero'])
-            ws.cell(row=row_num, column=27, value=item['Pedido_Status'])
-            ws.cell(row=row_num, column=28, value=item['Observacoes'])
-            ws.cell(row=row_num, column=29, value=item['Aprovacao'])
-            ws.cell(row=row_num, column=30, value=item['Aplicacao'])
-            ws.cell(row=row_num, column=31, value=item['Aplicacao_Geral'])
-        
-        # Ajustar largura das colunas
+            row = [
+                item['ID_Solicitacao'],
+                item['ID_Cotacao'],
+                item['Material'],
+                item['Cod_Material'],
+                item['Especificacao'],
+                item['Marca'],
+                item['Solicitante'],
+                item['Comprador_Atribuido'],
+                item['Empresa'],
+                item['Ativo'],
+                item['Nome_Ativo'],
+                item['Quantidade'],
+                item['Unidade_Medida'],
+                item['Prioridade_Original'],
+                item['Nivel_Prioridade'],
+                item['Valor_Prioridade'],
+                item['Data_Solicitacao'],
+                item['Status'],
+                item['Fornecedor'],
+                item['CNPJ_Fornecedor'],
+                item['Valor_Unitario'],
+                item['Valor_Total'],
+                item['Valor_Frete'],
+                item['Prazo_Entrega'],
+                item['Condicao_Pagamento'],
+                item['Pedido_Numero'],
+                item['Pedido_Status'],
+                item['Observacoes'],
+                item['Aprovacao'],
+                item['Aplicacao'],
+                item['Aplicacao_Geral']
+            ]
+            for col_num, value in enumerate(row, 1):
+                ws.cell(row=row_num, column=col_num, value=value)
+
+        # Ajuste automático de largura
         for column in ws.columns:
             max_length = 0
             column_letter = get_column_letter(column[0].column)
             for cell in column:
                 try:
-                    if len(str(cell.value)) > max_length:
+                    if cell.value and len(str(cell.value)) > max_length:
                         max_length = len(str(cell.value))
                 except:
                     pass
-            adjusted_width = min(max_length + 2, 30)
+            adjusted_width = min(max_length + 3, 40)
             ws.column_dimensions[column_letter].width = adjusted_width
-        
-        # Salvar
+
+        # Salvar em memória
+        output = BytesIO()
         wb.save(output)
         output.seek(0)
-        
-        # Criar resposta
+
+        # Nome do arquivo indicando se é completo ou filtrado
+        if exportar_todos:
+            filename = f"auditoria_solicitacoes_TODOS_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        else:
+            # Sanitizar nome do usuário para evitar problemas com caracteres especiais
+            usuario_sanitizado = usuario.replace(' ', '_').replace('\\', '_').replace('/', '_')
+            filename = f"auditoria_solicitacoes_{usuario_sanitizado}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+
         response = make_response(output.getvalue())
         response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        response.headers['Content-Disposition'] = 'attachment; filename=auditoria_solicitacoes_com_comprador.xlsx'
-        
+        response.headers['Content-Disposition'] = f'attachment; filename={filename}'
+
+        app.logger.info(f"Arquivo gerado com sucesso: {filename}")
         return response
-        
+
     except Exception as e:
         flash(f'Erro ao exportar relatório: {str(e)}', 'error')
-        app.logger.error(f'Erro em exportar_auditoria_xlsx: {str(e)}')
+        app.logger.error(f'Erro em exportar_auditoria_xlsx: {str(e)}', exc_info=True)
         return redirect(url_for('routes_bp.auditoria_solicitacoes'))
     
 def get_fornecedor_cnpj(fornecedor_id):
