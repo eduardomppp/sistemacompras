@@ -3848,152 +3848,124 @@ def download_comprovante(pedido_id):
 def listar_pedidos_compra():
     if 'usuario' not in session:
         return redirect(url_for('routes_bp.login'))
-    
+
     try:
-        # Obter parâmetros de filtro
-        status = request.args.get('status')
-        empresa_filtro = request.args.get('empresa')
-        usuario_filtro = request.args.get('usuario')
-        data_inicio = request.args.get('data_inicio')
-        data_fim = request.args.get('data_fim')
-        
-        # Parâmetros de paginação
-        pagina = request.args.get('pagina', 1, type=int)
-        por_pagina = request.args.get('por_pagina', 10, type=int)
-        
-        # Validação
-        valores_permitidos = [10, 20, 50, 100]
-        if por_pagina not in valores_permitidos:
+        # ────────────────────────────────────────────────
+        # 1. Captura de parâmetros (consistente com o template)
+        # ────────────────────────────────────────────────
+        pagina       = request.args.get('pagina', 1, type=int)
+        por_pagina   = request.args.get('por_pagina', 10, type=int)
+        status       = request.args.get('status')
+        empresa      = request.args.get('empresa')
+        usuario      = request.args.get('usuario')
+        data_inicio  = request.args.get('data_inicio')
+        data_fim     = request.args.get('data_fim')
+
+        # Validação básica
+        if por_pagina not in [10, 20, 50, 100]:
             por_pagina = 10
         if pagina < 1:
             pagina = 1
 
-        # Ler usuários e empresas
+        logging.info(f"→ Requisição GET /listar_pedidos_compra | página={pagina} | por_pagina={por_pagina}")
+        logging.info(f"   Filtros recebidos: status={status}, empresa={empresa}, usuario={usuario}, data_inicio={data_inicio}, data_fim={data_fim}")
+
+        # ────────────────────────────────────────────────
+        # 2. Carregar empresas e usuários do senhas.txt
+        # ────────────────────────────────────────────────
         usuarios_empresas = {}
         empresas_unicas = set()
         usuarios_unicos = set()
-        
+
         try:
             with open('senhas.txt', 'r', encoding='utf-8') as f:
                 for line in f:
                     partes = line.strip().split('%')
                     if len(partes) >= 4:
-                        usuario = partes[0]
-                        empresa = partes[3]
-                        usuarios_empresas[usuario] = empresa
-                        empresas_unicas.add(empresa)
-                        usuarios_unicos.add(usuario)
+                        u = partes[0].strip()
+                        e = partes[3].strip()
+                        usuarios_empresas[u] = e
+                        empresas_unicas.add(e)
+                        usuarios_unicos.add(u)
         except Exception as e:
-            logging.error(f"Erro ao ler senhas.txt: {str(e)}")
-            usuarios_empresas = {}
+            logging.error(f"Erro lendo senhas.txt: {str(e)}")
 
-        # CONSULTA BASE
+        # ────────────────────────────────────────────────
+        # 3. Query base
+        # ────────────────────────────────────────────────
         query = db.session.query(PedidosCompra).join(
-            pedido_preenchimento_associacao,
-            PedidosCompra.id == pedido_preenchimento_associacao.c.pedido_id
+            pedido_preenchimento_associacao, PedidosCompra.id == pedido_preenchimento_associacao.c.pedido_id
         ).join(
-            SolicitacoesPreenchidas,
-            pedido_preenchimento_associacao.c.preenchimento_id == SolicitacoesPreenchidas.id
+            SolicitacoesPreenchidas, pedido_preenchimento_associacao.c.preenchimento_id == SolicitacoesPreenchidas.id
         ).join(
-            SolicitacoesCompra,
-            SolicitacoesPreenchidas.solicitacao_id == SolicitacoesCompra.id
+            SolicitacoesCompra, SolicitacoesPreenchidas.solicitacao_id == SolicitacoesCompra.id
         )
 
-        # Aplicar filtros
+        # Filtros
         if status:
             query = query.filter(PedidosCompra.status == status)
-        
-        if empresa_filtro:
-            usuarios_da_empresa = [u for u, e in usuarios_empresas.items() if e == empresa_filtro]
+        if empresa:
+            usuarios_da_empresa = [u for u, e in usuarios_empresas.items() if e == empresa]
             query = query.filter(
-                (SolicitacoesCompra.empresa == empresa_filtro) |
-                (PedidosCompra.usuario.in_(usuarios_da_empresa))
+                or_(
+                    SolicitacoesCompra.empresa == empresa,
+                    PedidosCompra.usuario.in_(usuarios_da_empresa)
+                )
             )
-        
-        if usuario_filtro:
-            query = query.filter(PedidosCompra.usuario == usuario_filtro)
-        
+        if usuario:
+            query = query.filter(PedidosCompra.usuario == usuario)
         if data_inicio:
             query = query.filter(PedidosCompra.data_criacao >= data_inicio)
-        
         if data_fim:
-            data_fim_ajustada = datetime.strptime(data_fim, '%Y-%m-%d') + timedelta(days=1)
-            query = query.filter(PedidosCompra.data_criacao <= data_fim_ajustada)
+            try:
+                dt_fim = datetime.strptime(data_fim, '%Y-%m-%d') + timedelta(days=1)
+                query = query.filter(PedidosCompra.data_criacao < dt_fim)
+            except:
+                logging.warning("Formato inválido em data_fim")
 
-        # PASSO 1: Subquery só com IDs distintos
+        # ────────────────────────────────────────────────
+        # 4. Contagem e IDs paginados (com ordenação determinística)
+        # ────────────────────────────────────────────────
         query_ids = query.with_entities(PedidosCompra.id).distinct()
-        
-        # Contar total de itens
+
         total_itens = query_ids.count()
-        
-        # Calcular total de páginas
-        total_paginas = (total_itens + por_pagina - 1) // por_pagina if total_itens > 0 else 1
-        
-        # Ajustar página
-        if pagina > total_paginas and total_paginas > 0:
+        total_paginas = max(1, (total_itens + por_pagina - 1) // por_pagina)
+
+        if pagina > total_paginas:
             pagina = total_paginas
 
-        # Log de depuração (para verificar filtros e total)
-        logging.info(f"[PAGINAÇÃO] Página {pagina} | Filtros: {request.args}")
-        logging.info(f"[PAGINAÇÃO] Total de pedidos distintos encontrados: {total_itens}")
+        logging.info(f"Total itens distintos: {total_itens} → {total_paginas} páginas")
 
-        # PASSO 2: Buscar IDs da página atual (com ordenação determinística)
-        ids_paginados = query_ids.order_by(
+        # IDs da página atual
+        ids_page = query_ids.order_by(
             PedidosCompra.data_criacao.desc(),
-            PedidosCompra.id.desc()  # Adicionado para tornar a ordenação determinística
-        ).offset(
-            (pagina - 1) * por_pagina
-        ).limit(por_pagina).all()
-        
-        ids_paginados = [id[0] for id in ids_paginados]
+            PedidosCompra.id.desc()
+        ).offset((pagina - 1) * por_pagina).limit(por_pagina).all()
 
-        # Log de depuração para IDs
-        logging.info(f"[PAGINAÇÃO] IDs retornados pela subquery: {ids_paginados}")
+        ids_page = [row[0] for row in ids_page]
+        logging.info(f"IDs da página {pagina}: {ids_page}")
 
-        # PASSO 3: Buscar pedidos completos (com mesma ordenação)
-        if ids_paginados:
-            pedidos = db.session.query(PedidosCompra)\
-                .filter(PedidosCompra.id.in_(ids_paginados))\
-                .order_by(
-                    PedidosCompra.data_criacao.desc(),
-                    PedidosCompra.id.desc()  # Mesma ordenação aqui
-                )\
-                .all()
-        else:
-            pedidos = []
+        # Pedidos completos
+        pedidos = []
+        if ids_page:
+            pedidos = db.session.query(PedidosCompra).filter(
+                PedidosCompra.id.in_(ids_page)
+            ).order_by(
+                PedidosCompra.data_criacao.desc(),
+                PedidosCompra.id.desc()
+            ).all()
 
-        # Log de depuração para quantidade final
-        logging.info(f"[PAGINAÇÃO] Quantidade de pedidos carregados: {len(pedidos)}")
+        logging.info(f"Pedidos carregados nesta página: {len(pedidos)}")
 
-        # Se não há pedidos
-        if not pedidos:
-            return render_template(
-                'listar_pedidos_compra.html', 
-                pedidos_completos=[],
-                empresas=sorted(empresas_unicas),
-                usuarios=sorted(usuarios_unicos),
-                filtros={
-                    'empresa': empresa_filtro,
-                    'usuario': usuario_filtro,
-                    'data_inicio': data_inicio,
-                    'data_fim': data_fim,
-                    'status': status
-                },
-                pagina_atual=pagina,
-                total_paginas=total_paginas,
-                total_itens=total_itens,
-                por_pagina=por_pagina,
-                request=request
-            )
-
-        # Coletar IDs de fornecedores
+        # ────────────────────────────────────────────────
+        # 5. Buscar informações de fornecedores
+        # ────────────────────────────────────────────────
         fornecedor_ids = set()
         for pedido in pedidos:
             for preenchimento in pedido.preenchimentos:
                 if preenchimento.fornecedor_id:
                     fornecedor_ids.add(preenchimento.fornecedor_id)
 
-        # Buscar fornecedores
         fornecedores = {}
         if fornecedor_ids:
             conn = get_db_connection(DB_PATH_FORNECEDORES)
@@ -4013,7 +3985,9 @@ def listar_pedidos_compra():
                 finally:
                     conn.close()
 
-        # Estruturar dados para o template (SEM o campo numero_nf)
+        # ────────────────────────────────────────────────
+        # 6. Estruturar dados para o template
+        # ────────────────────────────────────────────────
         pedidos_completos = []
         for pedido in pedidos:
             preenchimentos_info = []
@@ -4027,7 +4001,7 @@ def listar_pedidos_compra():
                 if not empresa_usuario and preenchimento.solicitacao:
                     empresa_usuario = preenchimento.solicitacao.empresa
                 
-                marca = preenchimento.solicitacao.marca if preenchimento.solicitacao.marca else 'Não informado'
+                marca = preenchimento.solicitacao.marca if preenchimento.solicitacao and preenchimento.solicitacao.marca else 'Não informado'
                 
                 preenchimentos_info.append({
                     'id': preenchimento.id,
@@ -4035,9 +4009,8 @@ def listar_pedidos_compra():
                     'fornecedor_nome': fornecedor_info['nome_fantasia'],
                     'fornecedor_cnpj': fornecedor_info.get('cnpj', 'N/A'),
                     'fornecedor_id': preenchimento.fornecedor_id,
-                    'material': preenchimento.solicitacao.material.DescricaoMaterial if preenchimento.solicitacao.material else 'N/A',
+                    'material': preenchimento.solicitacao.material.DescricaoMaterial if preenchimento.solicitacao and preenchimento.solicitacao.material else 'N/A',
                     'empresa': empresa_usuario
-                    # REMOVIDO: 'numero_nf' pois não existe no modelo
                 })
             pedidos_completos.append({
                 'pedido': pedido,
@@ -4045,15 +4018,17 @@ def listar_pedidos_compra():
                 'observacoes': pedido.observacoes
             })
 
-        # Renderizar template
+        # ────────────────────────────────────────────────
+        # 7. Renderizar template
+        # ────────────────────────────────────────────────
         return render_template(
             'listar_pedidos_compra.html', 
             pedidos_completos=pedidos_completos,
             empresas=sorted(empresas_unicas),
             usuarios=sorted(usuarios_unicos),
             filtros={
-                'empresa': empresa_filtro,
-                'usuario': usuario_filtro,
+                'empresa': empresa,
+                'usuario': usuario,
                 'data_inicio': data_inicio,
                 'data_fim': data_fim,
                 'status': status
@@ -4066,9 +4041,7 @@ def listar_pedidos_compra():
         )
         
     except Exception as e:
-        logging.error(f"Erro ao listar pedidos de compra: {str(e)}")
-        import traceback
-        traceback.print_exc()
+        logging.error(f"Erro ao listar pedidos de compra: {str(e)}", exc_info=True)
         flash(f'Erro ao listar pedidos de compra: {str(e)}', 'error')
         return render_template(
             'listar_pedidos_compra.html', 
