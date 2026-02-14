@@ -3887,8 +3887,8 @@ def listar_pedidos_compra():
             logging.error(f"Erro ao ler senhas.txt: {str(e)}")
             usuarios_empresas = {}
 
-        # ===== CONSULTA BASE (COM JOINS) =====
-        query_base = db.session.query(PedidosCompra).join(
+        # CONSULTA BASE
+        query = db.session.query(PedidosCompra).join(
             pedido_preenchimento_associacao,
             PedidosCompra.id == pedido_preenchimento_associacao.c.pedido_id
         ).join(
@@ -3899,31 +3899,31 @@ def listar_pedidos_compra():
             SolicitacoesPreenchidas.solicitacao_id == SolicitacoesCompra.id
         )
 
-        # Aplicar filtros na query_base
+        # Aplicar filtros
         if status:
-            query_base = query_base.filter(PedidosCompra.status == status)
+            query = query.filter(PedidosCompra.status == status)
         
         if empresa_filtro:
             usuarios_da_empresa = [u for u, e in usuarios_empresas.items() if e == empresa_filtro]
-            query_base = query_base.filter(
+            query = query.filter(
                 (SolicitacoesCompra.empresa == empresa_filtro) |
                 (PedidosCompra.usuario.in_(usuarios_da_empresa))
             )
         
         if usuario_filtro:
-            query_base = query_base.filter(PedidosCompra.usuario == usuario_filtro)
+            query = query.filter(PedidosCompra.usuario == usuario_filtro)
         
         if data_inicio:
-            query_base = query_base.filter(PedidosCompra.data_criacao >= data_inicio)
+            query = query.filter(PedidosCompra.data_criacao >= data_inicio)
         
         if data_fim:
             data_fim_ajustada = datetime.strptime(data_fim, '%Y-%m-%d') + timedelta(days=1)
-            query_base = query_base.filter(PedidosCompra.data_criacao <= data_fim_ajustada)
+            query = query.filter(PedidosCompra.data_criacao <= data_fim_ajustada)
 
-        # ===== PASSO 1: Subquery só com IDs distintos =====
-        query_ids = query_base.with_entities(PedidosCompra.id).distinct()
+        # PASSO 1: Subquery só com IDs distintos
+        query_ids = query.with_entities(PedidosCompra.id).distinct()
         
-        # Contar total de itens (agora conta IDs únicos corretamente)
+        # Contar total de itens
         total_itens = query_ids.count()
         
         # Calcular total de páginas
@@ -3933,17 +3933,16 @@ def listar_pedidos_compra():
         if pagina > total_paginas and total_paginas > 0:
             pagina = total_paginas
 
-        # ===== PASSO 2: Buscar IDs da página atual =====
+        # PASSO 2: Buscar IDs da página atual
         ids_paginados = query_ids.order_by(
             PedidosCompra.data_criacao.desc()
         ).offset(
             (pagina - 1) * por_pagina
         ).limit(por_pagina).all()
         
-        # Converter para lista de IDs
         ids_paginados = [id[0] for id in ids_paginados]
 
-        # ===== PASSO 3: Buscar pedidos completos com esses IDs =====
+        # PASSO 3: Buscar pedidos completos
         if ids_paginados:
             pedidos = db.session.query(PedidosCompra)\
                 .filter(PedidosCompra.id.in_(ids_paginados))\
@@ -3952,14 +3951,34 @@ def listar_pedidos_compra():
         else:
             pedidos = []
 
-        # ===== RESTO DO CÓDIGO IGUAL (buscar fornecedores, etc) =====
-        pedidos_completos = []
+        # Se não há pedidos
+        if not pedidos:
+            return render_template(
+                'listar_pedidos_compra.html', 
+                pedidos_completos=[],
+                empresas=sorted(empresas_unicas),
+                usuarios=sorted(usuarios_unicos),
+                filtros={
+                    'empresa': empresa_filtro,
+                    'usuario': usuario_filtro,
+                    'data_inicio': data_inicio,
+                    'data_fim': data_fim,
+                    'status': status
+                },
+                pagina_atual=pagina,
+                total_paginas=total_paginas,
+                total_itens=total_itens,
+                por_pagina=por_pagina,
+                request=request
+            )
+
+        # Coletar IDs de fornecedores
         fornecedor_ids = set()
-        
         for pedido in pedidos:
             for preenchimento in pedido.preenchimentos:
-                fornecedor_ids.add(preenchimento.fornecedor_id)
-        
+                if preenchimento.fornecedor_id:
+                    fornecedor_ids.add(preenchimento.fornecedor_id)
+
         # Buscar fornecedores
         fornecedores = {}
         if fornecedor_ids:
@@ -3975,10 +3994,13 @@ def listar_pedidos_compra():
                             'nome_fantasia': row[1],
                             'cnpj': format_cnpj(row[2]) if row[2] else 'N/A'
                         }
+                except Exception as e:
+                    logging.error(f"Erro ao buscar fornecedores: {str(e)}")
                 finally:
                     conn.close()
 
-        # Estruturar dados
+        # Estruturar dados para o template (SEM o campo numero_nf)
+        pedidos_completos = []
         for pedido in pedidos:
             preenchimentos_info = []
             for preenchimento in pedido.preenchimentos:
@@ -3987,7 +4009,10 @@ def listar_pedidos_compra():
                     'cnpj': 'N/A'
                 })
                 
-                empresa_usuario = usuarios_empresas.get(pedido.usuario, preenchimento.solicitacao.empresa)
+                empresa_usuario = usuarios_empresas.get(pedido.usuario, '')
+                if not empresa_usuario and preenchimento.solicitacao:
+                    empresa_usuario = preenchimento.solicitacao.empresa
+                
                 marca = preenchimento.solicitacao.marca if preenchimento.solicitacao.marca else 'Não informado'
                 
                 preenchimentos_info.append({
@@ -3995,8 +4020,10 @@ def listar_pedidos_compra():
                     'marca': marca,
                     'fornecedor_nome': fornecedor_info['nome_fantasia'],
                     'fornecedor_cnpj': fornecedor_info.get('cnpj', 'N/A'),
+                    'fornecedor_id': preenchimento.fornecedor_id,
                     'material': preenchimento.solicitacao.material.DescricaoMaterial if preenchimento.solicitacao.material else 'N/A',
                     'empresa': empresa_usuario
+                    # REMOVIDO: 'numero_nf' pois não existe no modelo
                 })
             pedidos_completos.append({
                 'pedido': pedido,
@@ -4026,6 +4053,8 @@ def listar_pedidos_compra():
         
     except Exception as e:
         logging.error(f"Erro ao listar pedidos de compra: {str(e)}")
+        import traceback
+        traceback.print_exc()
         flash(f'Erro ao listar pedidos de compra: {str(e)}', 'error')
         return render_template(
             'listar_pedidos_compra.html', 
