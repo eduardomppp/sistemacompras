@@ -3922,40 +3922,45 @@ def listar_pedidos_compra():
                 query = query.filter(PedidosCompra.data_criacao < dt_fim)
             except:
                 logging.warning("Formato inválido em data_fim")
-
         # ────────────────────────────────────────────────
-        # 4. Contagem e IDs paginados (com ordenação determinística)
+        # 4. Contagem correta e paginação estável
         # ────────────────────────────────────────────────
-        query_ids = query.with_entities(PedidosCompra.id).distinct()
 
-        total_itens = query_ids.count()
+        # Buscar TODOS os IDs distintos primeiro
+        ids_distintos = query.with_entities(PedidosCompra.id)\
+            .distinct()\
+            .order_by(
+                PedidosCompra.data_criacao.desc(),
+                PedidosCompra.id.desc()
+            ).all()
+
+        ids_distintos = [row[0] for row in ids_distintos]
+
+        total_itens = len(ids_distintos)
         total_paginas = max(1, (total_itens + por_pagina - 1) // por_pagina)
 
         if pagina > total_paginas:
             pagina = total_paginas
 
-        logging.info(f"Total itens distintos: {total_itens} → {total_paginas} páginas")
+        logging.info(f"Total itens distintos reais: {total_itens} → {total_paginas} páginas")
 
-        # IDs da página atual
-        ids_page = query_ids.order_by(
-            PedidosCompra.data_criacao.desc(),
-            PedidosCompra.id.desc()
-        ).offset((pagina - 1) * por_pagina).limit(por_pagina).all()
+        # Agora sim fazemos a paginação manual sobre os IDs já distintos
+        inicio = (pagina - 1) * por_pagina
+        fim = inicio + por_pagina
+        ids_page = ids_distintos[inicio:fim]
 
-        ids_page = [row[0] for row in ids_page]
         logging.info(f"IDs da página {pagina}: {ids_page}")
 
-        # Pedidos completos
+        # Buscar pedidos completos
         pedidos = []
         if ids_page:
-            pedidos = db.session.query(PedidosCompra).filter(
-                PedidosCompra.id.in_(ids_page)
-            ).order_by(
-                PedidosCompra.data_criacao.desc(),
-                PedidosCompra.id.desc()
-            ).all()
+            pedidos = db.session.query(PedidosCompra)\
+                .filter(PedidosCompra.id.in_(ids_page))\
+                .order_by(
+                    PedidosCompra.data_criacao.desc(),
+                    PedidosCompra.id.desc()
+                ).all()
 
-        logging.info(f"Pedidos carregados nesta página: {len(pedidos)}")
 
         # ────────────────────────────────────────────────
         # 5. Buscar informações de fornecedores
