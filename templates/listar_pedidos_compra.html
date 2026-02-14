@@ -350,7 +350,6 @@
             }
         }
 
-        /* Estilo para destacar linhas na tabela */
         .table tbody tr {
             transition: background-color 0.2s;
         }
@@ -614,7 +613,7 @@
             </table>
         </div>
 
-        <!-- Seção de Paginação -->
+        <!-- Seção de Paginação CORRIGIDA -->
         {% if total_paginas > 1 %}
         <div class="pagination-container">
             <div class="items-per-page">
@@ -629,6 +628,7 @@
 
             <nav aria-label="Navegação de páginas">
                 <ul class="pagination">
+                    {# Criar dicionário com todos os parâmetros exceto 'pagina' #}
                     {% set args = request.args.to_dict() %}
                     {% set _ = args.pop('pagina', None) %}
                     
@@ -765,14 +765,16 @@
             });
         });
 
-        // Função para alterar itens por página
+        // Função para alterar itens por página - CORRIGIDA
         function changeItemsPerPage(select) {
             const url = new URL(window.location.href);
             const params = new URLSearchParams(url.search);
             
+            // Manter TODOS os parâmetros existentes
             params.set('por_pagina', select.value);
-            params.set('pagina', '1');
+            params.set('pagina', '1'); // Voltar para primeira página
             
+            // Construir nova URL
             window.location.href = url.pathname + '?' + params.toString();
         }
 
