@@ -3933,23 +3933,37 @@ def listar_pedidos_compra():
         if pagina > total_paginas and total_paginas > 0:
             pagina = total_paginas
 
-        # PASSO 2: Buscar IDs da página atual
+        # Log de depuração (para verificar filtros e total)
+        logging.info(f"[PAGINAÇÃO] Página {pagina} | Filtros: {request.args}")
+        logging.info(f"[PAGINAÇÃO] Total de pedidos distintos encontrados: {total_itens}")
+
+        # PASSO 2: Buscar IDs da página atual (com ordenação determinística)
         ids_paginados = query_ids.order_by(
-            PedidosCompra.data_criacao.desc()
+            PedidosCompra.data_criacao.desc(),
+            PedidosCompra.id.desc()  # Adicionado para tornar a ordenação determinística
         ).offset(
             (pagina - 1) * por_pagina
         ).limit(por_pagina).all()
         
         ids_paginados = [id[0] for id in ids_paginados]
 
-        # PASSO 3: Buscar pedidos completos
+        # Log de depuração para IDs
+        logging.info(f"[PAGINAÇÃO] IDs retornados pela subquery: {ids_paginados}")
+
+        # PASSO 3: Buscar pedidos completos (com mesma ordenação)
         if ids_paginados:
             pedidos = db.session.query(PedidosCompra)\
                 .filter(PedidosCompra.id.in_(ids_paginados))\
-                .order_by(PedidosCompra.data_criacao.desc())\
+                .order_by(
+                    PedidosCompra.data_criacao.desc(),
+                    PedidosCompra.id.desc()  # Mesma ordenação aqui
+                )\
                 .all()
         else:
             pedidos = []
+
+        # Log de depuração para quantidade final
+        logging.info(f"[PAGINAÇÃO] Quantidade de pedidos carregados: {len(pedidos)}")
 
         # Se não há pedidos
         if not pedidos:
