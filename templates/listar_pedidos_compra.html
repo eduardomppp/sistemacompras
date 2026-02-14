@@ -619,10 +619,9 @@
             <div class="items-per-page">
                 <label for="items-per-page">Itens por página:</label>
                 <select id="items-per-page" class="form-select form-select-sm" onchange="changeItemsPerPage(this)">
-                    <option value="10" {% if por_pagina == 10 %}selected{% endif %}>10</option>
-                    <option value="20" {% if por_pagina == 20 %}selected{% endif %}>20</option>
                     <option value="50" {% if por_pagina == 50 %}selected{% endif %}>50</option>
                     <option value="100" {% if por_pagina == 100 %}selected{% endif %}>100</option>
+                   
                 </select>
             </div>
 
