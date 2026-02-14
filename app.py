@@ -3857,22 +3857,18 @@ def listar_pedidos_compra():
         data_inicio = request.args.get('data_inicio')
         data_fim = request.args.get('data_fim')
         
-        # Parâmetros de paginação com validação
+        # Parâmetros de paginação
         pagina = request.args.get('pagina', 1, type=int)
         por_pagina = request.args.get('por_pagina', 10, type=int)
         
-        # ===== VALIDAÇÃO DE SEGURANÇA =====
-        # Garantir que por_pagina seja apenas valores permitidos
+        # Validação
         valores_permitidos = [10, 20, 50, 100]
         if por_pagina not in valores_permitidos:
-            por_pagina = 10  # Valor padrão seguro
-        
-        # Garantir que página seja pelo menos 1
+            por_pagina = 10
         if pagina < 1:
             pagina = 1
-        # ===================================
 
-        # Ler usuários e empresas do arquivo senhas.txt
+        # Ler usuários e empresas
         usuarios_empresas = {}
         empresas_unicas = set()
         usuarios_unicos = set()
@@ -3891,8 +3887,8 @@ def listar_pedidos_compra():
             logging.error(f"Erro ao ler senhas.txt: {str(e)}")
             usuarios_empresas = {}
 
-        # Consulta base
-        query = db.session.query(PedidosCompra).join(
+        # ===== CONSULTA BASE (COM JOINS) =====
+        query_base = db.session.query(PedidosCompra).join(
             pedido_preenchimento_associacao,
             PedidosCompra.id == pedido_preenchimento_associacao.c.pedido_id
         ).join(
@@ -3903,46 +3899,60 @@ def listar_pedidos_compra():
             SolicitacoesPreenchidas.solicitacao_id == SolicitacoesCompra.id
         )
 
-        # Aplicar filtros
+        # Aplicar filtros na query_base
         if status:
-            query = query.filter(PedidosCompra.status == status)
+            query_base = query_base.filter(PedidosCompra.status == status)
         
         if empresa_filtro:
-            query = query.filter(
+            usuarios_da_empresa = [u for u, e in usuarios_empresas.items() if e == empresa_filtro]
+            query_base = query_base.filter(
                 (SolicitacoesCompra.empresa == empresa_filtro) |
-                (PedidosCompra.usuario.in_(
-                    [usuario for usuario, empresa in usuarios_empresas.items() if empresa == empresa_filtro]
-                ))
+                (PedidosCompra.usuario.in_(usuarios_da_empresa))
             )
         
         if usuario_filtro:
-            query = query.filter(PedidosCompra.usuario == usuario_filtro)
+            query_base = query_base.filter(PedidosCompra.usuario == usuario_filtro)
         
         if data_inicio:
-            query = query.filter(PedidosCompra.data_criacao >= data_inicio)
+            query_base = query_base.filter(PedidosCompra.data_criacao >= data_inicio)
         
         if data_fim:
             data_fim_ajustada = datetime.strptime(data_fim, '%Y-%m-%d') + timedelta(days=1)
-            query = query.filter(PedidosCompra.data_criacao <= data_fim_ajustada)
+            query_base = query_base.filter(PedidosCompra.data_criacao <= data_fim_ajustada)
 
-        # Contar total de registros para paginação
-        total_itens = query.distinct().count()
+        # ===== PASSO 1: Subquery só com IDs distintos =====
+        query_ids = query_base.with_entities(PedidosCompra.id).distinct()
+        
+        # Contar total de itens (agora conta IDs únicos corretamente)
+        total_itens = query_ids.count()
         
         # Calcular total de páginas
         total_paginas = (total_itens + por_pagina - 1) // por_pagina if total_itens > 0 else 1
         
-        # Ajustar página se necessário (não pode ser maior que total de páginas)
+        # Ajustar página
         if pagina > total_paginas and total_paginas > 0:
             pagina = total_paginas
 
-        # Ordenar e aplicar paginação
-        pedidos = query.order_by(
+        # ===== PASSO 2: Buscar IDs da página atual =====
+        ids_paginados = query_ids.order_by(
             PedidosCompra.data_criacao.desc()
-        ).distinct().offset(
+        ).offset(
             (pagina - 1) * por_pagina
         ).limit(por_pagina).all()
+        
+        # Converter para lista de IDs
+        ids_paginados = [id[0] for id in ids_paginados]
 
-        # Obter informações de fornecedores e marcas
+        # ===== PASSO 3: Buscar pedidos completos com esses IDs =====
+        if ids_paginados:
+            pedidos = db.session.query(PedidosCompra)\
+                .filter(PedidosCompra.id.in_(ids_paginados))\
+                .order_by(PedidosCompra.data_criacao.desc())\
+                .all()
+        else:
+            pedidos = []
+
+        # ===== RESTO DO CÓDIGO IGUAL (buscar fornecedores, etc) =====
         pedidos_completos = []
         fornecedor_ids = set()
         
@@ -3952,11 +3962,11 @@ def listar_pedidos_compra():
         
         # Buscar fornecedores
         fornecedores = {}
-        conn = get_db_connection(DB_PATH_FORNECEDORES)
-        if conn:
-            try:
-                cursor = conn.cursor()
-                if fornecedor_ids:
+        if fornecedor_ids:
+            conn = get_db_connection(DB_PATH_FORNECEDORES)
+            if conn:
+                try:
+                    cursor = conn.cursor()
                     placeholders = ','.join(['?' for _ in fornecedor_ids])
                     cursor.execute(f'SELECT id, nome_fantasia, cnpj FROM fornecedores WHERE id IN ({placeholders})', 
                                  list(fornecedor_ids))
@@ -3965,10 +3975,10 @@ def listar_pedidos_compra():
                             'nome_fantasia': row[1],
                             'cnpj': format_cnpj(row[2]) if row[2] else 'N/A'
                         }
-            finally:
-                conn.close()
+                finally:
+                    conn.close()
 
-        # Estruturar dados para o template
+        # Estruturar dados
         for pedido in pedidos:
             preenchimentos_info = []
             for preenchimento in pedido.preenchimentos:
@@ -3994,7 +4004,7 @@ def listar_pedidos_compra():
                 'observacoes': pedido.observacoes
             })
 
-        # Renderizar template com todas as variáveis
+        # Renderizar template
         return render_template(
             'listar_pedidos_compra.html', 
             pedidos_completos=pedidos_completos,
