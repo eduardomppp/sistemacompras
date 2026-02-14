@@ -3952,14 +3952,23 @@ def listar_pedidos_compra():
         logging.info(f"IDs da página {pagina}: {ids_page}")
 
         # Buscar pedidos completos
-        pedidos = []
-        if ids_page:
-            pedidos = db.session.query(PedidosCompra)\
-                .filter(PedidosCompra.id.in_(ids_page))\
-                .order_by(
-                    PedidosCompra.data_criacao.desc(),
-                    PedidosCompra.id.desc()
-                ).all()
+        pedidos = db.session.query(PedidosCompra)\
+            .join(
+                pedido_preenchimento_associacao,
+                PedidosCompra.id == pedido_preenchimento_associacao.c.pedido_id
+            ).join(
+                SolicitacoesPreenchidas,
+                pedido_preenchimento_associacao.c.preenchimento_id == SolicitacoesPreenchidas.id
+            ).join(
+                SolicitacoesCompra,
+                SolicitacoesPreenchidas.solicitacao_id == SolicitacoesCompra.id
+            ).filter(
+                PedidosCompra.id.in_(ids_page)
+            ).distinct().order_by(
+                PedidosCompra.data_criacao.desc(),
+                PedidosCompra.id.desc()
+            ).all()
+
 
 
         # ────────────────────────────────────────────────
