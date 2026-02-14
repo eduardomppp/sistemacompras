@@ -3856,6 +3856,11 @@ def listar_pedidos_compra():
         usuario_filtro = request.args.get('usuario')
         data_inicio = request.args.get('data_inicio')
         data_fim = request.args.get('data_fim')
+        
+        # ===== NOVO: Parâmetros de paginação =====
+        pagina = request.args.get('pagina', 1, type=int)
+        por_pagina = request.args.get('por_pagina', 10, type=int)
+        # =========================================
 
         # Ler usuários e empresas do arquivo senhas.txt
         usuarios_empresas = {}
@@ -3866,7 +3871,7 @@ def listar_pedidos_compra():
             with open('senhas.txt', 'r', encoding='utf-8') as f:
                 for line in f:
                     partes = line.strip().split('%')
-                    if len(partes) >= 4:  # Verifica se tem pelo menos 4 partes
+                    if len(partes) >= 4:
                         usuario = partes[0]
                         empresa = partes[3]
                         usuarios_empresas[usuario] = empresa
@@ -3876,7 +3881,7 @@ def listar_pedidos_compra():
             logging.error(f"Erro ao ler senhas.txt: {str(e)}")
             usuarios_empresas = {}
 
-        # Consulta base
+        # Consulta base (MESMA DO SEU CÓDIGO ORIGINAL)
         query = db.session.query(PedidosCompra).join(
             pedido_preenchimento_associacao,
             PedidosCompra.id == pedido_preenchimento_associacao.c.pedido_id
@@ -3888,7 +3893,7 @@ def listar_pedidos_compra():
             SolicitacoesPreenchidas.solicitacao_id == SolicitacoesCompra.id
         )
 
-        # Aplicar filtros
+        # Aplicar filtros (MESMO DO SEU CÓDIGO ORIGINAL)
         if status:
             query = query.filter(PedidosCompra.status == status)
         
@@ -3907,15 +3912,28 @@ def listar_pedidos_compra():
             query = query.filter(PedidosCompra.data_criacao >= data_inicio)
         
         if data_fim:
-            # Adiciona 1 dia para incluir todo o dia final
             data_fim_ajustada = datetime.strptime(data_fim, '%Y-%m-%d') + timedelta(days=1)
             query = query.filter(PedidosCompra.data_criacao <= data_fim_ajustada)
 
-        # Ordenar e executar a consulta
+        # ===== NOVO: Contar total de registros para paginação =====
+        total_itens = query.distinct().count()
+        
+        # Calcular total de páginas
+        total_paginas = (total_itens + por_pagina - 1) // por_pagina if total_itens > 0 else 1
+        
+        # Ajustar página se necessário
+        if pagina > total_paginas:
+            pagina = total_paginas
+
+        # Ordenar e aplicar paginação (MESMA ORDER BY, mas com LIMIT e OFFSET)
         pedidos = query.order_by(
             PedidosCompra.data_criacao.desc()
-        ).distinct().all()
+        ).distinct().offset(
+            (pagina - 1) * por_pagina
+        ).limit(por_pagina).all()
+        # =========================================================
 
+        # TODO O RESTO É EXATAMENTE IGUAL AO SEU CÓDIGO ORIGINAL
         # Obter informações de fornecedores e marcas
         pedidos_completos = []
         fornecedor_ids = set()
@@ -3930,13 +3948,14 @@ def listar_pedidos_compra():
         if conn:
             try:
                 cursor = conn.cursor()
-                cursor.execute(f'SELECT id, nome_fantasia, cnpj FROM fornecedores WHERE id IN ({",".join("?"*len(fornecedor_ids))})', 
-                             list(fornecedor_ids))
-                for row in cursor.fetchall():
-                    fornecedores[row[0]] = {
-                        'nome_fantasia': row[1],
-                        'cnpj': format_cnpj(row[2]) if row[2] else 'N/A'
-                    }
+                if fornecedor_ids:  # Só executa se houver IDs
+                    cursor.execute(f'SELECT id, nome_fantasia, cnpj FROM fornecedores WHERE id IN ({",".join("?"*len(fornecedor_ids))})', 
+                                 list(fornecedor_ids))
+                    for row in cursor.fetchall():
+                        fornecedores[row[0]] = {
+                            'nome_fantasia': row[1],
+                            'cnpj': format_cnpj(row[2]) if row[2] else 'N/A'
+                        }
             finally:
                 conn.close()
 
@@ -3949,15 +3968,12 @@ def listar_pedidos_compra():
                     'cnpj': 'N/A'
                 })
                 
-                # Obter empresa do usuário do arquivo senhas.txt ou usar a da solicitação como fallback
                 empresa_usuario = usuarios_empresas.get(pedido.usuario, preenchimento.solicitacao.empresa)
-                
-                # CORREÇÃO: A marca está na solicitação, não no preenchimento
                 marca = preenchimento.solicitacao.marca if preenchimento.solicitacao.marca else 'Não informado'
                 
                 preenchimentos_info.append({
                     'id': preenchimento.id,
-                    'marca': marca,  # Usando a marca da solicitação
+                    'marca': marca,
                     'fornecedor_nome': fornecedor_info['nome_fantasia'],
                     'fornecedor_cnpj': fornecedor_info.get('cnpj', 'N/A'),
                     'material': preenchimento.solicitacao.material.DescricaoMaterial if preenchimento.solicitacao.material else 'N/A',
@@ -3969,6 +3985,7 @@ def listar_pedidos_compra():
                 'observacoes': pedido.observacoes
             })
 
+        # ===== NOVO: Adicionar variáveis de paginação ao render_template =====
         return render_template(
             'listar_pedidos_compra.html', 
             pedidos_completos=pedidos_completos,
@@ -3980,7 +3997,13 @@ def listar_pedidos_compra():
                 'data_inicio': data_inicio,
                 'data_fim': data_fim,
                 'status': status
-            }
+            },
+            # NOVAS VARIÁVEIS PARA PAGINAÇÃO
+            pagina_atual=pagina,
+            total_paginas=total_paginas,
+            total_itens=total_itens,
+            por_pagina=por_pagina,
+            request=request
         )
     except Exception as e:
         flash(f'Erro ao listar pedidos de compra: {str(e)}', 'error')
@@ -3989,7 +4012,13 @@ def listar_pedidos_compra():
             pedidos_completos=[],
             empresas=[],
             usuarios=[],
-            filtros={}
+            filtros={},
+            # VALORES PADRÃO PARA PAGINAÇÃO
+            pagina_atual=1,
+            total_paginas=1,
+            total_itens=0,
+            por_pagina=10,
+            request=request
         )
     
 #Nova Pagina pagamento
