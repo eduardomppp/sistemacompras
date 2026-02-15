@@ -1805,6 +1805,7 @@ def listar_solicitacoes():
                 ).all()
                 
                 s.pode_reprovar_individual = len(preenchimentos) == 0
+                s.preenchimentos_count = len(preenchimentos)
                 grupos[chave_grupo].append(s)
 
         # Ordenar grupos pela data mais recente
@@ -1853,6 +1854,96 @@ def listar_solicitacoes():
             total_grupos=0,
             request_args={}
         )
+
+@routes_bp.route('/api/editar_quantidade_solicitacao/<int:id>', methods=['POST'])
+def editar_quantidade_solicitacao(id):
+    """Edita a quantidade de uma solicitação individual (requer senha 122004)"""
+    if 'usuario' not in session:
+        return jsonify({'success': False, 'message': 'Usuário não autenticado'}), 401
+    
+    try:
+        data = request.get_json()
+        nova_quantidade = data.get('quantidade')
+        senha = data.get('senha')
+        
+        # Validar senha
+        if senha != '122004':
+            return jsonify({
+                'success': False, 
+                'message': 'Senha administrativa inválida!'
+            }), 403
+        
+        # Validar quantidade
+        if not nova_quantidade:
+            return jsonify({
+                'success': False, 
+                'message': 'Quantidade não informada'
+            }), 400
+        
+        try:
+            nova_quantidade = int(nova_quantidade)
+            if nova_quantidade <= 0:
+                return jsonify({
+                    'success': False, 
+                    'message': 'Quantidade deve ser maior que zero'
+                }), 400
+        except ValueError:
+            return jsonify({
+                'success': False, 
+                'message': 'Quantidade inválida'
+            }), 400
+        
+        # Buscar a solicitação
+        solicitacao = SolicitacoesCompra.query.get_or_404(id)
+        usuario = session['usuario']
+        
+        # Guardar quantidade anterior para log
+        quantidade_anterior = solicitacao.quantidade
+        
+        # Verificar se a solicitação já tem preenchimentos
+        preenchimentos = SolicitacoesPreenchidas.query.filter_by(
+            solicitacao_id=solicitacao.id
+        ).filter(
+            SolicitacoesPreenchidas.status != 'Rascunho'
+        ).count()
+        
+        # Se já tem preenchimentos enviados, não permite editar
+        if preenchimentos > 0:
+            return jsonify({
+                'success': False, 
+                'message': 'Não é possível editar quantidade: já existem cotações enviadas para esta solicitação.'
+            }), 400
+        
+        # Atualizar quantidade
+        solicitacao.quantidade = nova_quantidade
+        
+        # Adicionar observação sobre a alteração
+        observacao = f"QUANTIDADE ALTERADA de {quantidade_anterior} para {nova_quantidade} - Usuário: {usuario}"
+        if solicitacao.observacoes_col:
+            solicitacao.observacoes_col += f"\n{observacao}"
+        else:
+            solicitacao.observacoes_col = observacao
+        
+        # Registrar log
+        ip = request.remote_addr
+        registrar_log(usuario, 'editar_quantidade_solicitacao', 
+                     f'Solicitação ID {id} quantidade alterada de {quantidade_anterior} para {nova_quantidade}', ip)
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Quantidade atualizada com sucesso!',
+            'nova_quantidade': nova_quantidade
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"Erro ao editar quantidade da solicitação {id}: {str(e)}")
+        return jsonify({
+            'success': False, 
+            'message': f'Erro ao editar quantidade: {str(e)}'
+        }), 500
     
 #Tela Comprado
 @routes_bp.route('/listar_solicitacoes_comprador', methods=['GET'])
