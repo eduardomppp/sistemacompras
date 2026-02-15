@@ -3851,15 +3851,16 @@ def listar_pedidos_compra():
 
     try:
         # ────────────────────────────────────────────────
-        # 1. Captura de parâmetros (consistente com o template)
+        # 1. Captura de parâmetros
         # ────────────────────────────────────────────────
         pagina       = request.args.get('pagina', 1, type=int)
         por_pagina   = request.args.get('por_pagina', 50, type=int)
         status       = request.args.get('status')
         empresa      = request.args.get('empresa')
-        usuario      = request.args.get('usuario')
+        comprador_atribuido = request.args.get('comprador_atribuido')
         data_inicio  = request.args.get('data_inicio')
         data_fim     = request.args.get('data_fim')
+        numero_pedido = request.args.get('numero_pedido')
 
         # Validação básica
         if por_pagina not in [50, 100]:
@@ -3868,27 +3869,36 @@ def listar_pedidos_compra():
             pagina = 1
 
         logging.info(f"→ Requisição GET /listar_pedidos_compra | página={pagina} | por_pagina={por_pagina}")
-        logging.info(f"   Filtros recebidos: status={status}, empresa={empresa}, usuario={usuario}, data_inicio={data_inicio}, data_fim={data_fim}")
+        logging.info(f"   Filtros recebidos: status={status}, empresa={empresa}, comprador_atribuido={comprador_atribuido}, data_inicio={data_inicio}, data_fim={data_fim}, numero_pedido={numero_pedido}")
 
         # ────────────────────────────────────────────────
-        # 2. Carregar empresas e usuários do senhas.txt
+        # 2. Carregar empresas e compradores do senhas.txt
         # ────────────────────────────────────────────────
-        usuarios_empresas = {}
+        compradores_empresas = {}
         empresas_unicas = set()
-        usuarios_unicos = set()
+        compradores_unicos = set()
 
         try:
             with open('senhas.txt', 'r', encoding='utf-8') as f:
                 for line in f:
                     partes = line.strip().split('%')
                     if len(partes) >= 4:
-                        u = partes[0].strip()
-                        e = partes[3].strip()
-                        usuarios_empresas[u] = e
-                        empresas_unicas.add(e)
-                        usuarios_unicos.add(u)
+                        usuario = partes[0].strip()
+                        empresa_usuario = partes[3].strip()
+                        pagina_usuario = partes[2].strip().lower() if len(partes) > 2 else ''
+                        
+                        empresas_unicas.add(empresa_usuario)
+                        
+                        if 'comprador' in pagina_usuario:
+                            compradores_unicos.add(usuario)
+                            compradores_empresas[usuario] = empresa_usuario
+                            logging.debug(f"Comprador encontrado: {usuario} - Empresa: {empresa_usuario}")
+                        
         except Exception as e:
             logging.error(f"Erro lendo senhas.txt: {str(e)}")
+
+        logging.info(f"Compradores carregados: {sorted(compradores_unicos)}")
+        logging.info(f"Empresas carregadas: {sorted(empresas_unicas)}")
 
         # ────────────────────────────────────────────────
         # 3. Query base
@@ -3904,29 +3914,34 @@ def listar_pedidos_compra():
         # Filtros
         if status:
             query = query.filter(PedidosCompra.status == status)
+            
+        if numero_pedido:
+            query = query.filter(PedidosCompra.numero_pedido.ilike(f'%{numero_pedido}%'))
+            
         if empresa:
-            usuarios_da_empresa = [u for u, e in usuarios_empresas.items() if e == empresa]
             query = query.filter(
                 or_(
                     SolicitacoesCompra.empresa == empresa,
-                    PedidosCompra.usuario.in_(usuarios_da_empresa)
+                    PedidosCompra.usuario.in_([u for u, e in compradores_empresas.items() if e == empresa])
                 )
             )
-        if usuario:
-            query = query.filter(PedidosCompra.usuario == usuario)
+            
+        if comprador_atribuido:
+            query = query.filter(SolicitacoesCompra.comprador_atribuido == comprador_atribuido)
+            
         if data_inicio:
             query = query.filter(PedidosCompra.data_criacao >= data_inicio)
+            
         if data_fim:
             try:
                 dt_fim = datetime.strptime(data_fim, '%Y-%m-%d') + timedelta(days=1)
                 query = query.filter(PedidosCompra.data_criacao < dt_fim)
             except:
                 logging.warning("Formato inválido em data_fim")
-        # ────────────────────────────────────────────────
-        # 4. Contagem correta e paginação estável
-        # ────────────────────────────────────────────────
 
-        # Buscar TODOS os IDs distintos primeiro
+        # ────────────────────────────────────────────────
+        # 4. Contagem e paginação
+        # ────────────────────────────────────────────────
         ids_distintos = query.with_entities(PedidosCompra.id)\
             .distinct()\
             .order_by(
@@ -3935,23 +3950,16 @@ def listar_pedidos_compra():
             ).all()
 
         ids_distintos = [row[0] for row in ids_distintos]
-
         total_itens = len(ids_distintos)
         total_paginas = max(1, (total_itens + por_pagina - 1) // por_pagina)
 
         if pagina > total_paginas:
             pagina = total_paginas
 
-        logging.info(f"Total itens distintos reais: {total_itens} → {total_paginas} páginas")
-
-        # Agora sim fazemos a paginação manual sobre os IDs já distintos
         inicio = (pagina - 1) * por_pagina
         fim = inicio + por_pagina
         ids_page = ids_distintos[inicio:fim]
 
-        logging.info(f"IDs da página {pagina}: {ids_page}")
-
-        # Buscar pedidos completos
         pedidos = db.session.query(PedidosCompra)\
             .join(
                 pedido_preenchimento_associacao,
@@ -3968,8 +3976,6 @@ def listar_pedidos_compra():
                 PedidosCompra.data_criacao.desc(),
                 PedidosCompra.id.desc()
             ).all()
-
-
 
         # ────────────────────────────────────────────────
         # 5. Buscar informações de fornecedores
@@ -4000,7 +4006,7 @@ def listar_pedidos_compra():
                     conn.close()
 
         # ────────────────────────────────────────────────
-        # 6. Estruturar dados para o template
+        # 6. Estruturar dados para o template - ADICIONAR comprador_atribuido AQUI
         # ────────────────────────────────────────────────
         pedidos_completos = []
         for pedido in pedidos:
@@ -4011,12 +4017,13 @@ def listar_pedidos_compra():
                     'cnpj': 'N/A'
                 })
                 
-                empresa_usuario = usuarios_empresas.get(pedido.usuario, '')
+                empresa_usuario = compradores_empresas.get(pedido.usuario, '')
                 if not empresa_usuario and preenchimento.solicitacao:
                     empresa_usuario = preenchimento.solicitacao.empresa
                 
                 marca = preenchimento.solicitacao.marca if preenchimento.solicitacao and preenchimento.solicitacao.marca else 'Não informado'
                 
+                # 🔥 CORREÇÃO: Adicionar comprador_atribuido ao preenchimentos_info
                 preenchimentos_info.append({
                     'id': preenchimento.id,
                     'marca': marca,
@@ -4024,7 +4031,8 @@ def listar_pedidos_compra():
                     'fornecedor_cnpj': fornecedor_info.get('cnpj', 'N/A'),
                     'fornecedor_id': preenchimento.fornecedor_id,
                     'material': preenchimento.solicitacao.material.DescricaoMaterial if preenchimento.solicitacao and preenchimento.solicitacao.material else 'N/A',
-                    'empresa': empresa_usuario
+                    'empresa': empresa_usuario,
+                    'comprador_atribuido': preenchimento.solicitacao.comprador_atribuido if preenchimento.solicitacao else None  # NOVO CAMPO
                 })
             pedidos_completos.append({
                 'pedido': pedido,
@@ -4039,13 +4047,14 @@ def listar_pedidos_compra():
             'listar_pedidos_compra.html', 
             pedidos_completos=pedidos_completos,
             empresas=sorted(empresas_unicas),
-            usuarios=sorted(usuarios_unicos),
+            compradores=sorted(compradores_unicos),
             filtros={
                 'empresa': empresa,
-                'usuario': usuario,
+                'comprador_atribuido': comprador_atribuido,
                 'data_inicio': data_inicio,
                 'data_fim': data_fim,
-                'status': status
+                'status': status,
+                'numero_pedido': numero_pedido
             },
             pagina_atual=pagina,
             total_paginas=total_paginas,
@@ -4061,7 +4070,7 @@ def listar_pedidos_compra():
             'listar_pedidos_compra.html', 
             pedidos_completos=[],
             empresas=[],
-            usuarios=[],
+            compradores=[],
             filtros={},
             pagina_atual=1,
             total_paginas=1,
@@ -4069,6 +4078,7 @@ def listar_pedidos_compra():
             por_pagina=50,
             request=request
         )
+    
     
 #Nova Pagina pagamento
 @routes_bp.route('/listar_pedidos_compras_pg', methods=['GET'])
