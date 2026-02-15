@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Solicitações de Compra | Finalizadas</title>
     
-    <!-- Font Awesome 6 (mais atual) -->
+    <!-- Font Awesome 6 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- Bootstrap 5.3 -->
@@ -58,7 +58,6 @@
             padding: 1.5rem;
         }
 
-        /* Container Principal */
         .app-container {
             max-width: 1600px;
             margin: 0 auto;
@@ -72,7 +71,6 @@
             border: 1px solid var(--gray-200);
         }
 
-        /* Header */
         .page-header {
             background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
             padding: 1.5rem 2rem;
@@ -111,11 +109,6 @@
             border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
-        .header-badge i {
-            font-size: 1rem;
-        }
-
-        /* Filtros */
         .filters-section {
             padding: 1.5rem 2rem;
             background: white;
@@ -232,12 +225,6 @@
             box-shadow: var(--shadow-md);
         }
 
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        /* Controles de Paginação */
         .pagination-controls {
             padding: 1rem 2rem;
             background: var(--gray-50);
@@ -278,7 +265,6 @@
             border: 1px solid var(--gray-200);
         }
 
-        /* Grupos/Aplicações */
         .content-section {
             padding: 2rem;
         }
@@ -388,7 +374,6 @@
             box-shadow: var(--shadow-md);
         }
 
-        /* Tabela */
         .table-wrapper {
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
@@ -430,7 +415,6 @@
             background-color: var(--gray-50);
         }
 
-        /* Status Badge */
         .status-badge {
             display: inline-flex;
             align-items: center;
@@ -456,7 +440,6 @@
             color: #92400e;
         }
 
-        /* Comprador Select */
         .comprador-wrapper {
             display: flex;
             align-items: center;
@@ -498,7 +481,6 @@
             cursor: not-allowed;
         }
 
-        /* Botão Reprovar */
         .btn-reprovar {
             padding: 0.375rem 0.75rem;
             font-size: 0.75rem;
@@ -528,7 +510,6 @@
             cursor: not-allowed;
         }
 
-        /* Highlight para solicitações antigas */
         .highlight-old {
             background-color: #fffbeb !important;
         }
@@ -537,7 +518,6 @@
             background-color: #fef3c7 !important;
         }
 
-        /* Paginação */
         .pagination-nav {
             padding: 1.5rem 2rem;
             border-top: 1px solid var(--gray-200);
@@ -594,7 +574,6 @@
             pointer-events: none;
         }
 
-        /* Modais */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -677,18 +656,6 @@
             font-size: 0.875rem;
         }
 
-        .modal-info p {
-            margin: 0.5rem 0;
-        }
-
-        .modal-info p:first-child {
-            margin-top: 0;
-        }
-
-        .modal-info p:last-child {
-            margin-bottom: 0;
-        }
-
         .modal-actions {
             padding: 1.5rem;
             border-top: 1px solid var(--gray-200);
@@ -697,7 +664,6 @@
             justify-content: flex-end;
         }
 
-        /* Notificações */
         .notification {
             position: fixed;
             top: 1.5rem;
@@ -787,7 +753,6 @@
             color: var(--gray-600);
         }
 
-        /* Empty State */
         .empty-state {
             text-align: center;
             padding: 4rem 2rem;
@@ -807,13 +772,6 @@
             margin-bottom: 0.5rem;
         }
 
-        .empty-state p {
-            font-size: 0.875rem;
-            max-width: 400px;
-            margin: 0 auto;
-        }
-
-        /* Loading Spinner */
         .loading-spinner {
             display: inline-block;
             width: 1rem;
@@ -828,7 +786,6 @@
             to { transform: rotate(360deg); }
         }
 
-        /* Responsividade */
         @media (max-width: 768px) {
             body {
                 padding: 0.75rem;
@@ -921,7 +878,7 @@
             <div class="page-header">
                 <h1>
                     <i class="fas fa-clipboard-check"></i>
-                    Solicitações de Compra
+                    Solicitações de Compra Finalizadas
                 </h1>
                 <div class="header-badge">
                     <i class="fas fa-chart-bar"></i>
@@ -1165,11 +1122,24 @@
                     </div>
                     {% endfor %}
 
-                    <!-- Paginação -->
+                    <!-- Paginação Corrigida -->
                     <nav class="pagination-nav">
                         <ul class="pagination">
                             <li class="page-item {% if page <= 1 %}disabled{% endif %}">
-                                <a class="page-link" href="{{ url_for('routes_bp.listar_solicitacoes', page=page-1, per_page=per_page, **request_args) if page > 1 else '#' }}">
+                                <a class="page-link" href="
+                                    {%- if page > 1 -%}
+                                        ?page={{ page-1 }}&per_page={{ per_page }}
+                                        {%- if request.args.get('empresa') -%}&empresa={{ request.args.get('empresa') }}{%- endif -%}
+                                        {%- if request.args.get('usuario') -%}&usuario={{ request.args.get('usuario') }}{%- endif -%}
+                                        {%- if request.args.get('aplicacao') -%}&aplicacao={{ request.args.get('aplicacao') }}{%- endif -%}
+                                        {%- if request.args.get('status') -%}&status={{ request.args.get('status') }}{%- endif -%}
+                                        {%- if request.args.get('comprador') -%}&comprador={{ request.args.get('comprador') }}{%- endif -%}
+                                        {%- if request.args.get('data_inicio') -%}&data_inicio={{ request.args.get('data_inicio') }}{%- endif -%}
+                                        {%- if request.args.get('data_fim') -%}&data_fim={{ request.args.get('data_fim') }}{%- endif -%}
+                                    {%- else -%}
+                                        #
+                                    {%- endif -%}
+                                ">
                                     <i class="fas fa-chevron-left"></i>
                                 </a>
                             </li>
@@ -1181,7 +1151,15 @@
                                     </li>
                                 {% elif p <= page + 2 and p >= page - 2 %}
                                     <li class="page-item">
-                                        <a class="page-link" href="{{ url_for('routes_bp.listar_solicitacoes', page=p, per_page=per_page, **request_args) }}">{{ p }}</a>
+                                        <a class="page-link" href="?page={{ p }}&per_page={{ per_page }}
+                                            {%- if request.args.get('empresa') -%}&empresa={{ request.args.get('empresa') }}{%- endif -%}
+                                            {%- if request.args.get('usuario') -%}&usuario={{ request.args.get('usuario') }}{%- endif -%}
+                                            {%- if request.args.get('aplicacao') -%}&aplicacao={{ request.args.get('aplicacao') }}{%- endif -%}
+                                            {%- if request.args.get('status') -%}&status={{ request.args.get('status') }}{%- endif -%}
+                                            {%- if request.args.get('comprador') -%}&comprador={{ request.args.get('comprador') }}{%- endif -%}
+                                            {%- if request.args.get('data_inicio') -%}&data_inicio={{ request.args.get('data_inicio') }}{%- endif -%}
+                                            {%- if request.args.get('data_fim') -%}&data_fim={{ request.args.get('data_fim') }}{%- endif -%}
+                                        ">{{ p }}</a>
                                     </li>
                                 {% elif p == page + 3 or p == page - 3 %}
                                     <li class="page-item disabled">
@@ -1191,7 +1169,20 @@
                             {% endfor %}
 
                             <li class="page-item {% if page >= total_paginas %}disabled{% endif %}">
-                                <a class="page-link" href="{{ url_for('routes_bp.listar_solicitacoes', page=page+1, per_page=per_page, **request_args) if page < total_paginas else '#' }}">
+                                <a class="page-link" href="
+                                    {%- if page < total_paginas -%}
+                                        ?page={{ page+1 }}&per_page={{ per_page }}
+                                        {%- if request.args.get('empresa') -%}&empresa={{ request.args.get('empresa') }}{%- endif -%}
+                                        {%- if request.args.get('usuario') -%}&usuario={{ request.args.get('usuario') }}{%- endif -%}
+                                        {%- if request.args.get('aplicacao') -%}&aplicacao={{ request.args.get('aplicacao') }}{%- endif -%}
+                                        {%- if request.args.get('status') -%}&status={{ request.args.get('status') }}{%- endif -%}
+                                        {%- if request.args.get('comprador') -%}&comprador={{ request.args.get('comprador') }}{%- endif -%}
+                                        {%- if request.args.get('data_inicio') -%}&data_inicio={{ request.args.get('data_inicio') }}{%- endif -%}
+                                        {%- if request.args.get('data_fim') -%}&data_fim={{ request.args.get('data_fim') }}{%- endif -%}
+                                    {%- else -%}
+                                        #
+                                    {%- endif -%}
+                                ">
                                     <i class="fas fa-chevron-right"></i>
                                 </a>
                             </li>
@@ -1226,12 +1217,10 @@
                     <p id="deleteModalMessage"></p>
                 </div>
                 <div>
-                    <label class="form-label" style="font-size: 0.875rem;">
+                    <label style="font-size: 0.875rem; display: block; margin-bottom: 0.5rem;">
                         Digite a senha administrativa para confirmar:
                     </label>
-                    <input type="password" id="deletePassword" class="form-control" 
-                           style="width: 100%; padding: 0.5rem; border: 1px solid var(--gray-300); border-radius: var(--radius-sm);"
-                           placeholder="••••••••">
+                    <input type="password" id="deletePassword" style="width: 100%; padding: 0.5rem; border: 1px solid var(--gray-300); border-radius: var(--radius-sm);" placeholder="••••••••">
                 </div>
             </div>
             <div class="modal-actions">
@@ -1257,12 +1246,10 @@
                     <p id="duplicateModalMessage"></p>
                 </div>
                 <div>
-                    <label class="form-label" style="font-size: 0.875rem;">
+                    <label style="font-size: 0.875rem; display: block; margin-bottom: 0.5rem;">
                         Nome da nova aplicação:
                     </label>
-                    <input type="text" id="newAplicacaoName" class="form-control" 
-                           style="width: 100%; padding: 0.5rem; border: 1px solid var(--gray-300); border-radius: var(--radius-sm);"
-                           placeholder="Digite o nome...">
+                    <input type="text" id="newAplicacaoName" style="width: 100%; padding: 0.5rem; border: 1px solid var(--gray-300); border-radius: var(--radius-sm);" placeholder="Digite o nome...">
                 </div>
             </div>
             <div class="modal-actions">
@@ -1288,12 +1275,10 @@
                     <div id="reprovarModalInfo"></div>
                 </div>
                 <div>
-                    <label class="form-label" style="font-size: 0.875rem;">
+                    <label style="font-size: 0.875rem; display: block; margin-bottom: 0.5rem;">
                         Motivo da reprovação (opcional):
                     </label>
-                    <textarea id="motivoReprovar" class="form-control" 
-                              style="width: 100%; padding: 0.5rem; border: 1px solid var(--gray-300); border-radius: var(--radius-sm);"
-                              rows="3" placeholder="Digite o motivo..."></textarea>
+                    <textarea id="motivoReprovar" style="width: 100%; padding: 0.5rem; border: 1px solid var(--gray-300); border-radius: var(--radius-sm);" rows="3" placeholder="Digite o motivo..."></textarea>
                 </div>
             </div>
             <div class="modal-actions">
@@ -1309,7 +1294,6 @@
     <!-- Container para Notificações -->
     <div id="notificationContainer"></div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             // Elementos
@@ -1394,11 +1378,20 @@
             params.set('page', '1');
             params.set('per_page', document.getElementById('perPageSelect').value);
 
-            window.location.href = `${window.location.pathname}?${params.toString()}`;
+            // Construir URL
+            const url = new URL(window.location.origin + window.location.pathname);
+            params.forEach((value, key) => {
+                url.searchParams.set(key, value);
+            });
+            
+            window.location.href = url.toString();
         }
 
         function clearFilters() {
-            window.location.href = window.location.pathname + '?page=1&per_page=' + document.getElementById('perPageSelect').value;
+            const url = new URL(window.location.origin + window.location.pathname);
+            url.searchParams.set('page', '1');
+            url.searchParams.set('per_page', document.getElementById('perPageSelect').value);
+            window.location.href = url.toString();
         }
 
         function changePerPage() {
@@ -1474,7 +1467,6 @@
             document.getElementById('deletePassword').value = '';
             document.getElementById('confirmDelete').disabled = true;
             document.getElementById('confirmDelete').dataset.aplicacao = aplicacao;
-            document.getElementById('confirmDelete').dataset.btnElement = btn.outerHTML;
 
             openModal('deleteModal');
         }
@@ -1491,7 +1483,6 @@
 
             document.getElementById('newAplicacaoName').value = `${aplicacao}_copia`;
             document.getElementById('confirmDuplicate').dataset.aplicacao = aplicacao;
-            document.getElementById('confirmDuplicate').dataset.btnElement = btn.outerHTML;
 
             openModal('duplicateModal');
         }
@@ -1510,7 +1501,6 @@
 
             document.getElementById('motivoReprovar').value = '';
             document.getElementById('confirmReprovar').dataset.id = id;
-            document.getElementById('confirmReprovar').dataset.btnElement = btn.outerHTML;
 
             openModal('reprovarModal');
         }
@@ -1526,7 +1516,6 @@
         // Confirmações
         async function confirmExclusao() {
             const aplicacao = this.dataset.aplicacao;
-            const buttonHtml = this.dataset.btnElement;
             
             closeModal('deleteModal');
 
@@ -1622,12 +1611,17 @@
                     // Atualizar linha
                     const row = document.querySelector(`tr[data-id="${id}"]`);
                     if (row) {
-                        const statusCell = row.cells[8];
-                        statusCell.innerHTML = '<span class="status-badge reprovado">Reprovado</span>';
+                        const statusCell = row.querySelector('td:nth-child(9) .status-badge');
+                        if (statusCell) {
+                            statusCell.className = 'status-badge reprovado';
+                            statusCell.textContent = 'Reprovado';
+                        }
                         
                         const reprovarBtn = row.querySelector('.btn-reprovar');
-                        reprovarBtn.disabled = true;
-                        reprovarBtn.innerHTML = '<i class="fas fa-ban"></i> <span>Reprovada</span>';
+                        if (reprovarBtn) {
+                            reprovarBtn.disabled = true;
+                            reprovarBtn.innerHTML = '<i class="fas fa-ban"></i> <span>Reprovada</span>';
+                        }
                         
                         row.style.opacity = '0.8';
                         row.style.backgroundColor = '#f8f9fa';
@@ -1667,7 +1661,7 @@
                 </div>
             `;
 
-            notificationContainer.appendChild(notification);
+            document.getElementById('notificationContainer').appendChild(notification);
 
             setTimeout(() => {
                 if (notification.parentNode) {
@@ -1681,7 +1675,7 @@
         function highlightOldRequests() {
             const hoje = new Date();
             document.querySelectorAll('tbody tr').forEach(row => {
-                const dataCell = row.querySelector('td:nth-child(7)');
+                const dataCell = row.querySelector('td:nth-child(7) span');
                 if (!dataCell) return;
 
                 const dataTexto = dataCell.getAttribute('title') || dataCell.textContent;
@@ -1698,11 +1692,7 @@
             });
         }
 
-        // Utilitários
-        function formatDate(date) {
-            return new Date(date).toLocaleDateString('pt-BR');
-        }
-
+        // Disponibilizar função globalmente
         window.showNotification = showNotification;
     </script>
 </body>
