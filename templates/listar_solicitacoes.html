@@ -4,1572 +4,1706 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Solicitações de Compra Finalizadas</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <title>Solicitações de Compra | Finalizadas</title>
+    
+    <!-- Font Awesome 6 (mais atual) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Bootstrap 5.3 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         :root {
-            --primary-color: #022855;
-            --secondary-color: #f8f9fa;
-            --text-color: #333;
-            --border-color: #dee2e6;
-            --status-aprovado: #28a745;
-            --status-reprovado: #dc3545;
-            --status-pendente: #ffc107;
-            --danger-color: #dc3545;
-            --warning-color: #ffc107;
-            --success-color: #28a745;
+            --primary: #022855;
+            --primary-light: #1a3f6e;
+            --primary-dark: #011b38;
+            --secondary: #f8fafc;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --info: #3b82f6;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-400: #9ca3af;
+            --gray-500: #6b7280;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-800: #1f2937;
+            --gray-900: #111827;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            --radius-sm: 0.375rem;
+            --radius: 0.5rem;
+            --radius-lg: 0.75rem;
         }
 
         body {
-            background-color: var(--secondary-color);
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            color: var(--text-color);
-            margin: 0;
-            padding: 15px;
+            background-color: var(--gray-50);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            color: var(--gray-800);
+            line-height: 1.5;
+            padding: 1.5rem;
         }
 
-        .container {
-            background: #fff;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            max-width: 100%;
-            overflow-x: hidden;
+        /* Container Principal */
+        .app-container {
+            max-width: 1600px;
+            margin: 0 auto;
         }
 
-        h1 {
-            color: var(--primary-color);
-            text-align: center;
-            margin-bottom: 25px;
-            font-size: 20px;
-            font-weight: 700;
+        .main-card {
+            background: white;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+            border: 1px solid var(--gray-200);
         }
 
-        .filter-row {
+        /* Header */
+        .page-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            padding: 1.5rem 2rem;
+            color: white;
             display: flex;
+            align-items: center;
+            justify-content: space-between;
             flex-wrap: wrap;
-            gap: 8px;
-            margin-bottom: 15px;
+            gap: 1rem;
+        }
+
+        .page-header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .page-header h1 i {
+            font-size: 1.75rem;
+            opacity: 0.9;
+        }
+
+        .header-badge {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(4px);
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .header-badge i {
+            font-size: 1rem;
+        }
+
+        /* Filtros */
+        .filters-section {
+            padding: 1.5rem 2rem;
+            background: white;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .filters-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
         }
 
         .filter-group {
-            flex: 1 1 200px;
-            min-width: 150px;
+            display: flex;
+            flex-direction: column;
+            gap: 0.375rem;
         }
 
         .filter-group label {
-            font-size: 11px;
-            color: #555;
+            font-size: 0.75rem;
             font-weight: 600;
-            margin-bottom: 3px;
-            display: block;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--gray-500);
         }
 
         .filter-group select,
         .filter-group input {
-            font-size: 12px;
-            padding: 5px 8px;
-            height: 34px;
-            width: 100%;
+            height: 2.5rem;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.875rem;
+            border: 1px solid var(--gray-300);
+            border-radius: var(--radius-sm);
+            background-color: white;
+            transition: all 0.2s;
+        }
+
+        .filter-group select:hover,
+        .filter-group input:hover {
+            border-color: var(--gray-400);
+        }
+
+        .filter-group select:focus,
+        .filter-group input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(2, 40, 85, 0.1);
         }
 
         .filter-actions {
             display: flex;
-            gap: 8px;
+            gap: 0.75rem;
             justify-content: flex-end;
-            margin-top: 10px;
-            width: 100%;
+            align-items: flex-end;
         }
 
-        .btn-filter,
-        .btn-clear {
-            font-size: 12px;
-            padding: 6px 12px;
-            border-radius: 6px;
+        .btn {
+            height: 2.5rem;
+            padding: 0 1.25rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            border-radius: var(--radius-sm);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
             transition: all 0.2s;
-            height: 34px;
+            cursor: pointer;
+            border: 1px solid transparent;
         }
 
-        .btn-filter {
-            background-color: var(--primary-color);
-            color: #fff;
-            border: none;
-        }
-
-        .btn-filter:hover {
-            background-color: #004080;
-        }
-
-        .btn-clear {
-            background-color: #6c757d;
+        .btn-primary {
+            background-color: var(--primary);
             color: white;
-            border: none;
         }
 
-        .btn-clear:hover {
-            background-color: #5a6268;
+        .btn-primary:hover:not(:disabled) {
+            background-color: var(--primary-light);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
         }
 
-        .aplicacao-section {
-            margin-top: 30px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 12px;
-            background: #fff;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            overflow: hidden;
+        .btn-outline {
+            background-color: white;
+            border-color: var(--gray-300);
+            color: var(--gray-700);
         }
 
-        .aplicacao-header {
+        .btn-outline:hover:not(:disabled) {
+            background-color: var(--gray-50);
+            border-color: var(--gray-400);
+        }
+
+        .btn-danger {
+            background-color: var(--danger);
+            color: white;
+        }
+
+        .btn-danger:hover:not(:disabled) {
+            background-color: #dc2626;
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-success {
+            background-color: var(--success);
+            color: white;
+        }
+
+        .btn-success:hover:not(:disabled) {
+            background-color: #059669;
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Controles de Paginação */
+        .pagination-controls {
+            padding: 1rem 2rem;
+            background: var(--gray-50);
+            border-bottom: 1px solid var(--gray-200);
             display: flex;
+            flex-wrap: wrap;
+            align-items: center;
             justify-content: space-between;
-            align-items: center;
-            background: linear-gradient(135deg, #e9f0fb 0%, #dce7f8 100%);
-            padding: 10px 15px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            border-left: 4px solid var(--primary-color);
-            flex-wrap: wrap;
-            gap: 10px;
         }
 
-        .aplicacao-title {
-            color: var(--primary-color);
-            font-weight: 700;
-            font-size: 16px;
+        .per-page-selector {
             display: flex;
             align-items: center;
-            gap: 8px;
-            flex: 1;
-            min-width: 200px;
+            gap: 0.75rem;
         }
 
-        .aplicacao-title i {
-            font-size: 18px;
+        .per-page-selector select {
+            width: auto;
+            padding: 0.375rem 2rem 0.375rem 0.75rem;
+            font-size: 0.875rem;
+            border: 1px solid var(--gray-300);
+            border-radius: var(--radius-sm);
+            background-color: white;
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+            background-position: right 0.5rem center;
+            background-repeat: no-repeat;
+            background-size: 1.25rem;
         }
 
-        .grupo-info {
-            font-size: 11px;
-            color: #666;
-            background: #f8f9fa;
-            padding: 3px 8px;
-            border-radius: 4px;
-            margin-top: 4px;
+        .stats-info {
+            font-size: 0.875rem;
+            color: var(--gray-500);
+            background: white;
+            padding: 0.375rem 1rem;
+            border-radius: 2rem;
+            border: 1px solid var(--gray-200);
         }
 
-        .btn-group-acoes {
+        /* Grupos/Aplicações */
+        .content-section {
+            padding: 2rem;
+        }
+
+        .aplicacao-group {
+            background: white;
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius);
+            margin-bottom: 2rem;
+            overflow: hidden;
+            transition: all 0.2s;
+        }
+
+        .aplicacao-group:hover {
+            box-shadow: var(--shadow-md);
+            border-color: var(--gray-300);
+        }
+
+        .group-header {
+            background: linear-gradient(135deg, var(--gray-50) 0%, white 100%);
+            padding: 1.25rem 1.5rem;
             display: flex;
-            gap: 8px;
             flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            border-bottom: 1px solid var(--gray-200);
         }
 
-        .btn-duplicar-grupo,
-        .btn-excluir-grupo {
-            font-size: 11px;
-            padding: 5px 10px;
-            border-radius: 6px;
+        .group-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .group-title {
+            font-size: 1.125rem;
             font-weight: 600;
-            transition: all 0.3s;
+            color: var(--primary);
             display: flex;
             align-items: center;
-            gap: 5px;
-            white-space: nowrap;
-            border: none;
+            gap: 0.75rem;
+        }
+
+        .group-title i {
+            color: var(--primary);
+            font-size: 1.25rem;
+        }
+
+        .group-meta {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-size: 0.75rem;
+            color: var(--gray-500);
+        }
+
+        .group-meta span {
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+        }
+
+        .group-actions {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .btn-group-action {
+            padding: 0.5rem 1rem;
+            font-size: 0.8125rem;
+            border-radius: 2rem;
+            border: 1px solid transparent;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
             cursor: pointer;
         }
 
-        .btn-duplicar-grupo {
-            background-color: var(--success-color);
+        .btn-group-action.duplicate {
+            background-color: white;
+            border-color: var(--gray-300);
+            color: var(--success);
+        }
+
+        .btn-group-action.duplicate:hover {
+            background-color: var(--success);
+            border-color: var(--success);
             color: white;
-        }
-
-        .btn-duplicar-grupo:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(40, 167, 69, 0.2);
-            background-color: #218838;
+            box-shadow: var(--shadow-md);
         }
 
-        .btn-excluir-grupo {
-            background-color: var(--danger-color);
+        .btn-group-action.delete {
+            background-color: white;
+            border-color: var(--gray-300);
+            color: var(--danger);
+        }
+
+        .btn-group-action.delete:hover {
+            background-color: var(--danger);
+            border-color: var(--danger);
             color: white;
-        }
-
-        .btn-excluir-grupo:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(220, 53, 69, 0.2);
-            background-color: #c82333;
+            box-shadow: var(--shadow-md);
         }
 
-        /* CONTAINER RESPONSIVO PARA TABELA */
-        .table-responsive-container {
-            width: 100%;
+        /* Tabela */
+        .table-wrapper {
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            margin-bottom: 20px;
+            margin: 0;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 12px;
-            min-width: 1100px;
-        }
-
-        th, td {
-            border: 1px solid var(--border-color);
-            padding: 6px 8px;
-            text-align: center;
-            vertical-align: middle;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            font-size: 0.8125rem;
+            min-width: 1200px;
         }
 
         th {
-            background-color: var(--primary-color);
-            color: #fff;
-            font-size: 12px;
-            position: sticky;
-            top: 0;
+            background: var(--gray-50);
+            color: var(--gray-600);
             font-weight: 600;
-        }
-
-        tr:nth-child(even) {
-            background-color: #f9fbfd;
-        }
-
-        tr:hover {
-            background-color: #f0f7ff;
-        }
-
-        /* COLUNAS OTIMIZADAS */
-        .col-id {
-            width: 60px;
-            min-width: 60px;
-        }
-
-        .col-material {
-            width: 140px;
-            min-width: 140px;
-            max-width: 140px;
-            white-space: normal;
-        }
-
-        .col-especificacao {
-            width: 180px;
-            min-width: 180px;
-            max-width: 180px;
-            word-wrap: break-word;
-            white-space: normal;
-            line-height: 1.3;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 1rem 1rem;
             text-align: left;
+            border-bottom: 1px solid var(--gray-200);
+            white-space: nowrap;
         }
 
-        .col-quantidade {
-            width: 80px;
-            min-width: 80px;
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--gray-200);
+            color: var(--gray-700);
+            vertical-align: middle;
         }
 
-        .col-empresa {
-            width: 120px;
-            min-width: 120px;
+        tr:last-child td {
+            border-bottom: none;
         }
 
-        .col-aplicacao {
-            width: 130px;
-            min-width: 130px;
+        tr:hover td {
+            background-color: var(--gray-50);
         }
 
-        .col-data {
-            width: 110px;
-            min-width: 110px;
-        }
-
-        .col-usuario {
-            width: 120px;
-            min-width: 120px;
-        }
-
-        .col-status {
-            width: 100px;
-            min-width: 100px;
-        }
-
-        .col-comprador {
-            width: 130px;
-            min-width: 130px;
-        }
-
-        .col-atribuicao {
-            width: 160px;
-            min-width: 160px;
-        }
-
-        .col-reprovar {
-            width: 100px;
-            min-width: 100px;
-        }
-
+        /* Status Badge */
         .status-badge {
-            padding: 3px 8px;
-            border-radius: 10px;
-            font-size: 11px;
-            font-weight: 600;
-            display: inline-block;
-        }
-
-        .status-aprovado {
-            background-color: #d4edda;
-            color: var(--status-aprovado);
-        }
-
-        .status-reprovado {
-            background-color: #f8d7da;
-            color: var(--status-reprovado);
-        }
-
-        .status-pendente {
-            background-color: #fff3cd;
-            color: var(--status-pendente);
-        }
-
-        /* BOTÕES COMPACTOS */
-        .btn-atribuir {
-            background-color: var(--primary-color);
-            color: white;
-            font-size: 11px;
-            padding: 4px 8px;
-            border: none;
-            border-radius: 4px;
-            transition: background 0.2s;
-            margin-left: 5px;
-            width: 32px;
-            height: 32px;
             display: inline-flex;
             align-items: center;
-            justify-content: center;
-            cursor: pointer;
+            padding: 0.25rem 0.75rem;
+            border-radius: 2rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            line-height: 1.5;
         }
 
-        .btn-atribuir:hover {
-            background-color: #004080;
+        .status-badge.aprovado {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-badge.reprovado {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+
+        .status-badge.pendente {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+
+        /* Comprador Select */
+        .comprador-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
         .comprador-select {
-            font-size: 11px;
-            padding: 4px;
-            width: 120px;
-            height: 32px;
+            padding: 0.375rem 0.5rem;
+            font-size: 0.75rem;
+            border: 1px solid var(--gray-300);
+            border-radius: var(--radius-sm);
+            background-color: white;
+            min-width: 130px;
         }
 
-        /* BOTÃO REPROVAR COMPACTO */
-        .btn-reprovar {
-            background-color: var(--danger-color);
-            color: white;
-            font-size: 11px;
-            padding: 5px 8px;
-            border: none;
-            border-radius: 4px;
-            transition: all 0.3s;
-            cursor: pointer;
+        .btn-icon {
+            width: 2rem;
+            height: 2rem;
+            padding: 0;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 4px;
-            font-weight: 600;
-            width: 100%;
-            height: 32px;
+            border-radius: var(--radius-sm);
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-icon:hover:not(:disabled) {
+            background-color: var(--primary-light);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .btn-icon:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Botão Reprovar */
+        .btn-reprovar {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.75rem;
+            border-radius: var(--radius-sm);
+            background-color: white;
+            border: 1px solid var(--danger);
+            color: var(--danger);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.375rem;
+            cursor: pointer;
+            transition: all 0.2s;
             white-space: nowrap;
-            overflow: hidden;
         }
 
         .btn-reprovar:hover:not(:disabled) {
-            background-color: #c82333;
+            background-color: var(--danger);
+            color: white;
             transform: translateY(-1px);
-            box-shadow: 0 2px 4px rgba(220, 53, 69, 0.2);
+            box-shadow: var(--shadow-sm);
         }
 
         .btn-reprovar:disabled {
-            background-color: #6c757d;
+            background-color: var(--gray-100);
+            border-color: var(--gray-300);
+            color: var(--gray-400);
             cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
         }
 
-        /* RESPONSIVIDADE */
-        @media (max-width: 768px) {
-            body {
-                padding: 10px;
-            }
-            
-            .container {
-                padding: 15px;
-            }
-            
-            .filter-group {
-                flex: 1 1 100%;
-            }
-            
-            .aplicacao-header {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-            
-            .btn-group-acoes {
-                width: 100%;
-                justify-content: flex-start;
-            }
-            
-            .btn-reprovar span {
-                display: none;
-            }
-            
-            .btn-reprovar {
-                width: 40px;
-                justify-content: center;
-            }
-            
-            .btn-reprovar i {
-                margin: 0;
-                font-size: 14px;
-            }
-            
-            .col-atribuicao {
-                width: 140px;
-                min-width: 140px;
-            }
-            
-            table {
-                min-width: 1000px;
-            }
+        /* Highlight para solicitações antigas */
+        .highlight-old {
+            background-color: #fffbeb !important;
         }
 
-        @media (max-width: 480px) {
-            h1 {
-                font-size: 18px;
-            }
-            
-            .aplicacao-title {
-                font-size: 14px;
-            }
-            
-            .btn-duplicar-grupo,
-            .btn-excluir-grupo {
-                font-size: 10px;
-                padding: 4px 8px;
-            }
+        .highlight-old:hover td {
+            background-color: #fef3c7 !important;
         }
 
-        .empty-state {
-            text-align: center;
-            color: #777;
-            margin-top: 30px;
-            padding: 40px;
+        /* Paginação */
+        .pagination-nav {
+            padding: 1.5rem 2rem;
+            border-top: 1px solid var(--gray-200);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
         }
 
-        /* TOOLTIPS */
-        .tooltip-wrapper {
-            position: relative;
-            display: inline-block;
+        .pagination {
+            display: flex;
+            gap: 0.25rem;
+            list-style: none;
+            margin: 0;
+            padding: 0;
         }
 
-        .tooltip-wrapper:hover .tooltip-text {
-            visibility: visible;
-            opacity: 1;
+        .page-item {
+            margin: 0;
         }
 
-        .tooltip-text {
-            visibility: hidden;
-            width: 200px;
-            background-color: #333;
-            color: #fff;
-            text-align: center;
-            border-radius: 6px;
-            padding: 5px 8px;
-            position: absolute;
-            z-index: 1000;
-            bottom: 125%;
-            left: 50%;
-            transform: translateX(-50%);
-            opacity: 0;
-            transition: opacity 0.3s;
-            font-size: 11px;
-            white-space: normal;
+        .page-link {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 2.25rem;
+            height: 2.25rem;
+            padding: 0 0.5rem;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--gray-200);
+            background: white;
+            color: var(--gray-700);
+            font-size: 0.875rem;
+            text-decoration: none;
+            transition: all 0.2s;
         }
 
-        .tooltip-text::after {
-            content: "";
-            position: absolute;
-            top: 100%;
-            left: 50%;
-            margin-left: -5px;
-            border-width: 5px;
-            border-style: solid;
-            border-color: #333 transparent transparent transparent;
+        .page-link:hover {
+            background: var(--gray-50);
+            border-color: var(--gray-300);
+            transform: translateY(-1px);
         }
 
-        /* MODAIS */
-        .confirmation-modal {
+        .page-item.active .page-link {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+
+        .page-item.disabled .page-link {
+            background: var(--gray-100);
+            border-color: var(--gray-200);
+            color: var(--gray-400);
+            pointer-events: none;
+        }
+
+        /* Modais */
+        .modal-overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.7);
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
             display: none;
-            justify-content: center;
             align-items: center;
+            justify-content: center;
             z-index: 1000;
+            padding: 1rem;
         }
 
-        .modal-content {
+        .modal-container {
             background: white;
-            padding: 25px;
-            border-radius: 10px;
+            border-radius: var(--radius-lg);
             max-width: 500px;
-            width: 90%;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow-lg);
+            animation: modalSlideIn 0.3s ease;
         }
 
-        .modal-warning {
-            background: #fff3cd;
-            border-left: 4px solid var(--warning-color);
-            padding: 12px;
-            margin: 15px 0;
-            border-radius: 4px;
-            font-size: 13px;
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
-        .modal-success {
-            background: #d4edda;
-            border-left: 4px solid var(--success-color);
-            padding: 12px;
-            margin: 15px 0;
-            border-radius: 4px;
-            font-size: 13px;
+        .modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--gray-200);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
         }
 
-        .modal-danger {
-            background: #f8d7da;
-            border-left: 4px solid var(--danger-color);
-            padding: 12px;
-            margin: 15px 0;
-            border-radius: 4px;
-            font-size: 13px;
+        .modal-header.warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .modal-header.success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .modal-header.danger {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .modal-header i {
+            font-size: 1.5rem;
+        }
+
+        .modal-header h3 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .modal-info {
+            background: var(--gray-50);
+            padding: 1rem;
+            border-radius: var(--radius);
+            margin-bottom: 1.5rem;
+            font-size: 0.875rem;
+        }
+
+        .modal-info p {
+            margin: 0.5rem 0;
+        }
+
+        .modal-info p:first-child {
+            margin-top: 0;
+        }
+
+        .modal-info p:last-child {
+            margin-bottom: 0;
         }
 
         .modal-actions {
+            padding: 1.5rem;
+            border-top: 1px solid var(--gray-200);
             display: flex;
-            gap: 10px;
+            gap: 0.75rem;
             justify-content: flex-end;
-            margin-top: 20px;
         }
 
-        /* AJUSTES PARA IMPRESSÃO */
-        @media print {
-            body {
-                background: white;
-                padding: 0;
-                font-size: 10pt;
-            }
+        /* Notificações */
+        .notification {
+            position: fixed;
+            top: 1.5rem;
+            right: 1.5rem;
+            z-index: 1100;
+            min-width: 320px;
+            max-width: 400px;
+            background: white;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-lg);
+            border-left: 4px solid;
+            overflow: hidden;
+            animation: notificationSlideIn 0.3s ease;
+        }
 
-            .filter-row,
-            .filter-actions,
-            h1,
-            .btn-duplicar-grupo,
-            .btn-excluir-grupo,
-            .btn-atribuir,
-            .btn-reprovar,
-            .comprador-select {
-                display: none !important;
+        @keyframes notificationSlideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
             }
-
-            .container {
-                box-shadow: none;
-                padding: 0;
-                margin: 0;
-                max-width: 100%;
-            }
-
-            .table-responsive-container {
-                overflow: visible;
-                border: none;
-            }
-
-            table {
-                min-width: auto;
-                width: 100%;
-                font-size: 9pt;
-            }
-
-            th, td {
-                padding: 3px 5px;
-                border: 1px solid #ccc;
-            }
-
-            .col-especificacao {
-                white-space: normal;
-                max-width: 150px;
-            }
-            
-            .aplicacao-section {
-                page-break-inside: avoid;
-                border: none;
-                padding: 0;
-                margin: 0 0 20px 0;
+            to {
+                transform: translateX(0);
+                opacity: 1;
             }
         }
 
-        /* Destaque para solicitações antigas */
-        .highlight-old {
-            background-color: #fff6c2 !important;
-            animation: pulse 2s infinite;
+        .notification.success {
+            border-left-color: var(--success);
         }
 
-        @keyframes pulse {
-            0% { background-color: #fff6c2; }
-            50% { background-color: #fffbdb; }
-            100% { background-color: #fff6c2; }
+        .notification.error {
+            border-left-color: var(--danger);
         }
 
-        /* Loading spinner */
+        .notification.warning {
+            border-left-color: var(--warning);
+        }
+
+        .notification.info {
+            border-left-color: var(--info);
+        }
+
+        .notification-content {
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .notification-content i {
+            font-size: 1.25rem;
+        }
+
+        .notification.success i {
+            color: var(--success);
+        }
+
+        .notification.error i {
+            color: var(--danger);
+        }
+
+        .notification.warning i {
+            color: var(--warning);
+        }
+
+        .notification.info i {
+            color: var(--info);
+        }
+
+        .notification-message {
+            flex: 1;
+            font-size: 0.875rem;
+            color: var(--gray-700);
+        }
+
+        .notification-close {
+            background: none;
+            border: none;
+            color: var(--gray-400);
+            cursor: pointer;
+            padding: 0.25rem;
+            font-size: 1rem;
+            transition: color 0.2s;
+        }
+
+        .notification-close:hover {
+            color: var(--gray-600);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--gray-500);
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            color: var(--gray-300);
+            margin-bottom: 1.5rem;
+        }
+
+        .empty-state h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--gray-700);
+            margin-bottom: 0.5rem;
+        }
+
+        .empty-state p {
+            font-size: 0.875rem;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        /* Loading Spinner */
         .loading-spinner {
             display: inline-block;
-            width: 16px;
-            height: 16px;
+            width: 1rem;
+            height: 1rem;
             border: 2px solid rgba(255, 255, 255, 0.3);
             border-radius: 50%;
             border-top-color: #fff;
-            animation: spin 1s ease-in-out infinite;
-            vertical-align: middle;
-            margin-right: 5px;
+            animation: spin 0.6s linear infinite;
         }
 
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
 
-        /* Notificações */
-        .custom-notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 9999;
-            min-width: 300px;
-            max-width: 400px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            border-radius: 8px;
-            padding: 15px;
-            animation: slideIn 0.3s ease;
-            border-left: 4px solid;
-        }
-
-        .notification-success {
-            background-color: #d4edda;
-            border-left-color: #28a745;
-            color: #155724;
-        }
-
-        .notification-danger {
-            background-color: #f8d7da;
-            border-left-color: #dc3545;
-            color: #721c24;
-        }
-
-        .notification-warning {
-            background-color: #fff3cd;
-            border-left-color: #ffc107;
-            color: #856404;
-        }
-
-        @keyframes slideIn {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
+        /* Responsividade */
+        @media (max-width: 768px) {
+            body {
+                padding: 0.75rem;
             }
-            to {
-                transform: translateX(0);
-                opacity: 1;
+
+            .page-header {
+                padding: 1.25rem;
+            }
+
+            .page-header h1 {
+                font-size: 1.25rem;
+            }
+
+            .filters-section {
+                padding: 1.25rem;
+            }
+
+            .filters-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .pagination-controls {
+                padding: 1rem 1.25rem;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.75rem;
+            }
+
+            .content-section {
+                padding: 1.25rem;
+            }
+
+            .group-header {
+                padding: 1rem 1.25rem;
+            }
+
+            .group-actions {
+                width: 100%;
+            }
+
+            .btn-group-action {
+                flex: 1;
+                justify-content: center;
+            }
+
+            .notification {
+                min-width: auto;
+                max-width: none;
+                left: 1.5rem;
+                right: 1.5rem;
             }
         }
 
-        @keyframes slideOut {
-            from {
-                transform: translateX(0);
-                opacity: 1;
+        @media print {
+            .filters-section,
+            .pagination-controls,
+            .group-actions,
+            .btn-reprovar,
+            .btn-icon,
+            .comprador-select,
+            .pagination-nav {
+                display: none !important;
             }
-            to {
-                transform: translateX(100%);
-                opacity: 0;
+
+            body {
+                padding: 0;
+                background: white;
+            }
+
+            .main-card {
+                box-shadow: none;
+                border: none;
+            }
+
+            table {
+                min-width: auto;
+            }
+
+            th, td {
+                border: 1px solid #ddd;
             }
         }
     </style>
 </head>
 
 <body>
-    <div class="container">
-        <h1><i class="fas fa-clipboard-list"></i> Solicitações de Compra Finalizadas</h1>
-
-        <!-- Filtros -->
-        <div class="search-filter-container">
-            <div class="filter-row">
-                <div class="filter-group">
-                    <label>Empresa</label>
-                    <select id="empresaFilter" class="form-select form-select-sm">
-                        <option value="">Todas</option>
-                        {% for empresa in empresas %}
-                        <option value="{{ empresa }}">{{ empresa }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label>Usuário</label>
-                    <select id="usuarioFilter" class="form-select form-select-sm">
-                        <option value="">Todos</option>
-                        {% for usuario in usuarios %}
-                        <option value="{{ usuario }}">{{ usuario }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label>Aplicação</label>
-                    <select id="aplicacaoFilter" class="form-select form-select-sm">
-                        <option value="">Todas</option>
-                        {% for aplicacao in aplicacoes %}
-                        <option value="{{ aplicacao }}">{{ aplicacao }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label>Status</label>
-                    <select id="statusFilter" class="form-select form-select-sm">
-                        <option value="">Todos</option>
-                        <option value="Aprovado">Aprovado</option>
-                        <option value="Reprovado">Reprovado</option>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label>Comprador</label>
-                    <select id="compradorFilter" class="form-select form-select-sm">
-                        <option value="">Todos</option>
-                        {% for comprador in compradores %}
-                        <option value="{{ comprador }}">{{ comprador }}</option>
-                        {% endfor %}
-                        <option value="Não atribuído">Não atribuído</option>
-                    </select>
+    <div class="app-container">
+        <div class="main-card">
+            <!-- Header -->
+            <div class="page-header">
+                <h1>
+                    <i class="fas fa-clipboard-check"></i>
+                    Solicitações de Compra
+                </h1>
+                <div class="header-badge">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>{{ total_grupos }} grupos | {{ total_grupos * 5 }} solicitações</span>
                 </div>
             </div>
-            <div class="filter-row">
-                <div class="filter-group" style="flex: 2;">
-                    <label>Data de Solicitação</label>
-                    <div class="d-flex align-items-center gap-2">
-                        <input type="date" id="dataInicio" class="form-control form-control-sm">
-                        <span class="small">até</span>
-                        <input type="date" id="dataFim" class="form-control form-control-sm">
+
+            <!-- Filtros -->
+            <div class="filters-section">
+                <div class="filters-grid">
+                    <div class="filter-group">
+                        <label>Empresa</label>
+                        <select id="empresaFilter">
+                            <option value="">Todas as empresas</option>
+                            {% for empresa in empresas %}
+                            <option value="{{ empresa }}" {% if request.args.get('empresa') == empresa %}selected{% endif %}>{{ empresa }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label>Usuário</label>
+                        <select id="usuarioFilter">
+                            <option value="">Todos os usuários</option>
+                            {% for usuario in usuarios %}
+                            <option value="{{ usuario }}" {% if request.args.get('usuario') == usuario %}selected{% endif %}>{{ usuario }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label>Aplicação</label>
+                        <select id="aplicacaoFilter">
+                            <option value="">Todas as aplicações</option>
+                            {% for aplicacao in aplicacoes %}
+                            <option value="{{ aplicacao }}" {% if request.args.get('aplicacao') == aplicacao %}selected{% endif %}>{{ aplicacao }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label>Status</label>
+                        <select id="statusFilter">
+                            <option value="">Todos</option>
+                            <option value="Aprovado" {% if request.args.get('status') == 'Aprovado' %}selected{% endif %}>Aprovado</option>
+                            <option value="Reprovado" {% if request.args.get('status') == 'Reprovado' %}selected{% endif %}>Reprovado</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label>Comprador</label>
+                        <select id="compradorFilter">
+                            <option value="">Todos</option>
+                            {% for comprador in compradores %}
+                            <option value="{{ comprador }}" {% if request.args.get('comprador') == comprador %}selected{% endif %}>{{ comprador }}</option>
+                            {% endfor %}
+                            <option value="Não atribuído" {% if request.args.get('comprador') == 'Não atribuído' %}selected{% endif %}>Não atribuído</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-group" style="grid-column: span 2;">
+                        <label>Período</label>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <input type="date" id="dataInicio" value="{{ request.args.get('data_inicio', '') }}" placeholder="Data inicial">
+                            <span style="color: var(--gray-400); align-self: center;">até</span>
+                            <input type="date" id="dataFim" value="{{ request.args.get('data_fim', '') }}" placeholder="Data final">
+                        </div>
                     </div>
                 </div>
+
                 <div class="filter-actions">
-                    <button class="btn-clear btn-sm" id="clearFilters"><i class="fas fa-times"></i> Limpar</button>
-                    <button class="btn-filter btn-sm" id="applyFilters"><i class="fas fa-filter"></i> Aplicar</button>
-                </div>
-            </div>
-        </div>
-
-        {% if solicitacoes %}
-        {# MODIFICAÇÃO PRINCIPAL: Agrupar por aplicação E data completa (com hora) #}
-        {% set grupos = {} %}
-        {% for solicitacao in solicitacoes %}
-            {% if solicitacao.aplicacao %}
-                {# Criar chave única com aplicação + data completa (com hora) #}
-                {% set data_hora_formatada = solicitacao.data_solicitacao.strftime('%Y-%m-%d %H:%M') %}
-                {% set chave_grupo = solicitacao.aplicacao ~ '|' ~ data_hora_formatada %}
-                
-                {% if chave_grupo not in grupos %}
-                    {% set _ = grupos.update({chave_grupo: []}) %}
-                {% endif %}
-                {% set _ = grupos[chave_grupo].append(solicitacao) %}
-            {% endif %}
-        {% endfor %}
-        
-        {# Ordenar grupos pela data mais recente #}
-        {% set grupos_ordenados = grupos.items()|sort(attribute='0', reverse=true) %}
-
-        {# Percorrer os grupos ordenados #}
-        {% for chave_grupo, solicitacoes_grupo in grupos_ordenados %}
-        {% set partes = chave_grupo.split('|') %}
-        {% set aplicacao = partes[0] %}
-        {% set data_hora_grupo = partes[1] %}
-        
-        {# Encontrar a data mais recente dentro do grupo #}
-        {% set ultima_data = None %}
-        {% for solicitacao in solicitacoes_grupo %}
-            {% if not ultima_data or solicitacao.data_solicitacao > ultima_data %}
-                {% set ultima_data = solicitacao.data_solicitacao %}
-            {% endif %}
-        {% endfor %}
-        
-        <div class="aplicacao-section" id="grupo-{{ aplicacao|replace(' ', '-')|lower }}-{{ data_hora_grupo|replace(' ', '-')|replace(':', '') }}">
-            <div class="aplicacao-header">
-                <div>
-                    <div class="aplicacao-title">
-                        <i class="fas fa-folder"></i>
-                        <span>{{ aplicacao }}</span>
-                    </div>
-                    <div class="grupo-info">
-                        <i class="fas fa-file-alt"></i> {{ solicitacoes_grupo|length }} solicitações
-                        | Última atualização: {{ ultima_data|format_brasil_time }}
-                    </div>
-                </div>
-                <div class="btn-group-acoes">
-                    <button class="btn-duplicar-grupo" 
-                            data-aplicacao="{{ aplicacao }}"
-                            data-count="{{ solicitacoes_grupo|length }}"
-                            title="Duplicar TODAS as solicitações deste grupo">
-                        <i class="fas fa-copy"></i> Duplicar Grupo
+                    <button class="btn btn-outline" id="clearFilters">
+                        <i class="fas fa-times"></i>
+                        Limpar Filtros
                     </button>
-                    <button class="btn-excluir-grupo" 
-                            data-aplicacao="{{ aplicacao }}"
-                            data-count="{{ solicitacoes_grupo|length }}"
-                            title="Excluir TODAS as solicitações deste grupo">
-                        <i class="fas fa-trash"></i> Excluir Grupo
+                    <button class="btn btn-primary" id="applyFilters">
+                        <i class="fas fa-filter"></i>
+                        Aplicar Filtros
                     </button>
                 </div>
             </div>
-            
-            <!-- CONTAINER RESPONSIVO ADICIONADO -->
-            <div class="table-responsive-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th class="col-id">ID</th>
-                            <th class="col-material">Material</th>
-                            <th class="col-especificacao">Especificação</th>
-                            <th class="col-quantidade">Quantidade</th>
-                            <th class="col-empresa">Empresa</th>
-                            <th class="col-aplicacao">Aplicação</th>
-                            <th class="col-data">Data Solicitação</th>
-                            <th class="col-usuario">Usuário</th>
-                            <th class="col-status">Status</th>
-                            <th class="col-comprador">Comprador</th>
-                            <th class="col-atribuicao">Atribuição</th>
-                            <th class="col-reprovar">Reprovar</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {# Ordenar as solicitações dentro do grupo pela data (do mais novo para o mais antigo) #}
-                        {% for solicitacao in solicitacoes_grupo|sort(attribute='data_solicitacao', reverse=true) %}
-                        <tr data-id="{{ solicitacao.id }}" 
-                            data-aplicacao="{{ solicitacao.aplicacao }}" 
-                            data-order-date="{{ solicitacao.data_solicitacao.strftime('%Y-%m-%d') }}"
-                            class="{% if solicitacao.dias_atraso and solicitacao.dias_atraso > 7 %}highlight-old{% endif %}">
-                            <td class="col-id">{{ solicitacao.id }}</td>
-                            <td class="col-material">{{ solicitacao.material.DescricaoMaterial }}</td>
-                            <td class="col-especificacao">{{ solicitacao.especificacao or '-' }}</td>
-                            <td class="col-quantidade">{{ solicitacao.quantidade }}</td>
-                            <td class="col-empresa">{{ solicitacao.empresa }}</td>
-                            <td class="col-aplicacao">{{ solicitacao.aplicacao }}</td>
-                            <td class="col-data" data-order="{{ solicitacao.data_solicitacao.strftime('%Y-%m-%d') }}">
-                                {{ solicitacao.data_solicitacao | format_brasil_time }}
-                            </td>
-                            <td class="col-usuario">{{ solicitacao.usuario }}</td>
-                            <td class="col-status">
-                                <span class="status-badge status-{{ solicitacao.status_aprovacao|lower }}">
-                                    {{ solicitacao.status_aprovacao }}
-                                </span>
-                            </td>
-                            <td class="col-comprador">{{ solicitacao.comprador_atribuido or 'Não atribuído' }}</td>
-                            <td class="col-atribuicao">
-                                <div class="d-flex align-items-center">
-                                    <select class="form-select form-select-sm comprador-select" data-id="{{ solicitacao.id }}">
-                                        <option value="">Selecionar</option>
-                                        {% for comprador in compradores %}
-                                        <option value="{{ comprador }}" {% if solicitacao.comprador_atribuido==comprador %}selected{% endif %}>
-                                            {{ comprador }}
-                                        </option>
-                                        {% endfor %}
-                                    </select>
-                                    <button class="btn-atribuir" data-id="{{ solicitacao.id }}" title="Atribuir comprador">
-                                        <i class="fas fa-user-check"></i>
-                                    </button>
+
+            <!-- Controles de Paginação -->
+            <div class="pagination-controls">
+                <div class="per-page-selector">
+                    <label for="perPageSelect">Itens por página:</label>
+                    <select id="perPageSelect">
+                        <option value="5" {% if per_page == 5 %}selected{% endif %}>5 grupos</option>
+                        <option value="10" {% if per_page == 10 %}selected{% endif %}>10 grupos</option>
+                        <option value="20" {% if per_page == 20 %}selected{% endif %}>20 grupos</option>
+                        <option value="50" {% if per_page == 50 %}selected{% endif %}>50 grupos</option>
+                    </select>
+                </div>
+                <div class="stats-info">
+                    <i class="fas fa-layer-group"></i>
+                    Mostrando {{ grupos_paginados|length }} de {{ total_grupos }} grupos
+                </div>
+            </div>
+
+            <!-- Conteúdo Principal -->
+            <div class="content-section">
+                {% if grupos_paginados %}
+                    {% for chave_grupo, solicitacoes_grupo in grupos_paginados %}
+                    {% set partes = chave_grupo.split('|') %}
+                    {% set aplicacao = partes[0] %}
+                    {% set data_hora_grupo = partes[1] %}
+                    
+                    {# Encontrar a data mais recente #}
+                    {% set ultima_data = None %}
+                    {% for solicitacao in solicitacoes_grupo %}
+                        {% if not ultima_data or solicitacao.data_solicitacao > ultima_data %}
+                            {% set ultima_data = solicitacao.data_solicitacao %}
+                        {% endif %}
+                    {% endfor %}
+                    
+                    <div class="aplicacao-group" id="grupo-{{ aplicacao|replace(' ', '-')|lower }}-{{ data_hora_grupo|replace(' ', '-')|replace(':', '') }}">
+                        <div class="group-header">
+                            <div class="group-info">
+                                <div class="group-title">
+                                    <i class="fas fa-folder-open"></i>
+                                    <span>{{ aplicacao }}</span>
                                 </div>
-                            </td>
-                            <td class="col-reprovar">
-                                <!-- BOTÃO REPROVAR ATUALIZADO - AGORA SÓ BLOQUEIA SE JÁ ESTIVER REPROVADO -->
-                                <button class="btn-reprovar" 
-                                        data-id="{{ solicitacao.id }}"
-                                        data-material="{{ solicitacao.material.DescricaoMaterial }}"
-                                        data-especificacao="{{ solicitacao.especificacao }}"
-                                        data-status="{{ solicitacao.status_aprovacao }}"
-                                        {% if solicitacao.status_aprovacao == 'Reprovado' %}disabled{% endif %}
-                                        title="{% if solicitacao.status_aprovacao == 'Reprovado' %}
-                                                   Já reprovada
-                                               {% else %}
-                                                   Reprovar esta solicitação
-                                               {% endif %}">
-                                    <i class="fas fa-times-circle"></i> 
-                                    <span>{% if solicitacao.status_aprovacao == 'Reprovado' %}Reprovada{% else %}Reprovar{% endif %}</span>
+                                <div class="group-meta">
+                                    <span>
+                                        <i class="fas fa-file-alt"></i>
+                                        {{ solicitacoes_grupo|length }} solicitações
+                                    </span>
+                                    <span>
+                                        <i class="fas fa-clock"></i>
+                                        Última atualização: {{ ultima_data|format_brasil_time }}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="group-actions">
+                                <button class="btn-group-action duplicate" 
+                                        data-aplicacao="{{ aplicacao }}"
+                                        data-count="{{ solicitacoes_grupo|length }}"
+                                        title="Duplicar todas as solicitações deste grupo">
+                                    <i class="fas fa-copy"></i>
+                                    <span>Duplicar Grupo</span>
                                 </button>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                                <button class="btn-group-action delete" 
+                                        data-aplicacao="{{ aplicacao }}"
+                                        data-count="{{ solicitacoes_grupo|length }}"
+                                        title="Excluir todas as solicitações deste grupo">
+                                    <i class="fas fa-trash-alt"></i>
+                                    <span>Excluir Grupo</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="table-wrapper">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Material</th>
+                                        <th>Especificação</th>
+                                        <th>Quant.</th>
+                                        <th>Empresa</th>
+                                        <th>Aplicação</th>
+                                        <th>Data Solicitação</th>
+                                        <th>Usuário</th>
+                                        <th>Status</th>
+                                        <th>Comprador</th>
+                                        <th>Atribuição</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for solicitacao in solicitacoes_grupo|sort(attribute='data_solicitacao', reverse=true) %}
+                                    <tr data-id="{{ solicitacao.id }}" 
+                                        data-aplicacao="{{ solicitacao.aplicacao }}"
+                                        class="{% if solicitacao.dias_atraso and solicitacao.dias_atraso > 7 %}highlight-old{% endif %}">
+                                        <td><span class="badge bg-light text-dark">#{{ solicitacao.id }}</span></td>
+                                        <td style="max-width: 200px;">
+                                            <div style="white-space: normal; word-wrap: break-word;">
+                                                {{ solicitacao.material.DescricaoMaterial }}
+                                            </div>
+                                        </td>
+                                        <td style="max-width: 250px;">
+                                            <div style="white-space: normal; word-wrap: break-word;">
+                                                {{ solicitacao.especificacao or '-' }}
+                                            </div>
+                                        </td>
+                                        <td><strong>{{ solicitacao.quantidade }}</strong></td>
+                                        <td>{{ solicitacao.empresa }}</td>
+                                        <td>{{ solicitacao.aplicacao }}</td>
+                                        <td>
+                                            <span title="{{ solicitacao.data_solicitacao.strftime('%d/%m/%Y %H:%M') }}">
+                                                {{ solicitacao.data_solicitacao | format_brasil_time }}
+                                            </span>
+                                        </td>
+                                        <td>{{ solicitacao.usuario }}</td>
+                                        <td>
+                                            <span class="status-badge {{ solicitacao.status_aprovacao|lower }}">
+                                                {{ solicitacao.status_aprovacao }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-light text-dark">
+                                                {{ solicitacao.comprador_atribuido or 'Não atribuído' }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="comprador-wrapper">
+                                                <select class="comprador-select" data-id="{{ solicitacao.id }}">
+                                                    <option value="">Selecionar</option>
+                                                    {% for comprador in compradores %}
+                                                    <option value="{{ comprador }}" {% if solicitacao.comprador_atribuido == comprador %}selected{% endif %}>
+                                                        {{ comprador }}
+                                                    </option>
+                                                    {% endfor %}
+                                                </select>
+                                                <button class="btn-icon" data-id="{{ solicitacao.id }}" title="Atribuir comprador">
+                                                    <i class="fas fa-user-check"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <button class="btn-reprovar" 
+                                                    data-id="{{ solicitacao.id }}"
+                                                    data-material="{{ solicitacao.material.DescricaoMaterial }}"
+                                                    data-especificacao="{{ solicitacao.especificacao }}"
+                                                    data-status="{{ solicitacao.status_aprovacao }}"
+                                                    {% if solicitacao.status_aprovacao == 'Reprovado' %}disabled{% endif %}
+                                                    title="{% if solicitacao.status_aprovacao == 'Reprovado' %}
+                                                               Já reprovada
+                                                           {% else %}
+                                                               Reprovar esta solicitação
+                                                           {% endif %}">
+                                                <i class="fas fa-times-circle"></i>
+                                                <span>{% if solicitacao.status_aprovacao == 'Reprovado' %}Reprovada{% else %}Reprovar{% endif %}</span>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {% endfor %}
+
+                    <!-- Paginação -->
+                    <nav class="pagination-nav">
+                        <ul class="pagination">
+                            <li class="page-item {% if page <= 1 %}disabled{% endif %}">
+                                <a class="page-link" href="{{ url_for('routes_bp.listar_solicitacoes', page=page-1, per_page=per_page, **request_args) if page > 1 else '#' }}">
+                                    <i class="fas fa-chevron-left"></i>
+                                </a>
+                            </li>
+
+                            {% for p in range(1, total_paginas + 1) %}
+                                {% if p == page %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ p }}</span>
+                                    </li>
+                                {% elif p <= page + 2 and p >= page - 2 %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('routes_bp.listar_solicitacoes', page=p, per_page=per_page, **request_args) }}">{{ p }}</a>
+                                    </li>
+                                {% elif p == page + 3 or p == page - 3 %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link">...</span>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+
+                            <li class="page-item {% if page >= total_paginas %}disabled{% endif %}">
+                                <a class="page-link" href="{{ url_for('routes_bp.listar_solicitacoes', page=page+1, per_page=per_page, **request_args) if page < total_paginas else '#' }}">
+                                    <i class="fas fa-chevron-right"></i>
+                                </a>
+                            </li>
+                        </ul>
+                        <div style="font-size: 0.75rem; color: var(--gray-500);">
+                            Página {{ page }} de {{ total_paginas }} • Total de {{ total_grupos }} grupos
+                        </div>
+                    </nav>
+
+                {% else %}
+                    <!-- Empty State -->
+                    <div class="empty-state">
+                        <i class="fas fa-folder-open"></i>
+                        <h3>Nenhuma solicitação encontrada</h3>
+                        <p>Não há solicitações finalizadas para exibir com os filtros atuais.</p>
+                    </div>
+                {% endif %}
             </div>
-            <!-- FIM DO CONTAINER RESPONSIVO -->
         </div>
-        {% endfor %}
-        {% else %}
-        <div class="empty-state">
-            <i class="far fa-folder-open fa-3x mb-3"></i>
-            <p>Nenhuma solicitação finalizada encontrada.</p>
-        </div>
-        {% endif %}
     </div>
 
-    <!-- Modal de Confirmação (Exclusão) -->
-    <div class="confirmation-modal" id="confirmationModal">
-        <div class="modal-content">
-            <h3><i class="fas fa-exclamation-triangle text-danger"></i> Confirmar Exclusão de Grupo</h3>
-            
-            <div class="modal-warning">
-                <i class="fas fa-radiation-alt"></i>
-                <strong>ATENÇÃO: Esta ação é IRREVERSÍVEL!</strong>
-                <p>Todos os dados serão permanentemente excluídos do sistema.</p>
-            </div>
-            
-            <p id="modalMessage"></p>
-            
-            <div class="mb-3">
-                <label for="confirmationInput" class="form-label">
-                    Digite <code><strong>a senha administrativa</strong></code> para confirmar:
-                </label>
-                <input type="text" id="confirmationInput" class="form-control" 
-                       placeholder="Digite aqui...">
-            </div>
-            
-            <div class="modal-actions">
-                <button class="btn btn-secondary btn-sm" id="cancelDelete">Cancelar</button>
-                <button class="btn btn-danger btn-sm" id="confirmDelete" disabled>
-                    <i class="fas fa-trash"></i> Confirmar Exclusão
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal de Confirmação (Duplicação) -->
-    <div class="confirmation-modal" id="duplicationModal">
-        <div class="modal-content">
-            <h3><i class="fas fa-copy text-success"></i> Confirmar Duplicação de Grupo</h3>
-            
-            <div class="modal-success">
-                <i class="fas fa-info-circle"></i>
-                <strong>INFORMAÇÃO:</strong>
-                <p>As novas solicitações serão criadas com status "Pendente" e aplicação com sufixo "_copia".</p>
-            </div>
-            
-            <p id="duplicationMessage"></p>
-            
-            <div class="mb-3">
-                <label for="newAplicacaoName" class="form-label">
-                    Nome da nova aplicação:
-                </label>
-                <input type="text" id="newAplicacaoName" class="form-control" 
-                       placeholder="Digite o nome da nova aplicação...">
-            </div>
-            
-            <div class="modal-actions">
-                <button class="btn btn-secondary btn-sm" id="cancelDuplication">Cancelar</button>
-                <button class="btn btn-success btn-sm" id="confirmDuplication">
-                    <i class="fas fa-copy"></i> Confirmar Duplicação
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal de Confirmação (Reprovação Individual) ATUALIZADO -->
-    <div class="confirmation-modal" id="reprovarModal">
-        <div class="modal-content">
-            <h3><i class="fas fa-times-circle text-danger"></i> Confirmar Reprovação</h3>
-            
-            <!-- ATUALIZADO: Removida a restrição de cotações -->
-            <div class="modal-warning">
+    <!-- Modal de Exclusão -->
+    <div class="modal-overlay" id="deleteModal">
+        <div class="modal-container">
+            <div class="modal-header danger">
                 <i class="fas fa-exclamation-triangle"></i>
-                <strong>ATENÇÃO:</strong>
-                <p>Esta ação reprovará a solicitação independentemente do status das cotações.</p>
+                <h3>Confirmar Exclusão de Grupo</h3>
             </div>
-            
-            <div id="reprovarInfo">
-                <!-- Informações da solicitação serão inseridas aqui -->
+            <div class="modal-body">
+                <div class="modal-info">
+                    <p><strong>ATENÇÃO:</strong> Esta ação é irreversível!</p>
+                    <p id="deleteModalMessage"></p>
+                </div>
+                <div>
+                    <label class="form-label" style="font-size: 0.875rem;">
+                        Digite a senha administrativa para confirmar:
+                    </label>
+                    <input type="password" id="deletePassword" class="form-control" 
+                           style="width: 100%; padding: 0.5rem; border: 1px solid var(--gray-300); border-radius: var(--radius-sm);"
+                           placeholder="••••••••">
+                </div>
             </div>
-            
-            <div class="mb-3">
-                <label for="motivoReprovar" class="form-label">
-                    Motivo da reprovação (opcional):
-                </label>
-                <textarea id="motivoReprovar" class="form-control" rows="3" 
-                          placeholder="Digite o motivo da reprovação..."></textarea>
-            </div>
-            
             <div class="modal-actions">
-                <button class="btn btn-secondary btn-sm" id="cancelReprovar">Cancelar</button>
-                <button class="btn btn-danger btn-sm" id="confirmReprovar">
-                    <i class="fas fa-times-circle"></i> Confirmar Reprovação
+                <button class="btn btn-outline" id="cancelDelete">Cancelar</button>
+                <button class="btn btn-danger" id="confirmDelete" disabled>
+                    <i class="fas fa-trash-alt"></i>
+                    Confirmar Exclusão
                 </button>
             </div>
         </div>
     </div>
+
+    <!-- Modal de Duplicação -->
+    <div class="modal-overlay" id="duplicateModal">
+        <div class="modal-container">
+            <div class="modal-header success">
+                <i class="fas fa-copy"></i>
+                <h3>Confirmar Duplicação de Grupo</h3>
+            </div>
+            <div class="modal-body">
+                <div class="modal-info">
+                    <p><strong>Informação:</strong> As novas solicitações serão criadas com status "Pendente".</p>
+                    <p id="duplicateModalMessage"></p>
+                </div>
+                <div>
+                    <label class="form-label" style="font-size: 0.875rem;">
+                        Nome da nova aplicação:
+                    </label>
+                    <input type="text" id="newAplicacaoName" class="form-control" 
+                           style="width: 100%; padding: 0.5rem; border: 1px solid var(--gray-300); border-radius: var(--radius-sm);"
+                           placeholder="Digite o nome...">
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-outline" id="cancelDuplicate">Cancelar</button>
+                <button class="btn btn-success" id="confirmDuplicate">
+                    <i class="fas fa-copy"></i>
+                    Confirmar Duplicação
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Reprovação -->
+    <div class="modal-overlay" id="reprovarModal">
+        <div class="modal-container">
+            <div class="modal-header warning">
+                <i class="fas fa-times-circle"></i>
+                <h3>Confirmar Reprovação</h3>
+            </div>
+            <div class="modal-body">
+                <div class="modal-info">
+                    <p><strong>Atenção:</strong> Esta ação reprovará a solicitação independentemente do status das cotações.</p>
+                    <div id="reprovarModalInfo"></div>
+                </div>
+                <div>
+                    <label class="form-label" style="font-size: 0.875rem;">
+                        Motivo da reprovação (opcional):
+                    </label>
+                    <textarea id="motivoReprovar" class="form-control" 
+                              style="width: 100%; padding: 0.5rem; border: 1px solid var(--gray-300); border-radius: var(--radius-sm);"
+                              rows="3" placeholder="Digite o motivo..."></textarea>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-outline" id="cancelReprovar">Cancelar</button>
+                <button class="btn btn-danger" id="confirmReprovar">
+                    <i class="fas fa-times-circle"></i>
+                    Confirmar Reprovação
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Container para Notificações -->
+    <div id="notificationContainer"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // Define datas padrão (últimos 30 dias)
-            const start = new Date();
-            start.setDate(start.getDate() - 30);
-            document.getElementById('dataInicio').valueAsDate = start;
-            document.getElementById('dataFim').valueAsDate = new Date();
+            // Elementos
+            const notificationContainer = document.getElementById('notificationContainer');
             
-            // Aplica filtros iniciais
-            applyFilters();
-
-            // Event listeners para filtros
+            // Filtros
             document.getElementById('applyFilters').addEventListener('click', applyFilters);
             document.getElementById('clearFilters').addEventListener('click', clearFilters);
+            document.getElementById('perPageSelect').addEventListener('change', changePerPage);
 
             // Atribuição de comprador
-            document.querySelectorAll('.btn-atribuir').forEach(btn => {
-                btn.addEventListener('click', async () => {
-                    const id = btn.dataset.id;
-                    const select = document.querySelector(`.comprador-select[data-id="${id}"]`);
-                    const comprador = select.value;
-                    if (!comprador) return showNotification('Selecione um comprador.', 'warning');
-
-                    if (!confirm(`Atribuir esta solicitação a ${comprador}?`)) return;
-                    
-                    try {
-                        btn.innerHTML = '<span class="loading-spinner"></span>';
-                        btn.disabled = true;
-                        
-                        const resp = await fetch(`/api/solicitacoes/${id}/atribuir_comprador`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ comprador })
-                        });
-                        
-                        const data = await resp.json();
-                        
-                        if (data.success) {
-                            showNotification(`Comprador ${comprador} atribuído com sucesso!`, 'success');
-                            // Atualiza o texto na coluna do comprador
-                            const row = btn.closest('tr');
-                            const compradorCell = row.querySelector('.col-comprador');
-                            if (compradorCell) {
-                                compradorCell.textContent = comprador;
-                            }
-                            // Atualiza o select
-                            select.querySelectorAll('option').forEach(option => {
-                                option.selected = option.value === comprador;
-                            });
-                        } else {
-                            showNotification(data.error || 'Erro ao atribuir comprador.', 'danger');
-                        }
-                    } catch (error) {
-                        showNotification('Erro ao conectar com o servidor.', 'danger');
-                        console.error('Erro:', error);
-                    } finally {
-                        btn.innerHTML = '<i class="fas fa-user-check"></i>';
-                        btn.disabled = false;
-                    }
-                });
+            document.querySelectorAll('.btn-icon').forEach(btn => {
+                btn.addEventListener('click', atribuirComprador);
             });
 
-            // Botão de exclusão de grupo
-            document.querySelectorAll('.btn-excluir-grupo').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const aplicacao = this.dataset.aplicacao;
-                    const count = this.dataset.count;
-                    
-                    // Configurar modal
-                    document.getElementById('modalMessage').innerHTML = `
-                        <p><strong>Grupo:</strong> ${aplicacao}</p>
-                        <p><strong>Solicitações a serem excluídas:</strong> ${count}</p>
-                        <p class="text-danger"><i class="fas fa-exclamation-circle"></i> 
-                        Esta ação removerá permanentemente todas as ${count} solicitações deste grupo.</p>
-                    `;
-                    
-                    // Resetar input
-                    document.getElementById('confirmationInput').value = '';
-                    document.getElementById('confirmDelete').disabled = true;
-                    
-                    // Mostrar modal
-                    document.getElementById('confirmationModal').style.display = 'flex';
-                    
-                    // Configurar botão de confirmação
-                    const confirmBtn = document.getElementById('confirmDelete');
-                    confirmBtn.onclick = () => {
-                        confirmExclusaoGrupo(aplicacao, this);
-                    };
-                });
+            // Exclusão de grupo
+            document.querySelectorAll('.btn-group-action.delete').forEach(btn => {
+                btn.addEventListener('click', openDeleteModal);
             });
 
-            // Botão de duplicação de grupo
-            document.querySelectorAll('.btn-duplicar-grupo').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const aplicacao = this.dataset.aplicacao;
-                    const count = this.dataset.count;
-                    
-                    // Configurar modal de duplicação
-                    document.getElementById('duplicationMessage').innerHTML = `
-                        <p><strong>Grupo original:</strong> ${aplicacao}</p>
-                        <p><strong>Solicitações a serem duplicadas:</strong> ${count}</p>
-                        <p><strong>Nova aplicação:</strong> ${aplicacao}_copia</p>
-                    `;
-                    
-                    // Preencher input com sugestão
-                    document.getElementById('newAplicacaoName').value = `${aplicacao}_copia`;
-                    
-                    // Mostrar modal
-                    document.getElementById('duplicationModal').style.display = 'flex';
-                    
-                    // Configurar botão de confirmação
-                    document.getElementById('confirmDuplication').onclick = () => {
-                        const novaAplicacao = document.getElementById('newAplicacaoName').value.trim();
-                        if (!novaAplicacao) {
-                            showNotification('Por favor, informe um nome para a nova aplicação.', 'warning');
-                            return;
-                        }
-                        confirmDuplicacaoGrupo(aplicacao, novaAplicacao, this);
-                    };
-                });
+            // Duplicação de grupo
+            document.querySelectorAll('.btn-group-action.duplicate').forEach(btn => {
+                btn.addEventListener('click', openDuplicateModal);
             });
 
-            // Botão de reprovar individual - ATUALIZADO
+            // Reprovação individual
             document.querySelectorAll('.btn-reprovar:not(:disabled)').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const id = this.dataset.id;
-                    const material = this.dataset.material;
-                    const especificacao = this.dataset.especificacao;
-                    const statusAtual = this.dataset.status;
-                    
-                    // Se já estiver reprovado, não fazer nada
-                    if (statusAtual === 'Reprovado') return;
-                    
-                    // Configurar modal de reprovação
-                    document.getElementById('reprovarInfo').innerHTML = `
-                        <p><strong>ID da Solicitação:</strong> ${id}</p>
-                        <p><strong>Material:</strong> ${material}</p>
-                        <p><strong>Especificação:</strong> ${especificacao || '-'}</p>
-                        <p class="text-warning"><i class="fas fa-info-circle"></i> 
-                        Esta solicitação será reprovada independentemente de ter cotações associadas.</p>
-                    `;
-                    
-                    // Resetar textarea
-                    document.getElementById('motivoReprovar').value = '';
-                    
-                    // Armazenar o ID para uso posterior
-                    const confirmBtn = document.getElementById('confirmReprovar');
-                    confirmBtn.dataset.id = id;
-                    confirmBtn.dataset.btnElement = this.outerHTML;
-                    
-                    // Mostrar modal
-                    document.getElementById('reprovarModal').style.display = 'flex';
-                });
+                btn.addEventListener('click', openReprovarModal);
             });
 
-            // Cancelar exclusão
-            document.getElementById('cancelDelete').addEventListener('click', () => {
-                document.getElementById('confirmationModal').style.display = 'none';
+            // Modais - Cancelar
+            document.getElementById('cancelDelete').addEventListener('click', () => closeModal('deleteModal'));
+            document.getElementById('cancelDuplicate').addEventListener('click', () => closeModal('duplicateModal'));
+            document.getElementById('cancelReprovar').addEventListener('click', () => closeModal('reprovarModal'));
+
+            // Modal de exclusão - validação de senha
+            document.getElementById('deletePassword').addEventListener('input', function() {
+                document.getElementById('confirmDelete').disabled = this.value !== '122004';
             });
 
-            // Cancelar duplicação
-            document.getElementById('cancelDuplication').addEventListener('click', () => {
-                document.getElementById('duplicationModal').style.display = 'none';
-            });
-
-            // Cancelar reprovação
-            document.getElementById('cancelReprovar').addEventListener('click', () => {
-                document.getElementById('reprovarModal').style.display = 'none';
-            });
-
-            // Validação do input de confirmação (exclusão)
-            document.getElementById('confirmationInput').addEventListener('input', function() {
-                const confirmBtn = document.getElementById('confirmDelete');
-                // Substitua 'SENHA_ADMIN' pela senha real
-                confirmBtn.disabled = this.value.trim().toUpperCase() !== '122004';
-            });
-
-            // Enter no input de confirmação
-            document.getElementById('confirmationInput').addEventListener('keypress', function(e) {
+            // Modal de exclusão - Enter
+            document.getElementById('deletePassword').addEventListener('keypress', function(e) {
                 if (e.key === 'Enter' && !document.getElementById('confirmDelete').disabled) {
                     document.getElementById('confirmDelete').click();
                 }
             });
 
-            // Confirmar reprovação - ATUALIZADO (removida verificação de cotações)
-            document.getElementById('confirmReprovar').addEventListener('click', async function() {
-                const id = this.dataset.id;
-                const motivo = document.getElementById('motivoReprovar').value.trim();
-                
-                // Mostrar loading no botão
-                const originalText = this.innerHTML;
-                this.innerHTML = '<span class="loading-spinner"></span> Reprovando...';
-                this.disabled = true;
-                
-                try {
-                    const response = await fetch(`/reprovar_solicitacao_individual/${id}`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({ motivo: motivo })
-                    });
-                    
-                    const data = await response.json();
-                    
-                    if (data.success) {
-                        // Fechar modal
-                        document.getElementById('reprovarModal').style.display = 'none';
-                        
-                        // Exibir mensagem de sucesso
-                        showNotification(`✅ ${data.message}`, 'success');
-                        
-                        // Atualizar a linha da tabela
-                        const row = document.querySelector(`tr[data-id="${id}"]`);
-                        if (row) {
-                            // Atualizar status
-                            const statusCell = row.cells[8];
-                            statusCell.innerHTML = '<span class="status-badge status-reprovado">Reprovado</span>';
-                            
-                            // Atualizar botão de reprovar
-                            const reprovarBtn = row.querySelector('.btn-reprovar');
-                            if (reprovarBtn) {
-                                reprovarBtn.disabled = true;
-                                reprovarBtn.innerHTML = '<i class="fas fa-ban"></i> <span>Reprovada</span>';
-                                reprovarBtn.style.backgroundColor = '#6c757d';
-                                reprovarBtn.title = 'Já reprovada' + (motivo ? ` - Motivo: ${motivo}` : '');
-                            }
-                            
-                            // Desabilitar atribuição
-                            const atribuirBtn = row.querySelector('.btn-atribuir');
-                            const compradorSelect = row.querySelector('.comprador-select');
-                            if (atribuirBtn) atribuirBtn.disabled = true;
-                            if (compradorSelect) compradorSelect.disabled = true;
-                            
-                            // Adicionar efeito visual
-                            row.style.opacity = '0.8';
-                            row.style.backgroundColor = '#f8f9fa';
-                            row.classList.remove('highlight-old');
-                        }
-                        
-                    } else {
-                        // Restaurar botão
-                        this.innerHTML = originalText;
-                        this.disabled = false;
-                        
-                        // Mostrar erro
-                        showNotification(`❌ ${data.message}`, 'danger');
-                    }
-                    
-                } catch (error) {
-                    // Restaurar botão
-                    this.innerHTML = originalText;
-                    this.disabled = false;
-                    
-                    showNotification('❌ Erro ao conectar com o servidor.', 'danger');
-                    console.error('Erro:', error);
+            // Botões de confirmação
+            document.getElementById('confirmDelete').addEventListener('click', confirmExclusao);
+            document.getElementById('confirmDuplicate').addEventListener('click', confirmDuplicacao);
+            document.getElementById('confirmReprovar').addEventListener('click', confirmReprovacao);
+
+            // Fechar modais ao clicar fora
+            window.addEventListener('click', (event) => {
+                if (event.target.classList.contains('modal-overlay')) {
+                    event.target.style.display = 'none';
                 }
             });
 
-            // Fechar modal ao clicar fora
-            window.addEventListener('click', (event) => {
-                const modals = ['confirmationModal', 'duplicationModal', 'reprovarModal'];
-                modals.forEach(modalId => {
-                    const modal = document.getElementById(modalId);
-                    if (modal && event.target === modal) {
-                        modal.style.display = 'none';
-                    }
-                });
-            });
-
-            // Destaque para solicitações antigas
+            // Destacar solicitações antigas
             highlightOldRequests();
         });
 
-        // Função para limpar filtros
-        function clearFilters() {
-            document.getElementById('empresaFilter').value = '';
-            document.getElementById('usuarioFilter').value = '';
-            document.getElementById('aplicacaoFilter').value = '';
-            document.getElementById('statusFilter').value = '';
-            document.getElementById('compradorFilter').value = '';
-            document.getElementById('dataInicio').value = '';
-            document.getElementById('dataFim').value = '';
+        // Funções de Filtro
+        function applyFilters() {
+            const params = new URLSearchParams();
             
-            // Define datas padrão novamente
-            const start = new Date();
-            start.setDate(start.getDate() - 30);
-            document.getElementById('dataInicio').valueAsDate = start;
-            document.getElementById('dataFim').valueAsDate = new Date();
-            
-            applyFilters();
-            showNotification('Filtros limpos com sucesso!', 'success');
+            const filters = {
+                empresa: document.getElementById('empresaFilter').value,
+                usuario: document.getElementById('usuarioFilter').value,
+                aplicacao: document.getElementById('aplicacaoFilter').value,
+                status: document.getElementById('statusFilter').value,
+                comprador: document.getElementById('compradorFilter').value,
+                data_inicio: document.getElementById('dataInicio').value,
+                data_fim: document.getElementById('dataFim').value
+            };
+
+            Object.entries(filters).forEach(([key, value]) => {
+                if (value) params.set(key, value);
+            });
+
+            params.set('page', '1');
+            params.set('per_page', document.getElementById('perPageSelect').value);
+
+            window.location.href = `${window.location.pathname}?${params.toString()}`;
         }
 
-        // Função para confirmar exclusão
-        async function confirmExclusaoGrupo(aplicacao, button) {
-            const modal = document.getElementById('confirmationModal');
+        function clearFilters() {
+            window.location.href = window.location.pathname + '?page=1&per_page=' + document.getElementById('perPageSelect').value;
+        }
+
+        function changePerPage() {
+            const url = new URL(window.location.href);
+            url.searchParams.set('per_page', this.value);
+            url.searchParams.set('page', '1');
+            window.location.href = url.toString();
+        }
+
+        // Atribuir Comprador
+        async function atribuirComprador(event) {
+            const btn = event.currentTarget;
+            const id = btn.dataset.id;
+            const select = document.querySelector(`.comprador-select[data-id="${id}"]`);
+            const comprador = select.value;
+
+            if (!comprador) {
+                showNotification('Selecione um comprador.', 'warning');
+                return;
+            }
+
+            if (!confirm(`Deseja atribuir esta solicitação a ${comprador}?`)) return;
+
+            try {
+                btn.innerHTML = '<span class="loading-spinner"></span>';
+                btn.disabled = true;
+
+                const response = await fetch(`/api/solicitacoes/${id}/atribuir_comprador`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ comprador })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showNotification(`✅ Comprador ${comprador} atribuído com sucesso!`, 'success');
+                    
+                    // Atualizar interface
+                    const row = btn.closest('tr');
+                    const compradorCell = row.querySelector('td:nth-child(10) .badge');
+                    if (compradorCell) {
+                        compradorCell.textContent = comprador;
+                    }
+                    
+                    // Atualizar select
+                    Array.from(select.options).forEach(opt => {
+                        opt.selected = opt.value === comprador;
+                    });
+                } else {
+                    showNotification(`❌ ${data.error || 'Erro ao atribuir comprador.'}`, 'error');
+                }
+            } catch (error) {
+                showNotification('❌ Erro ao conectar com o servidor.', 'error');
+                console.error('Erro:', error);
+            } finally {
+                btn.innerHTML = '<i class="fas fa-user-check"></i>';
+                btn.disabled = false;
+            }
+        }
+
+        // Modais
+        function openDeleteModal(event) {
+            const btn = event.currentTarget;
+            const aplicacao = btn.dataset.aplicacao;
+            const count = btn.dataset.count;
+
+            document.getElementById('deleteModalMessage').innerHTML = `
+                <strong>Grupo:</strong> ${aplicacao}<br>
+                <strong>Solicitações a serem excluídas:</strong> ${count}
+            `;
+
+            document.getElementById('deletePassword').value = '';
+            document.getElementById('confirmDelete').disabled = true;
+            document.getElementById('confirmDelete').dataset.aplicacao = aplicacao;
+            document.getElementById('confirmDelete').dataset.btnElement = btn.outerHTML;
+
+            openModal('deleteModal');
+        }
+
+        function openDuplicateModal(event) {
+            const btn = event.currentTarget;
+            const aplicacao = btn.dataset.aplicacao;
+            const count = btn.dataset.count;
+
+            document.getElementById('duplicateModalMessage').innerHTML = `
+                <strong>Grupo original:</strong> ${aplicacao}<br>
+                <strong>Solicitações a serem duplicadas:</strong> ${count}
+            `;
+
+            document.getElementById('newAplicacaoName').value = `${aplicacao}_copia`;
+            document.getElementById('confirmDuplicate').dataset.aplicacao = aplicacao;
+            document.getElementById('confirmDuplicate').dataset.btnElement = btn.outerHTML;
+
+            openModal('duplicateModal');
+        }
+
+        function openReprovarModal(event) {
+            const btn = event.currentTarget;
+            const id = btn.dataset.id;
+            const material = btn.dataset.material;
+            const especificacao = btn.dataset.especificacao;
+
+            document.getElementById('reprovarModalInfo').innerHTML = `
+                <p><strong>ID:</strong> ${id}</p>
+                <p><strong>Material:</strong> ${material}</p>
+                <p><strong>Especificação:</strong> ${especificacao || '-'}</p>
+            `;
+
+            document.getElementById('motivoReprovar').value = '';
+            document.getElementById('confirmReprovar').dataset.id = id;
+            document.getElementById('confirmReprovar').dataset.btnElement = btn.outerHTML;
+
+            openModal('reprovarModal');
+        }
+
+        function openModal(modalId) {
+            document.getElementById(modalId).style.display = 'flex';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        // Confirmações
+        async function confirmExclusao() {
+            const aplicacao = this.dataset.aplicacao;
+            const buttonHtml = this.dataset.btnElement;
             
-            // Mostrar loading no botão
-            const originalText = button.innerHTML;
-            button.innerHTML = '<span class="loading-spinner"></span> Excluindo...';
-            button.disabled = true;
-            
-            // Fechar modal
-            modal.style.display = 'none';
-            
+            closeModal('deleteModal');
+
             try {
                 const response = await fetch('/api/excluir_grupo_aplicacao', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ aplicacao: aplicacao })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ aplicacao })
                 });
-                
+
                 const data = await response.json();
-                
+
                 if (data.success) {
-                    // Exibir mensagem de sucesso
                     showNotification(`✅ ${data.message}`, 'success');
                     
-                    // Remover a seção do grupo
-                    const grupoElement = document.querySelector(`.aplicacao-section[id^="grupo-${aplicacao.replace(/ /g, '-').toLowerCase()}"]`);
+                    // Remover grupo da tela
+                    const grupoElement = document.querySelector(`.aplicacao-group[id^="grupo-${aplicacao.replace(/ /g, '-').toLowerCase()}"]`);
                     if (grupoElement) {
                         grupoElement.style.opacity = '0.5';
                         grupoElement.style.transition = 'opacity 0.5s';
-                        
                         setTimeout(() => {
                             grupoElement.remove();
-                            
-                            // Verificar se ainda há grupos
-                            if (document.querySelectorAll('.aplicacao-section').length === 0) {
-                                setTimeout(() => {
-                                    location.reload();
-                                }, 1000);
+                            if (document.querySelectorAll('.aplicacao-group').length === 0) {
+                                setTimeout(() => location.reload(), 1000);
                             }
                         }, 500);
                     }
-                    
-                    // Log no console
-                    console.log('Detalhes da exclusão:', data.details);
-                    
                 } else {
-                    // Restaurar botão
-                    button.innerHTML = '<i class="fas fa-trash"></i> Excluir Grupo';
-                    button.disabled = false;
-                    
-                    // Mostrar erro
-                    if (data.error.includes('pedidos de compra associados')) {
-                        showNotification(`❌ ${data.error}<br>Pedidos: ${data.pedidos.join(', ')}`, 'danger', 10000);
-                    } else {
-                        showNotification(`❌ ${data.error}`, 'danger');
-                    }
+                    showNotification(`❌ ${data.error}`, 'error');
                 }
-                
             } catch (error) {
-                // Restaurar botão
-                button.innerHTML = '<i class="fas fa-trash"></i> Excluir Grupo';
-                button.disabled = false;
-                
-                showNotification('❌ Erro ao conectar com o servidor.', 'danger');
+                showNotification('❌ Erro ao conectar com o servidor.', 'error');
                 console.error('Erro:', error);
             }
         }
 
-        // Função para confirmar duplicação
-        async function confirmDuplicacaoGrupo(aplicacaoOriginal, novaAplicacao, button) {
-            const modal = document.getElementById('duplicationModal');
-            
-            // Mostrar loading no botão
-            const originalText = button.innerHTML;
-            button.innerHTML = '<span class="loading-spinner"></span> Duplicando...';
-            button.disabled = true;
-            
-            // Fechar modal
-            modal.style.display = 'none';
-            
+        async function confirmDuplicacao() {
+            const aplicacaoOriginal = this.dataset.aplicacao;
+            const novaAplicacao = document.getElementById('newAplicacaoName').value.trim();
+
+            if (!novaAplicacao) {
+                showNotification('Por favor, informe um nome para a nova aplicação.', 'warning');
+                return;
+            }
+
+            closeModal('duplicateModal');
+
             try {
                 const response = await fetch('/duplicar_grupo_aplicacao', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
                         aplicacao: aplicacaoOriginal,
                         nova_aplicacao: novaAplicacao 
                     })
                 });
-                
+
                 const data = await response.json();
-                
+
                 if (data.success) {
-                    // Exibir mensagem de sucesso
                     showNotification(`✅ ${data.message}`, 'success');
-                    
-                    // Log no console
-                    console.log('Detalhes da duplicação:', data);
-                    
-                    // Recarregar a página após 1.5 segundos para mostrar as novas solicitações
-                    setTimeout(() => {
-                        location.reload();
-                    }, 1500);
-                    
+                    setTimeout(() => location.reload(), 1500);
                 } else {
-                    // Restaurar botão
-                    button.innerHTML = '<i class="fas fa-copy"></i> Duplicar Grupo';
-                    button.disabled = false;
-                    
-                    // Mostrar erro
-                    showNotification(`❌ ${data.error}`, 'danger');
+                    showNotification(`❌ ${data.error}`, 'error');
                 }
-                
             } catch (error) {
-                // Restaurar botão
-                button.innerHTML = '<i class="fas fa-copy"></i> Duplicar Grupo';
-                button.disabled = false;
-                
-                showNotification('❌ Erro ao conectar com o servidor.', 'danger');
+                showNotification('❌ Erro ao conectar com o servidor.', 'error');
                 console.error('Erro:', error);
             }
         }
 
-        // Função para mostrar notificação
-        function showNotification(message, type = 'info', duration = 5000) {
-            // Remove notificação anterior se existir
-            const existingNotification = document.querySelector('.custom-notification');
-            if (existingNotification) {
-                existingNotification.style.animation = 'slideOut 0.3s ease';
-                setTimeout(() => existingNotification.remove(), 300);
+        async function confirmReprovacao() {
+            const id = this.dataset.id;
+            const motivo = document.getElementById('motivoReprovar').value.trim();
+            const originalText = this.innerHTML;
+
+            this.innerHTML = '<span class="loading-spinner"></span> Reprovando...';
+            this.disabled = true;
+
+            try {
+                const response = await fetch(`/reprovar_solicitacao_individual/${id}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ motivo })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    closeModal('reprovarModal');
+                    showNotification(`✅ ${data.message}`, 'success');
+
+                    // Atualizar linha
+                    const row = document.querySelector(`tr[data-id="${id}"]`);
+                    if (row) {
+                        const statusCell = row.cells[8];
+                        statusCell.innerHTML = '<span class="status-badge reprovado">Reprovado</span>';
+                        
+                        const reprovarBtn = row.querySelector('.btn-reprovar');
+                        reprovarBtn.disabled = true;
+                        reprovarBtn.innerHTML = '<i class="fas fa-ban"></i> <span>Reprovada</span>';
+                        
+                        row.style.opacity = '0.8';
+                        row.style.backgroundColor = '#f8f9fa';
+                        row.classList.remove('highlight-old');
+                    }
+                } else {
+                    showNotification(`❌ ${data.message}`, 'error');
+                }
+            } catch (error) {
+                showNotification('❌ Erro ao conectar com o servidor.', 'error');
+                console.error('Erro:', error);
+            } finally {
+                this.innerHTML = '<i class="fas fa-times-circle"></i> Confirmar Reprovação';
+                this.disabled = false;
             }
-            
+        }
+
+        // Notificações
+        function showNotification(message, type = 'info') {
             const notification = document.createElement('div');
-            notification.className = `custom-notification notification-${type}`;
+            notification.className = `notification ${type}`;
+            
+            const icons = {
+                success: 'fa-check-circle',
+                error: 'fa-exclamation-circle',
+                warning: 'fa-exclamation-triangle',
+                info: 'fa-info-circle'
+            };
+
             notification.innerHTML = `
-                <div class="d-flex align-items-center">
-                    <i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'danger' ? 'fa-exclamation-circle' : 'fa-info-circle'} me-2"></i>
-                    <div>${message}</div>
+                <div class="notification-content">
+                    <i class="fas ${icons[type] || icons.info}"></i>
+                    <div class="notification-message">${message}</div>
+                    <button class="notification-close" onclick="this.parentElement.parentElement.remove()">
+                        <i class="fas fa-times"></i>
+                    </button>
                 </div>
             `;
-            
-            document.body.appendChild(notification);
-            
-            // Auto-remover após duração
+
+            notificationContainer.appendChild(notification);
+
             setTimeout(() => {
                 if (notification.parentNode) {
                     notification.style.animation = 'slideOut 0.3s ease';
                     setTimeout(() => notification.remove(), 300);
                 }
-            }, duration);
+            }, 5000);
         }
 
-        // Função para aplicar filtros
-        function applyFilters() {
-            const empresa = document.getElementById('empresaFilter').value.trim();
-            const usuario = document.getElementById('usuarioFilter').value.trim();
-            const aplicacao = document.getElementById('aplicacaoFilter').value.trim();
-            const status = document.getElementById('statusFilter').value.trim();
-            const comprador = document.getElementById('compradorFilter').value.trim();
-            const inicio = document.getElementById('dataInicio').value;
-            const fim = document.getElementById('dataFim').value;
-
-            let gruposVisiveis = 0;
-            let totalLinhasVisiveis = 0;
-
-            // Percorre todas as seções de aplicação
-            document.querySelectorAll('.aplicacao-section').forEach(section => {
-                const rows = section.querySelectorAll('tbody tr');
-                let visibleCount = 0;
-
-                rows.forEach(row => {
-                    const rowData = {
-                        empresa: row.cells[4].textContent.trim(),
-                        aplicacao: row.cells[5].textContent.trim(),
-                        data: row.cells[6].getAttribute('data-order'),
-                        usuario: row.cells[7].textContent.trim(),
-                        status: row.cells[8].textContent.trim(),
-                        comprador: row.cells[9].textContent.trim()
-                    };
-
-                    const match =
-                        (!empresa || rowData.empresa === empresa) &&
-                        (!usuario || rowData.usuario === usuario) &&
-                        (!aplicacao || rowData.aplicacao === aplicacao) &&
-                        (!status || rowData.status === status) &&
-                        (!comprador || rowData.comprador === comprador ||
-                            (comprador === 'Não atribuído' && rowData.comprador === 'Não atribuído')) &&
-                        (!inicio || rowData.data >= inicio) &&
-                        (!fim || rowData.data <= fim);
-
-                    if (match) {
-                        row.style.display = '';
-                        visibleCount++;
-                        totalLinhasVisiveis++;
-                    } else {
-                        row.style.display = 'none';
-                    }
-                });
-
-                // Se nenhuma linha visível, esconde a seção inteira
-                if (visibleCount > 0) {
-                    section.style.display = '';
-                    gruposVisiveis++;
-                } else {
-                    section.style.display = 'none';
-                }
-            });
-
-            // Mostra mensagem se nenhum resultado encontrado
-            if (totalLinhasVisiveis === 0 && document.querySelector('.aplicacao-section')) {
-                showNotification('Nenhuma solicitação encontrada com os filtros aplicados.', 'warning');
-            }
-        }
-
+        // Destaque para solicitações antigas
         function highlightOldRequests() {
             const hoje = new Date();
-            const rows = document.querySelectorAll('tbody tr');
+            document.querySelectorAll('tbody tr').forEach(row => {
+                const dataCell = row.querySelector('td:nth-child(7)');
+                if (!dataCell) return;
 
-            rows.forEach(row => {
-                const cellData = row.querySelector('td[data-order]');
-                if (!cellData) return;
-
-                const dataTexto = cellData.getAttribute('data-order');
-                if (!dataTexto) return;
-
-                const dataSolicitacao = new Date(dataTexto);
-                const diffDias = Math.floor((hoje - dataSolicitacao) / (1000 * 60 * 60 * 24));
-
-                if (diffDias > 7) {
-                    row.classList.add('highlight-old');
-                    // Adiciona tooltip
-                    row.title = `Solicitação com ${diffDias} dias de atraso`;
+                const dataTexto = dataCell.getAttribute('title') || dataCell.textContent;
+                const partes = dataTexto.split('/');
+                if (partes.length === 3) {
+                    const dataSolicitacao = new Date(partes[2], partes[1] - 1, partes[0]);
+                    const diffDias = Math.floor((hoje - dataSolicitacao) / (1000 * 60 * 60 * 24));
+                    
+                    if (diffDias > 7) {
+                        row.classList.add('highlight-old');
+                        row.title = `Solicitação com ${diffDias} dias de atraso`;
+                    }
                 }
             });
         }
 
-        // Função para formatar data
+        // Utilitários
         function formatDate(date) {
-            const d = new Date(date);
-            return d.toLocaleDateString('pt-BR');
+            return new Date(date).toLocaleDateString('pt-BR');
         }
 
-        // Função para exportar para Excel
-        function exportToExcel() {
-            showNotification('Funcionalidade de exportação em desenvolvimento...', 'info');
-            // Implementar lógica de exportação aqui
-        }
+        window.showNotification = showNotification;
     </script>
 </body>
 </html>
