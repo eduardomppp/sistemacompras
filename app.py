@@ -1736,8 +1736,17 @@ def listar_solicitacoes():
     try:
         # Parâmetros de paginação
         page = request.args.get('page', 1, type=int)
-        per_page = request.args.get('per_page', 10, type=int)  # Grupos por página
+        per_page = request.args.get('per_page', 10, type=int)
         
+        # Parâmetros de filtro
+        empresa = request.args.get('empresa')
+        usuario = request.args.get('usuario')
+        aplicacao_filter = request.args.get('aplicacao')
+        status = request.args.get('status')
+        comprador_filter = request.args.get('comprador')
+        data_inicio = request.args.get('data_inicio')
+        data_fim = request.args.get('data_fim')
+
         # Subquery: IDs das solicitações que já estão em pedidos de compra
         subquery_pedidos = db.session.query(
             SolicitacoesPreenchidas.solicitacao_id
@@ -1746,41 +1755,36 @@ def listar_solicitacoes():
             SolicitacoesPreenchidas.id == pedido_preenchimento_associacao.c.preenchimento_id
         ).distinct()
 
-        # Buscar solicitações aprovadas que NÃO estão em pedidos de compra
-        solicitacoes_query = SolicitacoesCompra.query.filter(
+        # Query base
+        query = SolicitacoesCompra.query.filter(
             SolicitacoesCompra.status_aprovacao == "Aprovado",
             ~SolicitacoesCompra.id.in_(subquery_pedidos)
         )
 
-        # Aplicar filtros se fornecidos
-        empresa = request.args.get('empresa')
-        usuario = request.args.get('usuario')
-        aplicacao = request.args.get('aplicacao')
-        comprador = request.args.get('comprador')
-        data_inicio = request.args.get('data_inicio')
-        data_fim = request.args.get('data_fim')
-        
+        # Aplicar filtros
         if empresa:
-            solicitacoes_query = solicitacoes_query.filter(SolicitacoesCompra.empresa == empresa)
+            query = query.filter(SolicitacoesCompra.empresa == empresa)
         if usuario:
-            solicitacoes_query = solicitacoes_query.filter(SolicitacoesCompra.usuario == usuario)
-        if aplicacao:
-            solicitacoes_query = solicitacoes_query.filter(SolicitacoesCompra.aplicacao == aplicacao)
-        if comprador:
-            if comprador == 'Não atribuído':
-                solicitacoes_query = solicitacoes_query.filter(
+            query = query.filter(SolicitacoesCompra.usuario == usuario)
+        if aplicacao_filter:
+            query = query.filter(SolicitacoesCompra.aplicacao == aplicacao_filter)
+        if status:
+            query = query.filter(SolicitacoesCompra.status_aprovacao == status)
+        if comprador_filter:
+            if comprador_filter == 'Não atribuído':
+                query = query.filter(
                     (SolicitacoesCompra.comprador_atribuido == None) | 
                     (SolicitacoesCompra.comprador_atribuido == '')
                 )
             else:
-                solicitacoes_query = solicitacoes_query.filter(SolicitacoesCompra.comprador_atribuido == comprador)
+                query = query.filter(SolicitacoesCompra.comprador_atribuido == comprador_filter)
         if data_inicio:
-            solicitacoes_query = solicitacoes_query.filter(SolicitacoesCompra.data_solicitacao >= datetime.strptime(data_inicio, '%Y-%m-%d'))
+            query = query.filter(SolicitacoesCompra.data_solicitacao >= datetime.strptime(data_inicio, '%Y-%m-%d'))
         if data_fim:
-            solicitacoes_query = solicitacoes_query.filter(SolicitacoesCompra.data_solicitacao <= datetime.strptime(data_fim, '%Y-%m-%d') + timedelta(days=1))
+            query = query.filter(SolicitacoesCompra.data_solicitacao <= datetime.strptime(data_fim, '%Y-%m-%d') + timedelta(days=1))
 
-        # Obter todas as solicitações (para agrupamento)
-        solicitacoes = solicitacoes_query.all()
+        # Obter todas as solicitações
+        solicitacoes = query.all()
         
         # Agrupar por aplicação E data completa (com hora)
         grupos = {}
@@ -1818,7 +1822,6 @@ def listar_solicitacoes():
         empresas = sorted({s.empresa for s in solicitacoes if s.empresa})
         usuarios = sorted({s.usuario for s in solicitacoes if s.usuario})
         aplicacoes = sorted({s.aplicacao for s in solicitacoes if s.aplicacao})
-
         compradores = get_compradores()
 
         return render_template(
@@ -1837,17 +1840,19 @@ def listar_solicitacoes():
 
     except Exception as e:
         flash(f'Erro ao carregar solicitações: {str(e)}', 'error')
-        return render_template('listar_solicitacoes.html',
-                               grupos_paginados=[],
-                               empresas=[],
-                               usuarios=[],
-                               aplicacoes=[],
-                               compradores=[],
-                               page=1,
-                               per_page=10,
-                               total_paginas=1,
-                               total_grupos=0,
-                               request_args={})
+        return render_template(
+            'listar_solicitacoes.html',
+            grupos_paginados=[],
+            empresas=[],
+            usuarios=[],
+            aplicacoes=[],
+            compradores=[],
+            page=1,
+            per_page=10,
+            total_paginas=1,
+            total_grupos=0,
+            request_args={}
+        )
     
 #Tela Comprado
 @routes_bp.route('/listar_solicitacoes_comprador', methods=['GET'])
