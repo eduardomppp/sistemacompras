@@ -510,6 +510,41 @@
             cursor: not-allowed;
         }
 
+        /* Botão de editar quantidade */
+        .btn-editar-quantidade {
+            background: none;
+            border: 1px solid var(--gray-300);
+            border-radius: var(--radius-sm);
+            width: 32px;
+            height: 32px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-right: 4px;
+        }
+
+        .btn-editar-quantidade:hover:not(:disabled) {
+            background-color: var(--gray-100);
+            border-color: var(--gray-400);
+            transform: translateY(-1px);
+        }
+
+        .btn-editar-quantidade:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Container de ações */
+        .acoes-container {
+            display: flex;
+            gap: 4px;
+            justify-content: flex-start;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
         .highlight-old {
             background-color: #fffbeb !important;
         }
@@ -831,6 +866,21 @@
                 justify-content: center;
             }
 
+            .acoes-container {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .btn-editar-quantidade {
+                width: 100%;
+                margin-right: 0;
+                margin-bottom: 4px;
+            }
+
+            .btn-reprovar {
+                width: 100%;
+            }
+
             .notification {
                 min-width: auto;
                 max-width: none;
@@ -845,6 +895,7 @@
             .group-actions,
             .btn-reprovar,
             .btn-icon,
+            .btn-editar-quantidade,
             .comprador-select,
             .pagination-nav {
                 display: none !important;
@@ -878,7 +929,7 @@
             <div class="page-header">
                 <h1>
                     <i class="fas fa-clipboard-check"></i>
-                    Solicitações de Compra Finalizadas
+                    Solicitações de Compra
                 </h1>
                 <div class="header-badge">
                     <i class="fas fa-chart-bar"></i>
@@ -1064,7 +1115,7 @@
                                                 {{ solicitacao.especificacao or '-' }}
                                             </div>
                                         </td>
-                                        <td><strong>{{ solicitacao.quantidade }}</strong></td>
+                                        <td><strong id="quantidade-{{ solicitacao.id }}">{{ solicitacao.quantidade }}</strong></td>
                                         <td>{{ solicitacao.empresa }}</td>
                                         <td>{{ solicitacao.aplicacao }}</td>
                                         <td>
@@ -1099,20 +1150,40 @@
                                             </div>
                                         </td>
                                         <td>
-                                            <button class="btn-reprovar" 
-                                                    data-id="{{ solicitacao.id }}"
-                                                    data-material="{{ solicitacao.material.DescricaoMaterial }}"
-                                                    data-especificacao="{{ solicitacao.especificacao }}"
-                                                    data-status="{{ solicitacao.status_aprovacao }}"
-                                                    {% if solicitacao.status_aprovacao == 'Reprovado' %}disabled{% endif %}
-                                                    title="{% if solicitacao.status_aprovacao == 'Reprovado' %}
-                                                               Já reprovada
-                                                           {% else %}
-                                                               Reprovar esta solicitação
-                                                           {% endif %}">
-                                                <i class="fas fa-times-circle"></i>
-                                                <span>{% if solicitacao.status_aprovacao == 'Reprovado' %}Reprovada{% else %}Reprovar{% endif %}</span>
-                                            </button>
+                                            <div class="acoes-container">
+                                                <!-- Botão de Editar Quantidade (discreto) -->
+                                                <button class="btn-editar-quantidade" 
+                                                        data-id="{{ solicitacao.id }}"
+                                                        data-quantidade="{{ solicitacao.quantidade }}"
+                                                        data-material="{{ solicitacao.material.DescricaoMaterial }}"
+                                                        data-status="{{ solicitacao.status_aprovacao }}"
+                                                        {% if solicitacao.status_aprovacao == 'Reprovado' or solicitacao.preenchimentos_count > 0 %}disabled{% endif %}
+                                                        title="{% if solicitacao.status_aprovacao == 'Reprovado' %}
+                                                                   Solicitação reprovada
+                                                               {% elif solicitacao.preenchimentos_count > 0 %}
+                                                                   Já existem cotações enviadas
+                                                               {% else %}
+                                                                   Editar quantidade (requer senha)
+                                                               {% endif %}">
+                                                    <i class="fas fa-pencil-alt"></i>
+                                                </button>
+
+                                                <!-- Botão Reprovar existente -->
+                                                <button class="btn-reprovar" 
+                                                        data-id="{{ solicitacao.id }}"
+                                                        data-material="{{ solicitacao.material.DescricaoMaterial }}"
+                                                        data-especificacao="{{ solicitacao.especificacao }}"
+                                                        data-status="{{ solicitacao.status_aprovacao }}"
+                                                        {% if solicitacao.status_aprovacao == 'Reprovado' %}disabled{% endif %}
+                                                        title="{% if solicitacao.status_aprovacao == 'Reprovado' %}
+                                                                   Já reprovada
+                                                               {% else %}
+                                                                   Reprovar esta solicitação
+                                                               {% endif %}">
+                                                    <i class="fas fa-times-circle"></i>
+                                                    <span>{% if solicitacao.status_aprovacao == 'Reprovado' %}Reprovada{% else %}Reprovar{% endif %}</span>
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                     {% endfor %}
@@ -1291,6 +1362,50 @@
         </div>
     </div>
 
+    <!-- Modal de Edição de Quantidade -->
+    <div class="modal-overlay" id="editarQuantidadeModal">
+        <div class="modal-container" style="max-width: 400px;">
+            <div class="modal-header" style="background: #e5e7eb; color: #374151;">
+                <i class="fas fa-pencil-alt"></i>
+                <h3>Editar Quantidade</h3>
+            </div>
+            <div class="modal-body">
+                <div class="modal-info" style="margin-bottom: 1.5rem;">
+                    <p><strong>Material:</strong> <span id="editMaterialNome"></span></p>
+                    <p><strong>Quantidade atual:</strong> <span id="editQuantidadeAtual"></span></p>
+                </div>
+                
+                <div style="margin-bottom: 1rem;">
+                    <label style="font-size: 0.875rem; display: block; margin-bottom: 0.5rem; font-weight: 500;">
+                        Nova quantidade:
+                    </label>
+                    <input type="number" id="novaQuantidade" min="1" step="1" 
+                           style="width: 100%; padding: 0.5rem; border: 1px solid var(--gray-300); border-radius: var(--radius-sm);"
+                           placeholder="Digite a nova quantidade">
+                </div>
+                
+                <div>
+                    <label style="font-size: 0.875rem; display: block; margin-bottom: 0.5rem; font-weight: 500;">
+                        Senha administrativa:
+                    </label>
+                    <input type="password" id="senhaEdicao" 
+                           style="width: 100%; padding: 0.5rem; border: 1px solid var(--gray-300); border-radius: var(--radius-sm);"
+                           placeholder="Digite a senha">
+                    <small style="color: #6b7280; font-size: 0.75rem; margin-top: 0.25rem; display: block;">
+                        ⚠️ Esta ação alterará permanentemente a quantidade do material.
+                    </small>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-outline" id="cancelEditarQuantidade">Cancelar</button>
+                <button class="btn btn-primary" id="confirmEditarQuantidade" style="background-color: var(--primary);">
+                    <i class="fas fa-save"></i>
+                    Salvar Alteração
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Container para Notificações -->
     <div id="notificationContainer"></div>
 
@@ -1322,6 +1437,113 @@
             // Reprovação individual
             document.querySelectorAll('.btn-reprovar:not(:disabled)').forEach(btn => {
                 btn.addEventListener('click', openReprovarModal);
+            });
+
+            // Botão de editar quantidade
+            document.querySelectorAll('.btn-editar-quantidade:not(:disabled)').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const id = this.dataset.id;
+                    const quantidade = this.dataset.quantidade;
+                    const material = this.dataset.material;
+                    const status = this.dataset.status;
+                    
+                    // Preencher informações no modal
+                    document.getElementById('editMaterialNome').textContent = material || 'Material não especificado';
+                    document.getElementById('editQuantidadeAtual').textContent = quantidade;
+                    
+                    // Limpar campos
+                    document.getElementById('novaQuantidade').value = quantidade;
+                    document.getElementById('senhaEdicao').value = '';
+                    
+                    // Armazenar ID para uso posterior
+                    document.getElementById('confirmEditarQuantidade').dataset.id = id;
+                    
+                    // Mostrar modal
+                    openModal('editarQuantidadeModal');
+                });
+            });
+
+            // Cancelar edição
+            document.getElementById('cancelEditarQuantidade').addEventListener('click', () => {
+                closeModal('editarQuantidadeModal');
+            });
+
+            // Confirmar edição
+            document.getElementById('confirmEditarQuantidade').addEventListener('click', async function() {
+                const id = this.dataset.id;
+                const novaQuantidade = document.getElementById('novaQuantidade').value.trim();
+                const senha = document.getElementById('senhaEdicao').value.trim();
+                
+                // Validações
+                if (!novaQuantidade) {
+                    showNotification('Por favor, informe a nova quantidade.', 'warning');
+                    return;
+                }
+                
+                if (parseInt(novaQuantidade) <= 0) {
+                    showNotification('A quantidade deve ser maior que zero.', 'warning');
+                    return;
+                }
+                
+                if (!senha) {
+                    showNotification('Por favor, informe a senha administrativa.', 'warning');
+                    return;
+                }
+                
+                // Mostrar loading
+                const originalText = this.innerHTML;
+                this.innerHTML = '<span class="loading-spinner"></span> Salvando...';
+                this.disabled = true;
+                
+                try {
+                    const response = await fetch(`/api/editar_quantidade_solicitacao/${id}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            quantidade: parseInt(novaQuantidade),
+                            senha: senha
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        // Fechar modal
+                        closeModal('editarQuantidadeModal');
+                        
+                        // Exibir mensagem de sucesso
+                        showNotification(`✅ ${data.message}`, 'success');
+                        
+                        // Atualizar a linha da tabela
+                        const quantidadeCell = document.getElementById(`quantidade-${id}`);
+                        if (quantidadeCell) {
+                            quantidadeCell.innerHTML = `<strong>${data.nova_quantidade}</strong>`;
+                            
+                            // Atualizar também o dataset do botão
+                            const editBtn = document.querySelector(`.btn-editar-quantidade[data-id="${id}"]`);
+                            if (editBtn) {
+                                editBtn.dataset.quantidade = data.nova_quantidade;
+                            }
+                            
+                            // Destacar visualmente
+                            quantidadeCell.style.backgroundColor = '#d1fae5';
+                            setTimeout(() => {
+                                quantidadeCell.style.backgroundColor = '';
+                            }, 2000);
+                        }
+                        
+                    } else {
+                        showNotification(`❌ ${data.message}`, 'error');
+                    }
+                } catch (error) {
+                    showNotification('❌ Erro ao conectar com o servidor.', 'error');
+                    console.error('Erro:', error);
+                } finally {
+                    this.innerHTML = '<i class="fas fa-save"></i> Salvar Alteração';
+                    this.disabled = false;
+                }
             });
 
             // Modais - Cancelar
@@ -1621,6 +1843,13 @@
                         if (reprovarBtn) {
                             reprovarBtn.disabled = true;
                             reprovarBtn.innerHTML = '<i class="fas fa-ban"></i> <span>Reprovada</span>';
+                        }
+
+                        // Desabilitar botão de editar
+                        const editarBtn = row.querySelector('.btn-editar-quantidade');
+                        if (editarBtn) {
+                            editarBtn.disabled = true;
+                            editarBtn.title = 'Solicitação reprovada';
                         }
                         
                         row.style.opacity = '0.8';
