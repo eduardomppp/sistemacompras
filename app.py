@@ -23,6 +23,60 @@ from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 from io import BytesIO
 from flask import make_response
+# Adicione no início do arquivo, após as importações
+from functools import lru_cache
+from time import time
+
+# Cache simples com tempo de expiração
+_cache = {}
+_cache_timestamp = {}
+
+def get_cached_or_execute(key, func, ttl_seconds=300):
+    """
+    Cache simples com tempo de expiração
+    Uso: dados = get_cached_or_execute('chave_unica', lambda: minha_funcao(), ttl_seconds=60)
+    """
+    current_time = time()
+    if key in _cache and (current_time - _cache_timestamp.get(key, 0)) < ttl_seconds:
+        print(f"✅ Cache hit para {key}")
+        return _cache[key]
+    
+    print(f"🔄 Cache miss para {key}, executando função...")
+    result = func()
+    _cache[key] = result
+    _cache_timestamp[key] = current_time
+    return result
+
+# Funções auxiliares para cache
+def get_empresas_unicas_cached():
+    """Retorna lista única de empresas"""
+    return [e[0] for e in db.session.query(SolicitacoesCompra.empresa).distinct().all() if e[0]]
+
+def get_usuarios_unicos_cached():
+    """Retorna lista única de usuários"""
+    return [u[0] for u in db.session.query(SolicitacoesCompra.usuario).distinct().all() if u[0]]
+
+def get_aplicacoes_unicas_cached():
+    """Retorna lista única de aplicações"""
+    from sqlalchemy import or_
+    
+    aplicacoes = set()
+    
+    # Materiais
+    for a in db.session.query(Materiais.Aplicacao).filter(
+        Materiais.Aplicacao.isnot(None), Materiais.Aplicacao != ''
+    ).distinct().all():
+        if a[0]:
+            aplicacoes.add(a[0].strip())
+    
+    # Solicitações
+    for a in db.session.query(SolicitacoesCompra.aplicacao).filter(
+        SolicitacoesCompra.aplicacao.isnot(None), SolicitacoesCompra.aplicacao != ''
+    ).distinct().all():
+        if a[0]:
+            aplicacoes.add(a[0].strip())
+    
+    return sorted(aplicacoes)
 
 # Carregar variáveis de ambiente
 load_dotenv()
@@ -1715,17 +1769,20 @@ def abrir_solicitacao():
         flash(f'Erro ao abrir solicitações: {str(e)}', 'error')
         return redirect(url_for('routes_bp.buscar_material'))
 
-def get_compradores():
-    """Retorna lista de nomes de compradores a partir do arquivo senhas.txt"""
+def _get_compradores_from_file():
+    """Função interna para ler compradores do arquivo (usada apenas pelo cache)"""
     senhas = ler_senhas()
     compradores = []
     
     for usuario_completo, dados in senhas.items():
-        # CORREÇÃO: Verificar se a página contém 'comprador' e usar o usuário base
         if 'comprador' in dados['pagina'].lower():
             compradores.append(dados['usuario_base'])
     
-    return sorted(set(compradores))  # Usar set para remover duplicatasrn sorted(compradores)
+    return sorted(set(compradores))
+
+def get_compradores():
+    """Retorna lista de nomes de compradores a partir do cache"""
+    return get_cached_or_execute('compradores', _get_compradores_from_file, ttl_seconds=300)
 
 
 @routes_bp.route('/listar_solicitacoes', methods=['GET'])
@@ -2027,38 +2084,30 @@ def aprovar_solicitacao():
         return redirect(url_for('routes_bp.login'))
     
     try:
-        # Obter parâmetro de filtro
+        # Importar or_ no início da função
+        from sqlalchemy import or_
+        
+        # Obter parâmetros de filtro
         filtro_status = request.args.get('filtro_status', 'pendentes')
-        aplicacao_filtro = request.args.get('aplicacao', '')  # NOVO: Filtro por aplicação
+        aplicacao_filtro = request.args.get('aplicacao', '')
         
         print(f"🚀 DEBUG - aprovar_solicitacao com filtro: {filtro_status}")
         
+        # Importar joinedload para eager loading
+        from sqlalchemy.orm import joinedload
+        
+        # Query base com eager loading do material
+        query = SolicitacoesCompra.query.options(joinedload(SolicitacoesCompra.material))
+        
         if filtro_status == 'pendentes':
-            # Buscar solicitações pendentes
-            solicitacoes_none = SolicitacoesCompra.query.filter(
-                SolicitacoesCompra.status_aprovacao.is_(None)
+            # Buscar solicitações pendentes em UMA consulta
+            solicitacoes = query.filter(
+                or_(
+                    SolicitacoesCompra.status_aprovacao.is_(None),
+                    SolicitacoesCompra.status_aprovacao == '',
+                    SolicitacoesCompra.status_aprovacao == 'Pendente'
+                )
             ).all()
-            
-            solicitacoes_empty = SolicitacoesCompra.query.filter(
-                SolicitacoesCompra.status_aprovacao == ''
-            ).all()
-            
-            solicitacoes_pendente = SolicitacoesCompra.query.filter(
-                SolicitacoesCompra.status_aprovacao == 'Pendente'
-            ).all()
-            
-            # Combinar todos os resultados
-            solicitacoes = solicitacoes_none + solicitacoes_empty + solicitacoes_pendente
-            
-            # Remover duplicatas
-            seen_ids = set()
-            solicitacoes_unique = []
-            for sol in solicitacoes:
-                if sol.id not in seen_ids:
-                    seen_ids.add(sol.id)
-                    solicitacoes_unique.append(sol)
-            
-            solicitacoes = solicitacoes_unique
             
         elif filtro_status == 'abertas':
             # Solicitações sem preenchimento FINALIZADO
@@ -2066,17 +2115,17 @@ def aprovar_solicitacao():
                 SolicitacoesPreenchidas.status.in_(['Aprovado', 'Reprovado', 'Entregue', 'Em Processamento'])
             ).distinct()
             
-            solicitacoes = SolicitacoesCompra.query.filter(
+            solicitacoes = query.filter(
                 ~SolicitacoesCompra.id.in_(subquery)
             ).all()
             
         elif filtro_status == 'aprovadas':
-            solicitacoes = SolicitacoesCompra.query.filter(
+            solicitacoes = query.filter(
                 SolicitacoesCompra.status_aprovacao == 'Aprovado'
             ).all()
             
         elif filtro_status == 'reprovadas':
-            solicitacoes = SolicitacoesCompra.query.filter(
+            solicitacoes = query.filter(
                 SolicitacoesCompra.status_aprovacao == 'Reprovado'
             ).all()
             
@@ -2085,80 +2134,62 @@ def aprovar_solicitacao():
                 SolicitacoesPreenchidas.status.in_(['Aprovado', 'Reprovado', 'Entregue', 'Em Processamento'])
             ).distinct()
             
-            solicitacoes = SolicitacoesCompra.query.filter(
+            solicitacoes = query.filter(
                 SolicitacoesCompra.id.in_(subquery)
             ).all()
             
         else:
-            solicitacoes = SolicitacoesCompra.query.all()
+            solicitacoes = query.all()
 
-        # CORREÇÃO COMPLETA: Obter aplicações únicas de forma mais abrangente
-        aplicacoes_unicas = set()
-        
-        # 1. Buscar aplicações dos materiais
-        materiais_com_aplicacao = Materiais.query.filter(
+        # Buscar aplicações em UMA ÚNICA consulta
+        # Buscar aplicações de materiais
+        aplicacoes_materiais = db.session.query(
+            Materiais.Aplicacao
+        ).filter(
             Materiais.Aplicacao.isnot(None),
             Materiais.Aplicacao != ''
-        ).all()
-        for material in materiais_com_aplicacao:
-            if material.Aplicacao and material.Aplicacao.strip():
-                aplicacoes_unicas.add(material.Aplicacao.strip())
+        ).distinct().all()
         
-        # 2. Buscar aplicações das solicitações (tanto aplicacao quanto aplicacao_geral)
-        solicitacoes_com_aplicacao = SolicitacoesCompra.query.filter(
-            or_(
-                SolicitacoesCompra.aplicacao.isnot(None),
-                SolicitacoesCompra.aplicacao_geral.isnot(None)
-            )
-        ).all()
+        # Buscar aplicações de solicitações
+        aplicacoes_solicitacoes = db.session.query(
+            SolicitacoesCompra.aplicacao
+        ).filter(
+            SolicitacoesCompra.aplicacao.isnot(None),
+            SolicitacoesCompra.aplicacao != ''
+        ).distinct().all()
         
-        for solicitacao in solicitacoes_com_aplicacao:
-            if solicitacao.aplicacao and solicitacao.aplicacao.strip():
-                aplicacoes_unicas.add(solicitacao.aplicacao.strip())
-            if solicitacao.aplicacao_geral and solicitacao.aplicacao_geral.strip():
-                aplicacoes_unicas.add(solicitacao.aplicacao_geral.strip())
+        # Buscar aplicações gerais
+        aplicacoes_gerais = db.session.query(
+            SolicitacoesCompra.aplicacao_geral
+        ).filter(
+            SolicitacoesCompra.aplicacao_geral.isnot(None),
+            SolicitacoesCompra.aplicacao_geral != ''
+        ).distinct().all()
         
-        # 3. Buscar também das solicitações atuais para garantir completude
-        for solicitacao in solicitacoes:
-            if solicitacao.aplicacao and solicitacao.aplicacao.strip():
-                aplicacoes_unicas.add(solicitacao.aplicacao.strip())
-            if solicitacao.aplicacao_geral and solicitacao.aplicacao_geral.strip():
-                aplicacoes_unicas.add(solicitacao.aplicacao_geral.strip())
-            # Se não tem aplicação específica, usar a do material
-            elif solicitacao.material and solicitacao.material.Aplicacao and solicitacao.material.Aplicacao.strip():
-                aplicacoes_unicas.add(solicitacao.material.Aplicacao.strip())
+        # Combinar todas as aplicações
+        aplicacoes_unicas = set()
+        for aplicacao in aplicacoes_materiais:
+            if aplicacao[0]:
+                aplicacoes_unicas.add(aplicacao[0].strip())
+        for aplicacao in aplicacoes_solicitacoes:
+            if aplicacao[0]:
+                aplicacoes_unicas.add(aplicacao[0].strip())
+        for aplicacao in aplicacoes_gerais:
+            if aplicacao[0]:
+                aplicacoes_unicas.add(aplicacao[0].strip())
         
         aplicacoes_unicas = sorted(aplicacoes_unicas)
         
         print(f"🔍 DEBUG - Total de aplicações únicas encontradas: {len(aplicacoes_unicas)}")
-        for i, aplicacao in enumerate(aplicacoes_unicas[:10]):  # Mostrar apenas as primeiras 10 para debug
-            print(f"  {i+1}. {aplicacao}")
 
-        # NOVO: Aplicar filtro por aplicação se especificado
+        # Aplicar filtro por aplicação se especificado
         if aplicacao_filtro:
-            solicitacoes_filtradas = []
-            for solicitacao in solicitacoes:
-                # Verificar aplicação em várias fontes
-                aplicacao_encontrada = False
-                
-                # 1. Verificar aplicação específica da solicitação
-                if solicitacao.aplicacao and aplicacao_filtro.lower() in solicitacao.aplicacao.lower():
-                    aplicacao_encontrada = True
-                
-                # 2. Verificar aplicação geral da solicitação
-                elif solicitacao.aplicacao_geral and aplicacao_filtro.lower() in solicitacao.aplicacao_geral.lower():
-                    aplicacao_encontrada = True
-                
-                # 3. Verificar aplicação do material
-                elif solicitacao.material and solicitacao.material.Aplicacao and aplicacao_filtro.lower() in solicitacao.material.Aplicacao.lower():
-                    aplicacao_encontrada = True
-                
-                if aplicacao_encontrada:
-                    solicitacoes_filtradas.append(solicitacao)
-            
-            solicitacoes = solicitacoes_filtradas
-            print(f"✅ Aplicado filtro por aplicação: '{aplicacao_filtro}' - {len(solicitacoes)} solicitações encontradas")
+            solicitacoes = [s for s in solicitacoes if 
+                           (s.aplicacao and aplicacao_filtro.lower() in s.aplicacao.lower()) or
+                           (s.aplicacao_geral and aplicacao_filtro.lower() in s.aplicacao_geral.lower()) or
+                           (s.material and s.material.Aplicacao and aplicacao_filtro.lower() in s.material.Aplicacao.lower())]
 
+        # Função para obter usuários e empresas
         def get_usuarios_empresas():
             usuarios = set()
             empresas = set()
@@ -2179,13 +2210,12 @@ def aprovar_solicitacao():
         
         if not solicitacoes:
             flash('Nenhuma solicitação encontrada com os filtros aplicados.', 'info')
-            print("⚠️ DEBUG - Nenhuma solicitação para exibir")
         
         return render_template('aprovar_solicitacao.html', 
                             solicitacoes=solicitacoes,
                             empresas=empresas,
                             usuarios=usuarios,
-                            aplicacoes_unicas=aplicacoes_unicas,  # CORRIGIDO
+                            aplicacoes_unicas=aplicacoes_unicas,
                             filtro_status=filtro_status,
                             aplicacao_filtro=aplicacao_filtro)
         
@@ -2194,6 +2224,7 @@ def aprovar_solicitacao():
         print(f"❌ DEBUG - Erro: {str(e)}")
         flash(f'Erro ao carregar solicitações: {str(e)}', 'error')
         return redirect(url_for('routes_bp.buscar_material'))
+    
     
 @routes_bp.route('/debug_ultimas_solicitacoes')
 def debug_ultimas_solicitacoes():
@@ -6288,6 +6319,10 @@ def dashboard():
         return redirect(url_for('routes_bp.login'))
     
     try:
+        # Importações necessárias
+        from sqlalchemy.orm import joinedload
+        from datetime import datetime, timedelta
+        
         # Obter parâmetros de filtro
         empresa = request.args.get('empresa', 'Todas')
         periodo = request.args.get('periodo', 'Últimos 30 dias')
@@ -6307,53 +6342,63 @@ def dashboard():
         elif periodo == '2024':
             data_inicio = datetime(2024, 1, 1)
         
-        # CONSULTA BASE OTIMIZADA
-        query = SolicitacoesCompra.query
+        # ✅ CORREÇÃO: Carregar apenas o necessário com joins apropriados
+        query = SolicitacoesCompra.query.options(
+            joinedload(SolicitacoesCompra.material),
+            joinedload(SolicitacoesCompra.preenchimentos_fornecidos)
+        )
         
-        # Aplicar filtros
+        # Aplicar filtros de data
         if data_inicio:
             query = query.filter(SolicitacoesCompra.data_solicitacao >= data_inicio)
         
-        if empresa and empresa != 'Todas':
-            query = query.filter(SolicitacoesCompra.empresa == empresa)
-        
-        if status_filtro and status_filtro != 'Todos':
-            if status_filtro == 'Pendente':
-                query = query.filter(SolicitacoesCompra.status_aprovacao.in_([None, '', 'Pendente']))
-            elif status_filtro == 'Aprovado':
-                query = query.filter(SolicitacoesCompra.status_aprovacao == 'Aprovado')
-            elif status_filtro == 'Reprovado':
-                query = query.filter(SolicitacoesCompra.status_aprovacao == 'Reprovado')
-        
-        if comprador_filtro and comprador_filtro != 'Todos':
-            query = query.filter(SolicitacoesCompra.comprador_atribuido == comprador_filtro)
-        
-        # Executar consulta
+        # Executar consulta principal
         solicitacoes = query.all()
+        
+        # ✅ OTIMIZAÇÃO: Processar dados em memória (sem novas consultas)
         total_solicitacoes = len(solicitacoes)
         
-        # DADOS BÁSICOS
-        aprovadas = sum(1 for s in solicitacoes if s.status_aprovacao == 'Aprovado')
-        pendentes = sum(1 for s in solicitacoes if s.status_aprovacao in [None, '', 'Pendente'])
-        rejeitadas = sum(1 for s in solicitacoes if s.status_aprovacao == 'Reprovado')
-        
-        # 1. PRODUTIVIDADE DOS COMPRADORES
+        # Dicionários para agregação
         compradores_metrics = {}
+        produtos_pendentes = {}
+        volume_por_empresa = {}
+        pendencias_por_empresa = {}
+        gastos_por_veiculo = {}
+        compras_por_veiculo = {}
+        tempo_aberto_lista = []
+        gastos_por_empresa = {}
+        produtividade_por_empresa = {}
         
+        # Processar todas as solicitações em um único loop
         for solicitacao in solicitacoes:
-            comprador = solicitacao.comprador_atribuido or 'Não Atribuído'
+            # Aplicar filtros em memória
+            if empresa != 'Todas' and solicitacao.empresa != empresa:
+                continue
+            if comprador_filtro != 'Todos' and solicitacao.comprador_atribuido != comprador_filtro:
+                continue
             
+            # Status da solicitação
+            status = solicitacao.status_aprovacao
+            if status_filtro != 'Todos':
+                if status_filtro == 'Pendente' and status not in [None, '', 'Pendente']:
+                    continue
+                elif status_filtro == 'Aprovado' and status != 'Aprovado':
+                    continue
+                elif status_filtro == 'Reprovado' and status != 'Reprovado':
+                    continue
+            
+            # 1. PRODUTIVIDADE DOS COMPRADORES
+            comprador = solicitacao.comprador_atribuido or 'Não Atribuído'
             if comprador not in compradores_metrics:
                 compradores_metrics[comprador] = {
-                    'pendentes': 0,
-                    'aprovadas': 0,
-                    'rejeitadas': 0,
-                    'valor_total': 0,
-                    'tempo_medio': 0,
-                    'contador_tempo': 0
+                    'pendentes': 0, 'aprovadas': 0, 'rejeitadas': 0,
+                    'valor_total': 0, 'tempo_medio': 0, 'contador_tempo': 0,
+                    'total': 0
                 }
             
-            status = solicitacao.status_aprovacao
+            # Incrementar contadores
+            compradores_metrics[comprador]['total'] += 1
+            
             if status == 'Aprovado':
                 compradores_metrics[comprador]['aprovadas'] += 1
             elif status in [None, '', 'Pendente']:
@@ -6361,27 +6406,125 @@ def dashboard():
             elif status == 'Reprovado':
                 compradores_metrics[comprador]['rejeitadas'] += 1
             
-            # Buscar preenchimentos para calcular valor
-            preenchimentos = SolicitacoesPreenchidas.query.filter_by(
-                solicitacao_id=solicitacao.id
-            ).filter(
-                SolicitacoesPreenchidas.status != 'Rascunho'
-            ).all()
+            # Calcular valor total (usando preenchimentos já carregados)
+            valor_solicitacao = 0
+            for preenchimento in solicitacao.preenchimentos_fornecidos:
+                if preenchimento.status != 'Rascunho' and preenchimento.valor_total:
+                    valor_solicitacao += preenchimento.valor_total
             
-            valor_solicitacao = sum(p.valor_total for p in preenchimentos if p and p.valor_total)
             compradores_metrics[comprador]['valor_total'] += valor_solicitacao
             
-            # Calcular tempo médio para solicitações aprovadas
+            # Tempo médio para aprovadas
             if status == 'Aprovado' and solicitacao.data_solicitacao:
                 dias = (data_atual - solicitacao.data_solicitacao).days
                 compradores_metrics[comprador]['tempo_medio'] += dias
                 compradores_metrics[comprador]['contador_tempo'] += 1
+            
+            # 2. PRODUTOS PENDENTES
+            if status in [None, '', 'Pendente'] and solicitacao.material:
+                material = solicitacao.material
+                produto_nome = material.DescricaoMaterial
+                if len(produto_nome) > 40:
+                    produto_nome = produto_nome[:40] + '...'
+                
+                chave = f"{material.CodMaterial}|{solicitacao.empresa}"
+                
+                if chave not in produtos_pendentes:
+                    produtos_pendentes[chave] = {
+                        'produto': produto_nome,
+                        'quantidade': 0,
+                        'valor_total': 0,
+                        'empresa': solicitacao.empresa,
+                        'dias_pendente': (data_atual - solicitacao.data_solicitacao).days if solicitacao.data_solicitacao else 0
+                    }
+                
+                produtos_pendentes[chave]['quantidade'] += solicitacao.quantidade
+                
+                # Valor estimado
+                if solicitacao.preenchimentos_fornecidos:
+                    valores = [p.valor_unitario for p in solicitacao.preenchimentos_fornecidos 
+                              if p.valor_unitario and p.status != 'Rascunho']
+                    if valores:
+                        valor_medio = sum(valores) / len(valores)
+                        produtos_pendentes[chave]['valor_total'] += valor_medio * solicitacao.quantidade
+            
+            # 3. VOLUME POR EMPRESA
+            empresa_nome = solicitacao.empresa
+            if empresa_nome not in volume_por_empresa:
+                volume_por_empresa[empresa_nome] = {'total': 0, 'valor_total': 0}
+            
+            volume_por_empresa[empresa_nome]['total'] += 1
+            volume_por_empresa[empresa_nome]['valor_total'] += valor_solicitacao
+            
+            # 4. PENDÊNCIAS POR EMPRESA
+            if status in [None, '', 'Pendente']:
+                if empresa_nome not in pendencias_por_empresa:
+                    pendencias_por_empresa[empresa_nome] = {'quantidade': 0, 'dias_total': 0, 'valor_pendente': 0}
+                
+                pendencias_por_empresa[empresa_nome]['quantidade'] += 1
+                dias = (data_atual - solicitacao.data_solicitacao).days if solicitacao.data_solicitacao else 0
+                pendencias_por_empresa[empresa_nome]['dias_total'] += dias
+                pendencias_por_empresa[empresa_nome]['valor_pendente'] += valor_solicitacao
+            
+            # 5. GASTOS POR VEÍCULO
+            if solicitacao.ativo == 'Sim' and solicitacao.nome_ativo:
+                veiculo = solicitacao.nome_ativo
+                if veiculo not in gastos_por_veiculo:
+                    gastos_por_veiculo[veiculo] = {'valor_total': 0, 'solicitacoes': 0, 'itens_total': 0}
+                
+                gastos_por_veiculo[veiculo]['valor_total'] += valor_solicitacao
+                gastos_por_veiculo[veiculo]['solicitacoes'] += 1
+                gastos_por_veiculo[veiculo]['itens_total'] += solicitacao.quantidade
+                
+                # 6. COMPRAS POR VEÍCULO
+                if veiculo not in compras_por_veiculo:
+                    compras_por_veiculo[veiculo] = 0
+                compras_por_veiculo[veiculo] += solicitacao.quantidade
+            
+            # 7. TEMPO EM ABERTO
+            if status in [None, '', 'Pendente'] and solicitacao.data_solicitacao and solicitacao.material:
+                dias_aberto = (data_atual - solicitacao.data_solicitacao).days
+                if dias_aberto > 0:
+                    material_nome = solicitacao.material.DescricaoMaterial
+                    if len(material_nome) > 30:
+                        material_nome = material_nome[:30] + '...'
+                    
+                    prioridade = dias_aberto * (1 + (valor_solicitacao / 10000))
+                    
+                    tempo_aberto_lista.append({
+                        'id': solicitacao.id,
+                        'dias_aberto': dias_aberto,
+                        'empresa': solicitacao.empresa,
+                        'material': material_nome,
+                        'valor_pendente': valor_solicitacao,
+                        'prioridade': round(prioridade, 2),
+                        'comprador': solicitacao.comprador_atribuido or 'Não Atribuído'
+                    })
+            
+            # 8. GASTOS POR EMPRESA
+            if empresa_nome not in gastos_por_empresa:
+                gastos_por_empresa[empresa_nome] = 0
+            gastos_por_empresa[empresa_nome] += valor_solicitacao
+            
+            # 9. PRODUTIVIDADE POR EMPRESA
+            if empresa_nome not in produtividade_por_empresa:
+                produtividade_por_empresa[empresa_nome] = {
+                    'compradores': set(), 'solicitacoes': 0, 'aprovadas': 0, 'valor_total': 0
+                }
+            
+            produtividade_por_empresa[empresa_nome]['solicitacoes'] += 1
+            if solicitacao.comprador_atribuido:
+                produtividade_por_empresa[empresa_nome]['compradores'].add(solicitacao.comprador_atribuido)
+            if status == 'Aprovado':
+                produtividade_por_empresa[empresa_nome]['aprovadas'] += 1
+            produtividade_por_empresa[empresa_nome]['valor_total'] += valor_solicitacao
         
-        # Converter para lista
+        # ✅ Converter dicionários para listas ordenadas
+        # Compradores
         compradores_lista = []
         for nome, dados in compradores_metrics.items():
             tempo_medio = dados['tempo_medio'] / dados['contador_tempo'] if dados['contador_tempo'] > 0 else 0
-            total = dados['pendentes'] + dados['aprovadas'] + dados['rejeitadas']
+            total = dados['total']
             taxa_aprovacao = (dados['aprovadas'] / total * 100) if total > 0 else 0
             
             compradores_lista.append({
@@ -6394,118 +6537,30 @@ def dashboard():
                 'taxa_aprovacao': round(taxa_aprovacao, 1),
                 'total': total
             })
-        
         compradores_lista.sort(key=lambda x: x['total'], reverse=True)
         
-        # 2. PRODUTOS PENDENTES
-        produtos_pendentes = {}
-        
-        for solicitacao in solicitacoes:
-            if solicitacao.status_aprovacao in [None, '', 'Pendente']:
-                material = db.session.get(Materiais, solicitacao.cod_material)
-                if material:
-                    # Truncar nome do produto se muito longo
-                    produto_nome = material.DescricaoMaterial
-                    if len(produto_nome) > 40:
-                        produto_nome = produto_nome[:40] + '...'
-                    
-                    chave = f"{material.CodMaterial}|{solicitacao.empresa}"
-                    
-                    if chave not in produtos_pendentes:
-                        produtos_pendentes[chave] = {
-                            'produto': produto_nome,
-                            'quantidade': 0,
-                            'valor_total': 0,
-                            'empresa': solicitacao.empresa,
-                            'dias_pendente': (data_atual - solicitacao.data_solicitacao).days if solicitacao.data_solicitacao else 0
-                        }
-                    
-                    produtos_pendentes[chave]['quantidade'] += solicitacao.quantidade
-                    
-                    # Calcular valor estimado
-                    preenchimentos = SolicitacoesPreenchidas.query.filter_by(
-                        solicitacao_id=solicitacao.id
-                    ).filter(
-                        SolicitacoesPreenchidas.status != 'Rascunho'
-                    ).all()
-                    
-                    if preenchimentos:
-                        valor_medio = sum(p.valor_unitario for p in preenchimentos if p and p.valor_unitario) / len(preenchimentos)
-                        produtos_pendentes[chave]['valor_total'] += valor_medio * solicitacao.quantidade
-        
+        # Produtos pendentes
         produtos_pendentes_lista = sorted(
             produtos_pendentes.values(),
             key=lambda x: x['dias_pendente'],
             reverse=True
-        )[:8]  # Top 8
+        )[:8]
         
-        # 3. VOLUME DE COMPRAS POR EMPRESA
-        volume_por_empresa = {}
-        for solicitacao in solicitacoes:
-            empresa_nome = solicitacao.empresa
-            if empresa_nome not in volume_por_empresa:
-                volume_por_empresa[empresa_nome] = {
-                    'total': 0,
-                    'valor_total': 0
-                }
-            
-            volume_por_empresa[empresa_nome]['total'] += 1
-            
-            # Calcular valor
-            preenchimentos = SolicitacoesPreenchidas.query.filter_by(
-                solicitacao_id=solicitacao.id
-            ).filter(
-                SolicitacoesPreenchidas.status != 'Rascunho'
-            ).all()
-            
-            valor = sum(p.valor_total for p in preenchimentos if p and p.valor_total)
-            volume_por_empresa[empresa_nome]['valor_total'] += valor
-        
-        # Calcular porcentagens e crescimento simplificado
+        # Volume por empresa
         volume_total = sum(dados['total'] for dados in volume_por_empresa.values())
         volume_empresa_data = []
-        
         for empresa_nome, dados in volume_por_empresa.items():
             porcentagem = round((dados['total'] / volume_total) * 100, 1) if volume_total > 0 else 0
             volume_empresa_data.append({
                 'empresa': empresa_nome,
                 'volume': dados['total'],
                 'valor_total': dados['valor_total'],
-                'crescimento': 0,  # Simplificado para demo
+                'crescimento': 0,
                 'porcentagem': porcentagem
             })
-        
         volume_empresa_data.sort(key=lambda x: x['volume'], reverse=True)
         
-        # 4. PENDÊNCIAS POR EMPRESA
-        pendencias_por_empresa = {}
-        for solicitacao in solicitacoes:
-            if solicitacao.status_aprovacao in [None, '', 'Pendente']:
-                empresa_nome = solicitacao.empresa
-                
-                if empresa_nome not in pendencias_por_empresa:
-                    pendencias_por_empresa[empresa_nome] = {
-                        'quantidade': 0,
-                        'dias_total': 0,
-                        'valor_pendente': 0
-                    }
-                
-                pendencias_por_empresa[empresa_nome]['quantidade'] += 1
-                
-                # Calcular dias pendente
-                dias = (data_atual - solicitacao.data_solicitacao).days if solicitacao.data_solicitacao else 0
-                pendencias_por_empresa[empresa_nome]['dias_total'] += dias
-                
-                # Calcular valor pendente
-                preenchimentos = SolicitacoesPreenchidas.query.filter_by(
-                    solicitacao_id=solicitacao.id
-                ).filter(
-                    SolicitacoesPreenchidas.status != 'Rascunho'
-                ).all()
-                
-                valor = sum(p.valor_total for p in preenchimentos if p and p.valor_total)
-                pendencias_por_empresa[empresa_nome]['valor_pendente'] += valor
-        
+        # Pendências por empresa
         pendencias_lista = []
         for empresa_nome, dados in pendencias_por_empresa.items():
             tempo_medio = dados['dias_total'] / dados['quantidade'] if dados['quantidade'] > 0 else 0
@@ -6515,34 +6570,9 @@ def dashboard():
                 'tempo_medio_dias': round(tempo_medio, 1),
                 'valor_pendente': dados['valor_pendente']
             })
-        
         pendencias_lista.sort(key=lambda x: x['pendencias'], reverse=True)
         
-        # 5. MAIOR VOLUME DE GASTOS POR VEÍCULO
-        gastos_por_veiculo = {}
-        for solicitacao in solicitacoes:
-            if solicitacao.ativo == 'Sim' and solicitacao.nome_ativo:
-                veiculo = solicitacao.nome_ativo
-                
-                if veiculo not in gastos_por_veiculo:
-                    gastos_por_veiculo[veiculo] = {
-                        'valor_total': 0,
-                        'solicitacoes': 0,
-                        'itens_total': 0
-                    }
-                
-                # Buscar preenchimentos
-                preenchimentos = SolicitacoesPreenchidas.query.filter_by(
-                    solicitacao_id=solicitacao.id
-                ).filter(
-                    SolicitacoesPreenchidas.status != 'Rascunho'
-                ).all()
-                
-                valor = sum(p.valor_total for p in preenchimentos if p and p.valor_total)
-                gastos_por_veiculo[veiculo]['valor_total'] += valor
-                gastos_por_veiculo[veiculo]['solicitacoes'] += 1
-                gastos_por_veiculo[veiculo]['itens_total'] += solicitacao.quantidade
-        
+        # Gastos por veículo
         gastos_veiculo_lista = [
             {
                 'veiculo': veiculo,
@@ -6555,15 +6585,7 @@ def dashboard():
         ]
         gastos_veiculo_lista.sort(key=lambda x: x['valor_total'], reverse=True)
         
-        # 6. MAIOR VOLUME DE COMPRAS POR VEÍCULO (simplificado)
-        compras_por_veiculo = {}
-        for solicitacao in solicitacoes:
-            if solicitacao.ativo == 'Sim' and solicitacao.nome_ativo:
-                veiculo = solicitacao.nome_ativo
-                if veiculo not in compras_por_veiculo:
-                    compras_por_veiculo[veiculo] = 0
-                compras_por_veiculo[veiculo] += solicitacao.quantidade
-        
+        # Compras por veículo
         compras_veiculo_lista = [
             {
                 'veiculo': veiculo,
@@ -6574,139 +6596,29 @@ def dashboard():
         ]
         compras_veiculo_lista.sort(key=lambda x: x['quantidade_total'], reverse=True)
         
-        # 7. SOLICITAÇÕES COM MAIOR TEMPO EM ABERTO
-        tempo_aberto_lista = []
-        for solicitacao in solicitacoes:
-            if solicitacao.status_aprovacao in [None, '', 'Pendente']:
-                dias_aberto = (data_atual - solicitacao.data_solicitacao).days if solicitacao.data_solicitacao else 0
-                
-                if dias_aberto > 0:
-                    material = db.session.get(Materiais, solicitacao.cod_material)
-                    material_nome = material.DescricaoMaterial[:30] + '...' if material and len(material.DescricaoMaterial) > 30 else material.DescricaoMaterial if material else ''
-                    
-                    # Calcular prioridade simplificada
-                    preenchimentos = SolicitacoesPreenchidas.query.filter_by(
-                        solicitacao_id=solicitacao.id
-                    ).filter(
-                        SolicitacoesPreenchidas.status != 'Rascunho'
-                    ).all()
-                    
-                    valor_pendente = sum(p.valor_total for p in preenchimentos if p and p.valor_total)
-                    prioridade = dias_aberto * (1 + (valor_pendente / 10000))
-                    
-                    tempo_aberto_lista.append({
-                        'id': solicitacao.id,
-                        'dias_aberto': dias_aberto,
-                        'empresa': solicitacao.empresa,
-                        'material': material_nome,
-                        'valor_pendente': valor_pendente,
-                        'prioridade': round(prioridade, 2),
-                        'comprador': solicitacao.comprador_atribuido or 'Não Atribuído'
-                    })
-        
+        # Tempo em aberto
         tempo_aberto_lista.sort(key=lambda x: x['prioridade'], reverse=True)
         tempo_aberto_lista = tempo_aberto_lista[:10]
         
-        # 8. COMPARAÇÃO DE GASTOS POR EMPRESA (simplificado)
-        gastos_por_empresa = {}
-        for solicitacao in solicitacoes:
-            empresa_nome = solicitacao.empresa
-            if empresa_nome not in gastos_por_empresa:
-                gastos_por_empresa[empresa_nome] = 0
-            
-            # Buscar preenchimentos
-            preenchimentos = SolicitacoesPreenchidas.query.filter_by(
-                solicitacao_id=solicitacao.id
-            ).filter(
-                SolicitacoesPreenchidas.status != 'Rascunho'
-            ).all()
-            
-            valor = sum(p.valor_total for p in preenchimentos if p and p.valor_total)
-            gastos_por_empresa[empresa_nome] += valor
-        
+        # Gastos por empresa
         gastos_empresa_lista = []
         for empresa_nome, gastos in gastos_por_empresa.items():
-            # Determinar tendência simplificada
-            if gastos > 100000:
-                tendencia = 'alta'
-                simbolo = '↗'
-            elif gastos > 50000:
-                tendencia = 'estável'
-                simbolo = '→'
-            else:
-                tendencia = 'baixa'
-                simbolo = '↘'
+            tendencia = 'alta' if gastos > 100000 else ('estável' if gastos > 50000 else 'baixa')
+            simbolo = '↗' if gastos > 100000 else ('→' if gastos > 50000 else '↘')
             
             gastos_empresa_lista.append({
                 'empresa': empresa_nome,
                 'gastos_total': gastos,
-                'variacao': 0,  # Simplificado para demo
+                'variacao': 0,
                 'tendencia': tendencia,
                 'simbolo': simbolo
             })
-        
         gastos_empresa_lista.sort(key=lambda x: x['gastos_total'], reverse=True)
         
-        # 9. EVOLUÇÃO DE COMPPRAS NOS ÚLTIMOS MESES (dados de exemplo)
-        meses_nomes = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
-        
-        # Gerar dados de exemplo baseados nas empresas existentes
-        empresas_existentes = list(set(s.empresa for s in solicitacoes))
-        evolucao_compras = {}
-        
-        for empresa in empresas_existentes[:3]:  # Máximo 3 empresas
-            # Gerar dados aleatórios para demonstração
-            import random
-            dados = [random.randint(50, 200) for _ in range(6)]  # 6 meses
-            evolucao_compras[empresa] = dados
-        
-        # Nomes dos últimos 6 meses
-        mes_atual = data_atual.month
-        meses_labels = []
-        for i in range(6):
-            mes_num = mes_atual - (5 - i)
-            ano = data_atual.year
-            if mes_num <= 0:
-                mes_num += 12
-                ano -= 1
-            meses_labels.append(f"{meses_nomes[mes_num - 1]}/{str(ano)[-2:]}")
-        
-        # 10. PRODUTIVIDADE GERAL POR EMPRESA
-        produtividade_por_empresa = {}
-        
-        for solicitacao in solicitacoes:
-            empresa_nome = solicitacao.empresa
-            
-            if empresa_nome not in produtividade_por_empresa:
-                produtividade_por_empresa[empresa_nome] = {
-                    'compradores': set(),
-                    'solicitacoes': 0,
-                    'aprovadas': 0,
-                    'valor_total': 0
-                }
-            
-            produtividade_por_empresa[empresa_nome]['solicitacoes'] += 1
-            
-            if solicitacao.comprador_atribuido:
-                produtividade_por_empresa[empresa_nome]['compradores'].add(solicitacao.comprador_atribuido)
-            
-            if solicitacao.status_aprovacao == 'Aprovado':
-                produtividade_por_empresa[empresa_nome]['aprovadas'] += 1
-            
-            # Calcular valor
-            preenchimentos = SolicitacoesPreenchidas.query.filter_by(
-                solicitacao_id=solicitacao.id
-            ).filter(
-                SolicitacoesPreenchidas.status != 'Rascunho'
-            ).all()
-            
-            valor = sum(p.valor_total for p in preenchimentos if p and p.valor_total)
-            produtividade_por_empresa[empresa_nome]['valor_total'] += valor
-        
+        # Produtividade por empresa
         produtividade_lista = []
         for empresa_nome, dados in produtividade_por_empresa.items():
             taxa_aprovacao = (dados['aprovadas'] / dados['solicitacoes'] * 100) if dados['solicitacoes'] > 0 else 0
-            
             produtividade_lista.append({
                 'empresa': empresa_nome,
                 'compradores': len(dados['compradores']),
@@ -6715,29 +6627,24 @@ def dashboard():
                 'taxa_aprovacao': round(taxa_aprovacao, 1),
                 'valor_total': dados['valor_total']
             })
-        
         produtividade_lista.sort(key=lambda x: x['taxa_aprovacao'], reverse=True)
         
-        # OBTER LISTAS PARA FILTROS
-        empresas_disponiveis = db.session.query(
-            SolicitacoesCompra.empresa
-        ).distinct().order_by(
-            SolicitacoesCompra.empresa
-        ).all()
+        # Dados básicos
+        aprovadas = sum(1 for s in solicitacoes if s.status_aprovacao == 'Aprovado')
+        pendentes = sum(1 for s in solicitacoes if s.status_aprovacao in [None, '', 'Pendente'])
+        rejeitadas = sum(1 for s in solicitacoes if s.status_aprovacao == 'Reprovado')
         
-        compradores_disponiveis = db.session.query(
-            SolicitacoesCompra.comprador_atribuido
-        ).filter(
-            SolicitacoesCompra.comprador_atribuido.isnot(None),
-            SolicitacoesCompra.comprador_atribuido != ''
-        ).distinct().order_by(
-            SolicitacoesCompra.comprador_atribuido
-        ).all()
+        # Valor total
+        valor_total = sum(d['valor_total'] for d in volume_por_empresa.values())
         
-        empresas_filtro = ['Todas'] + [e[0] for e in empresas_disponiveis if e[0]]
-        compradores_filtro = ['Todos'] + [c[0] for c in compradores_disponiveis if c[0]]
+        # Tempo médio de aprovação
+        tempos_aprovacao = [s for s in solicitacoes if s.status_aprovacao == 'Aprovado' and s.data_solicitacao]
+        tempo_medio_aprovacao = sum((data_atual - s.data_solicitacao).days for s in tempos_aprovacao) / len(tempos_aprovacao) if tempos_aprovacao else 0
         
-        # FORMATAR VALORES
+        # Valor médio por solicitação
+        valor_medio_por_solicitacao = valor_total / total_solicitacoes if total_solicitacoes > 0 else 0
+        
+        # ✅ Função auxiliar de formatação
         def formatar_valor(valor):
             try:
                 valor = float(valor)
@@ -6750,35 +6657,32 @@ def dashboard():
             except:
                 return "R$ 0,00"
         
-        # Calcular tempo médio de aprovação
-        tempo_medio_aprovacao = 0
-        contador_tempo = 0
-        for solicitacao in solicitacoes:
-            if solicitacao.status_aprovacao == 'Aprovado' and solicitacao.data_solicitacao:
-                dias = (data_atual - solicitacao.data_solicitacao).days
-                tempo_medio_aprovacao += dias
-                contador_tempo += 1
+        # ✅ Dados de exemplo para evolução (6 meses)
+        meses_nomes = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
+        mes_atual = data_atual.month
+        meses_labels = []
+        for i in range(6):
+            mes_num = mes_atual - (5 - i)
+            ano = data_atual.year
+            if mes_num <= 0:
+                mes_num += 12
+                ano -= 1
+            meses_labels.append(f"{meses_nomes[mes_num - 1]}/{str(ano)[-2:]}")
         
-        tempo_medio_aprovacao = tempo_medio_aprovacao / contador_tempo if contador_tempo > 0 else 0
+        # Evolução de compras (dados de exemplo)
+        empresas_existentes = list(set(s.empresa for s in solicitacoes))[:3]
+        evolucao_compras = {}
+        import random
+        for empresa_nome in empresas_existentes:
+            evolucao_compras[empresa_nome] = [random.randint(50, 200) for _ in range(6)]
         
-        # Calcular valor total e médio
-        valor_total = 0
-        for solicitacao in solicitacoes:
-            preenchimentos = SolicitacoesPreenchidas.query.filter_by(
-                solicitacao_id=solicitacao.id
-            ).filter(
-                SolicitacoesPreenchidas.status != 'Rascunho'
-            ).all()
-            
-            for preenchimento in preenchimentos:
-                if preenchimento and preenchimento.valor_total:
-                    valor_total += preenchimento.valor_total
+        # ✅ Filtros disponíveis
+        empresas_filtro = ['Todas'] + list(set(s.empresa for s in solicitacoes if s.empresa))
+        compradores_filtro = ['Todos'] + list(set(s.comprador_atribuido for s in solicitacoes if s.comprador_atribuido))
         
-        valor_medio_por_solicitacao = valor_total / total_solicitacoes if total_solicitacoes > 0 else 0
-        
-        # Adicionar a função formatar_valor ao contexto do template
-        import sys
-        sys.path.append('.')
+        # Ordenar listas
+        empresas_filtro.sort() if len(empresas_filtro) > 1 else None
+        compradores_filtro.sort() if len(compradores_filtro) > 1 else None
         
         return render_template(
             'dashboard.html',
@@ -6793,7 +6697,7 @@ def dashboard():
             
             # Dados para gráficos e tabelas
             compradores_produtividade=compradores_lista[:8],
-            produtos_pendentes=produtos_pendentes_lista[:8],
+            produtos_pendentes=produtos_pendentes_lista,
             volume_empresa=volume_empresa_data[:6],
             pendencias_empresa=pendencias_lista[:6],
             gastos_veiculo=gastos_veiculo_lista[:5],
@@ -6820,7 +6724,10 @@ def dashboard():
         flash(f'Erro ao carregar dashboard: {str(e)}', 'error')
         app.logger.error(f'Erro no dashboard: {str(e)}', exc_info=True)
         
-        # Retornar dados vazios em caso de erro
+        # Função auxiliar de fallback
+        def formatar_valor_fallback(valor):
+            return "R$ 0,00"
+        
         return render_template(
             'dashboard.html',
             total_solicitacoes=0,
@@ -6846,9 +6753,10 @@ def dashboard():
             empresa_selecionada='Todas',
             periodo_selecionado='Últimos 30 dias',
             status_selecionado='Todos',
-            comprador_selecionado='Todos'
+            comprador_selecionado='Todos',
+            formatar_valor=formatar_valor_fallback
         )
-
+    
 #------------------------------------------------------------------------------------
     
 @routes_bp.route('/dashboard/data', methods=['GET'])
