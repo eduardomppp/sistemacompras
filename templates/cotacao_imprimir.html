@@ -40,7 +40,7 @@
         }
 
         .header h1 {
-            font-size: 16px;
+            font-size: 9px;
             margin: 0;
             text-transform: uppercase;
             letter-spacing: 0.5px;
@@ -48,7 +48,7 @@
         }
 
         .header p {
-            font-size: 10px;
+            font-size: 9px;
             margin: 5px 0 0;
             opacity: 0.9;
         }
@@ -66,10 +66,11 @@
         .tabela-comparativa {
             width: 100%;
             border-collapse: collapse;
-            font-size: 9px;
+            font-size: 16px;
             background: white;
             table-layout: fixed;
             border: 2px solid #333;
+
         }
 
         .tabela-comparativa th,
@@ -79,6 +80,7 @@
             text-align: center;
             vertical-align: middle;
             height: 28px;
+            font-size: 16px;
         }
 
         /* Cabeçalho geral da tabela */
@@ -88,7 +90,7 @@
             font-weight: 600;
             white-space: nowrap;
             border-bottom: 2px solid #144288 !important;
-            font-size: 9px;
+            font-size: 16px;
             padding: 4px 3px !important;
             border: 1.5px solid #333;
         }
@@ -108,7 +110,7 @@
             right: 2px;
             background: white;
             color: #0B2E59;
-            font-size: 6px;
+            font-size: 16px;
             padding: 1px 3px;
             border-radius: 2px;
             border: 1.5px solid #0B2E59;
@@ -117,7 +119,7 @@
         }
 
         .cotacao-info {
-            font-size: 8px;
+            font-size: 16px;
             margin-top: 2px;
             opacity: 0.9;
         }
@@ -170,7 +172,7 @@
 
         /* ID do material */
         .material-id {
-            font-size: 8px;
+            font-size: 16px;
             color: #666;
             margin-top: 1px;
             font-style: italic;
@@ -211,14 +213,14 @@
             color: #000;
             padding: 6px 10px;
             margin: -12px -12px 10px -12px;
-            font-size: 10px;
+            font-size: 11px;
             font-weight: 600;
             border-bottom: 2px solid #000000;
             text-transform: uppercase;
         }
 
         .preco-info {
-            font-size: 9px;
+            font-size: 11px;
             margin-bottom: 6px;
             display: flex;
             align-items: center;
@@ -242,7 +244,7 @@
             color: #000;
             padding: 6px 10px;
             margin: -12px -12px 10px -12px;
-            font-size: 10px;
+            font-size: 11px;
             font-weight: 600;
             border-bottom: 2px solid #000000;
             text-transform: uppercase;
@@ -274,7 +276,7 @@
             color: #000;
             padding: 6px 10px;
             margin: -12px -12px 10px -12px;
-            font-size: 10px;
+            font-size: 9px;
             font-weight: 600;
             border-bottom: 2px solid #000000;
             text-transform: uppercase;
@@ -306,7 +308,7 @@
             color: #000;
             padding: 5px 8px;
             margin: -10px -10px 8px -10px;
-            font-size: 10px;
+            font-size: 9px;
             font-weight: 600;
             border-bottom: 2px solid #000000;
             text-transform: uppercase;
@@ -337,7 +339,7 @@
             color: #000;
             padding: 5px 8px;
             margin: -10px -10px 15px -10px;
-            font-size: 10px;
+            font-size: 9px;
             font-weight: 600;
             border-bottom: 2px solid #000000;
             text-transform: uppercase;
@@ -347,9 +349,16 @@
         /* Grid dos totais */
         .totais-grid {
             display: grid;
-            grid-template-columns: repeat({{ cotacoes_salvas|length }}, 1fr);
-            gap: 8px;
-            height: calc(100% - 30px);
+
+            grid-template-columns: repeat({
+                    {
+                    cotacoes_salvas|length
+                }
+            }
+
+            , 1fr);
+        gap: 8px;
+        height: calc(100% - 30px);
         }
 
         /* CARD DE TOTAL */
@@ -384,7 +393,7 @@
             justify-content: space-between;
             align-items: center;
             padding: 3px 0;
-            font-size: 8.5px;
+            font-size: 10px;
             min-height: 18px;
         }
 
@@ -434,7 +443,7 @@
             color: #000;
             padding: 5px 8px;
             margin: -12px -12px 10px -12px;
-            font-size: 10px;
+            font-size: 11px;
             font-weight: 600;
             border-bottom: 2px solid #000000;
             text-align: center;
@@ -445,7 +454,7 @@
             display: grid;
             grid-template-columns: repeat(6, 1fr);
             gap: 10px;
-            font-size: 9px;
+            font-size: 11px;
         }
 
         .info-item {
@@ -457,7 +466,7 @@
         .info-label {
             font-weight: 600;
             color: #000000;
-            font-size: 8px;
+            font-size: 11px;
             text-transform: uppercase;
         }
 
@@ -467,7 +476,7 @@
             border-radius: 3px;
             background: #f9f9f9;
             min-height: 24px;
-            font-size: 9px;
+            font-size: 11px;
             width: 100%;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
@@ -482,7 +491,7 @@
         .footer {
             margin-top: 10px;
             text-align: center;
-            font-size: 9px;
+            font-size: 11px;
             width: 100%;
         }
 
@@ -501,17 +510,19 @@
             min-width: 0;
         }
 
+        /* Versão normal (tela) */
         .linha-assinatura {
-            border-top: 2px solid #000;
+            border-top: 1px solid #000;
             height: 1px;
-            margin: 15px auto 3px;
-            width: 90%;
-            max-width: 100px;
+            margin: 40px auto 3px;
+            width: 100%;
+            max-width: 200px;
+            /* Aumentado de 100px */
         }
 
         .assinatura p {
             margin: 0;
-            font-size: 8px;
+            font-size: 16px;
             font-weight: 600;
             line-height: 1.2;
         }
@@ -551,7 +562,7 @@
 
             body {
                 padding: 0 !important;
-                font-size: 11pt !important;
+                font-size: 10pt !important;
                 line-height: 1.1 !important;
                 color: #000000 !important;
                 background: #fff !important;
@@ -601,8 +612,10 @@
             .observacao-comprador h4,
             .totais-inferiores h4,
             .info-geral h3 {
-                background: white !important;      /* FUNDO BRANCO */
-                color: #000000 !important;         /* LETRA PRETA */
+                background: white !important;
+                /* FUNDO BRANCO */
+                color: #000000 !important;
+                /* LETRA PRETA */
                 font-weight: 900 !important;
                 border-bottom: 3px solid #000000 !important;
                 border-top: none !important;
@@ -629,10 +642,27 @@
             }
 
             /* NEGRITO MÁXIMO EM TODOS OS TEXTOS */
-            body, p, span, div, td, th, strong, label, input, textarea, 
-            .header h1, .header p, .cotacao-info, .material-id, .preco-info,
-            .opcao-pagamento, .total-label-inferior, .total-value-inferior,
-            .assinatura p, .info-label, .info-value-editable {
+            body,
+            p,
+            span,
+            div,
+            td,
+            th,
+            strong,
+            label,
+            input,
+            textarea,
+            .header h1,
+            .header p,
+            .cotacao-info,
+            .material-id,
+            .preco-info,
+            .opcao-pagamento,
+            .total-label-inferior,
+            .total-value-inferior,
+            .assinatura p,
+            .info-label,
+            .info-value-editable {
                 font-weight: 700 !important;
                 color: #000000 !important;
             }
@@ -664,8 +694,16 @@
                 font-weight: 900 !important;
             }
 
-            .linha-assinatura {
-                border-top: 3px solid #000000 !important;
+            /* Versão impressão */
+            @media print {
+                .linha-assinatura {
+                    border-top: 1px solid #000000 !important;
+                    height: 1px !important;
+                    margin: 45px auto 8px !important;
+                    width: 100% !important;
+                    max-width: 250px !important;
+                    /* Ainda maior na impressão */
+                }
             }
 
             .campo-data,
@@ -708,7 +746,7 @@
 
                         {% for cotacao in cotacoes_salvas %}
                         <th colspan="2" class="cotacao-header-agrupado">
-                            <div style="font-weight: bold; font-size: 9px; color: white;">
+                            <div style="font-weight: bold; font-size: 10px; color: white;">
                                 Cotação {{ loop.index }}
                             </div>
                             <div class="cotacao-info" style="color: white;">
@@ -896,20 +934,23 @@
 
                                 <div class="total-line-inferior">
                                     <span class="total-label-inferior">Total Produtos:</span>
-                                    <span class="total-value-inferior">R$ {{ "%.2f"|format(ns.total_produtos)|replace('.', ',') }}</span>
+                                    <span class="total-value-inferior">R$ {{
+                                        "%.2f"|format(ns.total_produtos)|replace('.', ',') }}</span>
                                 </div>
 
                                 {% if valor_frete > 0 %}
                                 <div class="total-line-inferior">
                                     <span class="total-label-inferior">Frete:</span>
-                                    <span class="total-value-inferior">R$ {{ "%.2f"|format(valor_frete)|replace('.', ',') }}</span>
+                                    <span class="total-value-inferior">R$ {{ "%.2f"|format(valor_frete)|replace('.',
+                                        ',') }}</span>
                                 </div>
                                 {% endif %}
 
                                 {% if desconto > 0 %}
                                 <div class="total-line-inferior">
                                     <span class="total-label-inferior">Desconto:</span>
-                                    <span class="total-value-inferior desconto-inferior">- R$ {{ "%.2f"|format(desconto)|replace('.', ',') }}</span>
+                                    <span class="total-value-inferior desconto-inferior">- R$ {{
+                                        "%.2f"|format(desconto)|replace('.', ',') }}</span>
                                 </div>
                                 {% endif %}
 
