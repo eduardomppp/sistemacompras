@@ -1100,7 +1100,7 @@ Grupo de {{ solicitacoes_grupo|length }} solicitações para {{ solicitacoes_gru
         function aplicarMascaraMonetaria(input) {
             let valor = input.val();
             const isUnitario = input.hasClass('material-unitario');
-            const casasDecimais = isUnitario ? 4 : 2;
+            const casasDecimais = isUnitario ? 6 : 2;
 
             if (valor === '') {
                 input.val('');
@@ -1430,7 +1430,7 @@ Grupo de {{ solicitacoes_grupo|length }} solicitações para {{ solicitacoes_gru
                             <div class="valor-input" style="position: relative;">
                                 <input type="text" class="material-unitario"
                                        name="valor_unitario[]"
-                                       placeholder="0,0000"
+                                       placeholder="0,000000"
                                        required
                                        data-cotacao-id="${cotacaoId}"
                                        data-material-id="${materialId}">
@@ -1563,7 +1563,7 @@ Grupo de {{ solicitacoes_grupo|length }} solicitações para {{ solicitacoes_gru
                             <div class="valor-input" style="position: relative;">
                                 <input type="text" class="material-unitario"
                                        name="valor_unitario[]"
-                                       placeholder="0,0000"
+                                       placeholder="0,000000"
                                        value="${valorUnitarioParaInput}"
                                        required
                                        data-cotacao-id="${cotacaoId}"

@@ -1,12 +1,18 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Comparativo de Cotações | Sistema de Compras</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        * { margin:0; padding:0; box-sizing:border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: #f0f4f8;
@@ -23,10 +29,21 @@
             border-radius: 8px;
             margin-bottom: 20px;
             text-align: center;
-            box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
         }
-        .header h1 { font-size: 24px; margin:0; text-transform:uppercase; font-weight:700; }
-        .header p { font-size: 14px; margin:6px 0 0; opacity:0.95; }
+
+        .header h1 {
+            font-size: 24px;
+            margin: 0;
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 14px;
+            margin: 6px 0 0;
+            opacity: 0.95;
+        }
 
         .table-container {
             margin-bottom: 20px;
@@ -34,8 +51,9 @@
             border-radius: 8px;
             background: white;
             overflow-x: auto;
-            box-shadow: 0 3px 6px rgba(0,0,0,0.05);
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.05);
         }
+
         .tabela-comparativa {
             width: 100%;
             border-collapse: collapse;
@@ -43,7 +61,9 @@
             background: white;
             table-layout: auto;
         }
-        .tabela-comparativa th, .tabela-comparativa td {
+
+        .tabela-comparativa th,
+        .tabela-comparativa td {
             border: 1px solid #cbd5e1;
             padding: 10px 7px;
             text-align: center;
@@ -51,6 +71,7 @@
             word-wrap: break-word;
             overflow-wrap: break-word;
         }
+
         .tabela-header {
             background: #0B2E59 !important;
             color: white !important;
@@ -58,12 +79,14 @@
             font-size: 13px;
             text-transform: uppercase;
         }
+
         .cotacao-header-agrupado {
             background: #1e4a7a !important;
             color: white !important;
             padding: 10px 7px !important;
             font-size: 13px;
         }
+
         .cotacao-info {
             font-size: 12px;
             margin-top: 4px;
@@ -72,15 +95,53 @@
             word-break: break-word;
         }
 
-        .col-material     { min-width: 200px; width: 20%; text-align:left !important; background:#f8fafc; padding-left:12px !important; }
-        .col-quantidade   { min-width: 60px;  width: 7%;  background:#f8fafc; }
-        .col-unidade      { min-width: 60px;  width: 7%;  background:#f8fafc; }
-        .col-cotacao-unit { min-width: 85px;  width: 9%;  }
-        .col-cotacao-total{ min-width: 95px;  width: 10%; font-weight:600; color:#0B2E59; background:#f0f9ff; }
+        .col-material {
+            min-width: 200px;
+            width: 20%;
+            text-align: left !important;
+            background: #f8fafc;
+            padding-left: 12px !important;
+        }
 
-        .material-row td { background:#fff !important; }
-        .material-row:hover td { background:#f8fafc !important; }
-        .material-id { font-size:11px; color:#64748b; font-style:italic; margin-top:3px; }
+        .col-quantidade {
+            min-width: 60px;
+            width: 7%;
+            background: #f8fafc;
+        }
+
+        .col-unidade {
+            min-width: 60px;
+            width: 7%;
+            background: #f8fafc;
+        }
+
+        .col-cotacao-unit {
+            min-width: 85px;
+            width: 9%;
+        }
+
+        .col-cotacao-total {
+            min-width: 95px;
+            width: 10%;
+            font-weight: 600;
+            color: #0B2E59;
+            background: #f0f9ff;
+        }
+
+        .material-row td {
+            background: #fff !important;
+        }
+
+        .material-row:hover td {
+            background: #f8fafc !important;
+        }
+
+        .material-id {
+            font-size: 11px;
+            color: #64748b;
+            font-style: italic;
+            margin-top: 3px;
+        }
 
         /* Ajuste: duas colunas com tamanhos equilibrados */
         .info-bottom {
@@ -89,26 +150,37 @@
             gap: 20px;
             margin-top: 20px;
         }
-        .coluna-esquerda, .coluna-direita { display:flex; flex-direction:column; gap:16px; }
+
+        .coluna-esquerda,
+        .coluna-direita {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
 
         /* Cards da esquerda com padding reduzido para ficar mais compacto */
-        .ultimo-preco, .fluxo-pagamento, .status-entrega {
+        .ultimo-preco,
+        .fluxo-pagamento,
+        .status-entrega {
             border: 1px solid #e2e8f0;
             border-radius: 8px;
             padding: 12px;
             background: white;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
         }
-        
-        .observacao-comprador, .totais-inferiores, .info-geral {
+
+        .observacao-comprador,
+        .totais-inferiores,
+        .info-geral {
             border: 1px solid #e2e8f0;
             border-radius: 8px;
             padding: 16px;
             background: white;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
         }
-        
-        h4, h3 {
+
+        h4,
+        h3 {
             background: #f1f5f9;
             color: #0B2E59;
             padding: 8px 12px;
@@ -119,38 +191,43 @@
             border-radius: 8px 8px 0 0;
             text-transform: uppercase;
         }
-        
+
         /* Títulos específicos para a esquerda */
-        .ultimo-preco h4, .fluxo-pagamento h4, .status-entrega h4 {
+        .ultimo-preco h4,
+        .fluxo-pagamento h4,
+        .status-entrega h4 {
             margin: -12px -12px 10px -12px;
             font-size: 13px;
         }
 
-        .preco-info { 
-            font-size:12px; 
-            margin-bottom:8px; 
-            display:flex; 
-            align-items:center; 
-        }
-        .preco-info strong { 
-            min-width:85px; 
-            color:#475569;
-            font-size: 11px;
-        }
-        .campo-data, .campo-observacao {
-            flex:1;
-            padding:6px 8px;
-            border:1px solid #cbd5e1;
-            border-radius:5px;
-            font-size:12px;
+        .preco-info {
+            font-size: 12px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
         }
 
-        .opcao-pagamento { 
-            display:flex; 
-            align-items:center; 
-            gap:8px; 
-            margin-bottom:6px; 
-            font-size:12px; 
+        .preco-info strong {
+            min-width: 85px;
+            color: #475569;
+            font-size: 11px;
+        }
+
+        .campo-data,
+        .campo-observacao {
+            flex: 1;
+            padding: 6px 8px;
+            border: 1px solid #cbd5e1;
+            border-radius: 5px;
+            font-size: 12px;
+        }
+
+        .opcao-pagamento {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+            font-size: 12px;
         }
 
         .totais-grid {
@@ -158,143 +235,187 @@
             grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
             gap: 16px;
         }
+
         .total-card-inferior {
-            border:1px solid #e2e8f0;
-            border-radius:6px;
-            background:white;
-            overflow:hidden;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            background: white;
+            overflow: hidden;
         }
+
         .total-card-header-inferior {
-            background:#0B2E59;
-            color:white;
-            padding:8px 10px;
-            text-align:center;
-            font-size:12px;
-            font-weight:600;
-            border-bottom:2px solid #1e4a7a;
-            white-space:nowrap;
-            overflow:hidden;
-            text-overflow:ellipsis;
+            background: #0B2E59;
+            color: white;
+            padding: 8px 10px;
+            text-align: center;
+            font-size: 12px;
+            font-weight: 600;
+            border-bottom: 2px solid #1e4a7a;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
-        .total-card-body-inferior { padding:10px; }
+
+        .total-card-body-inferior {
+            padding: 10px;
+        }
+
         .total-line-inferior {
-            display:flex;
-            justify-content:space-between;
-            padding:4px 0;
-            font-size:12px;
-            border-bottom:1px dashed #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            font-size: 12px;
+            border-bottom: 1px dashed #e2e8f0;
         }
-        .total-label-inferior { color:#475569; }
-        .total-value-inferior { color:#0B2E59; font-weight:600; }
-        .desconto-inferior { color:#dc2626 !important; }
+
+        .total-label-inferior {
+            color: #475569;
+        }
+
+        .total-value-inferior {
+            color: #0B2E59;
+            font-weight: 600;
+        }
+
+        .desconto-inferior {
+            color: #dc2626 !important;
+        }
+
         .total-geral-inferior {
-            background:#0B2E59;
-            color:white;
-            padding:8px 10px;
-            border-radius:5px;
-            font-size:13px;
-            font-weight:700;
-            margin-top:8px;
-            display:flex;
-            justify-content:space-between;
+            background: #0B2E59;
+            color: white;
+            padding: 8px 10px;
+            border-radius: 5px;
+            font-size: 13px;
+            font-weight: 700;
+            margin-top: 8px;
+            display: flex;
+            justify-content: space-between;
         }
 
         .info-grid {
-            display:grid;
+            display: grid;
             grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-            gap:16px;
-        }
-        .info-item { display:flex; flex-direction:column; gap:5px; }
-        .info-label {
-            font-weight:600;
-            color:#475569;
-            font-size:12px;
-            text-transform:uppercase;
-        }
-        .info-value-editable {
-            padding:8px 10px;
-            border:1px solid #cbd5e1;
-            border-radius:5px;
-            font-size:12px;
+            gap: 16px;
         }
 
-        .campo-observacao { width:100%; min-height:80px; resize:vertical; }
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #475569;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+
+        .info-value-editable {
+            padding: 8px 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 5px;
+            font-size: 12px;
+        }
+
+        .campo-observacao {
+            width: 100%;
+            min-height: 80px;
+            resize: vertical;
+        }
 
         .footer {
-            margin-top:25px;
-            text-align:center;
-            font-size:13px;
-            background:white;
-            padding:16px;
-            border-radius:8px;
-            border:1px solid #e2e8f0;
+            margin-top: 25px;
+            text-align: center;
+            font-size: 13px;
+            background: white;
+            padding: 16px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
         }
+
         .assinaturas {
-            display:grid;
+            display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap:25px;
-            margin-top:16px;
+            gap: 25px;
+            margin-top: 16px;
         }
+
         .linha-assinatura {
-            border-top:2px solid #64748b;
-            margin:0 auto 8px;
-            width:75%;
+            border-top: 2px solid #64748b;
+            margin: 0 auto 8px;
+            width: 75%;
         }
 
         .btn-impressao {
-            position:fixed;
-            top:20px;
-            right:20px;
-            background:#0B2E59;
-            color:white;
-            border:none;
-            padding:10px 20px;
-            border-radius:6px;
-            font-weight:600;
-            cursor:pointer;
-            z-index:1000;
-            box-shadow:0 3px 6px rgba(0,0,0,0.15);
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #0B2E59;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            z-index: 1000;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
         }
 
-        /* IMPRESSÃO – CORREÇÃO DEFINITIVA PARA O TEXTO BRANCO */
+        /* IMPRESSÃO – CORREÇÃO DEFINITIVA PARA O TEXTO BRANCO E LETRAS MAIORES (16pt) */
         @media print {
             @page {
                 size: A4 landscape;
-                margin: 1cm;
+                margin: 0.8cm;
             }
+
             body {
                 background: white;
                 padding: 0;
                 margin: 0;
-                font-size: 9pt;
+                font-size: 16pt;
+                /* AUMENTADO para 16pt */
             }
+
             .btn-impressao {
                 display: none;
             }
+
             .info-bottom {
                 display: grid !important;
                 grid-template-columns: 32% 68% !important;
-                gap: 8px;
+                gap: 16px;
+                /* AUMENTADO de 12px para 16px */
             }
+
             .table-container {
-                border: 1px solid #000;
+                border: 2px solid #000;
+                /* Mais grosso */
                 border-radius: 0;
                 box-shadow: none;
                 overflow: visible;
-                margin-bottom: 8px;
+                margin-bottom: 16px;
+                /* AUMENTADO de 12px para 16px */
             }
+
             .tabela-comparativa {
-                font-size: 8pt;
+                font-size: 15pt;
+                /* AUMENTADO de 11pt para 15pt */
                 width: 100%;
                 border-collapse: collapse;
             }
+
             .tabela-comparativa th,
             .tabela-comparativa td {
-                padding: 4px 3px;
-                font-size: 8pt;
-                border: 1px solid #000 !important;
+                padding: 12px 8px;
+                /* AUMENTADO de 8px 6px para 12px 8px */
+                font-size: 15pt;
+                /* AUMENTADO de 11pt para 15pt */
+                border: 1.5px solid #000 !important;
+                /* Mais grosso */
             }
-            
+
             /* CORREÇÃO: Forçar cores sólidas e texto visível */
             .tabela-header,
             .cotacao-header-agrupado {
@@ -303,21 +424,24 @@
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
                 font-weight: bold !important;
-                font-size: 8pt !important;
-                border: 1px solid #000 !important;
+                font-size: 15pt !important;
+                /* AUMENTADO de 11pt para 15pt */
+                border: 1.5px solid #000 !important;
             }
-            
+
             /* Garantir que "Total (R$)" apareça */
             .col-cotacao-total.tabela-header,
             .col-cotacao-unit.tabela-header {
                 background-color: #0B2E59 !important;
                 color: white !important;
-                min-width: 70px !important;
+                min-width: 100px !important;
+                /* AUMENTADO de 80px para 100px */
                 white-space: normal !important;
                 word-break: break-word !important;
-                line-height: 1.2 !important;
+                line-height: 1.4 !important;
+                /* AUMENTADO de 1.3 para 1.4 */
             }
-            
+
             .col-cotacao-total {
                 background: #f0f9ff !important;
                 -webkit-print-color-adjust: exact !important;
@@ -325,100 +449,195 @@
                 color: #0B2E59 !important;
                 font-weight: 600 !important;
             }
-            
+
             .header {
                 background: #0B2E59 !important;
                 color: white !important;
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
-                padding: 6px;
-                margin-bottom: 6px;
+                padding: 16px;
+                /* AUMENTADO de 10px para 16px */
+                margin-bottom: 16px;
+                /* AUMENTADO de 12px para 16px */
             }
+
             .header h1 {
-                font-size: 14pt;
+                font-size: 26pt;
+                /* AUMENTADO de 18pt para 26pt */
             }
+
             .header p {
-                font-size: 9pt;
+                font-size: 18pt;
+                /* AUMENTADO de 12pt para 18pt */
             }
-            
+
             .total-card-header-inferior,
             .total-geral-inferior {
                 background: #0B2E59 !important;
                 color: white !important;
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
-                font-size: 8pt;
-                padding: 4px 6px;
-                border: 1px solid #000 !important;
+                font-size: 16pt;
+                /* AUMENTADO de 11pt para 16pt */
+                padding: 12px 14px;
+                /* AUMENTADO de 8px 10px para 12px 14px */
+                border: 1.5px solid #000 !important;
             }
-            
+
             .totais-grid {
                 grid-template-columns: repeat(2, 1fr);
-                gap: 4px;
+                gap: 16px;
+                /* AUMENTADO de 10px para 16px */
             }
+
             .total-card-inferior {
                 break-inside: avoid;
                 page-break-inside: avoid;
-                font-size: 8pt;
-                border: 1px solid #000 !important;
+                font-size: 15pt;
+                /* AUMENTADO de 11pt para 15pt */
+                border: 1.5px solid #000 !important;
             }
-            
+
+            .total-line-inferior {
+                font-size: 14pt;
+                /* AUMENTADO de 10pt para 14pt */
+                padding: 10px 0;
+                /* AUMENTADO de 6px para 10px */
+            }
+
             .info-geral {
-                margin-top: 8px;
+                margin-top: 16px;
+                /* AUMENTADO de 12px para 16px */
                 break-inside: avoid;
                 page-break-inside: avoid;
             }
+
+            .info-label {
+                font-size: 13pt !important;
+                /* AUMENTADO de 9pt para 13pt */
+            }
+
+            .info-value-editable {
+                font-size: 14pt !important;
+                /* AUMENTADO de 10pt para 14pt */
+                padding: 10px 12px !important;
+                /* AUMENTADO de 6px 8px para 10px 12px */
+            }
+
             .footer {
                 break-inside: avoid;
                 page-break-inside: avoid;
-                margin-top: 10px;
+                margin-top: 20px;
+                /* AUMENTADO de 15px para 20px */
+                font-size: 16pt;
+                /* AUMENTADO de 11pt para 16pt */
             }
+
             .assinaturas {
                 grid-template-columns: repeat(4, 1fr);
-                gap: 8px;
+                gap: 20px;
+                /* AUMENTADO de 15px para 20px */
             }
-            input, textarea {
-                border: 1px solid #000;
+
+            input,
+            textarea {
+                border: 1.5px solid #000;
                 background: transparent;
-                padding: 2px 4px;
-                font-size: 8pt;
+                padding: 10px 12px;
+                /* AUMENTADO de 6px 8px para 10px 12px */
+                font-size: 15pt;
+                /* AUMENTADO de 11pt para 15pt */
             }
-            .ultimo-preco, .fluxo-pagamento, .status-entrega {
+
+            .ultimo-preco,
+            .fluxo-pagamento,
+            .status-entrega {
                 break-inside: avoid;
                 page-break-inside: avoid;
-                padding: 8px;
-                border: 1px solid #000 !important;
+                padding: 16px;
+                /* AUMENTADO de 12px para 16px */
+                border: 1.5px solid #000 !important;
             }
-            .ultimo-preco h4, .fluxo-pagamento h4, .status-entrega h4 {
-                font-size: 9pt;
-                padding: 4px 8px;
-                margin: -8px -8px 6px -8px;
+
+            .ultimo-preco h4,
+            .fluxo-pagamento h4,
+            .status-entrega h4 {
+                font-size: 16pt;
+                /* AUMENTADO de 12pt para 16pt */
+                padding: 12px 16px;
+                /* AUMENTADO de 8px 12px para 12px 16px */
+                margin: -16px -16px 14px -16px;
+                /* Ajustado */
                 background: #f1f5f9 !important;
-                border-bottom: 1px solid #000 !important;
+                border-bottom: 1.5px solid #000 !important;
             }
+
             .preco-info {
-                font-size: 8pt;
-                margin-bottom: 4px;
+                font-size: 15pt;
+                /* AUMENTADO de 11pt para 15pt */
+                margin-bottom: 12px;
+                /* AUMENTADO de 8px para 12px */
             }
+
             .preco-info strong {
-                min-width: 70px;
-                font-size: 8pt;
+                min-width: 120px;
+                /* AUMENTADO de 90px para 120px */
+                font-size: 14pt;
+                /* AUMENTADO de 10pt para 14pt */
+            }
+
+            .campo-data,
+            .campo-observacao {
+                font-size: 15pt;
+                /* AUMENTADO de 11pt para 15pt */
+                padding: 10px 12px;
+                /* AUMENTADO de 6px 8px para 10px 12px */
+            }
+
+            .opcao-pagamento {
+                font-size: 15pt;
+                /* AUMENTADO de 11pt para 15pt */
+                gap: 16px;
+                /* AUMENTADO de 12px para 16px */
+            }
+
+            .cotacao-info {
+                font-size: 14pt;
+                /* AUMENTADO de 10pt para 14pt */
+            }
+
+            .material-id {
+                font-size: 13pt;
+                /* AUMENTADO de 9pt para 13pt */
+            }
+
+            .col-material {
+                font-size: 15pt;
+                /* AUMENTADO de 11pt para 15pt */
+            }
+
+            .info-grid {
+                gap: 20px;
+                /* AUMENTADO de 15px para 20px */
+            }
+
+            .assinaturas p {
+                font-size: 14pt;
+                /* AUMENTADO */
             }
         }
 
         @media (max-width: 1400px) {
-            .info-bottom { grid-template-columns:1fr; }
+            .info-bottom {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
+
 <body>
 
     <button class="btn-impressao" onclick="window.print()">🖨️ Imprimir</button>
-
-    <div class="header">
-        <h1>Comparativo de Cotações</h1>
-        <p>Sistema de Compras - Análise de Propostas</p>
-    </div>
 
     <div class="table-container">
         <table class="tabela-comparativa">
@@ -430,7 +649,8 @@
                     {% for cotacao in cotacoes_salvas %}
                     <th colspan="2" class="cotacao-header-agrupado">
                         <div style="font-weight:bold;">Cotação {{ loop.index }}</div>
-                        <div class="cotacao-info">{{ cotacao.fornecedor_nome_fantasia|truncate(22) if cotacao else 'N/D' }}</div>
+                        <div class="cotacao-info">{{ cotacao.fornecedor_nome_fantasia|truncate(22) if cotacao else 'N/D'
+                            }}</div>
                     </th>
                     {% endfor %}
                 </tr>
@@ -443,50 +663,53 @@
             </thead>
             <tbody>
                 {% if modo_grupo %}
-                    {% for solicitacao in solicitacoes_grupo %}
-                    <tr class="material-row">
-                        <td class="col-material">
-                            <strong>{{ solicitacao.material.DescricaoMaterial }}</strong>
-                            <div class="material-id">Código: #{{ solicitacao.id }}</div>
-                        </td>
-                        <td class="col-quantidade">{{ solicitacao.quantidade }}</td>
-                        <td class="col-unidade">{{ solicitacao.unidade_medida | default('UN') }}</td>
-                        {% for cotacao in cotacoes_salvas %}
-                        {% set mat = cotacao.materiais|selectattr("solicitacao_id", "equalto", solicitacao.id)|first if cotacao and cotacao.materiais else none %}
-                        <td class="col-cotacao-unit">
-                            {% if mat and mat.valor_unitario %}R$ {{ "%.2f"|format(mat.valor_unitario|float)|replace('.', ',') }}{% else %}-{% endif %}
-                        </td>
-                        <td class="col-cotacao-total">
-                            {% if mat and mat.valor_unitario %}
-                                {% set tot = mat.valor_unitario|float * solicitacao.quantidade|float %}
-                                R$ {{ "%.2f"|format(tot)|replace('.', ',') }}
-                            {% else %}-{% endif %}
-                        </td>
-                        {% endfor %}
-                    </tr>
+                {% for solicitacao in solicitacoes_grupo %}
+                <tr class="material-row">
+                    <td class="col-material">
+                        <strong>{{ solicitacao.material.DescricaoMaterial }}</strong>
+                        <div class="material-id">Código: #{{ solicitacao.id }}</div>
+                    </td>
+                    <td class="col-quantidade">{{ solicitacao.quantidade }}</td>
+                    <td class="col-unidade">{{ solicitacao.unidade_medida | default('UN') }}</td>
+                    {% for cotacao in cotacoes_salvas %}
+                    {% set mat = cotacao.materiais|selectattr("solicitacao_id", "equalto", solicitacao.id)|first if
+                    cotacao and cotacao.materiais else none %}
+                    <td class="col-cotacao-unit">
+                        {% if mat and mat.valor_unitario %}R$ {{ "%.2f"|format(mat.valor_unitario|float)|replace('.',
+                        ',') }}{% else %}-{% endif %}
+                    </td>
+                    <td class="col-cotacao-total">
+                        {% if mat and mat.valor_unitario %}
+                        {% set tot = mat.valor_unitario|float * solicitacao.quantidade|float %}
+                        R$ {{ "%.2f"|format(tot)|replace('.', ',') }}
+                        {% else %}-{% endif %}
+                    </td>
                     {% endfor %}
+                </tr>
+                {% endfor %}
                 {% else %}
-                    <!-- modo single -->
-                    <tr class="material-row">
-                        <td class="col-material">
-                            <strong>{{ solicitacao.material.DescricaoMaterial }}</strong>
-                            <div class="material-id">Código: #{{ solicitacao.id }}</div>
-                        </td>
-                        <td class="col-quantidade">{{ solicitacao.quantidade }}</td>
-                        <td class="col-unidade">{{ solicitacao.unidade_medida | default('UN') }}</td>
-                        {% for cotacao in cotacoes_salvas %}
-                        {% set mat = cotacao.materiais|first if cotacao and cotacao.materiais else none %}
-                        <td class="col-cotacao-unit">
-                            {% if mat and mat.valor_unitario %}R$ {{ "%.2f"|format(mat.valor_unitario|float)|replace('.', ',') }}{% else %}-{% endif %}
-                        </td>
-                        <td class="col-cotacao-total">
-                            {% if mat and mat.valor_unitario %}
-                                {% set tot = mat.valor_unitario|float * solicitacao.quantidade|float %}
-                                R$ {{ "%.2f"|format(tot)|replace('.', ',') }}
-                            {% else %}-{% endif %}
-                        </td>
-                        {% endfor %}
-                    </tr>
+                <!-- modo single -->
+                <tr class="material-row">
+                    <td class="col-material">
+                        <strong>{{ solicitacao.material.DescricaoMaterial }}</strong>
+                        <div class="material-id">Código: #{{ solicitacao.id }}</div>
+                    </td>
+                    <td class="col-quantidade">{{ solicitacao.quantidade }}</td>
+                    <td class="col-unidade">{{ solicitacao.unidade_medida | default('UN') }}</td>
+                    {% for cotacao in cotacoes_salvas %}
+                    {% set mat = cotacao.materiais|first if cotacao and cotacao.materiais else none %}
+                    <td class="col-cotacao-unit">
+                        {% if mat and mat.valor_unitario %}R$ {{ "%.2f"|format(mat.valor_unitario|float)|replace('.',
+                        ',') }}{% else %}-{% endif %}
+                    </td>
+                    <td class="col-cotacao-total">
+                        {% if mat and mat.valor_unitario %}
+                        {% set tot = mat.valor_unitario|float * solicitacao.quantidade|float %}
+                        R$ {{ "%.2f"|format(tot)|replace('.', ',') }}
+                        {% else %}-{% endif %}
+                    </td>
+                    {% endfor %}
+                </tr>
                 {% endif %}
             </tbody>
         </table>
@@ -497,15 +720,17 @@
         <div class="coluna-esquerda">
             <div class="ultimo-preco">
                 <h4>ÚLTIMO PREÇO DE COMPRAS</h4>
-                <div class="preco-info"><strong>Fornecedor:</strong><input type="text" class="campo-data" placeholder="Nome do fornecedor"></div>
-                <div class="preco-info"><strong>Valor total:</strong><input type="text" class="campo-data" placeholder="R$ 0,00"></div>
-                <div class="preco-info"><strong>Data compra:</strong><input type="text" class="campo-data" placeholder="DD/MM/AAAA"></div>
+                <div class="preco-info"><strong>Fornecedor:</strong><input type="text" class="campo-data"
+                        placeholder="Nome do fornecedor"></div>
+                <div class="preco-info"><strong>Valor total:</strong><input type="text" class="campo-data"
+                        placeholder="R$ 0,00"></div>
+                <div class="preco-info"><strong>Data compra:</strong><input type="text" class="campo-data"
+                        placeholder="DD/MM/AAAA"></div>
             </div>
 
             <div class="fluxo-pagamento">
-                <h4>FLUXO DE PAGAMENTO</h4>
-                <div class="opcao-pagamento"><input type="checkbox" id="normal" checked><label for="normal">NORMAL (28 dias)</label></div>
-                <div class="opcao-pagamento"><input type="checkbox" id="urgente"><label for="urgente">URGENTE (7 dias)</label></div>
+                <h4>FORMA DE PAGAMENTO</h4>
+                <textarea rows="3" placeholder="Digite a forma de pagamento"></textarea>
             </div>
 
             <div class="status-entrega">
@@ -523,58 +748,68 @@
                     {% for cotacao in cotacoes_salvas %}
                     <div class="total-card-inferior">
                         <div class="total-card-header-inferior">
-                            Cotação {{ loop.index }} - {{ cotacao.fornecedor_nome_fantasia|truncate(18) if cotacao else 'N/D' }}
+                            Cotação {{ loop.index }} - {{ cotacao.fornecedor_nome_fantasia|truncate(18) if cotacao else
+                            'N/D' }}
                         </div>
                         <div class="total-card-body-inferior">
                             {% set ns = namespace(total_produtos=0) %}
                             {% if cotacao and cotacao.materiais %}
-                                {% if modo_grupo %}
-                                    {% for solicitacao in solicitacoes_grupo %}
-                                        {% set material_cotacao = cotacao.materiais|selectattr("solicitacao_id", "equalto", solicitacao.id)|first %}
-                                        {% if material_cotacao and material_cotacao.valor_unitario %}
-                                            {% set ns.total_produtos = ns.total_produtos + (material_cotacao.valor_unitario|float * solicitacao.quantidade|float) %}
-                                        {% endif %}
-                                    {% endfor %}
-                                {% else %}
-                                    {% set material_cotacao = cotacao.materiais|first %}
-                                    {% if material_cotacao and material_cotacao.valor_unitario %}
-                                        {% set ns.total_produtos = material_cotacao.valor_unitario|float * solicitacao.quantidade|float %}
-                                    {% endif %}
-                                {% endif %}
+                            {% if modo_grupo %}
+                            {% for solicitacao in solicitacoes_grupo %}
+                            {% set material_cotacao = cotacao.materiais|selectattr("solicitacao_id", "equalto",
+                            solicitacao.id)|first %}
+                            {% if material_cotacao and material_cotacao.valor_unitario %}
+                            {% set ns.total_produtos = ns.total_produtos + (material_cotacao.valor_unitario|float *
+                            solicitacao.quantidade|float) %}
+                            {% endif %}
+                            {% endfor %}
+                            {% else %}
+                            {% set material_cotacao = cotacao.materiais|first %}
+                            {% if material_cotacao and material_cotacao.valor_unitario %}
+                            {% set ns.total_produtos = material_cotacao.valor_unitario|float *
+                            solicitacao.quantidade|float %}
+                            {% endif %}
+                            {% endif %}
                             {% endif %}
 
-                            {% set valor_frete = cotacao.valor_frete|float if cotacao and cotacao.valor_frete else 0.0 %}
+                            {% set valor_frete = cotacao.valor_frete|float if cotacao and cotacao.valor_frete else 0.0
+                            %}
 
                             {% set desconto = 0.0 %}
                             {% if cotacao %}
-                                {% set fonte = cotacao.condicao_pagamento or cotacao.desconto_valor or '' %}
-                                {% if fonte|trim %}
-                                    {% set desconto = fonte|trim|replace(',', '.')|replace(' ', '')|replace('R$', '')|replace('%', '')|float(0.0) %}
-                                {% endif %}
+                            {% set fonte = cotacao.condicao_pagamento or cotacao.desconto_valor or '' %}
+                            {% if fonte|trim %}
+                            {% set desconto = fonte|trim|replace(',', '.')|replace(' ', '')|replace('R$',
+                            '')|replace('%', '')|float(0.0) %}
+                            {% endif %}
                             {% endif %}
 
                             <div class="total-line-inferior">
                                 <span class="total-label-inferior">Subtotal:</span>
-                                <span class="total-value-inferior">R$ {{ "%.2f"|format(ns.total_produtos)|replace('.', ',') }}</span>
+                                <span class="total-value-inferior">R$ {{ "%.2f"|format(ns.total_produtos)|replace('.',
+                                    ',') }}</span>
                             </div>
 
                             {% if valor_frete > 0 %}
                             <div class="total-line-inferior">
                                 <span class="total-label-inferior">Frete:</span>
-                                <span class="total-value-inferior">R$ {{ "%.2f"|format(valor_frete)|replace('.', ',') }}</span>
+                                <span class="total-value-inferior">R$ {{ "%.2f"|format(valor_frete)|replace('.', ',')
+                                    }}</span>
                             </div>
                             {% endif %}
 
                             {% if desconto > 0 %}
                             <div class="total-line-inferior">
                                 <span class="total-label-inferior">Desconto:</span>
-                                <span class="total-value-inferior desconto-inferior">- R$ {{ "%.2f"|format(desconto)|replace('.', ',') }}</span>
+                                <span class="total-value-inferior desconto-inferior">- R$ {{
+                                    "%.2f"|format(desconto)|replace('.', ',') }}</span>
                             </div>
                             {% endif %}
 
                             <div class="total-geral-inferior">
                                 <span>TOTAL GERAL:</span>
-                                <span>R$ {{ "%.2f"|format(ns.total_produtos + valor_frete - desconto)|replace('.', ',') }}</span>
+                                <span>R$ {{ "%.2f"|format(ns.total_produtos + valor_frete - desconto)|replace('.', ',')
+                                    }}</span>
                             </div>
                         </div>
                     </div>
@@ -586,31 +821,39 @@
 
     <!-- INFORMAÇÕES GERAIS - VERSÃO COMPACTA E DISCRETA -->
     <div class="info-geral" style="margin-top: 16px; padding: 12px;">
-        <h3 style="background: #f8fafc; color: #334155; padding: 6px 10px; margin: -12px -12px 10px -12px; font-size: 13px; font-weight: 600; border-bottom: 1px solid #cbd5e1; text-transform: uppercase; letter-spacing: 0.3px;">INFORMAÇÕES GERAIS</h3>
+        <h3
+            style="background: #f8fafc; color: #334155; padding: 6px 10px; margin: -12px -12px 10px -12px; font-size: 13px; font-weight: 600; border-bottom: 1px solid #cbd5e1; text-transform: uppercase; letter-spacing: 0.3px;">
+            INFORMAÇÕES GERAIS</h3>
         <div class="info-grid" style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px;">
             <div class="info-item" style="gap: 2px;">
                 <div class="info-label" style="font-size: 10px; color: #64748b;">EMPRESA</div>
-                <input type="text" class="info-value-editable" placeholder="Empresa" style="padding: 5px 8px; font-size: 11px;">
+                <input type="text" class="info-value-editable" placeholder="Empresa"
+                    style="padding: 5px 8px; font-size: 11px;">
             </div>
             <div class="info-item" style="gap: 2px;">
                 <div class="info-label" style="font-size: 10px; color: #64748b;">APLICAÇÃO</div>
-                <input type="text" class="info-value-editable" placeholder="Aplicação" style="padding: 5px 8px; font-size: 11px;">
+                <input type="text" class="info-value-editable" placeholder="Aplicação"
+                    style="padding: 5px 8px; font-size: 11px;">
             </div>
             <div class="info-item" style="gap: 2px;">
                 <div class="info-label" style="font-size: 10px; color: #64748b;">PRIORIDADE</div>
-                <input type="text" class="info-value-editable" placeholder="Prioridade" style="padding: 5px 8px; font-size: 11px;">
+                <input type="text" class="info-value-editable" placeholder="Prioridade"
+                    style="padding: 5px 8px; font-size: 11px;">
             </div>
             <div class="info-item" style="gap: 2px;">
                 <div class="info-label" style="font-size: 10px; color: #64748b;">DATA SOLIC.</div>
-                <input type="text" class="info-value-editable" placeholder="DD/MM/AAAA" style="padding: 5px 8px; font-size: 11px;">
+                <input type="text" class="info-value-editable" placeholder="DD/MM/AAAA"
+                    style="padding: 5px 8px; font-size: 11px;">
             </div>
             <div class="info-item" style="gap: 2px;">
                 <div class="info-label" style="font-size: 10px; color: #64748b;">SOLICITANTE</div>
-                <input type="text" class="info-value-editable" placeholder="Nome" style="padding: 5px 8px; font-size: 11px;">
+                <input type="text" class="info-value-editable" placeholder="Nome"
+                    style="padding: 5px 8px; font-size: 11px;">
             </div>
             <div class="info-item" style="gap: 2px;">
                 <div class="info-label" style="font-size: 10px; color: #64748b;">SETOR</div>
-                <input type="text" class="info-value-editable" placeholder="Setor" style="padding: 5px 8px; font-size: 11px;">
+                <input type="text" class="info-value-editable" placeholder="Setor"
+                    style="padding: 5px 8px; font-size: 11px;">
             </div>
         </div>
     </div>
@@ -618,7 +861,8 @@
     <!-- Observação do comprador -->
     <div class="observacao-comprador" style="margin-top: 20px;">
         <h4>OBSERVAÇÃO DO COMPRADOR</h4>
-        <textarea class="campo-observacao" placeholder="Digite aqui observações relevantes sobre a cotação..."></textarea>
+        <textarea class="campo-observacao"
+            placeholder="Digite aqui observações relevantes sobre a cotação..."></textarea>
     </div>
 
     <!-- Assinaturas -->
@@ -700,4 +944,5 @@
     </script>
 
 </body>
+
 </html>

@@ -203,6 +203,7 @@
             letter-spacing: 0.5px;
             border-bottom: 1px solid #dee2e6;
             padding: 12px 8px;
+            white-space: nowrap;
         }
 
         .table tbody td {
@@ -219,6 +220,18 @@
         .table tbody tr:hover {
             background-color: var(--primary-light);
         }
+
+        /* Ajuste de largura das colunas */
+        .table th:nth-child(1) { width: 100px; }  /* Número */
+        .table th:nth-child(2) { width: 90px; }   /* Data */
+        .table th:nth-child(3) { width: 100px; }  /* Comprador */
+        .table th:nth-child(4) { width: 100px; }  /* Valor */
+        .table th:nth-child(5) { width: 120px; }  /* Condição */
+        .table th:nth-child(6) { width: auto; }    /* Itens (flexível) */
+        .table th:nth-child(7) { width: 100px; }  /* Status */
+        .table th:nth-child(8) { width: 80px; }   /* PDF */
+        .table th:nth-child(9) { width: 80px; }   /* Comprovante */
+        .table th:nth-child(10) { width: 200px; } /* Ações */
 
         .material-info {
             font-size: 0.85rem;
@@ -267,6 +280,7 @@
             display: inline-block;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            white-space: nowrap;
         }
 
         .status-Gerado {
@@ -309,6 +323,7 @@
             display: flex;
             gap: 8px;
             align-items: center;
+            flex-wrap: wrap;
         }
 
         .action-buttons .form-select-sm {
@@ -322,6 +337,48 @@
         .action-buttons .btn-sm {
             padding: 0.25rem 0.75rem;
             font-size: 0.75rem;
+        }
+
+        /* ESTILOS PARA AS COLUNAS PDF E COMPROVANTE */
+        .pdf-column, .comprovante-column {
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        .pdf-container, .comprovante-container {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            align-items: center;
+            justify-content: center;
+            min-height: 80px;
+        }
+
+        .comprovante-container {
+            min-height: 38px;
+        }
+
+        .pdf-container .btn, .comprovante-container .btn {
+            width: 42px;
+            height: 38px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+        }
+
+        .pdf-container .btn i, .comprovante-container .btn i {
+            font-size: 1.1rem;
+        }
+
+        .pdf-container .text-muted, .comprovante-container .text-muted {
+            display: inline-block;
+            width: 42px;
+            height: 38px;
+            line-height: 38px;
+            text-align: center;
+            color: #adb5bd;
         }
 
         /* Containers de campos adicionais */
@@ -629,26 +686,50 @@
                                 {{ item.pedido.status }}
                             </span>
                         </td>
-                        <td>
-                            {% if item.pedido %}
-                            <a href="{{ url_for('routes_bp.view_pedido_pdf', pedido_id=item.pedido.id) }}"
-                                class="btn btn-sm btn-outline-primary" target="_blank" title="Ver PDF">
-                                <i class="bi bi-file-earmark-pdf"></i>
-                            </a>
-                            {% else %}
-                            <span class="text-muted">-</span>
-                            {% endif %}
+                        
+                        <!-- COLUNA PDF - AJUSTADA -->
+                        <td class="pdf-column">
+                            <div class="pdf-container">
+                                {% if item.pedido %}
+                                <a href="{{ url_for('routes_bp.view_pedido_pdf', pedido_id=item.pedido.id) }}"
+                                    class="btn btn-sm btn-outline-primary" target="_blank" title="Ver PDF do Pedido">
+                                    <i class="bi bi-file-earmark-pdf"></i>
+                                </a>
+                                {% endif %}
+                                
+                                {% if item.preenchimentos %}
+                                    {% for preenchimento in item.preenchimentos %}
+                                        {% if preenchimento.pdf_path %}
+                                        <a href="{{ url_for('routes_bp.download_pdf', preenchimento_id=preenchimento.id) }}"
+                                            class="btn btn-sm btn-outline-success" target="_blank"
+                                            title="Orçamento - {{ preenchimento.fornecedor_nome }}">
+                                            <i class="bi bi-file-pdf"></i>
+                                        </a>
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endif %}
+                                
+                                {% if not item.pedido and (not item.preenchimentos or not item.preenchimentos|selectattr('pdf_path')|list) %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </div>
                         </td>
-                        <td>
-                            {% if item.pedido.comprovante_pagamento %}
-                            <a href="{{ url_for('routes_bp.download_comprovante', pedido_id=item.pedido.id) }}"
-                                class="btn btn-sm btn-outline-success" title="Baixar comprovante" download>
-                                <i class="bi bi-receipt"></i>
-                            </a>
-                            {% else %}
-                            <span class="text-muted">-</span>
-                            {% endif %}
+                        
+                        <!-- COLUNA COMPROVANTE - AJUSTADA -->
+                        <td class="comprovante-column">
+                            <div class="comprovante-container">
+                                {% if item.pedido.comprovante_pagamento %}
+                                <a href="{{ url_for('routes_bp.download_comprovante', pedido_id=item.pedido.id) }}"
+                                    class="btn btn-sm btn-outline-success" title="Baixar comprovante" download>
+                                    <i class="bi bi-receipt"></i>
+                                </a>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </div>
                         </td>
+                        
+                        <!-- COLUNA AÇÕES -->
                         <td>
                             <form id="form-{{ item.pedido.id }}" method="POST"
                                 action="{{ url_for('routes_bp.atualizar_status_pedido', id=item.pedido.id) }}"
