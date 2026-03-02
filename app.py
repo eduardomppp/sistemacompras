@@ -3526,19 +3526,73 @@ def get_fornecedor_nome(fornecedor_id):
 
 @routes_bp.route('/download_pdf/<int:preenchimento_id>', methods=['GET'])
 def download_pdf(preenchimento_id):
-    if 'usuario' not in session:
-        return redirect(url_for('routes_bp.login'))
+    """Endpoint para download seguro de PDFs de cotações"""
     
+    # Verificação de autenticação
+    if 'usuario' not in session:
+        flash('🔒 Acesso restrito. Por favor, faça login.', 'error')
+        return redirect(url_for('routes_bp.login'))
+
     try:
-        preenchimento = app.jinja_env.globals['SolicitacoesPreenchidas'].query.get_or_404(preenchimento_id)
-        if not preenchimento.pdf_path or not os.path.exists(preenchimento.pdf_path):
-            flash('Arquivo PDF não encontrado.', 'error')
-            return redirect(url_for('routes_bp.listar_solicitacoes_preenchidas'))
+        # Busca o preenchimento
+        preenchimento = SolicitacoesPreenchidas.query.get_or_404(preenchimento_id)
         
-        return send_file(preenchimento.pdf_path, as_attachment=True)
+        # Verifica se existe caminho do PDF
+        if not preenchimento.pdf_path:
+            flash('📄 Este orçamento não possui arquivo anexado.', 'info')
+            return redirect(url_for('routes_bp.listar_pedidos_compra'))
+
+        # Configurações de caminho
+        uploads_dir = os.path.abspath(app.config['UPLOAD_FOLDER'])
+        file_to_download = None
+
+        # Tentativa 1: Se o caminho é absoluto
+        if os.path.isabs(preenchimento.pdf_path):
+            candidate_path = preenchimento.pdf_path
+        else:
+            # Tentativa 2: Caminho relativo à pasta Uploads
+            candidate_path = os.path.join(uploads_dir, preenchimento.pdf_path)
+
+        # Verifica se o arquivo existe
+        if os.path.isfile(candidate_path):
+            file_to_download = candidate_path
+        else:
+            # Tentativa 3: Busca por padrão (se o nome estiver incompleto)
+            from glob import glob
+            pattern = os.path.join(uploads_dir, f'*{preenchimento_id}*')
+            matching_files = glob(pattern)
+            
+            if matching_files:
+                file_to_download = matching_files[0]
+
+        # Validação final
+        if not file_to_download or not os.path.isfile(file_to_download):
+            flash('⚠️ Arquivo PDF não encontrado no servidor.', 'warning')
+            # Em vez de redirecionar para listar_solicitacoes_preenchidas, volta para a lista de pedidos
+            return redirect(url_for('routes_bp.listar_pedidos_compra'))
+
+        # Verificação de segurança
+        if not os.path.abspath(file_to_download).startswith(uploads_dir):
+            logging.warning(f'Tentativa de acesso a caminho não autorizado: {file_to_download}')
+            flash('⛔ Caminho do arquivo inválido.', 'danger')
+            return redirect(url_for('routes_bp.listar_pedidos_compra'))
+
+        # Preparação do download
+        fornecedor_nome = get_fornecedor_nome(preenchimento.fornecedor_id)
+        filename = f"ORCAMENTO_{fornecedor_nome}_{preenchimento_id}_{os.path.basename(file_to_download)}"
+        
+        return send_file(
+            file_to_download,
+            as_attachment=True,
+            download_name=filename,
+            mimetype='application/pdf',
+            conditional=True
+        )
+        
     except Exception as e:
-        flash(f'Erro ao baixar PDF: {str(e)}', 'error')
-        return redirect(url_for('routes_bp.listar_solicitacoes_preenchidas'))
+        logging.error(f'❌ Erro ao baixar PDF do preenchimento {preenchimento_id}: {str(e)}', exc_info=True)
+        flash('⛔ Erro inesperado ao baixar orçamento.', 'danger')
+        return redirect(url_for('routes_bp.listar_pedidos_compra'))
 
 @routes_bp.route('/atualizar_status_preenchimento/<int:id>', methods=['POST'])
 def atualizar_status_preenchimento(id):
@@ -4209,13 +4263,14 @@ def listar_pedidos_compra():
                     'fornecedor_id': preenchimento.fornecedor_id,
                     'material': preenchimento.solicitacao.material.DescricaoMaterial if preenchimento.solicitacao and preenchimento.solicitacao.material else 'N/A',
                     'empresa': empresa_usuario,
-                    'comprador_atribuido': preenchimento.solicitacao.comprador_atribuido if preenchimento.solicitacao else None  # NOVO CAMPO
+                    'comprador_atribuido': preenchimento.solicitacao.comprador_atribuido if preenchimento.solicitacao else None,  # NOVO CAMPO
+                    'pdf_path': preenchimento.pdf_path  # ADICIONE ESTA LINHA
                 })
-            pedidos_completos.append({
-                'pedido': pedido,
-                'preenchimentos': preenchimentos_info,
-                'observacoes': pedido.observacoes
-            })
+                pedidos_completos.append({
+                    'pedido': pedido,
+                    'preenchimentos': preenchimentos_info,
+                    'observacoes': pedido.observacoes
+                })
 
         # ────────────────────────────────────────────────
         # 7. Renderizar template
