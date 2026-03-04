@@ -5,16 +5,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Solicitações de Compra | Finalizadas</title>
-    
+
     <!-- Font Awesome 6 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+
     <!-- Bootstrap 5.3 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    
+
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
+
     <style>
         * {
             margin: 0;
@@ -640,6 +640,7 @@
                 opacity: 0;
                 transform: translateY(-20px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -719,6 +720,7 @@
                 transform: translateX(100%);
                 opacity: 0;
             }
+
             to {
                 transform: translateX(0);
                 opacity: 1;
@@ -818,7 +820,9 @@
         }
 
         @keyframes spin {
-            to { transform: rotate(360deg); }
+            to {
+                transform: rotate(360deg);
+            }
         }
 
         @media (max-width: 768px) {
@@ -890,6 +894,7 @@
         }
 
         @media print {
+
             .filters-section,
             .pagination-controls,
             .group-actions,
@@ -915,7 +920,8 @@
                 min-width: auto;
             }
 
-            th, td {
+            th,
+            td {
                 border: 1px solid #ddd;
             }
         }
@@ -945,7 +951,8 @@
                         <select id="empresaFilter">
                             <option value="">Todas as empresas</option>
                             {% for empresa in empresas %}
-                            <option value="{{ empresa }}" {% if request.args.get('empresa') == empresa %}selected{% endif %}>{{ empresa }}</option>
+                            <option value="{{ empresa }}" {% if request.args.get('empresa')==empresa %}selected{% endif
+                                %}>{{ empresa }}</option>
                             {% endfor %}
                         </select>
                     </div>
@@ -955,7 +962,8 @@
                         <select id="usuarioFilter">
                             <option value="">Todos os usuários</option>
                             {% for usuario in usuarios %}
-                            <option value="{{ usuario }}" {% if request.args.get('usuario') == usuario %}selected{% endif %}>{{ usuario }}</option>
+                            <option value="{{ usuario }}" {% if request.args.get('usuario')==usuario %}selected{% endif
+                                %}>{{ usuario }}</option>
                             {% endfor %}
                         </select>
                     </div>
@@ -965,7 +973,8 @@
                         <select id="aplicacaoFilter">
                             <option value="">Todas as aplicações</option>
                             {% for aplicacao in aplicacoes %}
-                            <option value="{{ aplicacao }}" {% if request.args.get('aplicacao') == aplicacao %}selected{% endif %}>{{ aplicacao }}</option>
+                            <option value="{{ aplicacao }}" {% if request.args.get('aplicacao')==aplicacao %}selected{%
+                                endif %}>{{ aplicacao }}</option>
                             {% endfor %}
                         </select>
                     </div>
@@ -974,8 +983,10 @@
                         <label>Status</label>
                         <select id="statusFilter">
                             <option value="">Todos</option>
-                            <option value="Aprovado" {% if request.args.get('status') == 'Aprovado' %}selected{% endif %}>Aprovado</option>
-                            <option value="Reprovado" {% if request.args.get('status') == 'Reprovado' %}selected{% endif %}>Reprovado</option>
+                            <option value="Aprovado" {% if request.args.get('status')=='Aprovado' %}selected{% endif %}>
+                                Aprovado</option>
+                            <option value="Reprovado" {% if request.args.get('status')=='Reprovado' %}selected{% endif
+                                %}>Reprovado</option>
                         </select>
                     </div>
 
@@ -984,18 +995,22 @@
                         <select id="compradorFilter">
                             <option value="">Todos</option>
                             {% for comprador in compradores %}
-                            <option value="{{ comprador }}" {% if request.args.get('comprador') == comprador %}selected{% endif %}>{{ comprador }}</option>
+                            <option value="{{ comprador }}" {% if request.args.get('comprador')==comprador %}selected{% 
+                                endif %}>{{ comprador }}</option>
                             {% endfor %}
-                            <option value="Não atribuído" {% if request.args.get('comprador') == 'Não atribuído' %}selected{% endif %}>Não atribuído</option>
+                            <option value="Não atribuído" {% if request.args.get('comprador')=='Não atribuído'
+                                %}selected{% endif %}>Não atribuído</option>
                         </select>
                     </div>
 
                     <div class="filter-group" style="grid-column: span 2;">
                         <label>Período</label>
                         <div style="display: flex; gap: 0.5rem;">
-                            <input type="date" id="dataInicio" value="{{ request.args.get('data_inicio', '') }}" placeholder="Data inicial">
+                            <input type="date" id="dataInicio" value="{{ request.args.get('data_inicio', '') }}"
+                                placeholder="Data inicial">
                             <span style="color: var(--gray-400); align-self: center;">até</span>
-                            <input type="date" id="dataFim" value="{{ request.args.get('data_fim', '') }}" placeholder="Data final">
+                            <input type="date" id="dataFim" value="{{ request.args.get('data_fim', '') }}"
+                                placeholder="Data final">
                         </div>
                     </div>
                 </div>
@@ -1017,10 +1032,10 @@
                 <div class="per-page-selector">
                     <label for="perPageSelect">Itens por página:</label>
                     <select id="perPageSelect">
-                        <option value="5" {% if per_page == 5 %}selected{% endif %}>5 grupos</option>
-                        <option value="10" {% if per_page == 10 %}selected{% endif %}>10 grupos</option>
-                        <option value="20" {% if per_page == 20 %}selected{% endif %}>20 grupos</option>
-                        <option value="50" {% if per_page == 50 %}selected{% endif %}>50 grupos</option>
+                        <option value="5" {% if per_page==5 %}selected{% endif %}>5 grupos</option>
+                        <option value="10" {% if per_page==10 %}selected{% endif %}>10 grupos</option>
+                        <option value="20" {% if per_page==20 %}selected{% endif %}>20 grupos</option>
+                        <option value="50" {% if per_page==50 %}selected{% endif %}>50 grupos</option>
                     </select>
                 </div>
                 <div class="stats-info">
@@ -1032,172 +1047,173 @@
             <!-- Conteúdo Principal -->
             <div class="content-section">
                 {% if grupos_paginados %}
-                    {% for chave_grupo, solicitacoes_grupo in grupos_paginados %}
-                    {% set partes = chave_grupo.split('|') %}
-                    {% set aplicacao = partes[0] %}
-                    {% set data_hora_grupo = partes[1] %}
-                    
-                    {# Encontrar a data mais recente #}
-                    {% set ultima_data = None %}
-                    {% for solicitacao in solicitacoes_grupo %}
-                        {% if not ultima_data or solicitacao.data_solicitacao > ultima_data %}
-                            {% set ultima_data = solicitacao.data_solicitacao %}
-                        {% endif %}
-                    {% endfor %}
-                    
-                    <div class="aplicacao-group" id="grupo-{{ aplicacao|replace(' ', '-')|lower }}-{{ data_hora_grupo|replace(' ', '-')|replace(':', '') }}">
-                        <div class="group-header">
-                            <div class="group-info">
-                                <div class="group-title">
-                                    <i class="fas fa-folder-open"></i>
-                                    <span>{{ aplicacao }}</span>
-                                </div>
-                                <div class="group-meta">
-                                    <span>
-                                        <i class="fas fa-file-alt"></i>
-                                        {{ solicitacoes_grupo|length }} solicitações
-                                    </span>
-                                    <span>
-                                        <i class="fas fa-clock"></i>
-                                        Última atualização: {{ ultima_data|format_brasil_time }}
-                                    </span>
-                                </div>
+                {% for chave_grupo, solicitacoes_grupo in grupos_paginados %}
+                {% set partes = chave_grupo.split('|') %}
+                {% set aplicacao = partes[0] %}
+                {% set data_hora_grupo = partes[1] %}
+
+                {# Encontrar a data mais recente #}
+                {% set ultima_data = None %}
+                {% for solicitacao in solicitacoes_grupo %}
+                {% if not ultima_data or solicitacao.data_solicitacao > ultima_data %}
+                {% set ultima_data = solicitacao.data_solicitacao %}
+                {% endif %}
+                {% endfor %}
+
+                <div class="aplicacao-group"
+                    id="grupo-{{ aplicacao|replace(' ', '-')|lower }}-{{ data_hora_grupo|replace(' ', '-')|replace(':', '') }}">
+                    <div class="group-header">
+                        <div class="group-info">
+                            <div class="group-title">
+                                <i class="fas fa-folder-open"></i>
+                                <span>{{ aplicacao }}</span>
                             </div>
-                            <div class="group-actions">
-                                <button class="btn-group-action duplicate" 
-                                        data-aplicacao="{{ aplicacao }}"
-                                        data-count="{{ solicitacoes_grupo|length }}"
-                                        title="Duplicar todas as solicitações deste grupo">
-                                    <i class="fas fa-copy"></i>
-                                    <span>Duplicar Grupo</span>
-                                </button>
-                                <button class="btn-group-action delete" 
-                                        data-aplicacao="{{ aplicacao }}"
-                                        data-count="{{ solicitacoes_grupo|length }}"
-                                        title="Excluir todas as solicitações deste grupo">
-                                    <i class="fas fa-trash-alt"></i>
-                                    <span>Excluir Grupo</span>
-                                </button>
+                            <div class="group-meta">
+                                <span>
+                                    <i class="fas fa-file-alt"></i>
+                                    {{ solicitacoes_grupo|length }} solicitações
+                                </span>
+                                <span>
+                                    <i class="fas fa-clock"></i>
+                                    Última atualização: {{ ultima_data|format_brasil_time }}
+                                </span>
                             </div>
                         </div>
+                        <div class="group-actions">
+                            <button class="btn-group-action duplicate" data-aplicacao="{{ aplicacao }}"
+                                data-count="{{ solicitacoes_grupo|length }}"
+                                title="Duplicar todas as solicitações deste grupo">
+                                <i class="fas fa-copy"></i>
+                                <span>Duplicar Grupo</span>
+                            </button>
+                            <button class="btn-group-action delete" data-aplicacao="{{ aplicacao }}"
+                                data-count="{{ solicitacoes_grupo|length }}"
+                                title="Excluir todas as solicitações deste grupo">
+                                <i class="fas fa-trash-alt"></i>
+                                <span>Excluir Grupo</span>
+                            </button>
+                        </div>
+                    </div>
 
-                        <div class="table-wrapper">
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>ID</th>
-                                        <th>Material</th>
-                                        <th>Especificação</th>
-                                        <th>Quant.</th>
-                                        <th>Empresa</th>
-                                        <th>Aplicação</th>
-                                        <th>Data Solicitação</th>
-                                        <th>Usuário</th>
-                                        <th>Status</th>
-                                        <th>Comprador</th>
-                                        <th>Atribuição</th>
-                                        <th>Ações</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for solicitacao in solicitacoes_grupo|sort(attribute='data_solicitacao', reverse=true) %}
-                                    <tr data-id="{{ solicitacao.id }}" 
-                                        data-aplicacao="{{ solicitacao.aplicacao }}"
-                                        class="{% if solicitacao.dias_atraso and solicitacao.dias_atraso > 7 %}highlight-old{% endif %}">
-                                        <td><span class="badge bg-light text-dark">#{{ solicitacao.id }}</span></td>
-                                        <td style="max-width: 200px;">
-                                            <div style="white-space: normal; word-wrap: break-word;">
-                                                {{ solicitacao.material.DescricaoMaterial }}
-                                            </div>
-                                        </td>
-                                        <td style="max-width: 250px;">
-                                            <div style="white-space: normal; word-wrap: break-word;">
-                                                {{ solicitacao.especificacao or '-' }}
-                                            </div>
-                                        </td>
-                                        <td><strong id="quantidade-{{ solicitacao.id }}">{{ solicitacao.quantidade }}</strong></td>
-                                        <td>{{ solicitacao.empresa }}</td>
-                                        <td>{{ solicitacao.aplicacao }}</td>
-                                        <td>
-                                            <span title="{{ solicitacao.data_solicitacao.strftime('%d/%m/%Y %H:%M') }}">
-                                                {{ solicitacao.data_solicitacao | format_brasil_time }}
-                                            </span>
-                                        </td>
-                                        <td>{{ solicitacao.usuario }}</td>
-                                        <td>
-                                            <span class="status-badge {{ solicitacao.status_aprovacao|lower }}">
-                                                {{ solicitacao.status_aprovacao }}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <span class="badge bg-light text-dark">
-                                                {{ solicitacao.comprador_atribuido or 'Não atribuído' }}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <div class="comprador-wrapper">
-                                                <select class="comprador-select" data-id="{{ solicitacao.id }}">
-                                                    <option value="">Selecionar</option>
-                                                    {% for comprador in compradores %}
-                                                    <option value="{{ comprador }}" {% if solicitacao.comprador_atribuido == comprador %}selected{% endif %}>
-                                                        {{ comprador }}
-                                                    </option>
-                                                    {% endfor %}
-                                                </select>
-                                                <button class="btn-icon" data-id="{{ solicitacao.id }}" title="Atribuir comprador">
-                                                    <i class="fas fa-user-check"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div class="acoes-container">
-                                                <!-- Botão de Editar Quantidade (discreto) -->
-                                                <button class="btn-editar-quantidade" 
-                                                        data-id="{{ solicitacao.id }}"
-                                                        data-quantidade="{{ solicitacao.quantidade }}"
-                                                        data-material="{{ solicitacao.material.DescricaoMaterial }}"
-                                                        data-status="{{ solicitacao.status_aprovacao }}"
-                                                        {% if solicitacao.status_aprovacao == 'Reprovado' or solicitacao.preenchimentos_count > 0 %}disabled{% endif %}
-                                                        title="{% if solicitacao.status_aprovacao == 'Reprovado' %}
-                                                                   Solicitação reprovada
-                                                               {% elif solicitacao.preenchimentos_count > 0 %}
-                                                                   Já existem cotações enviadas
-                                                               {% else %}
-                                                                   Editar quantidade (requer senha)
-                                                               {% endif %}">
-                                                    <i class="fas fa-pencil-alt"></i>
-                                                </button>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Material</th>
+                                    <th>Especificação</th>
+                                    <th>Quant.</th>
+                                    <th>Empresa</th>
+                                    <th>Aplicação</th>
+                                    <th>Data Solicitação</th>
+                                    <th>Usuário</th>
+                                    <th>Status</th>
+                                    <th>Comprador</th>
+                                    <th>Atribuição</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for solicitacao in solicitacoes_grupo|sort(attribute='data_solicitacao',
+                                reverse=true) %}
+                                <tr data-id="{{ solicitacao.id }}" data-aplicacao="{{ solicitacao.aplicacao }}"
+                                    class="{% if solicitacao.dias_atraso and solicitacao.dias_atraso > 7 %}highlight-old{% endif %}">
+                                    <td><span class="badge bg-light text-dark">#{{ solicitacao.id }}</span></td>
+                                    <td style="max-width: 200px;">
+                                        <div style="white-space: normal; word-wrap: break-word;">
+                                            {{ solicitacao.material.DescricaoMaterial }}
+                                        </div>
+                                    </td>
+                                    <td style="max-width: 250px;">
+                                        <div style="white-space: normal; word-wrap: break-word;">
+                                            {{ solicitacao.especificacao or '-' }}
+                                        </div>
+                                    </td>
+                                    <td><strong id="quantidade-{{ solicitacao.id }}">{{ solicitacao.quantidade
+                                            }}</strong></td>
+                                    <td>{{ solicitacao.empresa }}</td>
+                                    <td>{{ solicitacao.aplicacao }}</td>
+                                    <td>
+                                        <span title="{{ solicitacao.data_solicitacao.strftime('%d/%m/%Y %H:%M') }}">
+                                            {{ solicitacao.data_solicitacao | format_brasil_time }}
+                                        </span>
+                                    </td>
+                                    <td>{{ solicitacao.usuario }}</td>
+                                    <td>
+                                        <span class="status-badge {{ solicitacao.status_aprovacao|lower }}">
+                                            {{ solicitacao.status_aprovacao }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-light text-dark">
+                                            {{ solicitacao.comprador_atribuido or 'Não atribuído' }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="comprador-wrapper">
+                                            <select class="comprador-select" data-id="{{ solicitacao.id }}">
+                                                <option value="">Selecionar</option>
+                                                {% for comprador in compradores %}
+                                                <option value="{{ comprador }}" {% if
+                                                    solicitacao.comprador_atribuido==comprador %}selected{% endif %}>
+                                                    {{ comprador }}
+                                                </option>
+                                                {% endfor %}
+                                            </select>
+                                            <button class="btn-icon" data-id="{{ solicitacao.id }}"
+                                                title="Atribuir comprador">
+                                                <i class="fas fa-user-check"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="acoes-container">
+                                            <!-- Botão de Editar Quantidade (discreto) -->
+                                            <button class="btn-editar-quantidade" data-id="{{ solicitacao.id }}"
+                                                data-quantidade="{{ solicitacao.quantidade }}"
+                                                data-material="{{ solicitacao.material.DescricaoMaterial }}"
+                                                data-status="{{ solicitacao.status_aprovacao }}" {% if
+                                                solicitacao.status_aprovacao=='Reprovado' or
+                                                solicitacao.preenchimentos_count> 0 %}disabled{% endif %}
+                                                title="{% if solicitacao.status_aprovacao == 'Reprovado' %}
+                                                Solicitação reprovada
+                                                {% elif solicitacao.preenchimentos_count > 0 %}
+                                                Já existem cotações enviadas
+                                                {% else %}
+                                                Editar quantidade (requer senha)
+                                                {% endif %}">
+                                                <i class="fas fa-pencil-alt"></i>
+                                            </button>
 
-                                                <!-- Botão Reprovar existente -->
-                                                <button class="btn-reprovar" 
-                                                        data-id="{{ solicitacao.id }}"
-                                                        data-material="{{ solicitacao.material.DescricaoMaterial }}"
-                                                        data-especificacao="{{ solicitacao.especificacao }}"
-                                                        data-status="{{ solicitacao.status_aprovacao }}"
-                                                        {% if solicitacao.status_aprovacao == 'Reprovado' %}disabled{% endif %}
-                                                        title="{% if solicitacao.status_aprovacao == 'Reprovado' %}
+                                            <!-- Botão Reprovar existente -->
+                                            <button class="btn-reprovar" data-id="{{ solicitacao.id }}"
+                                                data-material="{{ solicitacao.material.DescricaoMaterial }}"
+                                                data-especificacao="{{ solicitacao.especificacao }}"
+                                                data-status="{{ solicitacao.status_aprovacao }}" {% if
+                                                solicitacao.status_aprovacao=='Reprovado' %}disabled{% endif %} title="{% if solicitacao.status_aprovacao == 'Reprovado' %}
                                                                    Já reprovada
                                                                {% else %}
                                                                    Reprovar esta solicitação
                                                                {% endif %}">
-                                                    <i class="fas fa-times-circle"></i>
-                                                    <span>{% if solicitacao.status_aprovacao == 'Reprovado' %}Reprovada{% else %}Reprovar{% endif %}</span>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
+                                                <i class="fas fa-times-circle"></i>
+                                                <span>{% if solicitacao.status_aprovacao == 'Reprovado' %}Reprovada{%
+                                                    else %}Reprovar{% endif %}</span>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
                     </div>
-                    {% endfor %}
+                </div>
+                {% endfor %}
 
-                    <!-- Paginação Corrigida -->
-                    <nav class="pagination-nav">
-                        <ul class="pagination">
-                            <li class="page-item {% if page <= 1 %}disabled{% endif %}">
-                                <a class="page-link" href="
+                <!-- Paginação Corrigida -->
+                <nav class="pagination-nav">
+                    <ul class="pagination">
+                        <li class="page-item {% if page <= 1 %}disabled{% endif %}">
+                            <a class="page-link" href="
                                     {%- if page > 1 -%}
                                         ?page={{ page-1 }}&per_page={{ per_page }}
                                         {%- if request.args.get('empresa') -%}&empresa={{ request.args.get('empresa') }}{%- endif -%}
@@ -1211,18 +1227,18 @@
                                         #
                                     {%- endif -%}
                                 ">
-                                    <i class="fas fa-chevron-left"></i>
-                                </a>
-                            </li>
+                                <i class="fas fa-chevron-left"></i>
+                            </a>
+                        </li>
 
-                            {% for p in range(1, total_paginas + 1) %}
-                                {% if p == page %}
-                                    <li class="page-item active">
-                                        <span class="page-link">{{ p }}</span>
-                                    </li>
-                                {% elif p <= page + 2 and p >= page - 2 %}
-                                    <li class="page-item">
-                                        <a class="page-link" href="?page={{ p }}&per_page={{ per_page }}
+                        {% for p in range(1, total_paginas + 1) %}
+                        {% if p == page %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ p }}</span>
+                        </li>
+                        {% elif p <= page + 2 and p>= page - 2 %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ p }}&per_page={{ per_page }}
                                             {%- if request.args.get('empresa') -%}&empresa={{ request.args.get('empresa') }}{%- endif -%}
                                             {%- if request.args.get('usuario') -%}&usuario={{ request.args.get('usuario') }}{%- endif -%}
                                             {%- if request.args.get('aplicacao') -%}&aplicacao={{ request.args.get('aplicacao') }}{%- endif -%}
@@ -1231,12 +1247,12 @@
                                             {%- if request.args.get('data_inicio') -%}&data_inicio={{ request.args.get('data_inicio') }}{%- endif -%}
                                             {%- if request.args.get('data_fim') -%}&data_fim={{ request.args.get('data_fim') }}{%- endif -%}
                                         ">{{ p }}</a>
-                                    </li>
-                                {% elif p == page + 3 or p == page - 3 %}
-                                    <li class="page-item disabled">
-                                        <span class="page-link">...</span>
-                                    </li>
-                                {% endif %}
+                            </li>
+                            {% elif p == page + 3 or p == page - 3 %}
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                            {% endif %}
                             {% endfor %}
 
                             <li class="page-item {% if page >= total_paginas %}disabled{% endif %}">
@@ -1257,19 +1273,19 @@
                                     <i class="fas fa-chevron-right"></i>
                                 </a>
                             </li>
-                        </ul>
-                        <div style="font-size: 0.75rem; color: var(--gray-500);">
-                            Página {{ page }} de {{ total_paginas }} • Total de {{ total_grupos }} grupos
-                        </div>
-                    </nav>
+                    </ul>
+                    <div style="font-size: 0.75rem; color: var(--gray-500);">
+                        Página {{ page }} de {{ total_paginas }} • Total de {{ total_grupos }} grupos
+                    </div>
+                </nav>
 
                 {% else %}
-                    <!-- Empty State -->
-                    <div class="empty-state">
-                        <i class="fas fa-folder-open"></i>
-                        <h3>Nenhuma solicitação encontrada</h3>
-                        <p>Não há solicitações finalizadas para exibir com os filtros atuais.</p>
-                    </div>
+                <!-- Empty State -->
+                <div class="empty-state">
+                    <i class="fas fa-folder-open"></i>
+                    <h3>Nenhuma solicitação encontrada</h3>
+                    <p>Não há solicitações finalizadas para exibir com os filtros atuais.</p>
+                </div>
                 {% endif %}
             </div>
         </div>
@@ -1291,7 +1307,9 @@
                     <label style="font-size: 0.875rem; display: block; margin-bottom: 0.5rem;">
                         Digite a senha administrativa para confirmar:
                     </label>
-                    <input type="password" id="deletePassword" style="width: 100%; padding: 0.5rem; border: 1px solid var(--gray-300); border-radius: var(--radius-sm);" placeholder="••••••••">
+                    <input type="password" id="deletePassword"
+                        style="width: 100%; padding: 0.5rem; border: 1px solid var(--gray-300); border-radius: var(--radius-sm);"
+                        placeholder="••••••••">
                 </div>
             </div>
             <div class="modal-actions">
@@ -1320,7 +1338,9 @@
                     <label style="font-size: 0.875rem; display: block; margin-bottom: 0.5rem;">
                         Nome da nova aplicação:
                     </label>
-                    <input type="text" id="newAplicacaoName" style="width: 100%; padding: 0.5rem; border: 1px solid var(--gray-300); border-radius: var(--radius-sm);" placeholder="Digite o nome...">
+                    <input type="text" id="newAplicacaoName"
+                        style="width: 100%; padding: 0.5rem; border: 1px solid var(--gray-300); border-radius: var(--radius-sm);"
+                        placeholder="Digite o nome...">
                 </div>
             </div>
             <div class="modal-actions">
@@ -1342,14 +1362,17 @@
             </div>
             <div class="modal-body">
                 <div class="modal-info">
-                    <p><strong>Atenção:</strong> Esta ação reprovará a solicitação independentemente do status das cotações.</p>
+                    <p><strong>Atenção:</strong> Esta ação reprovará a solicitação independentemente do status das
+                        cotações.</p>
                     <div id="reprovarModalInfo"></div>
                 </div>
                 <div>
                     <label style="font-size: 0.875rem; display: block; margin-bottom: 0.5rem;">
                         Motivo da reprovação (opcional):
                     </label>
-                    <textarea id="motivoReprovar" style="width: 100%; padding: 0.5rem; border: 1px solid var(--gray-300); border-radius: var(--radius-sm);" rows="3" placeholder="Digite o motivo..."></textarea>
+                    <textarea id="motivoReprovar"
+                        style="width: 100%; padding: 0.5rem; border: 1px solid var(--gray-300); border-radius: var(--radius-sm);"
+                        rows="3" placeholder="Digite o motivo..."></textarea>
                 </div>
             </div>
             <div class="modal-actions">
@@ -1374,23 +1397,23 @@
                     <p><strong>Material:</strong> <span id="editMaterialNome"></span></p>
                     <p><strong>Quantidade atual:</strong> <span id="editQuantidadeAtual"></span></p>
                 </div>
-                
+
                 <div style="margin-bottom: 1rem;">
                     <label style="font-size: 0.875rem; display: block; margin-bottom: 0.5rem; font-weight: 500;">
                         Nova quantidade:
                     </label>
-                    <input type="number" id="novaQuantidade" min="1" step="1" 
-                           style="width: 100%; padding: 0.5rem; border: 1px solid var(--gray-300); border-radius: var(--radius-sm);"
-                           placeholder="Digite a nova quantidade">
+                    <input type="number" id="novaQuantidade" min="0.01" step="0.01"
+                        style="width: 100%; padding: 0.5rem; border: 1px solid var(--gray-300); border-radius: var(--radius-sm);"
+                        placeholder="Digite a nova quantidade">
                 </div>
-                
+
                 <div>
                     <label style="font-size: 0.875rem; display: block; margin-bottom: 0.5rem; font-weight: 500;">
                         Senha administrativa:
                     </label>
-                    <input type="password" id="senhaEdicao" 
-                           style="width: 100%; padding: 0.5rem; border: 1px solid var(--gray-300); border-radius: var(--radius-sm);"
-                           placeholder="Digite a senha">
+                    <input type="password" id="senhaEdicao"
+                        style="width: 100%; padding: 0.5rem; border: 1px solid var(--gray-300); border-radius: var(--radius-sm);"
+                        placeholder="Digite a senha">
                     <small style="color: #6b7280; font-size: 0.75rem; margin-top: 0.25rem; display: block;">
                         ⚠️ Esta ação alterará permanentemente a quantidade do material.
                     </small>
@@ -1413,7 +1436,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             // Elementos
             const notificationContainer = document.getElementById('notificationContainer');
-            
+
             // Filtros
             document.getElementById('applyFilters').addEventListener('click', applyFilters);
             document.getElementById('clearFilters').addEventListener('click', clearFilters);
@@ -1439,62 +1462,74 @@
                 btn.addEventListener('click', openReprovarModal);
             });
 
-            // Botão de editar quantidade
+            // Botão de editar quantidade - ABRIR MODAL
             document.querySelectorAll('.btn-editar-quantidade:not(:disabled)').forEach(btn => {
-                btn.addEventListener('click', function() {
+                btn.addEventListener('click', function () {
                     const id = this.dataset.id;
                     const quantidade = this.dataset.quantidade;
                     const material = this.dataset.material;
                     const status = this.dataset.status;
-                    
+
                     // Preencher informações no modal
                     document.getElementById('editMaterialNome').textContent = material || 'Material não especificado';
                     document.getElementById('editQuantidadeAtual').textContent = quantidade;
-                    
+
                     // Limpar campos
                     document.getElementById('novaQuantidade').value = quantidade;
                     document.getElementById('senhaEdicao').value = '';
-                    
+
                     // Armazenar ID para uso posterior
                     document.getElementById('confirmEditarQuantidade').dataset.id = id;
-                    
+
                     // Mostrar modal
                     openModal('editarQuantidadeModal');
                 });
             });
 
-            // Cancelar edição
-            document.getElementById('cancelEditarQuantidade').addEventListener('click', () => {
-                closeModal('editarQuantidadeModal');
-            });
-
-            // Confirmar edição
-            document.getElementById('confirmEditarQuantidade').addEventListener('click', async function() {
+            // Confirmar edição - APENAS UM EVENTO!
+            document.getElementById('confirmEditarQuantidade').addEventListener('click', async function () {
                 const id = this.dataset.id;
                 const novaQuantidade = document.getElementById('novaQuantidade').value.trim();
                 const senha = document.getElementById('senhaEdicao').value.trim();
-                
+
                 // Validações
                 if (!novaQuantidade) {
                     showNotification('Por favor, informe a nova quantidade.', 'warning');
                     return;
                 }
-                
-                if (parseInt(novaQuantidade) <= 0) {
+
+                // Converter para float
+                const quantidadeFloat = parseFloat(novaQuantidade);
+
+                // Verificar se é um número válido
+                if (isNaN(quantidadeFloat)) {
+                    showNotification('Por favor, informe um número válido.', 'warning');
+                    return;
+                }
+
+                // Verificar se é maior que zero
+                if (quantidadeFloat <= 0) {
                     showNotification('A quantidade deve ser maior que zero.', 'warning');
                     return;
                 }
-                
+
+                // Validar número de casas decimais (máximo 2)
+                const partes = novaQuantidade.split('.');
+                if (partes.length > 1 && partes[1].length > 2) {
+                    showNotification('A quantidade pode ter no máximo 2 casas decimais.', 'warning');
+                    return;
+                }
+
                 if (!senha) {
                     showNotification('Por favor, informe a senha administrativa.', 'warning');
                     return;
                 }
-                
+
                 // Mostrar loading
                 const originalText = this.innerHTML;
                 this.innerHTML = '<span class="loading-spinner"></span> Salvando...';
                 this.disabled = true;
-                
+
                 try {
                     const response = await fetch(`/api/editar_quantidade_solicitacao/${id}`, {
                         method: 'POST',
@@ -1502,38 +1537,43 @@
                             'Content-Type': 'application/json',
                         },
                         body: JSON.stringify({
-                            quantidade: parseInt(novaQuantidade),
+                            quantidade: quantidadeFloat,
                             senha: senha
                         })
                     });
-                    
+
                     const data = await response.json();
-                    
+
                     if (data.success) {
                         // Fechar modal
                         closeModal('editarQuantidadeModal');
-                        
+
                         // Exibir mensagem de sucesso
                         showNotification(`✅ ${data.message}`, 'success');
-                        
+
                         // Atualizar a linha da tabela
                         const quantidadeCell = document.getElementById(`quantidade-${id}`);
                         if (quantidadeCell) {
-                            quantidadeCell.innerHTML = `<strong>${data.nova_quantidade}</strong>`;
-                            
+                            // Formatar o número para exibição
+                            const novoValorFormatado = data.nova_quantidade % 1 === 0
+                                ? data.nova_quantidade
+                                : data.nova_quantidade.toFixed(2);
+
+                            quantidadeCell.innerHTML = `<strong>${novoValorFormatado}</strong>`;
+
                             // Atualizar também o dataset do botão
                             const editBtn = document.querySelector(`.btn-editar-quantidade[data-id="${id}"]`);
                             if (editBtn) {
                                 editBtn.dataset.quantidade = data.nova_quantidade;
                             }
-                            
+
                             // Destacar visualmente
                             quantidadeCell.style.backgroundColor = '#d1fae5';
                             setTimeout(() => {
                                 quantidadeCell.style.backgroundColor = '';
                             }, 2000);
                         }
-                        
+
                     } else {
                         showNotification(`❌ ${data.message}`, 'error');
                     }
@@ -1546,18 +1586,23 @@
                 }
             });
 
+            // Cancelar edição
+            document.getElementById('cancelEditarQuantidade').addEventListener('click', () => {
+                closeModal('editarQuantidadeModal');
+            });
+
             // Modais - Cancelar
             document.getElementById('cancelDelete').addEventListener('click', () => closeModal('deleteModal'));
             document.getElementById('cancelDuplicate').addEventListener('click', () => closeModal('duplicateModal'));
             document.getElementById('cancelReprovar').addEventListener('click', () => closeModal('reprovarModal'));
 
             // Modal de exclusão - validação de senha
-            document.getElementById('deletePassword').addEventListener('input', function() {
+            document.getElementById('deletePassword').addEventListener('input', function () {
                 document.getElementById('confirmDelete').disabled = this.value !== '122004';
             });
 
             // Modal de exclusão - Enter
-            document.getElementById('deletePassword').addEventListener('keypress', function(e) {
+            document.getElementById('deletePassword').addEventListener('keypress', function (e) {
                 if (e.key === 'Enter' && !document.getElementById('confirmDelete').disabled) {
                     document.getElementById('confirmDelete').click();
                 }
@@ -1582,7 +1627,7 @@
         // Funções de Filtro
         function applyFilters() {
             const params = new URLSearchParams();
-            
+
             const filters = {
                 empresa: document.getElementById('empresaFilter').value,
                 usuario: document.getElementById('usuarioFilter').value,
@@ -1605,7 +1650,7 @@
             params.forEach((value, key) => {
                 url.searchParams.set(key, value);
             });
-            
+
             window.location.href = url.toString();
         }
 
@@ -1651,14 +1696,14 @@
 
                 if (data.success) {
                     showNotification(`✅ Comprador ${comprador} atribuído com sucesso!`, 'success');
-                    
+
                     // Atualizar interface
                     const row = btn.closest('tr');
                     const compradorCell = row.querySelector('td:nth-child(10) .badge');
                     if (compradorCell) {
                         compradorCell.textContent = comprador;
                     }
-                    
+
                     // Atualizar select
                     Array.from(select.options).forEach(opt => {
                         opt.selected = opt.value === comprador;
@@ -1738,7 +1783,7 @@
         // Confirmações
         async function confirmExclusao() {
             const aplicacao = this.dataset.aplicacao;
-            
+
             closeModal('deleteModal');
 
             try {
@@ -1752,7 +1797,7 @@
 
                 if (data.success) {
                     showNotification(`✅ ${data.message}`, 'success');
-                    
+
                     // Remover grupo da tela
                     const grupoElement = document.querySelector(`.aplicacao-group[id^="grupo-${aplicacao.replace(/ /g, '-').toLowerCase()}"]`);
                     if (grupoElement) {
@@ -1789,9 +1834,9 @@
                 const response = await fetch('/duplicar_grupo_aplicacao', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
+                    body: JSON.stringify({
                         aplicacao: aplicacaoOriginal,
-                        nova_aplicacao: novaAplicacao 
+                        nova_aplicacao: novaAplicacao
                     })
                 });
 
@@ -1838,7 +1883,7 @@
                             statusCell.className = 'status-badge reprovado';
                             statusCell.textContent = 'Reprovado';
                         }
-                        
+
                         const reprovarBtn = row.querySelector('.btn-reprovar');
                         if (reprovarBtn) {
                             reprovarBtn.disabled = true;
@@ -1851,7 +1896,7 @@
                             editarBtn.disabled = true;
                             editarBtn.title = 'Solicitação reprovada';
                         }
-                        
+
                         row.style.opacity = '0.8';
                         row.style.backgroundColor = '#f8f9fa';
                         row.classList.remove('highlight-old');
@@ -1872,7 +1917,7 @@
         function showNotification(message, type = 'info') {
             const notification = document.createElement('div');
             notification.className = `notification ${type}`;
-            
+
             const icons = {
                 success: 'fa-check-circle',
                 error: 'fa-exclamation-circle',
@@ -1912,7 +1957,7 @@
                 if (partes.length === 3) {
                     const dataSolicitacao = new Date(partes[2], partes[1] - 1, partes[0]);
                     const diffDias = Math.floor((hoje - dataSolicitacao) / (1000 * 60 * 60 * 24));
-                    
+
                     if (diffDias > 7) {
                         row.classList.add('highlight-old');
                         row.title = `Solicitação com ${diffDias} dias de atraso`;
@@ -1925,4 +1970,5 @@
         window.showNotification = showNotification;
     </script>
 </body>
+
 </html>
