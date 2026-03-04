@@ -1911,7 +1911,6 @@ def listar_solicitacoes():
             total_grupos=0,
             request_args={}
         )
-
 @routes_bp.route('/api/editar_quantidade_solicitacao/<int:id>', methods=['POST'])
 def editar_quantidade_solicitacao(id):
     """Edita a quantidade de uma solicitação individual (requer senha 122004)"""
@@ -1931,14 +1930,15 @@ def editar_quantidade_solicitacao(id):
             }), 403
         
         # Validar quantidade
-        if not nova_quantidade:
+        if nova_quantidade is None:
             return jsonify({
                 'success': False, 
                 'message': 'Quantidade não informada'
             }), 400
         
         try:
-            nova_quantidade = int(nova_quantidade)
+            # 👇 CORREÇÃO: Converter para float
+            nova_quantidade = float(nova_quantidade)
             if nova_quantidade <= 0:
                 return jsonify({
                     'success': False, 
@@ -1947,7 +1947,7 @@ def editar_quantidade_solicitacao(id):
         except ValueError:
             return jsonify({
                 'success': False, 
-                'message': 'Quantidade inválida'
+                'message': 'Quantidade inválida. Use números com ponto (ex: 10.5)'
             }), 400
         
         # Buscar a solicitação
