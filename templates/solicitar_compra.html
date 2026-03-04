@@ -39,7 +39,7 @@
             padding-left: 15px;
             margin-top: 30px;
             margin-bottom: 20px;
-            background: linear-gradient(to right, rgba(255,107,53,0.1), transparent);
+            background: linear-gradient(to right, rgba(255, 107, 53, 0.1), transparent);
             padding: 10px 15px;
             border-radius: 0 8px 8px 0;
         }
@@ -74,7 +74,8 @@
             background-color: #fff;
             border: var(--card-border);
             border-radius: 15px;
-            margin-bottom: 40px; /* Espaço grande entre solicitações */
+            margin-bottom: 40px;
+            /* Espaço grande entre solicitações */
             box-shadow: var(--card-shadow);
             position: relative;
             transition: transform 0.2s, box-shadow 0.2s;
@@ -119,7 +120,7 @@
             align-items: center;
             justify-content: center;
             border-radius: 50%;
-            background-color: rgba(255,255,255,0.2);
+            background-color: rgba(255, 255, 255, 0.2);
             transition: all 0.2s;
         }
 
@@ -175,7 +176,7 @@
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 1px;
-            box-shadow: 0 4px 10px rgba(255,107,53,0.3);
+            box-shadow: 0 4px 10px rgba(255, 107, 53, 0.3);
         }
 
         .btn {
@@ -236,7 +237,7 @@
 
         /* Loading spinner personalizado */
         .loading-spinner {
-            background: rgba(255,255,255,0.9);
+            background: rgba(255, 255, 255, 0.9);
             border: 1px solid #dee2e6;
             border-radius: 8px;
             padding: 10px;
@@ -283,7 +284,7 @@
         <!-- Formulário principal -->
         <form method="POST" action="{{ url_for('routes_bp.abrir_solicitacao') }}" enctype="multipart/form-data"
             id="solicitacaoForm">
-            
+
             <!-- Campo oculto para aplicação geral -->
             <input type="hidden" id="aplicacao_geral_hidden" name="aplicacao_geral" value="">
 
@@ -323,7 +324,8 @@
                             <label for="pesquisa_material-1" class="form-label required-field">Buscar Material</label>
                             <select class="form-select select2-pesquisa-material" id="pesquisa_material-1"
                                 name="pesquisa_material[]" required>
-                                <option value="" disabled selected>Digite para buscar por código ou descrição...</option>
+                                <option value="" disabled selected>Digite para buscar por código ou descrição...
+                                </option>
                             </select>
                             <input type="hidden" class="cod-material-hidden" name="cod_material[]" value="">
                             <small class="text-muted d-block mt-2">
@@ -340,8 +342,8 @@
                         <div class="card-body">
                             <div class="mb-3">
                                 <label for="descricao-1" class="form-label">Descrição do Material</label>
-                                <input type="text" class="form-control descricao-material bg-light" id="descricao-1" 
-                                       name="descricao[]" readonly placeholder="Material selecionado aparecerá aqui">
+                                <input type="text" class="form-control descricao-material bg-light" id="descricao-1"
+                                    name="descricao[]" readonly placeholder="Material selecionado aparecerá aqui">
                                 <small class="text-muted">Campo preenchido automaticamente</small>
                             </div>
 
@@ -406,9 +408,11 @@
                                         <option value="Não">Não</option>
                                     </select>
                                 </div>
-                                <div class="col-md-6 mb-3 nome-ativo-container" id="nome_ativo_container-1" style="display:none;">
+                                <div class="col-md-6 mb-3 nome-ativo-container" id="nome_ativo_container-1"
+                                    style="display:none;">
                                     <label for="nome_ativo-1" class="form-label required-field">Nome do Ativo</label>
-                                    <select class="form-select select2-nome-ativo" id="nome_ativo-1" name="nome_ativo[]">
+                                    <select class="form-select select2-nome-ativo" id="nome_ativo-1"
+                                        name="nome_ativo[]">
                                         <option value="" disabled selected>Selecione um ativo...</option>
                                         {% for nome in ler_nomes_registros() %}
                                         <option value="{{ nome }}">{{ nome }}</option>
@@ -429,17 +433,44 @@
                             <div class="row">
                                 <div class="col-md-6 mb-3">
                                     <label for="prioridade-1" class="form-label required-field">Prioridade</label>
-                                    <select class="form-select prioridade-material" id="prioridade-1" name="prioridade[]"
-                                        required>
+                                    <select class="form-select prioridade-material" id="prioridade-1"
+                                        name="prioridade[]" required>
                                         <option value="Programado" selected>Programado</option>
                                         <option value="Urgente">Urgente</option>
                                     </select>
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label for="empresa-1" class="form-label required-field">Empresa</label>
-                                    <input type="text" class="form-control empresa-material" id="empresa-1" name="empresa[]"
-                                        required value="{{ empresa_usuario }}" readonly>
-                                    <small class="text-muted">Empresa vinculada ao seu usuário</small>
+                                    <select class="form-select empresa-select" id="empresa-select-1"
+                                        onchange="verificarOutroEmpresa(1)">
+                                        <option value="" disabled selected>Selecione a empresa...</option>
+                                        <option value="Fazendas">Fazendas</option>
+                                        <option value="Grupo Adriano Cobuccio">Grupo Adriano Cobuccio</option>
+                                        <option value="ESPAZO">ESPAZO</option>
+                                        <option value="Brasil Card">Brasil Card</option>
+                                        <option value="Engenharia">Engenharia</option>
+                                        <option value="Posto Petro">Posto Petro</option>
+                                        <option value="Ágil">Ágil</option>
+                                        <option value="FORQUILHA">FORQUILHA</option>
+                                        <option value="BOLT">BOLT</option>
+                                        <option value="BOQUEIRÃO">BOQUEIRÃO</option>
+                                        <option value="USINA CGH RIO DO PEIXE">USINA CGH RIO DO PEIXE</option>
+                                        <option value="outro">✏️ Outro (digitar manualmente)</option>
+                                    </select>
+
+                                    <!-- Campo para digitar manualmente (inicialmente oculto) -->
+                                    <div id="empresa-outro-container-1" style="display: none; margin-top: 10px;">
+                                        <input type="text" class="form-control" id="empresa-outro-1"
+                                            placeholder="Digite o nome da empresa">
+                                        <small class="text-muted">Digite o nome da empresa desejada</small>
+                                    </div>
+
+                                    <!-- Campo hidden que vai enviar o valor final -->
+                                    <input type="hidden" class="empresa-material" id="empresa-1" name="empresa[]"
+                                        required>
+
+                                    <small class="text-muted">Selecione a empresa ou escolha "Outro" para
+                                        digitar</small>
                                 </div>
                             </div>
                         </div>
@@ -507,27 +538,27 @@
          */
         function carregarMateriaisSelect2(index) {
             const selectElement = $(`#pesquisa_material-${index}`);
-            
+
             // Inicializar Select2 com AJAX e paginação
             selectElement.select2({
                 ajax: {
                     url: '/api/materiais_search',
                     dataType: 'json',
                     delay: 400,  // Aguarda 400ms após parar de digitar
-                    data: function(params) {
+                    data: function (params) {
                         return {
                             q: params.term || '',    // termo de busca
                             page: params.page || 1    // página atual
                         };
                     },
-                    processResults: function(data, params) {
+                    processResults: function (data, params) {
                         params.page = params.page || 1;
-                        
+
                         // Log para debug
                         console.log(`Carregando página ${params.page} para solicitação ${index}`);
-                        
+
                         return {
-                            results: data.materiais.map(function(item) {
+                            results: data.materiais.map(function (item) {
                                 return {
                                     id: item.CodMaterial,
                                     text: `${item.DescricaoMaterial} (Cód: ${item.CodMaterial})`,
@@ -545,13 +576,13 @@
                 placeholder: "Digite código ou descrição do material...",
                 minimumInputLength: 0,  // Permite buscar sem digitar (mostra resultados iniciais)
                 language: {
-                    noResults: function() {
+                    noResults: function () {
                         return "Nenhum material encontrado";
                     },
-                    searching: function() {
+                    searching: function () {
                         return "Buscando materiais...";
                     },
-                    inputTooShort: function() {
+                    inputTooShort: function () {
                         return "Digite para buscar materiais";
                     }
                 },
@@ -565,13 +596,13 @@
                 placeholder: "Digite para buscar um ativo...",
                 minimumInputLength: 3,
                 language: {
-                    noResults: function() {
+                    noResults: function () {
                         return "Nenhum ativo encontrado";
                     },
-                    searching: function() {
+                    searching: function () {
                         return "Buscando...";
                     },
-                    inputTooShort: function() {
+                    inputTooShort: function () {
                         return "Digite pelo menos 3 caracteres";
                     }
                 },
@@ -618,14 +649,14 @@
         $(document).on('change', '.select2-pesquisa-material', function () {
             const index = $(this).attr('id').split('-')[1];
             const selectedData = $(this).select2('data')[0];
-            
+
             console.log('Material selecionado:', selectedData);
 
             if (selectedData && selectedData.id) {
                 // Preencher campos hidden e descrição
                 $(`#solicitacao-${index} .cod-material-hidden`).val(selectedData.id);
                 $(`#solicitacao-${index} .descricao-material`).val(selectedData.descricao || selectedData.text.split(' (Cód:')[0]);
-                
+
                 // Sugerir especificação se estiver vazia
                 if (!$(`#especificacao-${index}`).val().trim()) {
                     $(`#especificacao-${index}`).val(selectedData.descricao || selectedData.text.split(' (Cód:')[0]);
@@ -633,7 +664,7 @@
 
                 // Habilitar botão de envio
                 $('#submitBtn').prop('disabled', false);
-                
+
                 // Foco no campo especificação
                 $(`#especificacao-${index}`).focus();
             } else {
@@ -834,15 +865,15 @@
         /**
          * Remover solicitação
          */
-        window.removerSolicitacao = function(index) {
+        window.removerSolicitacao = function (index) {
             if (solicitacaoCount > 1) {
                 // Confirmar exclusão
                 if (confirm(`Deseja realmente remover a Solicitação #${index}?`)) {
-                    $(`#solicitacao-${index}`).slideUp(300, function() {
+                    $(`#solicitacao-${index}`).slideUp(300, function () {
                         $(this).remove();
                         solicitacaoCount--;
                         verificarSolicitacoesComMaterial();
-                        
+
                         // Reordenar números das solicitações restantes
                         reordenarSolicitacoes();
                     });
@@ -856,26 +887,26 @@
          * Reordenar números das solicitações após remoção
          */
         function reordenarSolicitacoes() {
-            $('.solicitacao-item').each(function(newIndex) {
+            $('.solicitacao-item').each(function (newIndex) {
                 const oldIndex = $(this).data('index');
                 const newNumber = newIndex + 1;
-                
+
                 if (oldIndex != newNumber) {
                     // Atualizar IDs
                     $(this).attr('id', `solicitacao-${newNumber}`).data('index', newNumber);
-                    
+
                     // Atualizar número no cabeçalho
                     $(this).find('.solicitacao-numero').html(`<i class="fas fa-clipboard-list"></i> Solicitação #${newNumber}`);
-                    
+
                     // Atualizar onclick do botão remover
                     $(this).find('.remove-solicitacao').attr('onclick', `removerSolicitacao(${newNumber})`);
-                    
+
                     // Atualizar IDs dos elementos
-                    $(this).find('[id]').each(function() {
+                    $(this).find('[id]').each(function () {
                         const oldId = $(this).attr('id');
                         const newId = oldId.replace(/-(\d+)$/, '-' + newNumber);
                         $(this).attr('id', newId);
-                        
+
                         // Atualizar labels associados
                         $(this).closest('.mb-3').find('label').attr('for', newId);
                     });
@@ -888,7 +919,7 @@
          */
         function verificarSolicitacoesComMaterial() {
             let hasMaterial = false;
-            $('.cod-material-hidden').each(function() {
+            $('.cod-material-hidden').each(function () {
                 if ($(this).val().trim() !== '') {
                     hasMaterial = true;
                     return false; // break
@@ -901,13 +932,13 @@
         /**
          * Validação do formulário antes do envio
          */
-        $('#solicitacaoForm').on('submit', function(e) {
+        $('#solicitacaoForm').on('submit', function (e) {
             // Copiar aplicação geral para o campo hidden
             $('#aplicacao_geral_hidden').val($('#aplicacao').val());
 
             // Verificar se tem pelo menos um material
             let hasMaterial = false;
-            $('.cod-material-hidden').each(function() {
+            $('.cod-material-hidden').each(function () {
                 if ($(this).val().trim() !== '') {
                     hasMaterial = true;
                 }
@@ -921,10 +952,10 @@
 
             // Validar campos obrigatórios
             let hasError = false;
-            $('.solicitacao-item').each(function() {
+            $('.solicitacao-item').each(function () {
                 const index = $(this).data('index');
                 const codMaterial = $(this).find('.cod-material-hidden').val();
-                
+
                 if (codMaterial) {
                     // Verificar especificação
                     if (!$(`#especificacao-${index}`).val().trim()) {
@@ -956,18 +987,58 @@
             return !hasError;
         });
 
+        // Função para verificar se selecionou "Outro"
+        function verificarOutroEmpresa(index) {
+            const select = document.getElementById(`empresa-select-${index}`);
+            const outroContainer = document.getElementById(`empresa-outro-container-${index}`);
+            const outroInput = document.getElementById(`empresa-outro-${index}`);
+            const hiddenInput = document.getElementById(`empresa-${index}`);
+
+            if (select.value === 'outro') {
+                // Mostrar campo para digitar
+                outroContainer.style.display = 'block';
+                hiddenInput.value = ''; // Limpa o hidden enquanto digita
+                outroInput.focus();
+            } else {
+                // Esconder campo de digitação
+                outroContainer.style.display = 'none';
+                // Se tiver um valor válido, preenche o hidden
+                if (select.value) {
+                    hiddenInput.value = select.value;
+                } else {
+                    hiddenInput.value = '';
+                }
+            }
+        }
+
+        // Função para atualizar o hidden quando digitar manualmente
+        function atualizarEmpresaManual(index) {
+            const select = document.getElementById(`empresa-select-${index}`);
+            const outroInput = document.getElementById(`empresa-outro-${index}`);
+            const hiddenInput = document.getElementById(`empresa-${index}`);
+
+            if (select.value === 'outro' && outroInput.value.trim() !== '') {
+                hiddenInput.value = outroInput.value.trim();
+            }
+        }
+
+        // Adicionar evento para quando digitar no campo manual
+        $(document).on('input', '[id^="empresa-outro-"]', function () {
+            const index = this.id.split('-')[2];
+            atualizarEmpresaManual(index);
+        });
         /**
          * Inicialização quando o documento estiver pronto
          */
-        $(document).ready(function() {
+        $(document).ready(function () {
             console.log('Inicializando sistema de solicitações...');
-            
+
             // Inicializar o primeiro select com paginação
             carregarMateriaisSelect2(1);
-            
+
             // Esconder aviso de warning
             $('#materialWarning').hide();
-            
+
             console.log('Sistema inicializado com sucesso!');
         });
 
