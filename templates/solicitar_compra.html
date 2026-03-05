@@ -69,13 +69,11 @@
             font-weight: bold;
         }
 
-        /* ESTILO PRINCIPAL - SEPARADOR BEM EVIDENTE ENTRE SOLICITAÇÕES */
         .solicitacao-item {
             background-color: #fff;
             border: var(--card-border);
             border-radius: 15px;
             margin-bottom: 40px;
-            /* Espaço grande entre solicitações */
             box-shadow: var(--card-shadow);
             position: relative;
             transition: transform 0.2s, box-shadow 0.2s;
@@ -85,7 +83,6 @@
             box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
         }
 
-        /* Número da solicitação em destaque */
         .solicitacao-header {
             background: linear-gradient(135deg, var(--primary-color) 0%, #03407c 100%);
             color: white;
@@ -129,7 +126,6 @@
             transform: rotate(90deg);
         }
 
-        /* Cards internos com cores suaves */
         .solicitacao-item .card {
             border: none;
             border-radius: 0;
@@ -159,7 +155,6 @@
             background-color: #fff;
         }
 
-        /* Linha divisória visual entre solicitações */
         .solicitacao-separator {
             text-align: center;
             margin: -20px 0 30px 0;
@@ -235,7 +230,6 @@
             border-radius: 10px;
         }
 
-        /* Loading spinner personalizado */
         .loading-spinner {
             background: rgba(255, 255, 255, 0.9);
             border: 1px solid #dee2e6;
@@ -424,7 +418,7 @@
                         </div>
                     </div>
 
-                    <!-- Card: Prioridade e Empresa -->
+                    <!-- Card: Prioridade e Empresa (CORRIGIDO) -->
                     <div class="card">
                         <div class="card-header">
                             <i class="fas fa-exclamation-triangle"></i> 4. Prioridade e Empresa
@@ -440,33 +434,30 @@
                                     </select>
                                 </div>
                                 <div class="col-md-6 mb-3">
-                                    <label for="empresa-1" class="form-label required-field">Empresa</label>
+                                    <label for="empresa-select-1" class="form-label required-field">Empresa</label>
                                     <select class="form-select empresa-select" id="empresa-select-1"
                                         onchange="verificarOutroEmpresa(1)">
-                                        <option value="" disabled selected>Selecione a empresa...</option>
-                                        <option value="Fazendas">Fazendas</option>
-                                        <option value="Grupo Adriano Cobuccio">Grupo Adriano Cobuccio</option>
-                                        <option value="ESPAZO">ESPAZO</option>
-                                        <option value="Brasil Card">Brasil Card</option>
-                                        <option value="Engenharia">Engenharia</option>
-                                        <option value="Posto Petro">Posto Petro</option>
-                                        <option value="Ágil">Ágil</option>
-                                        <option value="FORQUILHA">FORQUILHA</option>
-                                        <option value="BOLT">BOLT</option>
-                                        <option value="BOQUEIRÃO">BOQUEIRÃO</option>
-                                        <option value="USINA CGH RIO DO PEIXE">USINA CGH RIO DO PEIXE</option>
+                                        <option value="" disabled>Selecione a empresa...</option>
+                                        {% set empresas_lista = ['Selecione...','Fazendas', 'Grupo Adriano Cobuccio',
+                                        'ESPAZO', 'Brasil Card', 'Engenharia', 'Posto Petro', 'Ágil', 'FORQUILHA',
+                                        'BOLT', 'BOQUEIRÃO', 'USINA CGH RIO DO PEIXE'] %}
+                                        {% for empresa in empresas_lista %}
+                                        <option value="{{ empresa }}" {% if empresa_usuario==empresa %}selected{% endif
+                                            %}>{{ empresa }}</option>
+                                        {% endfor %}
                                         <option value="outro">✏️ Outro (digitar manualmente)</option>
                                     </select>
 
                                     <!-- Campo para digitar manualmente (inicialmente oculto) -->
                                     <div id="empresa-outro-container-1" style="display: none; margin-top: 10px;">
                                         <input type="text" class="form-control" id="empresa-outro-1"
-                                            placeholder="Digite o nome da empresa">
+                                            placeholder="Digite o nome da empresa" oninput="atualizarEmpresaManual(1)">
                                         <small class="text-muted">Digite o nome da empresa desejada</small>
                                     </div>
 
                                     <!-- Campo hidden que vai enviar o valor final -->
                                     <input type="hidden" class="empresa-material" id="empresa-1" name="empresa[]"
+                                        value="{{ empresa_usuario if empresa_usuario in empresas_lista else '' }}"
                                         required>
 
                                     <small class="text-muted">Selecione a empresa ou escolha "Outro" para
@@ -532,9 +523,14 @@
         // Variável global para controlar o número de solicitações
         let solicitacaoCount = 1;
 
+        // Lista de empresas para usar no template
+        const empresasLista = ['Selecione...', 'Fazendas', 'Grupo Adriano Cobuccio', 'ESPAZO', 'Brasil Card', 'Engenharia', 'Posto Petro', 'Ágil', 'FORQUILHA', 'BOLT', 'BOQUEIRÃO', 'USINA CGH RIO DO PEIXE'];
+
+        // Empresa do usuário (passada do backend)
+        const empresaUsuario = "{{ empresa_usuario }}";
+
         /**
          * Função principal para carregar o Select2 com paginação
-         * Esta é a solução para o problema de performance!
          */
         function carregarMateriaisSelect2(index) {
             const selectElement = $(`#pesquisa_material-${index}`);
@@ -544,19 +540,15 @@
                 ajax: {
                     url: '/api/materiais_search',
                     dataType: 'json',
-                    delay: 400,  // Aguarda 400ms após parar de digitar
+                    delay: 400,
                     data: function (params) {
                         return {
-                            q: params.term || '',    // termo de busca
-                            page: params.page || 1    // página atual
+                            q: params.term || '',
+                            page: params.page || 1
                         };
                     },
                     processResults: function (data, params) {
                         params.page = params.page || 1;
-
-                        // Log para debug
-                        console.log(`Carregando página ${params.page} para solicitação ${index}`);
-
                         return {
                             results: data.materiais.map(function (item) {
                                 return {
@@ -574,7 +566,7 @@
                     cache: true
                 },
                 placeholder: "Digite código ou descrição do material...",
-                minimumInputLength: 0,  // Permite buscar sem digitar (mostra resultados iniciais)
+                minimumInputLength: 0,
                 language: {
                     noResults: function () {
                         return "Nenhum material encontrado";
@@ -587,8 +579,8 @@
                     }
                 },
                 width: '100%',
-                templateResult: formatMaterialResult,  // Formatação customizada dos resultados
-                templateSelection: formatMaterialSelection  // Formatação do item selecionado
+                templateResult: formatMaterialResult,
+                templateSelection: formatMaterialSelection
             });
 
             // Inicializar Select2 para o campo Nome do Ativo
@@ -650,25 +642,17 @@
             const index = $(this).attr('id').split('-')[1];
             const selectedData = $(this).select2('data')[0];
 
-            console.log('Material selecionado:', selectedData);
-
             if (selectedData && selectedData.id) {
-                // Preencher campos hidden e descrição
                 $(`#solicitacao-${index} .cod-material-hidden`).val(selectedData.id);
                 $(`#solicitacao-${index} .descricao-material`).val(selectedData.descricao || selectedData.text.split(' (Cód:')[0]);
 
-                // Sugerir especificação se estiver vazia
                 if (!$(`#especificacao-${index}`).val().trim()) {
                     $(`#especificacao-${index}`).val(selectedData.descricao || selectedData.text.split(' (Cód:')[0]);
                 }
 
-                // Habilitar botão de envio
                 $('#submitBtn').prop('disabled', false);
-
-                // Foco no campo especificação
                 $(`#especificacao-${index}`).focus();
             } else {
-                // Limpar campos se nada for selecionado
                 $(`#solicitacao-${index} .cod-material-hidden`).val('');
                 $(`#solicitacao-${index} .descricao-material`).val('');
                 verificarSolicitacoesComMaterial();
@@ -694,12 +678,66 @@
         });
 
         /**
+         * Funções para controle do campo empresa
+         */
+        function verificarOutroEmpresa(index) {
+            const select = document.getElementById(`empresa-select-${index}`);
+            const outroContainer = document.getElementById(`empresa-outro-container-${index}`);
+            const outroInput = document.getElementById(`empresa-outro-${index}`);
+            const hiddenInput = document.getElementById(`empresa-${index}`);
+
+            if (select.value === 'outro') {
+                outroContainer.style.display = 'block';
+                hiddenInput.value = '';
+                outroInput.focus();
+            } else {
+                outroContainer.style.display = 'none';
+                if (select.value) {
+                    hiddenInput.value = select.value;
+                } else {
+                    hiddenInput.value = '';
+                }
+            }
+        }
+
+        function atualizarEmpresaManual(index) {
+            const select = document.getElementById(`empresa-select-${index}`);
+            const outroInput = document.getElementById(`empresa-outro-${index}`);
+            const hiddenInput = document.getElementById(`empresa-${index}`);
+
+            if (select.value === 'outro' && outroInput.value.trim() !== '') {
+                hiddenInput.value = outroInput.value.trim();
+            }
+        }
+
+        function inicializarEmpresaSelecionada(index) {
+            const select = document.getElementById(`empresa-select-${index}`);
+            const hiddenInput = document.getElementById(`empresa-${index}`);
+
+            if (select && hiddenInput) {
+                if (select.value && select.value !== 'outro' && select.value !== '') {
+                    hiddenInput.value = select.value;
+                }
+            }
+        }
+
+        function inicializarTodasEmpresas() {
+            for (let i = 1; i <= solicitacaoCount; i++) {
+                inicializarEmpresaSelecionada(i);
+            }
+        }
+
+        /**
          * Adicionar nova solicitação
          */
         $('#adicionarSolicitacao').on('click', function () {
             solicitacaoCount++;
 
-            // Template da nova solicitação com todos os cards
+            // Determinar se a empresa do usuário está na lista para pré-selecionar
+            const empresaSelected = empresasLista.includes(empresaUsuario) ? 'selected' : '';
+            const empresaValue = empresasLista.includes(empresaUsuario) ? empresaUsuario : '';
+
+            // Template da nova solicitação com campo empresa corrigido
             const novoSolicitacao = `
                 <div class="solicitacao-item" id="solicitacao-${solicitacaoCount}" data-index="${solicitacaoCount}">
                     <!-- Separador visual -->
@@ -755,28 +793,55 @@
                                     placeholder="Descreva detalhadamente as especificações técnicas..."></textarea>
                             </div>
 
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label for="quantidade-${solicitacaoCount}" class="form-label required-field">Quantidade</label>
-                                    <input type="number" class="form-control quantidade-material" id="quantidade-${solicitacaoCount}"
-                                        name="quantidade[]" min="1" required placeholder="Ex: 10">
+                          <!-- Card: Informações Básicas -->
+                                <div class="card">
+                                    <div class="card-header">
+                                        <i class="fas fa-file-alt"></i> 2. Informações Básicas
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="mb-3">
+                                            <label for="descricao-${solicitacaoCount}" class="form-label">Descrição do Material</label>
+                                            <input type="text" class="form-control descricao-material bg-light" id="descricao-${solicitacaoCount}" 
+                                                name="descricao[]" readonly placeholder="Material selecionado aparecerá aqui">
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label for="especificacao-${solicitacaoCount}" class="form-label required-field">Especificação</label>
+                                            <textarea class="form-control especificacao-material" id="especificacao-${solicitacaoCount}"
+                                                name="especificacao[]" rows="3" required
+                                                placeholder="Descreva detalhadamente as especificações técnicas..."></textarea>
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="quantidade-${solicitacaoCount}" class="form-label required-field">Quantidade</label>
+                                                <input type="number" class="form-control quantidade-material" id="quantidade-${solicitacaoCount}"
+                                                    name="quantidade[]" min="1" required placeholder="Ex: 10">
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="unidade_medida-${solicitacaoCount}" class="form-label required-field">Unidade</label>
+                                                <select class="form-select unidade-medida-material" id="unidade_medida-${solicitacaoCount}"
+                                                    name="unidade_medida[]" required>
+                                                    <option value="" disabled selected>Selecione...</option>
+                                                    <option value="Peça">Peça</option>
+                                                    <option value="Unidade">Unidade</option>
+                                                    <option value="KG">KG</option>
+                                                    <option value="Metro">Metro</option>
+                                                    <option value="Metro quadrado">Metro quadrado</option>
+                                                    <option value="Metro cúbico">Metro cúbico</option>
+                                                    <option value="Litro">Litro</option>
+                                                    <option value="Quilograma">Quilograma</option>
+                                                    <option value="Grama">Grama</option>
+                                                    <option value="Caixa">Caixa</option>
+                                                    <option value="Pacote">Pacote</option>
+                                                    <option value="Par">Par</option>
+                                                    <option value="Jogo">Jogo</option>
+                                                    <option value="Conjunto">Conjunto</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="col-md-6 mb-3">
-                                    <label for="unidade_medida-${solicitacaoCount}" class="form-label required-field">Unidade</label>
-                                    <select class="form-select unidade-medida-material" id="unidade_medida-${solicitacaoCount}"
-                                        name="unidade_medida[]" required>
-                                        <option value="" disabled selected>Selecione...</option>
-                                        <option value="Peça">Peça</option>
-                                        <option value="Unidade">Unidade</option>
-                                        <option value="KG">KG</option>
-                                        <option value="Metro">Metro</option>
-                                        <option value="Litro">Litro</option>
-                                        <option value="Caixa">Caixa</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
 
                     <!-- Card: Detalhes do Material -->
                     <div class="card">
@@ -812,7 +877,7 @@
                         </div>
                     </div>
 
-                    <!-- Card: Prioridade e Empresa -->
+                    <!-- Card: Prioridade e Empresa (CORRIGIDO) -->
                     <div class="card">
                         <div class="card-header">
                             <i class="fas fa-exclamation-triangle"></i> 4. Prioridade e Empresa
@@ -827,9 +892,25 @@
                                     </select>
                                 </div>
                                 <div class="col-md-6 mb-3">
-                                    <label for="empresa-${solicitacaoCount}" class="form-label required-field">Empresa</label>
-                                    <input type="text" class="form-control empresa-material" id="empresa-${solicitacaoCount}" 
-                                           name="empresa[]" required value="{{ empresa_usuario }}" readonly>
+                                    <label for="empresa-select-${solicitacaoCount}" class="form-label required-field">Empresa</label>
+                                    <select class="form-select empresa-select" id="empresa-select-${solicitacaoCount}" onchange="verificarOutroEmpresa(${solicitacaoCount})">
+                                        <option value="" disabled>Selecione a empresa...</option>
+                                        ${empresasLista.map(emp => `<option value="${emp}" ${emp === empresaUsuario ? 'selected' : ''}>${emp}</option>`).join('')}
+                                        <option value="outro">✏️ Outro (digitar manualmente)</option>
+                                    </select>
+
+                                    <!-- Campo para digitar manualmente -->
+                                    <div id="empresa-outro-container-${solicitacaoCount}" style="display: none; margin-top: 10px;">
+                                        <input type="text" class="form-control" id="empresa-outro-${solicitacaoCount}" 
+                                               placeholder="Digite o nome da empresa" oninput="atualizarEmpresaManual(${solicitacaoCount})">
+                                        <small class="text-muted">Digite o nome da empresa desejada</small>
+                                    </div>
+
+                                    <!-- Campo hidden que vai enviar o valor final -->
+                                    <input type="hidden" class="empresa-material" id="empresa-${solicitacaoCount}" 
+                                           name="empresa[]" value="${empresaValue}" required>
+
+                                    <small class="text-muted">Selecione a empresa ou escolha "Outro" para digitar</small>
                                 </div>
                             </div>
                         </div>
@@ -858,6 +939,9 @@
             // Inicializar Select2 para a nova solicitação
             carregarMateriaisSelect2(solicitacaoCount);
 
+            // Inicializar empresa selecionada
+            inicializarEmpresaSelecionada(solicitacaoCount);
+
             // Scroll suave até a nova solicitação
             $(`#solicitacao-${solicitacaoCount}`)[0].scrollIntoView({ behavior: 'smooth', block: 'start' });
         });
@@ -867,14 +951,11 @@
          */
         window.removerSolicitacao = function (index) {
             if (solicitacaoCount > 1) {
-                // Confirmar exclusão
                 if (confirm(`Deseja realmente remover a Solicitação #${index}?`)) {
                     $(`#solicitacao-${index}`).slideUp(300, function () {
                         $(this).remove();
                         solicitacaoCount--;
                         verificarSolicitacoesComMaterial();
-
-                        // Reordenar números das solicitações restantes
                         reordenarSolicitacoes();
                     });
                 }
@@ -892,22 +973,15 @@
                 const newNumber = newIndex + 1;
 
                 if (oldIndex != newNumber) {
-                    // Atualizar IDs
                     $(this).attr('id', `solicitacao-${newNumber}`).data('index', newNumber);
-
-                    // Atualizar número no cabeçalho
                     $(this).find('.solicitacao-numero').html(`<i class="fas fa-clipboard-list"></i> Solicitação #${newNumber}`);
-
-                    // Atualizar onclick do botão remover
                     $(this).find('.remove-solicitacao').attr('onclick', `removerSolicitacao(${newNumber})`);
 
-                    // Atualizar IDs dos elementos
                     $(this).find('[id]').each(function () {
                         const oldId = $(this).attr('id');
                         const newId = oldId.replace(/-(\d+)$/, '-' + newNumber);
                         $(this).attr('id', newId);
 
-                        // Atualizar labels associados
                         $(this).closest('.mb-3').find('label').attr('for', newId);
                     });
                 }
@@ -922,7 +996,7 @@
             $('.cod-material-hidden').each(function () {
                 if ($(this).val().trim() !== '') {
                     hasMaterial = true;
-                    return false; // break
+                    return false;
                 }
             });
 
@@ -933,10 +1007,8 @@
          * Validação do formulário antes do envio
          */
         $('#solicitacaoForm').on('submit', function (e) {
-            // Copiar aplicação geral para o campo hidden
             $('#aplicacao_geral_hidden').val($('#aplicacao').val());
 
-            // Verificar se tem pelo menos um material
             let hasMaterial = false;
             $('.cod-material-hidden').each(function () {
                 if ($(this).val().trim() !== '') {
@@ -950,14 +1022,12 @@
                 return false;
             }
 
-            // Validar campos obrigatórios
             let hasError = false;
             $('.solicitacao-item').each(function () {
                 const index = $(this).data('index');
                 const codMaterial = $(this).find('.cod-material-hidden').val();
 
                 if (codMaterial) {
-                    // Verificar especificação
                     if (!$(`#especificacao-${index}`).val().trim()) {
                         alert(`Solicitação #${index}: Especificação é obrigatória.`);
                         $(`#especificacao-${index}`).focus();
@@ -965,7 +1035,6 @@
                         return false;
                     }
 
-                    // Verificar quantidade
                     if (!$(`#quantidade-${index}`).val() || $(`#quantidade-${index}`).val() < 1) {
                         alert(`Solicitação #${index}: Quantidade deve ser maior que zero.`);
                         $(`#quantidade-${index}`).focus();
@@ -973,11 +1042,18 @@
                         return false;
                     }
 
-                    // Verificar ativo e nome_ativo
                     const ativo = $(`#ativo-${index}`).val();
                     if (ativo === 'Sim' && !$(`#nome_ativo-${index}`).val()) {
                         alert(`Solicitação #${index}: Selecione o nome do ativo.`);
                         $(`#nome_ativo-${index}`).select2('open');
+                        hasError = true;
+                        return false;
+                    }
+
+                    // NOVA VALIDAÇÃO: Verificar empresa
+                    if (!$(`#empresa-${index}`).val()) {
+                        alert(`Solicitação #${index}: Empresa é obrigatória.`);
+                        $(`#empresa-select-${index}`).focus();
                         hasError = true;
                         return false;
                     }
@@ -987,61 +1063,22 @@
             return !hasError;
         });
 
-        // Função para verificar se selecionou "Outro"
-        function verificarOutroEmpresa(index) {
-            const select = document.getElementById(`empresa-select-${index}`);
-            const outroContainer = document.getElementById(`empresa-outro-container-${index}`);
-            const outroInput = document.getElementById(`empresa-outro-${index}`);
-            const hiddenInput = document.getElementById(`empresa-${index}`);
-
-            if (select.value === 'outro') {
-                // Mostrar campo para digitar
-                outroContainer.style.display = 'block';
-                hiddenInput.value = ''; // Limpa o hidden enquanto digita
-                outroInput.focus();
-            } else {
-                // Esconder campo de digitação
-                outroContainer.style.display = 'none';
-                // Se tiver um valor válido, preenche o hidden
-                if (select.value) {
-                    hiddenInput.value = select.value;
-                } else {
-                    hiddenInput.value = '';
-                }
-            }
-        }
-
-        // Função para atualizar o hidden quando digitar manualmente
-        function atualizarEmpresaManual(index) {
-            const select = document.getElementById(`empresa-select-${index}`);
-            const outroInput = document.getElementById(`empresa-outro-${index}`);
-            const hiddenInput = document.getElementById(`empresa-${index}`);
-
-            if (select.value === 'outro' && outroInput.value.trim() !== '') {
-                hiddenInput.value = outroInput.value.trim();
-            }
-        }
-
-        // Adicionar evento para quando digitar no campo manual
-        $(document).on('input', '[id^="empresa-outro-"]', function () {
-            const index = this.id.split('-')[2];
-            atualizarEmpresaManual(index);
-        });
         /**
          * Inicialização quando o documento estiver pronto
          */
         $(document).ready(function () {
             console.log('Inicializando sistema de solicitações...');
 
-            // Inicializar o primeiro select com paginação
             carregarMateriaisSelect2(1);
-
-            // Esconder aviso de warning
             $('#materialWarning').hide();
+
+            // Inicializar empresas selecionadas
+            setTimeout(function () {
+                inicializarTodasEmpresas();
+            }, 500);
 
             console.log('Sistema inicializado com sucesso!');
         });
-
     </script>
 </body>
 
