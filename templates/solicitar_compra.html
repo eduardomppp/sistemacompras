@@ -418,7 +418,7 @@
                         </div>
                     </div>
 
-                    <!-- Card: Prioridade e Empresa (CORRIGIDO) -->
+                    <!-- Card: Prioridade e Empresa -->
                     <div class="card">
                         <div class="card-header">
                             <i class="fas fa-exclamation-triangle"></i> 4. Prioridade e Empresa
@@ -737,7 +737,7 @@
             const empresaSelected = empresasLista.includes(empresaUsuario) ? 'selected' : '';
             const empresaValue = empresasLista.includes(empresaUsuario) ? empresaUsuario : '';
 
-            // Template da nova solicitação com campo empresa corrigido
+            // Template da nova solicitação - CORRIGIDO (removida a duplicação)
             const novoSolicitacao = `
                 <div class="solicitacao-item" id="solicitacao-${solicitacaoCount}" data-index="${solicitacaoCount}">
                     <!-- Separador visual -->
@@ -783,7 +783,8 @@
                             <div class="mb-3">
                                 <label for="descricao-${solicitacaoCount}" class="form-label">Descrição do Material</label>
                                 <input type="text" class="form-control descricao-material bg-light" id="descricao-${solicitacaoCount}" 
-                                       name="descricao[]" readonly placeholder="Material selecionado aparecerá aqui">
+                                    name="descricao[]" readonly placeholder="Material selecionado aparecerá aqui">
+                                <small class="text-muted">Campo preenchido automaticamente</small>
                             </div>
 
                             <div class="mb-3">
@@ -791,57 +792,39 @@
                                 <textarea class="form-control especificacao-material" id="especificacao-${solicitacaoCount}"
                                     name="especificacao[]" rows="3" required
                                     placeholder="Descreva detalhadamente as especificações técnicas..."></textarea>
+                                <small class="text-muted">Detalhe as especificações necessárias</small>
                             </div>
 
-                          <!-- Card: Informações Básicas -->
-                                <div class="card">
-                                    <div class="card-header">
-                                        <i class="fas fa-file-alt"></i> 2. Informações Básicas
-                                    </div>
-                                    <div class="card-body">
-                                        <div class="mb-3">
-                                            <label for="descricao-${solicitacaoCount}" class="form-label">Descrição do Material</label>
-                                            <input type="text" class="form-control descricao-material bg-light" id="descricao-${solicitacaoCount}" 
-                                                name="descricao[]" readonly placeholder="Material selecionado aparecerá aqui">
-                                        </div>
-
-                                        <div class="mb-3">
-                                            <label for="especificacao-${solicitacaoCount}" class="form-label required-field">Especificação</label>
-                                            <textarea class="form-control especificacao-material" id="especificacao-${solicitacaoCount}"
-                                                name="especificacao[]" rows="3" required
-                                                placeholder="Descreva detalhadamente as especificações técnicas..."></textarea>
-                                        </div>
-
-                                        <div class="row">
-                                            <div class="col-md-6 mb-3">
-                                                <label for="quantidade-${solicitacaoCount}" class="form-label required-field">Quantidade</label>
-                                                <input type="number" class="form-control quantidade-material" id="quantidade-${solicitacaoCount}"
-                                                    name="quantidade[]" min="1" required placeholder="Ex: 10">
-                                            </div>
-                                            <div class="col-md-6 mb-3">
-                                                <label for="unidade_medida-${solicitacaoCount}" class="form-label required-field">Unidade</label>
-                                                <select class="form-select unidade-medida-material" id="unidade_medida-${solicitacaoCount}"
-                                                    name="unidade_medida[]" required>
-                                                    <option value="" disabled selected>Selecione...</option>
-                                                    <option value="Peça">Peça</option>
-                                                    <option value="Unidade">Unidade</option>
-                                                    <option value="KG">KG</option>
-                                                    <option value="Metro">Metro</option>
-                                                    <option value="Metro quadrado">Metro quadrado</option>
-                                                    <option value="Metro cúbico">Metro cúbico</option>
-                                                    <option value="Litro">Litro</option>
-                                                    <option value="Quilograma">Quilograma</option>
-                                                    <option value="Grama">Grama</option>
-                                                    <option value="Caixa">Caixa</option>
-                                                    <option value="Pacote">Pacote</option>
-                                                    <option value="Par">Par</option>
-                                                    <option value="Jogo">Jogo</option>
-                                                    <option value="Conjunto">Conjunto</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="quantidade-${solicitacaoCount}" class="form-label required-field">Quantidade</label>
+                                    <input type="number" class="form-control quantidade-material" id="quantidade-${solicitacaoCount}"
+                                        name="quantidade[]" min="1" required placeholder="Ex: 10">
                                 </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="unidade_medida-${solicitacaoCount}" class="form-label required-field">Unidade</label>
+                                    <select class="form-select unidade-medida-material" id="unidade_medida-${solicitacaoCount}"
+                                        name="unidade_medida[]" required>
+                                        <option value="" disabled selected>Selecione...</option>
+                                        <option value="Peça">Peça</option>
+                                        <option value="Unidade">Unidade</option>
+                                        <option value="KG">KG</option>
+                                        <option value="Metro">Metro</option>
+                                        <option value="Metro quadrado">Metro quadrado</option>
+                                        <option value="Metro cúbico">Metro cúbico</option>
+                                        <option value="Litro">Litro</option>
+                                        <option value="Quilograma">Quilograma</option>
+                                        <option value="Grama">Grama</option>
+                                        <option value="Caixa">Caixa</option>
+                                        <option value="Pacote">Pacote</option>
+                                        <option value="Par">Par</option>
+                                        <option value="Jogo">Jogo</option>
+                                        <option value="Conjunto">Conjunto</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
                     <!-- Card: Detalhes do Material -->
                     <div class="card">
@@ -853,6 +836,7 @@
                                 <label for="marca-${solicitacaoCount}" class="form-label">Marca</label>
                                 <input type="text" class="form-control marca-material" id="marca-${solicitacaoCount}" name="marca[]"
                                     placeholder="Ex: Bosch, 3M (opcional)">
+                                <small class="text-muted">Opcional</small>
                             </div>
 
                             <div class="row">
@@ -872,12 +856,13 @@
                                         <option value="{{ nome }}">{{ nome }}</option>
                                         {% endfor %}
                                     </select>
+                                    <small class="text-muted">Selecione o ativo relacionado</small>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Card: Prioridade e Empresa (CORRIGIDO) -->
+                    <!-- Card: Prioridade e Empresa -->
                     <div class="card">
                         <div class="card-header">
                             <i class="fas fa-exclamation-triangle"></i> 4. Prioridade e Empresa
