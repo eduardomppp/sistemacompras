@@ -8267,7 +8267,99 @@ def reprovar_solicitacao_individual(id):
             'success': False, 
             'message': f'Erro ao reprovar solicitação: {str(e)}'
         }), 500
+
+# Segmentar Grupo
+
+@routes_bp.route('/segmentar_grupo', methods=['POST'])
+def segmentar_grupo():
+    """Cria uma nova aplicação com as solicitações selecionadas"""
+    if 'usuario' not in session:
+        return jsonify({'success': False, 'error': 'Usuário não autenticado'}), 401
     
+    try:
+        data = request.get_json()
+        solicitacoes_ids = data.get('solicitacoes_ids', [])
+        nova_aplicacao = data.get('nova_aplicacao', '').strip()
+        senha = data.get('senha', '').strip()
+        
+        # Validações
+        if not solicitacoes_ids:
+            return jsonify({'success': False, 'error': 'Nenhuma solicitação selecionada'}), 400
+        
+        if not nova_aplicacao:
+            return jsonify({'success': False, 'error': 'Nome da nova aplicação é obrigatório'}), 400
+        
+        if senha != '122004':
+            return jsonify({'success': False, 'error': 'Senha administrativa inválida'}), 403
+        
+        # Buscar as solicitações originais
+        solicitacoes_originais = SolicitacoesCompra.query.filter(
+            SolicitacoesCompra.id.in_(solicitacoes_ids)
+        ).all()
+        
+        if not solicitacoes_originais:
+            return jsonify({'success': False, 'error': 'Solicitações não encontradas'}), 404
+        
+        usuario = session['usuario']
+        solicitacoes_criadas = 0
+        
+        # Duplicar cada solicitação com a nova aplicação
+        for sol_original in solicitacoes_originais:
+            try:
+                nova_solicitacao = SolicitacoesCompra(
+                    cod_material=sol_original.cod_material,
+                    especificacao=sol_original.especificacao,
+                    quantidade=sol_original.quantidade,
+                    unidade_medida=sol_original.unidade_medida,
+                    aplicacao=nova_aplicacao,
+                    aplicacao_geral=nova_aplicacao,
+                    empresa=sol_original.empresa,
+                    usuario=usuario,
+                    foto_path=sol_original.foto_path,
+                    marca=sol_original.marca,
+                    ativo=sol_original.ativo,
+                    nome_ativo=sol_original.nome_ativo,
+                    prioridade=sol_original.prioridade,
+                    status_aprovacao=None,  # Nova solicitação começa pendente
+                    comprador_atribuido=None
+                )
+                db.session.add(nova_solicitacao)
+                solicitacoes_criadas += 1
+                
+            except Exception as e:
+                db.session.rollback()
+                logging.error(f"Erro ao segmentar solicitação {sol_original.id}: {str(e)}")
+                return jsonify({
+                    'success': False, 
+                    'error': f'Erro ao segmentar solicitação: {str(e)}'
+                }), 500
+        
+        # Commit de todas as novas solicitações
+        db.session.commit()
+        
+        # Log da operação
+        logging.info(f"""
+        ✅ GRUPO SEGMENTADO COM SUCESSO
+        Nova aplicação: {nova_aplicacao}
+        Usuário: {usuario}
+        Solicitações originais: {len(solicitacoes_ids)}
+        Solicitações criadas: {solicitacoes_criadas}
+        """)
+        
+        return jsonify({
+            'success': True,
+            'message': f'✅ Grupo segmentado com sucesso! {solicitacoes_criadas} solicitações criadas.',
+            'nova_aplicacao': nova_aplicacao,
+            'count': solicitacoes_criadas
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"Erro geral ao segmentar grupo: {str(e)}", exc_info=True)
+        return jsonify({
+            'success': False, 
+            'error': f'Erro ao segmentar grupo: {str(e)}'
+        }), 500
     
   # Registro do Blueprint (apenas uma vez)
 app.register_blueprint(routes_bp)  
