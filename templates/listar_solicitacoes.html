@@ -225,6 +225,17 @@
             box-shadow: var(--shadow-md);
         }
 
+        .btn-info {
+            background-color: var(--info);
+            color: white;
+        }
+
+        .btn-info:hover:not(:disabled) {
+            background-color: #2563eb;
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+
         .pagination-controls {
             padding: 1rem 2rem;
             background: var(--gray-50);
@@ -360,6 +371,20 @@
             box-shadow: var(--shadow-md);
         }
 
+        .btn-group-action.segment {
+            background-color: white;
+            border-color: var(--gray-300);
+            color: var(--info);
+        }
+
+        .btn-group-action.segment:hover {
+            background-color: var(--info);
+            border-color: var(--info);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
         .btn-group-action.delete {
             background-color: white;
             border-color: var(--gray-300);
@@ -384,7 +409,7 @@
             width: 100%;
             border-collapse: collapse;
             font-size: 0.8125rem;
-            min-width: 1200px;
+            min-width: 1300px;
         }
 
         th {
@@ -510,7 +535,6 @@
             cursor: not-allowed;
         }
 
-        /* Botão de editar quantidade */
         .btn-editar-quantidade {
             background: none;
             border: 1px solid var(--gray-300);
@@ -536,7 +560,6 @@
             cursor: not-allowed;
         }
 
-        /* Container de ações */
         .acoes-container {
             display: flex;
             gap: 4px;
@@ -609,6 +632,17 @@
             pointer-events: none;
         }
 
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: var(--primary);
+        }
+
+        .select-all-checkbox:indeterminate {
+            accent-color: var(--gray-500);
+        }
+
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -670,6 +704,11 @@
             color: #991b1b;
         }
 
+        .modal-header.info {
+            background: var(--info);
+            color: white;
+        }
+
         .modal-header i {
             font-size: 1.5rem;
         }
@@ -698,6 +737,26 @@
             display: flex;
             gap: 0.75rem;
             justify-content: flex-end;
+        }
+
+        .material-list {
+            max-height: 150px;
+            overflow-y: auto;
+            background: var(--gray-50);
+            padding: 0.5rem;
+            border-radius: var(--radius-sm);
+            margin-top: 0.5rem;
+            font-size: 0.75rem;
+            border: 1px solid var(--gray-200);
+        }
+
+        .material-list-item {
+            padding: 0.25rem 0.5rem;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .material-list-item:last-child {
+            border-bottom: none;
         }
 
         .notification {
@@ -863,6 +922,7 @@
 
             .group-actions {
                 width: 100%;
+                flex-wrap: wrap;
             }
 
             .btn-group-action {
@@ -902,7 +962,8 @@
             .btn-icon,
             .btn-editar-quantidade,
             .comprador-select,
-            .pagination-nav {
+            .pagination-nav,
+            .btn-group-action {
                 display: none !important;
             }
 
@@ -1086,6 +1147,13 @@
                                 <i class="fas fa-copy"></i>
                                 <span>Duplicar Grupo</span>
                             </button>
+                            <button class="btn-group-action segment" 
+                                data-grupo="{{ chave_grupo }}"
+                                data-aplicacao="{{ aplicacao }}"
+                                title="Criar novo grupo com os itens selecionados">
+                                <i class="fas fa-cut"></i>
+                                <span>Segmentar Grupo</span>
+                            </button>
                             <button class="btn-group-action delete" data-aplicacao="{{ aplicacao }}"
                                 data-count="{{ solicitacoes_grupo|length }}"
                                 title="Excluir todas as solicitações deste grupo">
@@ -1099,6 +1167,9 @@
                         <table>
                             <thead>
                                 <tr>
+                                    <th style="width: 40px;">
+                                        <input type="checkbox" class="select-all-checkbox" data-grupo="{{ chave_grupo }}" title="Selecionar todos">
+                                    </th>
                                     <th>ID</th>
                                     <th>Material</th>
                                     <th>Especificação</th>
@@ -1118,6 +1189,13 @@
                                 reverse=true) %}
                                 <tr data-id="{{ solicitacao.id }}" data-aplicacao="{{ solicitacao.aplicacao }}"
                                     class="{% if solicitacao.dias_atraso and solicitacao.dias_atraso > 7 %}highlight-old{% endif %}">
+                                    <td style="width: 40px; text-align: center;">
+                                        <input type="checkbox" class="solicitacao-checkbox" 
+                                               data-id="{{ solicitacao.id }}"
+                                               data-grupo="{{ chave_grupo }}"
+                                               data-aplicacao="{{ solicitacao.aplicacao }}"
+                                               data-material="{{ solicitacao.material.DescricaoMaterial }}">
+                                    </td>
                                     <td><span class="badge bg-light text-dark">#{{ solicitacao.id }}</span></td>
                                     <td style="max-width: 200px;">
                                         <div style="white-space: normal; word-wrap: break-word;">
@@ -1353,6 +1431,53 @@
         </div>
     </div>
 
+    <!-- Modal de Segmentação -->
+    <div class="modal-overlay" id="segmentarModal">
+        <div class="modal-container">
+            <div class="modal-header info">
+                <i class="fas fa-cut"></i>
+                <h3>Segmentar Grupo</h3>
+            </div>
+            <div class="modal-body">
+                <div class="modal-info" style="margin-bottom: 1.5rem;">
+                    <p><strong>Aplicação original:</strong> <span id="segmentAplicacaoOriginal"></span></p>
+                    <p><strong>Solicitações selecionadas:</strong> <span id="segmentCount"></span></p>
+                    <div id="segmentListaMateriais" class="material-list">
+                        <!-- Lista de materiais será inserida aqui -->
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 1rem;">
+                    <label style="font-size: 0.875rem; display: block; margin-bottom: 0.5rem; font-weight: 500;">
+                        Nome da nova aplicação:
+                    </label>
+                    <input type="text" id="novaAplicacaoSegment"
+                        style="width: 100%; padding: 0.5rem; border: 1px solid var(--gray-300); border-radius: var(--radius-sm);"
+                        placeholder="Digite o nome da nova aplicação">
+                </div>
+
+                <div>
+                    <label style="font-size: 0.875rem; display: block; margin-bottom: 0.5rem; font-weight: 500;">
+                        Senha administrativa:
+                    </label>
+                    <input type="password" id="senhaSegmentar"
+                        style="width: 100%; padding: 0.5rem; border: 1px solid var(--gray-300); border-radius: var(--radius-sm);"
+                        placeholder="Digite a senha">
+                    <small style="color: #6b7280; font-size: 0.75rem; margin-top: 0.25rem; display: block;">
+                        ⚠️ A senha adm
+                    </small>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-outline" id="cancelSegmentar">Cancelar</button>
+                <button class="btn btn-info" id="confirmSegmentar">
+                    <i class="fas fa-cut"></i>
+                    Confirmar Segmentação
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal de Reprovação -->
     <div class="modal-overlay" id="reprovarModal">
         <div class="modal-container">
@@ -1447,6 +1572,30 @@
                 btn.addEventListener('click', atribuirComprador);
             });
 
+            // Checkboxes - Selecionar todos
+            document.querySelectorAll('.select-all-checkbox').forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const grupo = this.dataset.grupo;
+                    const checkboxes = document.querySelectorAll(`.solicitacao-checkbox[data-grupo="${grupo}"]`);
+                    checkboxes.forEach(cb => cb.checked = this.checked);
+                });
+            });
+
+            // Quando um checkbox individual muda, atualiza o "selecionar todos"
+            document.querySelectorAll('.solicitacao-checkbox').forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const grupo = this.dataset.grupo;
+                    const allCheckboxes = document.querySelectorAll(`.solicitacao-checkbox[data-grupo="${grupo}"]`);
+                    const selectAll = document.querySelector(`.select-all-checkbox[data-grupo="${grupo}"]`);
+                    
+                    if (selectAll) {
+                        const allChecked = Array.from(allCheckboxes).every(cb => cb.checked);
+                        selectAll.checked = allChecked;
+                        selectAll.indeterminate = !allChecked && Array.from(allCheckboxes).some(cb => cb.checked);
+                    }
+                });
+            });
+
             // Exclusão de grupo
             document.querySelectorAll('.btn-group-action.delete').forEach(btn => {
                 btn.addEventListener('click', openDeleteModal);
@@ -1455,6 +1604,11 @@
             // Duplicação de grupo
             document.querySelectorAll('.btn-group-action.duplicate').forEach(btn => {
                 btn.addEventListener('click', openDuplicateModal);
+            });
+
+            // Segmentação de grupo
+            document.querySelectorAll('.btn-group-action.segment').forEach(btn => {
+                btn.addEventListener('click', openSegmentarModal);
             });
 
             // Reprovação individual
@@ -1486,115 +1640,15 @@
                 });
             });
 
-            // Confirmar edição - APENAS UM EVENTO!
-            document.getElementById('confirmEditarQuantidade').addEventListener('click', async function () {
-                const id = this.dataset.id;
-                const novaQuantidade = document.getElementById('novaQuantidade').value.trim();
-                const senha = document.getElementById('senhaEdicao').value.trim();
-
-                // Validações
-                if (!novaQuantidade) {
-                    showNotification('Por favor, informe a nova quantidade.', 'warning');
-                    return;
-                }
-
-                // Converter para float
-                const quantidadeFloat = parseFloat(novaQuantidade);
-
-                // Verificar se é um número válido
-                if (isNaN(quantidadeFloat)) {
-                    showNotification('Por favor, informe um número válido.', 'warning');
-                    return;
-                }
-
-                // Verificar se é maior que zero
-                if (quantidadeFloat <= 0) {
-                    showNotification('A quantidade deve ser maior que zero.', 'warning');
-                    return;
-                }
-
-                // Validar número de casas decimais (máximo 2)
-                const partes = novaQuantidade.split('.');
-                if (partes.length > 1 && partes[1].length > 2) {
-                    showNotification('A quantidade pode ter no máximo 2 casas decimais.', 'warning');
-                    return;
-                }
-
-                if (!senha) {
-                    showNotification('Por favor, informe a senha administrativa.', 'warning');
-                    return;
-                }
-
-                // Mostrar loading
-                const originalText = this.innerHTML;
-                this.innerHTML = '<span class="loading-spinner"></span> Salvando...';
-                this.disabled = true;
-
-                try {
-                    const response = await fetch(`/api/editar_quantidade_solicitacao/${id}`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            quantidade: quantidadeFloat,
-                            senha: senha
-                        })
-                    });
-
-                    const data = await response.json();
-
-                    if (data.success) {
-                        // Fechar modal
-                        closeModal('editarQuantidadeModal');
-
-                        // Exibir mensagem de sucesso
-                        showNotification(`✅ ${data.message}`, 'success');
-
-                        // Atualizar a linha da tabela
-                        const quantidadeCell = document.getElementById(`quantidade-${id}`);
-                        if (quantidadeCell) {
-                            // Formatar o número para exibição
-                            const novoValorFormatado = data.nova_quantidade % 1 === 0
-                                ? data.nova_quantidade
-                                : data.nova_quantidade.toFixed(2);
-
-                            quantidadeCell.innerHTML = `<strong>${novoValorFormatado}</strong>`;
-
-                            // Atualizar também o dataset do botão
-                            const editBtn = document.querySelector(`.btn-editar-quantidade[data-id="${id}"]`);
-                            if (editBtn) {
-                                editBtn.dataset.quantidade = data.nova_quantidade;
-                            }
-
-                            // Destacar visualmente
-                            quantidadeCell.style.backgroundColor = '#d1fae5';
-                            setTimeout(() => {
-                                quantidadeCell.style.backgroundColor = '';
-                            }, 2000);
-                        }
-
-                    } else {
-                        showNotification(`❌ ${data.message}`, 'error');
-                    }
-                } catch (error) {
-                    showNotification('❌ Erro ao conectar com o servidor.', 'error');
-                    console.error('Erro:', error);
-                } finally {
-                    this.innerHTML = '<i class="fas fa-save"></i> Salvar Alteração';
-                    this.disabled = false;
-                }
-            });
-
-            // Cancelar edição
-            document.getElementById('cancelEditarQuantidade').addEventListener('click', () => {
-                closeModal('editarQuantidadeModal');
-            });
+            // Confirmar edição
+            document.getElementById('confirmEditarQuantidade').addEventListener('click', confirmEditarQuantidade);
 
             // Modais - Cancelar
             document.getElementById('cancelDelete').addEventListener('click', () => closeModal('deleteModal'));
             document.getElementById('cancelDuplicate').addEventListener('click', () => closeModal('duplicateModal'));
+            document.getElementById('cancelSegmentar').addEventListener('click', () => closeModal('segmentarModal'));
             document.getElementById('cancelReprovar').addEventListener('click', () => closeModal('reprovarModal'));
+            document.getElementById('cancelEditarQuantidade').addEventListener('click', () => closeModal('editarQuantidadeModal'));
 
             // Modal de exclusão - validação de senha
             document.getElementById('deletePassword').addEventListener('input', function () {
@@ -1611,6 +1665,7 @@
             // Botões de confirmação
             document.getElementById('confirmDelete').addEventListener('click', confirmExclusao);
             document.getElementById('confirmDuplicate').addEventListener('click', confirmDuplicacao);
+            document.getElementById('confirmSegmentar').addEventListener('click', confirmSegmentacao);
             document.getElementById('confirmReprovar').addEventListener('click', confirmReprovacao);
 
             // Fechar modais ao clicar fora
@@ -1699,7 +1754,7 @@
 
                     // Atualizar interface
                     const row = btn.closest('tr');
-                    const compradorCell = row.querySelector('td:nth-child(10) .badge');
+                    const compradorCell = row.querySelector('td:nth-child(11) .badge');
                     if (compradorCell) {
                         compradorCell.textContent = comprador;
                     }
@@ -1720,7 +1775,7 @@
             }
         }
 
-        // Modais
+        // MODAIS
         function openDeleteModal(event) {
             const btn = event.currentTarget;
             const aplicacao = btn.dataset.aplicacao;
@@ -1754,6 +1809,51 @@
             openModal('duplicateModal');
         }
 
+        function openSegmentarModal(event) {
+            const btn = event.currentTarget;
+            const grupo = btn.dataset.grupo;
+            const aplicacaoOriginal = btn.dataset.aplicacao;
+
+            // Buscar checkboxes selecionados deste grupo
+            const checkboxesSelecionados = document.querySelectorAll(`.solicitacao-checkbox[data-grupo="${grupo}"]:checked`);
+
+            if (checkboxesSelecionados.length === 0) {
+                showNotification('Selecione pelo menos uma solicitação para segmentar.', 'warning');
+                return;
+            }
+
+            // Coletar IDs e materiais
+            const ids = [];
+            const materiais = [];
+
+            checkboxesSelecionados.forEach(cb => {
+                ids.push(cb.dataset.id);
+                const material = cb.dataset.material;
+                if (material) materiais.push(`• ${material.substring(0, 50)}${material.length > 50 ? '...' : ''}`);
+            });
+
+            // Armazenar IDs no dataset do botão
+            document.getElementById('confirmSegmentar').dataset.ids = JSON.stringify(ids);
+            document.getElementById('confirmSegmentar').dataset.grupo = grupo;
+
+            // Atualizar informações no modal
+            document.getElementById('segmentAplicacaoOriginal').textContent = aplicacaoOriginal;
+            document.getElementById('segmentCount').textContent = `${checkboxesSelecionados.length} solicitação(ões)`;
+
+            // Lista de materiais
+            const listaHtml = materiais.length > 0 
+                ? materiais.join('<br>') 
+                : '<em>Nenhum material selecionado</em>';
+            
+            document.getElementById('segmentListaMateriais').innerHTML = listaHtml;
+
+            // Sugerir nome para nova aplicação
+            document.getElementById('novaAplicacaoSegment').value = `${aplicacaoOriginal}_segmentado_${new Date().getTime().toString().slice(-4)}`;
+            document.getElementById('senhaSegmentar').value = '';
+
+            openModal('segmentarModal');
+        }
+
         function openReprovarModal(event) {
             const btn = event.currentTarget;
             const id = btn.dataset.id;
@@ -1780,7 +1880,7 @@
             document.getElementById(modalId).style.display = 'none';
         }
 
-        // Confirmações
+        // CONFIRMAÇÕES
         async function confirmExclusao() {
             const aplicacao = this.dataset.aplicacao;
 
@@ -1854,6 +1954,63 @@
             }
         }
 
+        async function confirmSegmentacao() {
+            const idsJson = this.dataset.ids;
+            const grupo = this.dataset.grupo;
+            const novaAplicacao = document.getElementById('novaAplicacaoSegment').value.trim();
+            const senha = document.getElementById('senhaSegmentar').value.trim();
+
+            if (!novaAplicacao) {
+                showNotification('Por favor, informe o nome da nova aplicação.', 'warning');
+                return;
+            }
+
+            if (!senha) {
+                showNotification('Por favor, informe a senha administrativa.', 'warning');
+                return;
+            }
+
+            if (senha !== '122004') {
+                showNotification('Senha incorreta!', 'error');
+                return;
+            }
+
+            const solicitacoesIds = JSON.parse(idsJson);
+
+            closeModal('segmentarModal');
+
+            const originalText = this.innerHTML;
+            this.innerHTML = '<span class="loading-spinner"></span> Processando...';
+            this.disabled = true;
+
+            try {
+                const response = await fetch('/segmentar_grupo', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        solicitacoes_ids: solicitacoesIds,
+                        nova_aplicacao: novaAplicacao,
+                        senha: senha
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showNotification(`✅ ${data.message}`, 'success');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showNotification(`❌ ${data.error}`, 'error');
+                }
+            } catch (error) {
+                showNotification('❌ Erro ao conectar com o servidor.', 'error');
+                console.error('Erro:', error);
+            } finally {
+                this.innerHTML = '<i class="fas fa-cut"></i> Confirmar Segmentação';
+                this.disabled = false;
+            }
+        }
+
         async function confirmReprovacao() {
             const id = this.dataset.id;
             const motivo = document.getElementById('motivoReprovar').value.trim();
@@ -1878,7 +2035,7 @@
                     // Atualizar linha
                     const row = document.querySelector(`tr[data-id="${id}"]`);
                     if (row) {
-                        const statusCell = row.querySelector('td:nth-child(9) .status-badge');
+                        const statusCell = row.querySelector('td:nth-child(10) .status-badge');
                         if (statusCell) {
                             statusCell.className = 'status-badge reprovado';
                             statusCell.textContent = 'Reprovado';
@@ -1909,6 +2066,92 @@
                 console.error('Erro:', error);
             } finally {
                 this.innerHTML = '<i class="fas fa-times-circle"></i> Confirmar Reprovação';
+                this.disabled = false;
+            }
+        }
+
+        async function confirmEditarQuantidade() {
+            const id = this.dataset.id;
+            const novaQuantidade = document.getElementById('novaQuantidade').value.trim();
+            const senha = document.getElementById('senhaEdicao').value.trim();
+
+            // Validações
+            if (!novaQuantidade) {
+                showNotification('Por favor, informe a nova quantidade.', 'warning');
+                return;
+            }
+
+            // Converter para float
+            const quantidadeFloat = parseFloat(novaQuantidade);
+
+            // Verificar se é um número válido
+            if (isNaN(quantidadeFloat) || quantidadeFloat <= 0) {
+                showNotification('Por favor, informe um número válido maior que zero.', 'warning');
+                return;
+            }
+
+            if (!senha) {
+                showNotification('Por favor, informe a senha administrativa.', 'warning');
+                return;
+            }
+
+            // Mostrar loading
+            const originalText = this.innerHTML;
+            this.innerHTML = '<span class="loading-spinner"></span> Salvando...';
+            this.disabled = true;
+
+            try {
+                const response = await fetch(`/api/editar_quantidade_solicitacao/${id}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        quantidade: quantidadeFloat,
+                        senha: senha
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Fechar modal
+                    closeModal('editarQuantidadeModal');
+
+                    // Exibir mensagem de sucesso
+                    showNotification(`✅ ${data.message}`, 'success');
+
+                    // Atualizar a linha da tabela
+                    const quantidadeCell = document.getElementById(`quantidade-${id}`);
+                    if (quantidadeCell) {
+                        // Formatar o número para exibição
+                        const novoValorFormatado = data.nova_quantidade % 1 === 0
+                            ? data.nova_quantidade
+                            : data.nova_quantidade.toFixed(2);
+
+                        quantidadeCell.innerHTML = `<strong>${novoValorFormatado}</strong>`;
+
+                        // Atualizar também o dataset do botão
+                        const editBtn = document.querySelector(`.btn-editar-quantidade[data-id="${id}"]`);
+                        if (editBtn) {
+                            editBtn.dataset.quantidade = data.nova_quantidade;
+                        }
+
+                        // Destacar visualmente
+                        quantidadeCell.style.backgroundColor = '#d1fae5';
+                        setTimeout(() => {
+                            quantidadeCell.style.backgroundColor = '';
+                        }, 2000);
+                    }
+
+                } else {
+                    showNotification(`❌ ${data.message}`, 'error');
+                }
+            } catch (error) {
+                showNotification('❌ Erro ao conectar com o servidor.', 'error');
+                console.error('Erro:', error);
+            } finally {
+                this.innerHTML = '<i class="fas fa-save"></i> Salvar Alteração';
                 this.disabled = false;
             }
         }
@@ -1949,7 +2192,7 @@
         function highlightOldRequests() {
             const hoje = new Date();
             document.querySelectorAll('tbody tr').forEach(row => {
-                const dataCell = row.querySelector('td:nth-child(7) span');
+                const dataCell = row.querySelector('td:nth-child(8) span');
                 if (!dataCell) return;
 
                 const dataTexto = dataCell.getAttribute('title') || dataCell.textContent;
