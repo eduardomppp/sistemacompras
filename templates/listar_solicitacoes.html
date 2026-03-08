@@ -1056,7 +1056,7 @@
                         <select id="compradorFilter">
                             <option value="">Todos</option>
                             {% for comprador in compradores %}
-                            <option value="{{ comprador }}" {% if request.args.get('comprador')==comprador %}selected{% 
+                            <option value="{{ comprador }}" {% if request.args.get('comprador')==comprador %}selected{%
                                 endif %}>{{ comprador }}</option>
                             {% endfor %}
                             <option value="Não atribuído" {% if request.args.get('comprador')=='Não atribuído'
@@ -1147,10 +1147,8 @@
                                 <i class="fas fa-copy"></i>
                                 <span>Duplicar Grupo</span>
                             </button>
-                            <button class="btn-group-action segment" 
-                                data-grupo="{{ chave_grupo }}"
-                                data-aplicacao="{{ aplicacao }}"
-                                title="Criar novo grupo com os itens selecionados">
+                            <button class="btn-group-action segment" data-grupo="{{ chave_grupo }}"
+                                data-aplicacao="{{ aplicacao }}" title="Criar novo grupo com os itens selecionados">
                                 <i class="fas fa-cut"></i>
                                 <span>Segmentar Grupo</span>
                             </button>
@@ -1168,7 +1166,8 @@
                             <thead>
                                 <tr>
                                     <th style="width: 40px;">
-                                        <input type="checkbox" class="select-all-checkbox" data-grupo="{{ chave_grupo }}" title="Selecionar todos">
+                                        <input type="checkbox" class="select-all-checkbox"
+                                            data-grupo="{{ chave_grupo }}" title="Selecionar todos">
                                     </th>
                                     <th>ID</th>
                                     <th>Material</th>
@@ -1190,11 +1189,10 @@
                                 <tr data-id="{{ solicitacao.id }}" data-aplicacao="{{ solicitacao.aplicacao }}"
                                     class="{% if solicitacao.dias_atraso and solicitacao.dias_atraso > 7 %}highlight-old{% endif %}">
                                     <td style="width: 40px; text-align: center;">
-                                        <input type="checkbox" class="solicitacao-checkbox" 
-                                               data-id="{{ solicitacao.id }}"
-                                               data-grupo="{{ chave_grupo }}"
-                                               data-aplicacao="{{ solicitacao.aplicacao }}"
-                                               data-material="{{ solicitacao.material.DescricaoMaterial }}">
+                                        <input type="checkbox" class="solicitacao-checkbox"
+                                            data-id="{{ solicitacao.id }}" data-grupo="{{ chave_grupo }}"
+                                            data-aplicacao="{{ solicitacao.aplicacao }}"
+                                            data-material="{{ solicitacao.material.DescricaoMaterial }}">
                                     </td>
                                     <td><span class="badge bg-light text-dark">#{{ solicitacao.id }}</span></td>
                                     <td style="max-width: 200px;">
@@ -1574,7 +1572,7 @@
 
             // Checkboxes - Selecionar todos
             document.querySelectorAll('.select-all-checkbox').forEach(checkbox => {
-                checkbox.addEventListener('change', function() {
+                checkbox.addEventListener('change', function () {
                     const grupo = this.dataset.grupo;
                     const checkboxes = document.querySelectorAll(`.solicitacao-checkbox[data-grupo="${grupo}"]`);
                     checkboxes.forEach(cb => cb.checked = this.checked);
@@ -1583,11 +1581,11 @@
 
             // Quando um checkbox individual muda, atualiza o "selecionar todos"
             document.querySelectorAll('.solicitacao-checkbox').forEach(checkbox => {
-                checkbox.addEventListener('change', function() {
+                checkbox.addEventListener('change', function () {
                     const grupo = this.dataset.grupo;
                     const allCheckboxes = document.querySelectorAll(`.solicitacao-checkbox[data-grupo="${grupo}"]`);
                     const selectAll = document.querySelector(`.select-all-checkbox[data-grupo="${grupo}"]`);
-                    
+
                     if (selectAll) {
                         const allChecked = Array.from(allCheckboxes).every(cb => cb.checked);
                         selectAll.checked = allChecked;
@@ -1841,10 +1839,10 @@
             document.getElementById('segmentCount').textContent = `${checkboxesSelecionados.length} solicitação(ões)`;
 
             // Lista de materiais
-            const listaHtml = materiais.length > 0 
-                ? materiais.join('<br>') 
+            const listaHtml = materiais.length > 0
+                ? materiais.join('<br>')
                 : '<em>Nenhum material selecionado</em>';
-            
+
             document.getElementById('segmentListaMateriais').innerHTML = listaHtml;
 
             // Sugerir nome para nova aplicação
@@ -1976,14 +1974,16 @@
             }
 
             const solicitacoesIds = JSON.parse(idsJson);
+            const solicitacoesIdsOriginal = [...solicitacoesIds]; // Guardar cópia para reprovação
 
             closeModal('segmentarModal');
 
             const originalText = this.innerHTML;
-            this.innerHTML = '<span class="loading-spinner"></span> Processando...';
+            this.innerHTML = '<span class="loading-spinner"></span> Processando segmentação...';
             this.disabled = true;
 
             try {
+                // Primeiro: realizar a segmentação
                 const response = await fetch('/segmentar_grupo', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -1998,15 +1998,88 @@
 
                 if (data.success) {
                     showNotification(`✅ ${data.message}`, 'success');
-                    setTimeout(() => location.reload(), 1500);
+
+                    // Segundo: reprovar as solicitações originais UMA POR UMA
+                    if (solicitacoesIdsOriginal.length > 0) {
+                        this.innerHTML = '<span class="loading-spinner"></span> Reprovando solicitações originais...';
+
+                        let reprovadas = 0;
+                        let falhas = 0;
+
+                        for (const id of solicitacoesIdsOriginal) {
+                            try {
+                                const reprovarResponse = await fetch(`/reprovar_solicitacao_individual/${id}`, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ motivo: "Por obs segmentado" })
+                                });
+
+                                const reprovarData = await reprovarResponse.json();
+
+                                if (reprovarData.success) {
+                                    reprovadas++;
+
+                                    // Atualizar visualmente a linha reprovada
+                                    const row = document.querySelector(`tr[data-id="${id}"]`);
+                                    if (row) {
+                                        const statusCell = row.querySelector('td:nth-child(10) .status-badge');
+                                        if (statusCell) {
+                                            statusCell.className = 'status-badge reprovado';
+                                            statusCell.textContent = 'Reprovado';
+                                        }
+
+                                        const reprovarBtn = row.querySelector('.btn-reprovar');
+                                        if (reprovarBtn) {
+                                            reprovarBtn.disabled = true;
+                                            reprovarBtn.innerHTML = '<i class="fas fa-ban"></i> <span>Reprovada</span>';
+                                        }
+
+                                        const editarBtn = row.querySelector('.btn-editar-quantidade');
+                                        if (editarBtn) {
+                                            editarBtn.disabled = true;
+                                            editarBtn.title = 'Solicitação reprovada';
+                                        }
+
+                                        // Adicionar tooltip com motivo
+                                        row.setAttribute('title', 'Reprovado: Por obs segmentado');
+                                        row.style.opacity = '0.8';
+                                        row.style.backgroundColor = '#fee2e2'; // Vermelho claro
+                                        row.classList.remove('highlight-old');
+                                    }
+                                } else {
+                                    falhas++;
+                                    console.error(`Falha ao reprovar solicitação ${id}:`, reprovarData);
+                                }
+                            } catch (error) {
+                                falhas++;
+                                console.error(`Erro ao reprovar solicitação ${id}:`, error);
+                            }
+
+                            // Pequena pausa para não sobrecarregar o servidor
+                            await new Promise(resolve => setTimeout(resolve, 100));
+                        }
+
+                        // Mostrar resultado da reprovação
+                        if (falhas === 0) {
+                            showNotification(`✅ ${reprovadas} solicitações originais reprovadas com motivo: "Por obs segmentado"`, 'success');
+                        } else {
+                            showNotification(`⚠️ ${reprovadas} reprovadas, ${falhas} falhas. Motivo: "Por obs segmentado"`, 'warning');
+                        }
+
+                        // Recarregar a página após 2 segundos para mostrar as alterações
+                        setTimeout(() => location.reload(), 2000);
+                    } else {
+                        setTimeout(() => location.reload(), 1500);
+                    }
                 } else {
                     showNotification(`❌ ${data.error}`, 'error');
+                    this.innerHTML = originalText;
+                    this.disabled = false;
                 }
             } catch (error) {
                 showNotification('❌ Erro ao conectar com o servidor.', 'error');
                 console.error('Erro:', error);
-            } finally {
-                this.innerHTML = '<i class="fas fa-cut"></i> Confirmar Segmentação';
+                this.innerHTML = originalText;
                 this.disabled = false;
             }
         }
