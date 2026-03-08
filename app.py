@@ -113,6 +113,26 @@ if not app.secret_key:
 
 # Configuração do banco de dados SQLite
 DATABASE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'ComparasDB.db')
+
+# ===== INSIRA AQUI =====
+def garantir_coluna_marca():
+    try:
+        conn = sqlite3.connect(DATABASE)
+        cursor = conn.cursor()
+        cursor.execute("PRAGMA table_info(SolicitacoesPreenchidas)")
+        colunas = [col[1] for col in cursor.fetchall()]
+        if 'marca' not in colunas:
+            print("🔧 Adicionando coluna 'marca'...")
+            cursor.execute("ALTER TABLE SolicitacoesPreenchidas ADD COLUMN marca TEXT")
+            conn.commit()
+            print("✅ Coluna adicionada!")
+        conn.close()
+    except Exception as e:
+        print(f"⚠️  Erro: {e}")
+
+garantir_coluna_marca()
+# =========================
+
 app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{DATABASE}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 DB_PATH_FORNECEDORES = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'fornecedores.db')
