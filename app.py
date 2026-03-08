@@ -267,6 +267,7 @@ class SolicitacoesPreenchidas(db.Model):
     status = db.Column(db.Text, nullable=True, default='Rascunho')
     pdf_path = db.Column(db.Text, nullable=True)
     observacoes = db.Column(db.Text, nullable=True)  # Novo campo para observações
+    marca = db.Column(db.Text, nullable=True)  # 🔴 NOVO CAMPO ADICIONADO AQUI
     # REMOVER ESTA LINHA: aprovacao_pdf_path = db.Column(db.Text, nullable=True)
     
     solicitacao = db.relationship('SolicitacoesCompra', backref='preenchimentos_fornecidos')
@@ -293,8 +294,33 @@ class SolicitacoesPreenchidas(db.Model):
             'status': self.status,
             'pdf_path': self.pdf_path,
             'observacoes': self.observacoes,
+            'marca': self.marca,  # 🔴 ADICIONADO AQUI
             'historico_descontos': [h.to_dict() for h in self.historico_descontos]
         }
+def add_marca_to_preenchidas():
+    """Adiciona a coluna marca na tabela SolicitacoesPreenchidas"""
+    try:
+        conn = sqlite3.connect(DATABASE)
+        cursor = conn.cursor()
+        
+        # Verificar se a coluna já existe
+        cursor.execute("PRAGMA table_info(SolicitacoesPreenchidas)")
+        columns = [col[1] for col in cursor.fetchall()]
+        
+        if 'marca' not in columns:
+            cursor.execute("ALTER TABLE SolicitacoesPreenchidas ADD COLUMN marca TEXT")
+            conn.commit()
+            logging.info("Coluna marca adicionada à tabela SolicitacoesPreenchidas")
+            print("✓ Coluna marca adicionada com sucesso à tabela SolicitacoesPreenchidas!")
+        else:
+            print("✓ Coluna marca já existe na tabela SolicitacoesPreenchidas")
+        
+        conn.close()
+        return True
+    except sqlite3.Error as e:
+        logging.error(f"Erro ao adicionar coluna marca: {str(e)}")
+        print(f"✗ Erro ao adicionar coluna: {str(e)}")
+        return False
     
 def migrate_observacoes_col():
     try:
@@ -2638,13 +2664,15 @@ def preencher_solicitacao(id):
             prazos = request.form.getlist('prazo_entrega[]')
             condicoes = request.form.getlist('condicao_pagamento[]')
             observacoes = request.form.getlist('observacao[]')
-            preenchimento_ids = request.form.getlist('preenchimento_id[]')  # 🔴 IMPORTANTE!
+            preenchimento_ids = request.form.getlist('preenchimento_id[]')
             pdf_files = request.files.getlist('pdf_file[]')
             
             # === Captura de dados dos materiais ===
             todos_valores_unitarios = request.form.getlist('valor_unitario[]')
             todos_ids_solicitacao = request.form.getlist('solicitacao_id[]')
+            todas_marcas = request.form.getlist('marca[]')  # Capturar marcas
             
+            print(f"📋 Marcas recebidas: {todas_marcas}")
             print(f"📋 Preenchimento IDs recebidos: {preenchimento_ids}")
             print(f"📋 Fornecedores IDs recebidos: {fornecedores_ids}")
             print(f"📋 Valores unitários: {len(todos_valores_unitarios)}")
@@ -2716,7 +2744,14 @@ def preencher_solicitacao(id):
                     
                     valor_total = round(valor_unitario * sol.quantidade, 2)
                     
-                    # 🔴 BUSCAR PREENCHIMENTO - PRIORIDADE 1: PELO ID ESPECÍFICO
+                    # CAPTURAR A MARCA PARA ESTE MATERIAL
+                    marca = ''
+                    if material_idx < len(todas_marcas):
+                        marca = todas_marcas[material_idx].strip()
+                    
+                    print(f"   📝 Material {i+1}: Marca = '{marca}'")
+                    
+                    # BUSCAR PREENCHIMENTO - PRIORIDADE 1: PELO ID ESPECÍFICO
                     preenchimento = None
                     
                     if primeiro_material_desta_cotacao and preenchimento_id and preenchimento_id != '':
@@ -2726,7 +2761,7 @@ def preencher_solicitacao(id):
                         except:
                             pass
                     
-                    # 🔴 BUSCAR PREENCHIMENTO - PRIORIDADE 2: PELA COMBINAÇÃO
+                    # BUSCAR PREENCHIMENTO - PRIORIDADE 2: PELA COMBINAÇÃO
                     if not preenchimento:
                         preenchimento = SolicitacoesPreenchidas.query.filter_by(
                             solicitacao_id=sol.id,
@@ -2735,7 +2770,7 @@ def preencher_solicitacao(id):
                         ).first()
                         print(f"   🔍 Busca por fornecedor {fornecedor_id} + solicitação {sol.id}: {'Encontrado' if preenchimento else 'Não encontrado'}")
                     
-                    # 🔴 SE AINDA NÃO TEM, CRIAR NOVO
+                    # SE AINDA NÃO TEM, CRIAR NOVO (SALVANDO A MARCA NO PREENCHIMENTO)
                     if not preenchimento:
                         preenchimento = SolicitacoesPreenchidas(
                             solicitacao_id=sol.id,
@@ -2748,12 +2783,14 @@ def preencher_solicitacao(id):
                             observacoes=obs,
                             data_preenchimento=get_local_time(),
                             usuario=usuario,
-                            status='Rascunho' if is_rascunho else 'Aguardando Aprovacao'
+                            status='Rascunho' if is_rascunho else 'Aguardando Aprovacao',
+                            marca=marca  # 🔴 SALVAR MARCA NO PREENCHIMENTO
                         )
                         db.session.add(preenchimento)
-                        print(f"   ✅ Novo preenchimento criado para solicitação {sol.id}")
+                        print(f"   ✅ Novo preenchimento criado para solicitação {sol.id} com marca '{marca}'")
+                        
                     else:
-                        # ATUALIZAR PREENCHIMENTO EXISTENTE
+                        # ATUALIZAR PREENCHIMENTO EXISTENTE (INCLUINDO A MARCA)
                         print(f"   🔄 Atualizando preenchimento ID {preenchimento.id}")
                         
                         # Verificar mudanças para histórico
@@ -2783,7 +2820,7 @@ def preencher_solicitacao(id):
                             db.session.add(historico)
                             print(f"   📝 Histórico de desconto registrado")
                         
-                        # Atualizar dados
+                        # Atualizar dados (INCLUINDO A MARCA)
                         preenchimento.valor_unitario = valor_unitario
                         preenchimento.valor_total = valor_total
                         preenchimento.valor_frete = valor_frete if valor_frete > 0 else None
@@ -2793,6 +2830,9 @@ def preencher_solicitacao(id):
                         preenchimento.status = 'Rascunho' if is_rascunho else 'Aguardando Aprovacao'
                         preenchimento.data_preenchimento = get_local_time()
                         preenchimento.usuario = usuario
+                        preenchimento.marca = marca  # 🔴 ATUALIZAR MARCA NO PREENCHIMENTO
+                        
+                        print(f"   ✅ Marca '{marca}' atualizada no preenchimento {preenchimento.id}")
                     
                     # PDF apenas para o primeiro material da cotação
                     if idx < len(pdf_files) and i == 0 and pdf_files[idx] and pdf_files[idx].filename:
@@ -2934,13 +2974,14 @@ def preencher_solicitacao(id):
                     print(f"DEBUG - Erro ao buscar histórico de descontos: {str(e)}")
                 
                 material_info = {
-                    'preenchimento_id': cotacao.id,  # 🔴 ADICIONAR ESTE CAMPO!
+                    'preenchimento_id': cotacao.id,
                     'solicitacao_id': cotacao.solicitacao_id,
                     'valor_unitario': float(cotacao.valor_unitario) if cotacao.valor_unitario else 0.0,
                     'valor_total': float(cotacao.valor_total) if cotacao.valor_total else 0.0,
                     'descricao': solicitacao_match.material.DescricaoMaterial if solicitacao_match.material else '',
                     'quantidade': float(solicitacao_match.quantidade) if solicitacao_match.quantidade else 0.0,
                     'unidade': solicitacao_match.unidade_medida or 'un',
+                    'marca': cotacao.marca or '',  # 🔴 PEGAR MARCA DO PREENCHIMENTO (NÃO DA SOLICITAÇÃO)
                     'historico_descontos': historico_descontos
                 }
                 cotacao_estruturada['materiais'].append(material_info)
@@ -3179,6 +3220,7 @@ def cotacao_imprimir(id):
                 except Exception as e:
                     print(f"DEBUG - Erro ao buscar histórico de descontos: {str(e)}")
                 
+                # 🔴 ADICIONADO: Incluir a marca no material_info
                 material_info = {
                     'solicitacao_id': cotacao.solicitacao_id,
                     'valor_unitario': float(cotacao.valor_unitario) if cotacao.valor_unitario else 0.0,
@@ -3186,6 +3228,7 @@ def cotacao_imprimir(id):
                     'descricao': solicitacao_match.material.DescricaoMaterial if solicitacao_match.material else '',
                     'quantidade': float(solicitacao_match.quantidade) if solicitacao_match.quantidade else 0.0,
                     'unidade': solicitacao_match.unidade_medida or 'un',
+                    'marca': cotacao.marca or '',  # 🔴 NOVO: Incluir a marca do preenchimento
                     'historico_descontos': historico_descontos
                 }
                 cotacao_estruturada['materiais'].append(material_info)
@@ -8387,6 +8430,7 @@ if __name__ == '__main__':
         add_comprovante_pagamento_column()
         add_aplicacao_geral_column()  # NOVA MIGRAÇÃO AQUI
         add_comprador_atribuido_column()
+        add_marca_to_preenchidas()
         
         print("✓ Todas as migrações concluídas!")
     
