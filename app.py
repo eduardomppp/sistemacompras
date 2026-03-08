@@ -114,24 +114,75 @@ if not app.secret_key:
 # Configuração do banco de dados SQLite
 DATABASE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'ComparasDB.db')
 
-# ===== INSIRA AQUI =====
-def garantir_coluna_marca():
-    try:
-        conn = sqlite3.connect(DATABASE)
-        cursor = conn.cursor()
-        cursor.execute("PRAGMA table_info(SolicitacoesPreenchidas)")
-        colunas = [col[1] for col in cursor.fetchall()]
-        if 'marca' not in colunas:
-            print("🔧 Adicionando coluna 'marca'...")
-            cursor.execute("ALTER TABLE SolicitacoesPreenchidas ADD COLUMN marca TEXT")
-            conn.commit()
-            print("✅ Coluna adicionada!")
-        conn.close()
-    except Exception as e:
-        print(f"⚠️  Erro: {e}")
+# ===== Correcao Coluna Marca =====
 
-garantir_coluna_marca()
-# =========================
+def garantir_colunas_necessarias():
+    """Garante que TODAS as colunas necessárias existem"""
+    print("🔧 VERIFICANDO INTEGRIDADE DO BANCO DE DADOS...")
+    
+    # Lista de todas as colunas que precisamos verificar
+    verificacoes = [
+        {
+            'tabela': 'SolicitacoesPreenchidas',
+            'coluna': 'marca',
+            'sql': "ALTER TABLE SolicitacoesPreenchidas ADD COLUMN marca TEXT"
+        }
+    ]
+    
+    for item in verificacoes:
+        try:
+            # Conecta ao banco
+            conn = sqlite3.connect(DATABASE)
+            cursor = conn.cursor()
+            
+            # Verifica estrutura da tabela
+            cursor.execute(f"PRAGMA table_info({item['tabela']})")
+            colunas = [col[1] for col in cursor.fetchall()]
+            
+            if item['coluna'] not in colunas:
+                print(f"➕ Adicionando {item['coluna']} à tabela {item['tabela']}...")
+                
+                # Tenta adicionar a coluna
+                cursor.execute(item['sql'])
+                conn.commit()
+                
+                # Verifica se funcionou
+                cursor.execute(f"PRAGMA table_info({item['tabela']})")
+                colunas_apos = [col[1] for col in cursor.fetchall()]
+                
+                if item['coluna'] in colunas_apos:
+                    print(f"   ✅ Coluna '{item['coluna']}' adicionada com sucesso!")
+                else:
+                    print(f"   ❌ Falha ao adicionar '{item['coluna']}'")
+                    
+                    # TENTATIVA 2: Via SQLAlchemy (força recarregamento)
+                    try:
+                        from sqlalchemy import text
+                        with app.app_context():
+                            db.session.execute(text(item['sql']))
+                            db.session.commit()
+                            print(f"   ✅ Segunda tentativa bem-sucedida!")
+                    except:
+                        print(f"   ⚠️  Segunda tentativa também falhou")
+            else:
+                print(f"✅ Coluna '{item['coluna']}' já existe em {item['tabela']}")
+            
+            conn.close()
+            
+        except sqlite3.OperationalError as e:
+            if "duplicate column name" in str(e):
+                print(f"✅ Coluna '{item['coluna']}' já existe (ignorando erro)")
+            else:
+                print(f"⚠️  Erro ao verificar {item['tabela']}.{item['coluna']}: {e}")
+        except Exception as e:
+            print(f"⚠️  Erro inesperado: {e}")
+    
+    print("🔧 VERIFICAÇÃO CONCLUÍDA")
+    print("="*50)
+
+# Executa a correção
+garantir_colunas_necessarias()
+# ============================================
 
 app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{DATABASE}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
