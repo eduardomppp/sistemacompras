@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="pt-br">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -17,118 +16,119 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: #f0f4f8;
             color: #1e293b;
-            padding: 20px;
-            font-size: 18px;
-            line-height: 1.5;
+            padding: 5px;
+            font-size: 14px;
+            line-height: 1.3;
             display: flex;
             flex-direction: column;
             align-items: center;
         }
 
         .container {
-            max-width: 1600px;
+            max-width: 100%;
             width: 100%;
             margin: 0 auto;
+            padding: 0 2px;
         }
 
         .top-header {
             background: linear-gradient(135deg, #0B2E59 0%, #1e4a7a 100%);
             color: white;
-            padding: 18px 28px;
-            border-radius: 8px 8px 0 0;
-            margin-bottom: 2px;
+            padding: 5px 8px;
+            border-radius: 4px 4px 0 0;
+            margin-bottom: 1px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
             width: 100%;
         }
 
         .top-header h2 {
             margin: 0;
-            font-size: 24px;
+            font-size: 16px;
             font-weight: 600;
         }
 
         .empresa-destacado {
             background: rgba(255, 255, 255, 0.15);
-            padding: 10px 25px;
-            border-radius: 50px;
-            border: 2px solid rgba(255, 255, 255, 0.3);
+            padding: 3px 10px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
             display: flex;
             align-items: center;
-            gap: 18px;
+            gap: 5px;
         }
 
         .empresa-destacado label {
             font-weight: 600;
-            font-size: 20px;
+            font-size: 14px;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.2px;
         }
 
         .empresa-destacado input {
             background: white;
             border: none;
-            padding: 12px 24px;
-            border-radius: 25px;
-            font-size: 20px;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 14px;
             font-weight: 500;
-            min-width: 350px;
+            min-width: 200px;
             color: #0B2E59;
         }
 
         .empresa-destacado input::placeholder {
             color: #94a3b8;
-            font-size: 18px;
+            font-size: 13px;
         }
 
         .header {
             background: linear-gradient(135deg, #0B2E59 0%, #1e4a7a 100%);
             color: white;
-            padding: 20px 25px;
-            border-radius: 0 0 8px 8px;
-            margin-bottom: 22px;
+            padding: 6px 10px;
+            border-radius: 0 0 4px 4px;
+            margin-bottom: 8px;
             text-align: center;
-            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
             width: 100%;
         }
 
         .header h1 {
-            font-size: 30px;
+            font-size: 18px;
             margin: 0;
             text-transform: uppercase;
             font-weight: 700;
         }
 
         .header p {
-            font-size: 18px;
-            margin: 8px 0 0;
+            font-size: 13px;
+            margin: 2px 0 0;
             opacity: 0.95;
         }
 
         .table-container {
-            margin-bottom: 22px;
-            border: 2px solid #1e293b;
-            border-radius: 8px;
+            margin-bottom: 8px;
+            border: 1px solid #1e293b;
+            border-radius: 4px;
             background: white;
             overflow-x: auto;
-            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
             width: 100%;
         }
 
         .tabela-comparativa {
             width: 100%;
             border-collapse: collapse;
-            font-size: 17px;
+            font-size: 12px;
             background: white;
-            table-layout: auto;
+            table-layout: fixed;
         }
 
         .tabela-comparativa th,
         .tabela-comparativa td {
             border: 1px solid #cbd5e1;
-            padding: 14px 10px;
+            padding: 4px 3px;
             text-align: center;
             vertical-align: middle;
             word-wrap: break-word;
@@ -139,59 +139,53 @@
             background: #0B2E59 !important;
             color: white !important;
             font-weight: 700;
-            font-size: 17px;
+            font-size: 12px;
             text-transform: uppercase;
         }
 
         .cotacao-header-agrupado {
             background: #1e4a7a !important;
             color: white !important;
-            padding: 14px 10px !important;
-            font-size: 17px;
+            padding: 4px 3px !important;
+            font-size: 12px;
         }
 
         .cotacao-info {
-            font-size: 16px;
-            margin-top: 5px;
+            font-size: 11px;
+            margin-top: 1px;
             opacity: 0.9;
             white-space: normal;
             word-break: break-word;
         }
 
         .col-material {
-            min-width: 240px;
-            width: 18%;
+            width: 15%;
             text-align: left !important;
             background: #f8fafc;
-            padding-left: 18px !important;
+            padding-left: 5px !important;
         }
 
         .col-quantidade {
-            min-width: 80px;
-            width: 6%;
+            width: 4%;
             background: #f8fafc;
         }
 
         .col-unidade {
-            min-width: 80px;
-            width: 6%;
+            width: 4%;
             background: #f8fafc;
         }
 
         .col-cotacao-unit {
-            min-width: 105px;
-            width: 8%;
+            width: 7%;
         }
 
         .col-cotacao-marca {
-            min-width: 105px;
-            width: 8%;
+            width: 7%;
             background: #f9f7e8;
         }
 
         .col-cotacao-total {
-            min-width: 115px;
-            width: 9%;
+            width: 8%;
             font-weight: 600;
             color: #0B2E59;
             background: #f0f9ff;
@@ -201,24 +195,19 @@
             background: #fff !important;
         }
 
-        .material-row:hover td {
-            background: #f8fafc !important;
-        }
-
         .material-id {
-            font-size: 15px;
+            font-size: 10px;
             color: #64748b;
             font-style: italic;
-            margin-top: 4px;
+            margin-top: 1px;
         }
 
         /* ===== AJUSTES PRINCIPAIS - BLOCO ÚLTIMO PREÇO DE COMPRAS ===== */
         .info-bottom {
             display: grid;
-            grid-template-columns: 38% 60%;
-            /* AUMENTADO: esquerda de 32% para 38% */
-            gap: 22px;
-            margin-top: 22px;
+            grid-template-columns: 32% 66%;
+            gap: 1%;
+            margin-top: 6px;
             width: 100%;
         }
 
@@ -226,122 +215,147 @@
         .coluna-direita {
             display: flex;
             flex-direction: column;
-            gap: 18px;
+            gap: 6px;
         }
 
         .ultimo-preco,
         .fluxo-pagamento,
         .status-entrega {
             border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            padding: 18px;
+            border-radius: 4px;
+            padding: 6px;
             background: white;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
         }
 
-        /* AUMENTA O TAMANHO DOS CAMPOS NO ÚLTIMO PREÇO */
         .ultimo-preco .preco-info {
-            font-size: 17px;
-            margin-bottom: 15px;
-            /* AUMENTADO: 12px → 15px */
+            font-size: 12px;
+            margin-bottom: 4px;
             display: flex;
             align-items: center;
             width: 100%;
         }
 
         .ultimo-preco .preco-info strong {
-            min-width: 130px;
-            /* AUMENTADO: 110px → 130px */
+            min-width: 75px;
             color: #475569;
-            font-size: 16px;
+            font-size: 11px;
         }
 
         .ultimo-preco .campo-data {
             flex: 1;
-            padding: 12px 15px;
-            /* AUMENTADO: 10px 12px → 12px 15px */
+            padding: 4px 6px;
             border: 1px solid #cbd5e1;
-            border-radius: 5px;
-            font-size: 17px;
+            border-radius: 3px;
+            font-size: 12px;
             width: 100%;
         }
 
-        /* MANTÉM OS OUTROS CAMPOS IGUAIS */
         .fluxo-pagamento .campo-observacao,
         .status-entrega .campo-data {
-            padding: 10px 12px;
+            padding: 4px 6px;
         }
 
         .observacao-comprador,
         .totais-inferiores,
         .info-geral {
             border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            padding: 20px;
+            border-radius: 4px;
+            padding: 6px;
             background: white;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
             width: 100%;
         }
 
-        h4,
-        h3 {
+        /* ===== CORREÇÃO DO DESALINHAMENTO - TÍTULO E CAMPO ===== */
+        h4, h3 {
             background: #f1f5f9;
             color: #0B2E59;
-            padding: 12px 18px;
-            margin: -18px -18px 14px -18px;
-            font-size: 18px;
+            padding: 4px 8px;
+            margin: 0 0 4px 0;
+            font-size: 13px;
             font-weight: 700;
-            border-bottom: 2px solid #cbd5e1;
-            border-radius: 8px 8px 0 0;
+            border-bottom: 1px solid #cbd5e1;
+            border-radius: 4px 4px 0 0;
             text-transform: uppercase;
         }
 
         .ultimo-preco h4,
         .fluxo-pagamento h4,
-        .status-entrega h4 {
-            margin: -18px -18px 14px -18px;
-            font-size: 17px;
+        .status-entrega h4,
+        .observacao-comprador h4,
+        .totais-inferiores h4,
+        .info-geral h3 {
+            margin: 0 0 4px 0;
+            padding: 4px 8px;
+        }
+
+        .fluxo-pagamento {
+            padding: 0;
+        }
+
+        .fluxo-pagamento h4 {
+            margin: 0;
+            padding: 4px 8px;
+            border-radius: 4px 4px 0 0;
+        }
+
+        .fluxo-pagamento .campo-observacao {
+            margin: 0;
+            padding: 4px 8px;
+            border: 1px solid #cbd5e1;
+            border-top: none;
+            border-radius: 0 0 3px 3px;
+            width: 100%;
+            min-height: 60px;
+        }
+
+        .fluxo-pagamento {
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            background: white;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
         }
 
         .preco-info {
-            font-size: 17px;
-            margin-bottom: 12px;
+            font-size: 12px;
+            margin-bottom: 4px;
             display: flex;
             align-items: center;
         }
 
         .preco-info strong {
-            min-width: 110px;
+            min-width: 70px;
             color: #475569;
-            font-size: 16px;
+            font-size: 11px;
         }
 
         .campo-data,
         .campo-observacao {
             flex: 1;
-            padding: 10px 12px;
+            padding: 4px 6px;
             border: 1px solid #cbd5e1;
-            border-radius: 5px;
-            font-size: 17px;
+            border-radius: 3px;
+            font-size: 12px;
         }
 
         .opcao-pagamento {
             display: flex;
             align-items: center;
-            gap: 10px;
-            margin-bottom: 8px;
-            font-size: 17px;
+            gap: 5px;
+            margin-bottom: 3px;
+            font-size: 12px;
         }
 
         .totais-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 18px;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 5px;
         }
 
         .total-card-inferior {
             border: 1px solid #e2e8f0;
-            border-radius: 6px;
+            border-radius: 4px;
             background: white;
             overflow: hidden;
         }
@@ -349,25 +363,25 @@
         .total-card-header-inferior {
             background: #0B2E59;
             color: white;
-            padding: 12px 14px;
+            padding: 4px 6px;
             text-align: center;
-            font-size: 17px;
+            font-size: 12px;
             font-weight: 600;
-            border-bottom: 2px solid #1e4a7a;
+            border-bottom: 1px solid #1e4a7a;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
 
         .total-card-body-inferior {
-            padding: 14px;
+            padding: 5px;
         }
 
         .total-line-inferior {
             display: flex;
             justify-content: space-between;
-            padding: 8px 0;
-            font-size: 16px;
+            padding: 2px 0;
+            font-size: 11px;
             border-bottom: 1px dashed #e2e8f0;
         }
 
@@ -387,54 +401,77 @@
         .total-geral-inferior {
             background: #0B2E59;
             color: white;
-            padding: 12px 14px;
-            border-radius: 5px;
-            font-size: 17px;
+            padding: 4px 6px;
+            border-radius: 3px;
+            font-size: 12px;
             font-weight: 700;
-            margin-top: 12px;
+            margin-top: 4px;
             display: flex;
             justify-content: space-between;
         }
 
+        .observacao-cotacao {
+            margin-top: 8px;
+            padding: 4px;
+            background: #f9f9f9;
+            border-radius: 3px;
+            font-size: 11px;
+            border-left: 2px solid #0B2E59;
+        }
+
+        .observacao-cotacao strong {
+            color: #0B2E59;
+            display: block;
+            font-size: 10px;
+            text-transform: uppercase;
+            margin-bottom: 2px;
+        }
+
+        .observacao-cotacao p {
+            margin: 0;
+            padding: 2px 0;
+            word-wrap: break-word;
+        }
+
         .info-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 18px;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 5px;
         }
 
         .info-item {
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 2px;
         }
 
         .info-label {
             font-weight: 600;
             color: #475569;
-            font-size: 15px;
+            font-size: 10px;
             text-transform: uppercase;
         }
 
         .info-value-editable {
-            padding: 12px 14px;
+            padding: 4px 6px;
             border: 1px solid #cbd5e1;
-            border-radius: 5px;
-            font-size: 17px;
+            border-radius: 3px;
+            font-size: 12px;
         }
 
         .campo-observacao {
             width: 100%;
-            min-height: 100px;
+            min-height: 45px;
             resize: vertical;
         }
 
         .footer {
-            margin-top: 28px;
+            margin-top: 8px;
             text-align: center;
-            font-size: 17px;
+            font-size: 12px;
             background: white;
-            padding: 20px;
-            border-radius: 8px;
+            padding: 8px;
+            border-radius: 4px;
             border: 1px solid #e2e8f0;
             width: 100%;
         }
@@ -442,45 +479,38 @@
         .assinaturas {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 28px;
-            margin-top: 18px;
+            gap: 8px;
+            margin-top: 5px;
         }
 
         .linha-assinatura {
-            border-top: 2px solid #64748b;
-            margin: 0 auto 10px;
-            width: 75%;
+            border-top: 1px solid #64748b;
+            margin: 0 auto 3px;
+            width: 60%;
         }
 
         .assinaturas p {
-            font-size: 17px;
+            font-size: 12px;
         }
 
         .btn-impressao {
             position: fixed;
-            top: 20px;
-            right: 20px;
+            top: 5px;
+            right: 5px;
             background: #0B2E59;
             color: white;
             border: none;
-            padding: 14px 28px;
-            border-radius: 6px;
+            padding: 6px 12px;
+            border-radius: 4px;
             font-weight: 600;
-            font-size: 18px;
+            font-size: 13px;
             cursor: pointer;
             z-index: 1000;
-            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
-            transition: all 0.3s ease;
-        }
-
-        .btn-impressao:hover {
-            background: #1e4a7a;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
         }
 
         .required {
-            border-left: 4px solid #dc2626 !important;
+            border-left: 2px solid #dc2626 !important;
             border-color: #dc2626 !important;
         }
 
@@ -492,8 +522,8 @@
 
         .error-message {
             color: #dc2626;
-            font-size: 14px;
-            margin-top: 5px;
+            font-size: 11px;
+            margin-top: 2px;
             display: none;
         }
 
@@ -515,7 +545,6 @@
             z-index: 2000;
             visibility: hidden;
             opacity: 0;
-            transition: all 0.3s ease;
         }
 
         .validation-modal.show {
@@ -525,131 +554,120 @@
 
         .modal-content {
             background: white;
-            padding: 30px;
-            border-radius: 8px;
-            max-width: 400px;
+            padding: 15px;
+            border-radius: 4px;
+            max-width: 300px;
             text-align: center;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
         }
 
         .modal-content h3 {
             color: #dc2626;
-            margin: 0 0 15px 0;
+            margin: 0 0 8px 0;
             padding: 0;
             background: none;
             border: none;
         }
 
         .modal-content p {
-            margin-bottom: 20px;
-            font-size: 16px;
+            margin-bottom: 12px;
+            font-size: 13px;
         }
 
         .modal-content button {
             background: #0B2E59;
             color: white;
             border: none;
-            padding: 10px 25px;
-            border-radius: 5px;
-            font-size: 16px;
+            padding: 6px 15px;
+            border-radius: 3px;
+            font-size: 13px;
             cursor: pointer;
-            transition: all 0.3s ease;
         }
 
-        .modal-content button:hover {
-            background: #1e4a7a;
-        }
-
-        /* ===== AJUSTES NA IMPRESSÃO - VERSÃO SEM CORES ===== */
+        /* ===== AJUSTES NA IMPRESSÃO - VERSÃO COMPACTADA ===== */
         @media print {
             @page {
                 size: A4 landscape;
-                margin: 0.8cm;
+                margin: 0.3cm;
             }
 
             body {
                 background: white;
                 padding: 0;
                 margin: 0;
-                font-size: 20pt;
+                font-size: 11pt;
             }
 
-            .btn-impressao {
-                display: none;
-            }
-
+            .btn-impressao,
             .validation-modal {
                 display: none;
             }
 
-            /* REMOVER CORES - FUNDOS E TEXTOS EM PRETO E BRANCO */
+            .container {
+                max-width: 100%;
+                padding: 0;
+            }
+
             .top-header {
                 background: white !important;
                 color: black !important;
-                border: 2px solid black !important;
+                border: 1px solid black !important;
                 border-bottom: none !important;
                 -webkit-print-color-adjust: economy !important;
                 print-color-adjust: economy !important;
+                padding: 3px 5px !important;
             }
 
             .empresa-destacado {
                 background: white !important;
-                border: 2px solid black !important;
+                border: 1px solid black !important;
+                padding: 2px 5px !important;
             }
 
-            .empresa-destacado label {
-                color: black !important;
-            }
-
+            .empresa-destacado label,
             .empresa-destacado input {
-                background: white !important;
-                border: 2px solid black !important;
                 color: black !important;
+                border: 1px solid black !important;
+                background: white !important;
+                font-size: 11pt !important;
+                padding: 2px 5px !important;
             }
 
             .info-bottom {
                 display: grid !important;
-                grid-template-columns: 38% 60% !important;
-                gap: 20pt;
+                grid-template-columns: 32% 66% !important;
+                gap: 0.8%;
+                margin-top: 3pt;
             }
 
             .table-container {
-                border: 2px solid black;
-                border-radius: 0;
-                box-shadow: none;
-                overflow: visible;
-                margin-bottom: 20pt;
+                border: 1px solid black;
+                margin-bottom: 3pt;
             }
 
             .tabela-comparativa {
-                font-size: 19pt;
+                font-size: 10pt;
                 width: 100%;
-                border-collapse: collapse;
+                table-layout: fixed;
             }
 
             .tabela-comparativa th,
             .tabela-comparativa td {
-                padding: 16px 12px;
-                font-size: 19pt;
-                border: 2px solid black !important;
+                padding: 2pt 1pt;
+                font-size: 10pt;
+                border: 1px solid black !important;
             }
 
-            /* TODOS OS CABEÇALHOS - SEM CORES */
             .tabela-header,
-            .cotacao-header-agrupado,
-            .col-cotacao-total.tabela-header,
-            .col-cotacao-unit.tabela-header,
-            .col-cotacao-marca.tabela-header {
+            .cotacao-header-agrupado {
                 background: white !important;
                 color: black !important;
                 font-weight: bold !important;
-                font-size: 19pt !important;
-                border: 2px solid black !important;
+                font-size: 10pt !important;
+                border: 1px solid black !important;
                 -webkit-print-color-adjust: economy !important;
                 print-color-adjust: economy !important;
             }
 
-            /* REMOVER CORES DE FUNDO DAS CÉLULAS */
             .col-material,
             .col-quantidade,
             .col-unidade,
@@ -658,57 +676,40 @@
             .col-cotacao-total {
                 background: white !important;
                 color: black !important;
-                -webkit-print-color-adjust: economy !important;
-                print-color-adjust: economy !important;
             }
 
             .header {
                 background: white !important;
                 color: black !important;
-                border: 2px solid black !important;
-                -webkit-print-color-adjust: economy !important;
-                print-color-adjust: economy !important;
+                border: 1px solid black !important;
+                padding: 3pt 5pt !important;
+                margin-bottom: 3pt;
             }
 
             .header h1 {
                 color: black !important;
+                font-size: 14pt !important;
             }
 
             .header p {
                 color: black !important;
+                font-size: 10pt !important;
             }
 
-            /* CARDS DE TOTAIS - SEM CORES */
-            .total-card-header-inferior {
-                background: white !important;
-                color: black !important;
-                border: 2px solid black !important;
-                border-bottom: 1px solid black !important;
-                font-weight: bold !important;
-                -webkit-print-color-adjust: economy !important;
-                print-color-adjust: economy !important;
-            }
-
+            .total-card-header-inferior,
             .total-geral-inferior {
                 background: white !important;
                 color: black !important;
-                border: 2px solid black !important;
-                font-weight: bold !important;
-                -webkit-print-color-adjust: economy !important;
-                print-color-adjust: economy !important;
+                border: 1px solid black !important;
+                padding: 2pt 3pt !important;
             }
 
-            .total-value-inferior {
-                color: black !important;
-                font-weight: bold !important;
-            }
-
+            .total-value-inferior,
             .desconto-inferior {
                 color: black !important;
                 font-weight: bold !important;
             }
 
-            /* BORDAS PRETAS PARA TODOS OS ELEMENTOS */
             .ultimo-preco,
             .fluxo-pagamento,
             .status-entrega,
@@ -716,144 +717,120 @@
             .totais-inferiores,
             .info-geral,
             .footer {
-                border: 2px solid black !important;
+                border: 1px solid black !important;
                 background: white !important;
-                box-shadow: none !important;
-                -webkit-print-color-adjust: economy !important;
-                print-color-adjust: economy !important;
+                padding: 3pt !important;
+                margin-bottom: 2pt;
             }
 
-            /* CABEÇALHOS DAS SEÇÕES */
-            h4, h3, .ultimo-preco h4, .fluxo-pagamento h4, .status-entrega h4 {
+            h4, h3 {
                 background: white !important;
                 color: black !important;
-                border-bottom: 2px solid black !important;
-                -webkit-print-color-adjust: economy !important;
-                print-color-adjust: economy !important;
+                border-bottom: 1px solid black !important;
+                padding: 2pt 4pt !important;
+                margin: 0 0 2pt 0 !important;
+                font-size: 11pt !important;
             }
 
-            .info-label {
-                color: black !important;
-            }
-
-            /* CAMPOS DE INPUT E TEXTAREA */
             input, textarea, .campo-data, .campo-observacao, .info-value-editable {
-                border: 2px solid black !important;
+                border: 1px solid black !important;
                 background: white !important;
                 color: black !important;
-                padding: 14px 16px;
-                font-size: 19pt;
+                padding: 1pt 3pt !important;
+                font-size: 10pt;
             }
 
             .preco-info strong {
                 color: black !important;
+                min-width: 60pt !important;
+                font-size: 10pt !important;
             }
 
             .totais-grid {
                 grid-template-columns: repeat(2, 1fr);
-                gap: 20pt;
+                gap: 3pt;
             }
 
             .total-card-inferior {
+                border: 1px solid black !important;
                 break-inside: avoid;
-                page-break-inside: avoid;
-                font-size: 19pt;
-                border: 2px solid black !important;
-                background: white !important;
             }
 
             .total-line-inferior {
-                font-size: 18pt;
-                padding: 14px 0;
+                font-size: 9pt;
+                padding: 1pt 0;
                 border-bottom: 1px dashed black !important;
             }
 
-            .total-label-inferior {
+            .observacao-cotacao {
+                border: 1px solid black !important;
+                background: white !important;
+                padding: 2pt !important;
+                margin-top: 4pt;
+                border-left: 1px solid black !important;
+            }
+
+            .observacao-cotacao strong {
                 color: black !important;
-            }
-
-            .info-geral {
-                margin-top: 20pt;
-                break-inside: avoid;
-                page-break-inside: avoid;
-            }
-
-            .info-label {
-                font-size: 17pt !important;
-            }
-
-            .info-value-editable {
-                font-size: 18pt !important;
-                padding: 14px 16px !important;
-            }
-
-            .footer {
-                break-inside: avoid;
-                page-break-inside: avoid;
-                margin-top: 24pt;
-                font-size: 20pt;
-            }
-
-            .assinaturas {
-                grid-template-columns: repeat(4, 1fr);
-                gap: 24pt;
-            }
-
-            .ultimo-preco,
-            .fluxo-pagamento,
-            .status-entrega {
-                break-inside: avoid;
-                page-break-inside: avoid;
-                padding: 20px;
-            }
-
-            .preco-info {
-                font-size: 19pt;
-                margin-bottom: 16px;
-            }
-
-            .preco-info strong {
-                min-width: 150px;
-                font-size: 18pt;
-            }
-
-            .ultimo-preco .campo-data {
-                padding: 14px 18px;
-            }
-
-            .opcao-pagamento {
-                font-size: 19pt;
-                gap: 20px;
-            }
-
-            .cotacao-info {
-                font-size: 18pt;
-            }
-
-            .material-id {
-                font-size: 17pt;
-                color: black !important;
-            }
-
-            .col-material {
-                font-size: 19pt;
             }
 
             .info-grid {
-                gap: 24px;
+                grid-template-columns: repeat(5, 1fr);
+                gap: 2pt;
+            }
+
+            .info-label {
+                font-size: 8pt !important;
+                color: black !important;
+            }
+
+            .info-value-editable {
+                font-size: 9pt !important;
+                padding: 1pt 3pt !important;
+            }
+
+            .footer {
+                margin-top: 3pt;
+                font-size: 10pt;
+                padding: 3pt;
+            }
+
+            .assinaturas {
+                gap: 5pt;
             }
 
             .assinaturas p {
-                font-size: 18pt;
+                font-size: 9pt;
             }
 
             .linha-assinatura {
-                border-top: 2px solid black !important;
+                border-top: 1px solid black !important;
             }
 
-            /* REMOVER ÍCONES DE COR */
-            .required-label::after {
+            .material-id {
                 color: black !important;
+                font-size: 8pt !important;
+            }
+
+            .cotacao-info {
+                font-size: 9pt !important;
+            }
+
+            body, .container, .info-bottom, .table-container {
+                max-height: 100%;
+                overflow: visible;
+            }
+
+            .table-container {
+                page-break-inside: avoid;
+            }
+
+            .info-bottom {
+                page-break-inside: avoid;
+            }
+
+            .footer {
+                page-break-inside: avoid;
             }
         }
 
@@ -861,19 +838,8 @@
             .info-bottom {
                 grid-template-columns: 1fr;
             }
-
-            .top-header {
-                flex-direction: column;
-                gap: 12px;
-            }
-
-            .empresa-destacado {
-                width: 100%;
-            }
-
-            .empresa-destacado input {
-                min-width: auto;
-                width: 100%;
+            .info-grid {
+                grid-template-columns: repeat(3, 1fr);
             }
         }
     </style>
@@ -904,83 +870,85 @@
             <table class="tabela-comparativa">
                 <thead>
                     <tr>
-                        <th class="tabela-header col-material" rowspan="2">Material / Descrição</th>
-                        <th class="tabela-header col-quantidade" rowspan="2">Quantidade</th>
-                        <th class="tabela-header col-unidade" rowspan="2">Unidade</th>
+                        <th class="tabela-header col-material" rowspan="2">Material</th>
+                        <th class="tabela-header col-quantidade" rowspan="2">Qtd</th>
+                        <th class="tabela-header col-unidade" rowspan="2">Un</th>
                         {% for cotacao in cotacoes_salvas %}
                         <th colspan="3" class="cotacao-header-agrupado">
-                            <div style="font-weight:bold;">Cotação {{ loop.index }}</div>
-                            <div class="cotacao-info">{{ cotacao.fornecedor_nome_fantasia|truncate(22) if cotacao else
-                                'N/D'
-                                }}</div>
+                            <div style="font-weight: bold;">Cotação {{ loop.index }}</div>
+                            <div class="cotacao-info" style="font-size: 11px; line-height: 1.3;">
+                                {{ cotacao.fornecedor_nome_fantasia|truncate(15) if cotacao.fornecedor_nome_fantasia else 'N/D' }}
+                                {% if cotacao.fornecedor_telefone %}
+                                    <br><span style="font-size: 10px; opacity: 0.9;">📞 {{ cotacao.fornecedor_telefone }}</span>
+                                {% endif %}
+                            </div>
                         </th>
                         {% endfor %}
                     </tr>
                     <tr>
                         {% for cotacao in cotacoes_salvas %}
-                        <th class="tabela-header col-cotacao-unit">Unitário (R$)</th>
+                        <th class="tabela-header col-cotacao-unit">Unit</th>
                         <th class="tabela-header col-cotacao-marca">Marca</th>
-                        <th class="tabela-header col-cotacao-total">Total (R$)</th>
+                        <th class="tabela-header col-cotacao-total">Total</th>
                         {% endfor %}
                     </tr>
                 </thead>
                 <tbody>
                     {% if modo_grupo %}
-                    {% for solicitacao in solicitacoes_grupo %}
-                    <tr class="material-row">
-                        <td class="col-material">
-                            <strong>{{ solicitacao.material.DescricaoMaterial }}</strong>
-                            <div class="material-id">Código: #{{ solicitacao.id }}</div>
-                        </td>
-                        <td class="col-quantidade">{{ solicitacao.quantidade }}</td>
-                        <td class="col-unidade">{{ solicitacao.unidade_medida | default('UN') }}</td>
-                        {% for cotacao in cotacoes_salvas %}
-                        {% set mat = cotacao.materiais|selectattr("solicitacao_id", "equalto", solicitacao.id)|first if
-                        cotacao and cotacao.materiais else none %}
-                        <td class="col-cotacao-unit">
-                            {% if mat and mat.valor_unitario %}R$ {{
-                            "%.2f"|format(mat.valor_unitario|float)|replace('.',
-                            ',') }}{% else %}-{% endif %}
-                        </td>
-                        <td class="col-cotacao-marca">
-                            {% if mat and mat.marca %}{{ mat.marca }}{% else %}-{% endif %}
-                        </td>
-                        <td class="col-cotacao-total">
-                            {% if mat and mat.valor_unitario %}
-                            {% set tot = mat.valor_unitario|float * solicitacao.quantidade|float %}
-                            R$ {{ "%.2f"|format(tot)|replace('.', ',') }}
-                            {% else %}-{% endif %}
-                        </td>
+                        {% for solicitacao in solicitacoes_grupo %}
+                        <tr class="material-row">
+                            <td class="col-material">
+                                <strong>{{ solicitacao.material.DescricaoMaterial|truncate(20) }}</strong>
+                                <div class="material-id">#{{ solicitacao.id }}</div>
+                            </td>
+                            <td class="col-quantidade">{{ solicitacao.quantidade }}</td>
+                            <td class="col-unidade">{{ solicitacao.unidade_medida | default('UN') }}</td>
+                            {% for cotacao in cotacoes_salvas %}
+                                {% set mat = cotacao.materiais|selectattr("solicitacao_id", "equalto", solicitacao.id)|first if cotacao and cotacao.materiais else none %}
+                                <td class="col-cotacao-unit">
+                                    {% if mat and mat.valor_unitario %}
+                                        R$ {{ "%.2f"|format(mat.valor_unitario|float)|replace('.', ',') }}
+                                    {% else %}-{% endif %}
+                                </td>
+                                <td class="col-cotacao-marca">
+                                    {% if mat and mat.marca %}{{ mat.marca|truncate(8) }}{% else %}-{% endif %}
+                                </td>
+                                <td class="col-cotacao-total">
+                                    {% if mat and mat.valor_unitario %}
+                                        {% set tot = mat.valor_unitario|float * solicitacao.quantidade|float %}
+                                        R$ {{ "%.2f"|format(tot)|replace('.', ',') }}
+                                    {% else %}-{% endif %}
+                                </td>
+                            {% endfor %}
+                        </tr>
                         {% endfor %}
-                    </tr>
-                    {% endfor %}
                     {% else %}
-                    <!-- modo single -->
-                    <tr class="material-row">
-                        <td class="col-material">
-                            <strong>{{ solicitacao.material.DescricaoMaterial }}</strong>
-                            <div class="material-id">Código: #{{ solicitacao.id }}</div>
-                        </td>
-                        <td class="col-quantidade">{{ solicitacao.quantidade }}</td>
-                        <td class="col-unidade">{{ solicitacao.unidade_medida | default('UN') }}</td>
-                        {% for cotacao in cotacoes_salvas %}
-                        {% set mat = cotacao.materiais|first if cotacao and cotacao.materiais else none %}
-                        <td class="col-cotacao-unit">
-                            {% if mat and mat.valor_unitario %}R$ {{
-                            "%.2f"|format(mat.valor_unitario|float)|replace('.',
-                            ',') }}{% else %}-{% endif %}
-                        </td>
-                        <td class="col-cotacao-marca">
-                            {% if mat and mat.marca %}{{ mat.marca }}{% else %}-{% endif %}
-                        </td>
-                        <td class="col-cotacao-total">
-                            {% if mat and mat.valor_unitario %}
-                            {% set tot = mat.valor_unitario|float * solicitacao.quantidade|float %}
-                            R$ {{ "%.2f"|format(tot)|replace('.', ',') }}
-                            {% else %}-{% endif %}
-                        </td>
-                        {% endfor %}
-                    </tr>
+                        <!-- modo single -->
+                        <tr class="material-row">
+                            <td class="col-material">
+                                <strong>{{ solicitacao.material.DescricaoMaterial|truncate(20) }}</strong>
+                                <div class="material-id">#{{ solicitacao.id }}</div>
+                            </td>
+                            <td class="col-quantidade">{{ solicitacao.quantidade }}</td>
+                            <td class="col-unidade">{{ solicitacao.unidade_medida | default('UN') }}</td>
+                            {% for cotacao in cotacoes_salvas %}
+                                {% set mat = cotacao.materiais|first if cotacao and cotacao.materiais else none %}
+                                <td class="col-cotacao-unit">
+                                    {% if mat and mat.valor_unitario %}
+                                        R$ {{ "%.2f"|format(mat.valor_unitario|float)|replace('.', ',') }}
+                                    {% else %}-{% endif %}
+                                </td>
+                                <td class="col-cotacao-marca">
+                                    {% if mat and mat.marca %}{{ mat.marca|truncate(8) }}{% else %}-{% endif %}
+                                </td>
+                                <td class="col-cotacao-total">
+                                    {% if mat and mat.valor_unitario %}
+                                        {% set tot = mat.valor_unitario|float * solicitacao.quantidade|float %}
+                                        R$ {{ "%.2f"|format(tot)|replace('.', ',') }}
+                                    {% else %}-{% endif %}
+                                </td>
+                            {% endfor %}
+                        </tr>
                     {% endif %}
                 </tbody>
             </table>
@@ -990,107 +958,94 @@
         <div class="info-bottom">
             <div class="coluna-esquerda">
                 <div class="ultimo-preco">
-                    <h4>ÚLTIMO PREÇO DE COMPRAS</h4>
-                    <div class="preco-info"><strong>Fornecedor:</strong><input type="text" class="campo-data"
-                            placeholder="Fornecedor"></div>
-                    <div class="preco-info"><strong>Valor total:</strong><input type="text" class="campo-data"
-                            placeholder="R$ 0,00"></div>
-                    <div class="preco-info"><strong>Data compra:</strong><input type="text" class="campo-data"
-                            placeholder="DD/MM/AAAA"></div>
+                    <h4>ÚLTIMO PREÇO</h4>
+                    <div class="preco-info"><strong>Fornecedor:</strong><input type="text" class="campo-data" placeholder="Fornecedor"></div>
+                    <div class="preco-info"><strong>Valor total:</strong><input type="text" class="campo-data" placeholder="R$ 0,00"></div>
+                    <div class="preco-info"><strong>Data:</strong><input type="text" class="campo-data" placeholder="DD/MM/AAAA"></div>
                 </div>
 
-                <!-- Forma de pagamento com campo obrigatório -->
                 <div class="fluxo-pagamento">
-                    <h4><span class="required-label">FORMA DE PAGAMENTO</span></h4>
-                    <textarea rows="3" class="campo-observacao required" id="formaPagamento"
-                        placeholder="FORMA DE PAGAMENTO (OBRIGATÓRIO)" required></textarea>
-                    <div class="error-message" id="errorMessage">Este campo é obrigatório</div>
-
+                    <h4><span class="required-label">PAGAMENTO</span></h4>
+                    <textarea rows="2" class="campo-observacao required" id="formaPagamento" placeholder="FORMA DE PAGAMENTO (OBRIGATÓRIO)"></textarea>
+                    <div class="error-message" id="errorMessage">Campo obrigatório</div>
                 </div>
 
                 <div class="status-entrega">
-                    <h4>STATUS DA ENTREGA</h4>
+                    <h4>ENTREGA</h4>
                     <input type="text" class="campo-data" placeholder="Status atual">
-                    <h4 style="margin-top: 15px;">PREVISÃO DE ENTREGA</h4>
+                    <h4 style="margin-top: 4px;">PREVISÃO</h4>
                     <input type="text" class="campo-data" placeholder="DD/MM/AAAA">
                 </div>
             </div>
 
             <div class="coluna-direita">
                 <div class="totais-inferiores">
-                    <h4>TOTAIS POR COTAÇÃO</h4>
+                    <h4>TOTAIS</h4>
                     <div class="totais-grid">
                         {% for cotacao in cotacoes_salvas %}
                         <div class="total-card-inferior">
                             <div class="total-card-header-inferior">
-                                Cotação {{ loop.index }} - {{ cotacao.fornecedor_nome_fantasia|truncate(18) if cotacao
-                                else
-                                'N/D' }}
+                                Cotação {{ loop.index }} - {{ cotacao.fornecedor_nome_fantasia|truncate(12) if cotacao else 'N/D' }}
                             </div>
                             <div class="total-card-body-inferior">
                                 {% set ns = namespace(total_produtos=0) %}
                                 {% if cotacao and cotacao.materiais %}
-                                {% if modo_grupo %}
-                                {% for solicitacao in solicitacoes_grupo %}
-                                {% set material_cotacao = cotacao.materiais|selectattr("solicitacao_id", "equalto",
-                                solicitacao.id)|first %}
-                                {% if material_cotacao and material_cotacao.valor_unitario %}
-                                {% set ns.total_produtos = ns.total_produtos + (material_cotacao.valor_unitario|float *
-                                solicitacao.quantidade|float) %}
-                                {% endif %}
-                                {% endfor %}
-                                {% else %}
-                                {% set material_cotacao = cotacao.materiais|first %}
-                                {% if material_cotacao and material_cotacao.valor_unitario %}
-                                {% set ns.total_produtos = material_cotacao.valor_unitario|float *
-                                solicitacao.quantidade|float %}
-                                {% endif %}
-                                {% endif %}
+                                    {% if modo_grupo %}
+                                        {% for solicitacao in solicitacoes_grupo %}
+                                            {% set material_cotacao = cotacao.materiais|selectattr("solicitacao_id", "equalto", solicitacao.id)|first %}
+                                            {% if material_cotacao and material_cotacao.valor_unitario %}
+                                                {% set ns.total_produtos = ns.total_produtos + (material_cotacao.valor_unitario|float * solicitacao.quantidade|float) %}
+                                            {% endif %}
+                                        {% endfor %}
+                                    {% else %}
+                                        {% set material_cotacao = cotacao.materiais|first %}
+                                        {% if material_cotacao and material_cotacao.valor_unitario %}
+                                            {% set ns.total_produtos = material_cotacao.valor_unitario|float * solicitacao.quantidade|float %}
+                                        {% endif %}
+                                    {% endif %}
                                 {% endif %}
 
-                                {% set valor_frete = cotacao.valor_frete|float if cotacao and cotacao.valor_frete else
-                                0.0
-                                %}
-
+                                {% set valor_frete = cotacao.valor_frete|float if cotacao and cotacao.valor_frete else 0.0 %}
                                 {% set desconto = 0.0 %}
                                 {% if cotacao %}
-                                {% set fonte = cotacao.condicao_pagamento or cotacao.desconto_valor or '' %}
-                                {% if fonte|trim %}
-                                {% set desconto = fonte|trim|replace(',', '.')|replace(' ', '')|replace('R$',
-                                '')|replace('%', '')|float(0.0) %}
-                                {% endif %}
+                                    {% set fonte = cotacao.condicao_pagamento or cotacao.desconto_valor or '' %}
+                                    {% if fonte|trim %}
+                                        {% set desconto = fonte|trim|replace(',', '.')|replace(' ', '')|replace('R$', '')|replace('%', '')|float(0.0) %}
+                                    {% endif %}
                                 {% endif %}
 
                                 <div class="total-line-inferior">
                                     <span class="total-label-inferior">Subtotal:</span>
-                                    <span class="total-value-inferior">R$ {{
-                                        "%.2f"|format(ns.total_produtos)|replace('.',
-                                        ',') }}</span>
+                                    <span class="total-value-inferior">R$ {{ "%.2f"|format(ns.total_produtos)|replace('.', ',') }}</span>
                                 </div>
 
                                 {% if valor_frete > 0 %}
                                 <div class="total-line-inferior">
                                     <span class="total-label-inferior">Frete:</span>
-                                    <span class="total-value-inferior">R$ {{ "%.2f"|format(valor_frete)|replace('.',
-                                        ',')
-                                        }}</span>
+                                    <span class="total-value-inferior">R$ {{ "%.2f"|format(valor_frete)|replace('.', ',') }}</span>
                                 </div>
                                 {% endif %}
 
                                 {% if desconto > 0 %}
                                 <div class="total-line-inferior">
                                     <span class="total-label-inferior">Desconto:</span>
-                                    <span class="total-value-inferior desconto-inferior">- R$ {{
-                                        "%.2f"|format(desconto)|replace('.', ',') }}</span>
+                                    <span class="total-value-inferior desconto-inferior">-R$ {{ "%.2f"|format(desconto)|replace('.', ',') }}</span>
                                 </div>
                                 {% endif %}
 
                                 <div class="total-geral-inferior">
-                                    <span>TOTAL GERAL:</span>
-                                    <span>R$ {{ "%.2f"|format(ns.total_produtos + valor_frete - desconto)|replace('.',
-                                        ',')
-                                        }}</span>
+                                    <span>TOTAL:</span>
+                                    <span>R$ {{ "%.2f"|format(ns.total_produtos + valor_frete - desconto)|replace('.', ',') }}</span>
                                 </div>
+
+                                <!-- 🔴 OBSERVAÇÃO DA COTAÇÃO DENTRO DO CARD -->
+                                {% if cotacao.observacoes %}
+                                <div class="observacao-cotacao">
+                                    <strong>📝 OBSERVAÇÃO:</strong>
+                                    <p>{{ cotacao.observacoes }}</p>
+                                </div>
+                                {% endif %}
+                                <!-- ======================================================== -->
                             </div>
                         </div>
                         {% endfor %}
@@ -1100,70 +1055,48 @@
         </div>
 
         <!-- INFORMAÇÕES GERAIS -->
-        <div class="info-geral" style="margin-top: 18px; padding: 15px;">
-            <h3
-                style="background: #f8fafc; color: #334155; padding: 10px 14px; margin: -15px -15px 12px -15px; font-size: 17px; font-weight: 600; border-bottom: 1px solid #cbd5e1; text-transform: uppercase; letter-spacing: 0.3px;">
-                INFORMAÇÕES GERAIS</h3>
-            <div class="info-grid" style="grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px;">
-                <div class="info-item" style="gap: 4px;">
-                    <div class="info-label" style="font-size: 14px; color: #64748b;">SETOR</div>
-                    <input type="text" class="info-value-editable" placeholder="Setor"
-                        style="padding: 8px 12px; font-size: 15px;">
-
+        <div class="info-geral" style="margin-top: 6px; padding: 6px;">
+            <h3 style="background: #f8fafc; color: #334155; padding: 4px 8px; margin: -6px -6px 4px -6px; font-size: 12px; border-bottom: 1px solid #cbd5e1;">
+                INFORMAÇÕES GERAIS
+            </h3>
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-label">SETOR</div>
+                    <input type="text" class="info-value-editable" placeholder="Setor">
                 </div>
-                <div class="info-item" style="gap: 4px;">
-                    <div class="info-label" style="font-size: 14px; color: #64748b;">APLICAÇÃO</div>
-                    <input type="text" class="info-value-editable" placeholder="Aplicação"
-                        style="padding: 8px 12px; font-size: 15px;">
+                <div class="info-item">
+                    <div class="info-label">APLICAÇÃO</div>
+                    <input type="text" class="info-value-editable" placeholder="Aplicação">
                 </div>
-                <div class="info-item" style="gap: 4px;">
-                    <div class="info-label" style="font-size: 14px; color: #64748b;">PRIORIDADE</div>
-                    <input type="text" class="info-value-editable" placeholder="Prioridade"
-                        style="padding: 8px 12px; font-size: 15px;">
+                <div class="info-item">
+                    <div class="info-label">PRIORIDADE</div>
+                    <input type="text" class="info-value-editable" placeholder="Prioridade">
                 </div>
-                <div class="info-item" style="gap: 4px;">
-                    <div class="info-label" style="font-size: 14px; color: #64748b;">DATA SOLIC.</div>
-                    <input type="text" class="info-value-editable" placeholder="DD/MM/AAAA"
-                        style="padding: 8px 12px; font-size: 15px;">
+                <div class="info-item">
+                    <div class="info-label">DATA SOLIC.</div>
+                    <input type="text" class="info-value-editable" placeholder="DD/MM/AAAA">
                 </div>
-                <div class="info-item" style="gap: 4px;">
-                    <div class="info-label" style="font-size: 14px; color: #64748b;">SOLICITANTE</div>
-                    <input type="text" class="info-value-editable" placeholder="Nome"
-                        style="padding: 8px 12px; font-size: 15px;">
-                </div>
-                <div class="info-item" style="gap: 4px;">
-
+                <div class="info-item">
+                    <div class="info-label">SOLICITANTE</div>
+                    <input type="text" class="info-value-editable" placeholder="Nome">
                 </div>
             </div>
         </div>
 
         <!-- Observação do comprador -->
-        <div class="observacao-comprador" style="margin-top: 22px;">
-            <h4>OBSERVAÇÃO DO COMPRADOR</h4>
-            <textarea class="campo-observacao"
-                placeholder="Digite aqui observações relevantes sobre a cotação..."></textarea>
+        <div class="observacao-comprador" style="margin-top: 6px;">
+            <h4>OBSERVAÇÃO</h4>
+            <textarea class="campo-observacao" rows="2" placeholder="Observações..."></textarea>
         </div>
 
         <!-- Assinaturas -->
         <div class="footer">
-            <div style="font-size:20px; font-weight:700; color:#0B2E59; margin-bottom:20px;">ASSINATURAS</div>
+            <div style="font-size:14px; font-weight:700; color:#0B2E59; margin-bottom:8px;">ASSINATURAS</div>
             <div class="assinaturas">
-                <div class="assinatura">
-                    <div class="linha-assinatura"></div>
-                    <p></p>
-                </div>
-                <div class="assinatura">
-                    <div class="linha-assinatura"></div>
-                    <p></p>
-                </div>
-                <div class="assinatura">
-                    <div class="linha-assinatura"></div>
-                    <p></p>
-                </div>
-                <div class="assinatura">
-                    <div class="linha-assinatura"></div>
-                    <p></p>
-                </div>
+                <div class="assinatura"><div class="linha-assinatura"></div><p></p></div>
+                <div class="assinatura"><div class="linha-assinatura"></div><p></p></div>
+                <div class="assinatura"><div class="linha-assinatura"></div><p></p></div>
+                <div class="assinatura"><div class="linha-assinatura"></div><p></p></div>
             </div>
         </div>
     </div>
@@ -1194,45 +1127,6 @@
         }
 
         document.addEventListener('DOMContentLoaded', function () {
-            // Checkboxes mutuamente exclusivos
-            const checkboxes = document.querySelectorAll('input[type="checkbox"]');
-            checkboxes.forEach(checkbox => {
-                checkbox.addEventListener('change', function () {
-                    if (this.id === 'normal' && this.checked) {
-                        document.getElementById('urgente').checked = false;
-                    } else if (this.id === 'urgente' && this.checked) {
-                        document.getElementById('normal').checked = false;
-                    }
-                });
-            });
-
-            // Formatação de campos monetários
-            const camposValor = document.querySelectorAll('input[type="text"][placeholder*="R$"], input[value*="R$"]');
-            camposValor.forEach(campo => {
-                campo.addEventListener('blur', function () {
-                    let valor = this.value.replace(/[^\d,]/g, '');
-                    if (valor) {
-                        valor = valor.replace(',', '.');
-                        if (!isNaN(parseFloat(valor))) {
-                            this.value = 'R$ ' + parseFloat(valor).toFixed(2).replace('.', ',');
-                        }
-                    }
-                });
-            });
-
-            // Formatação de data
-            const camposData = document.querySelectorAll('input[placeholder*="DD/MM"]');
-            camposData.forEach(campo => {
-                campo.addEventListener('input', function (e) {
-                    let valor = this.value.replace(/\D/g, '');
-                    if (valor.length >= 8) {
-                        valor = valor.replace(/(\d{2})(\d{2})(\d{4})/, '$1/$2/$3');
-                        this.value = valor.substring(0, 10);
-                    }
-                });
-            });
-
-            // Validação do campo obrigatório de forma de pagamento
             const campoPagamento = document.getElementById('formaPagamento');
             const errorMessage = document.getElementById('errorMessage');
 
@@ -1240,66 +1134,24 @@
                 campoPagamento.addEventListener('input', function () {
                     if (this.value.trim() !== '') {
                         this.classList.remove('required');
-                        this.style.borderColor = '#cbd5e1';
-                        errorMessage.classList.remove('show');
-                    } else {
-                        this.classList.add('required');
-                        this.style.borderColor = '#dc2626';
-                    }
-                });
-
-                campoPagamento.addEventListener('blur', function () {
-                    if (this.value.trim() === '') {
-                        this.classList.add('required');
-                        this.style.borderColor = '#dc2626';
-                        errorMessage.classList.add('show');
-                    } else {
-                        this.classList.remove('required');
-                        this.style.borderColor = '#cbd5e1';
                         errorMessage.classList.remove('show');
                     }
                 });
             }
 
-            // Salvar campo empresa do topo
             const empresaTop = document.getElementById('empresa_top');
             const empresaSalva = localStorage.getItem('empresa_top');
-            if (empresaSalva) {
-                empresaTop.value = empresaSalva;
-            }
+            if (empresaSalva) empresaTop.value = empresaSalva;
             empresaTop.addEventListener('input', function () {
                 localStorage.setItem('empresa_top', this.value);
             });
 
-            // Salvamento automático no localStorage
-            const camposParaSalvar = document.querySelectorAll('.campo-data, .campo-observacao, .info-value-editable');
-            camposParaSalvar.forEach((campo, index) => {
-                const chave = `campo_salvo_${index}_${campo.className.split(' ').join('_')}`;
-                const valorSalvo = localStorage.getItem(chave);
-                if (valorSalvo) {
-                    campo.value = valorSalvo;
-                }
-                campo.addEventListener('input', function () {
-                    localStorage.setItem(chave, this.value);
-                });
-            });
-
-            // Fechar modal ao clicar fora
             window.addEventListener('click', function (event) {
-                const modal = document.getElementById('validationModal');
-                if (event.target === modal) {
-                    fecharModal();
-                }
-            });
-
-            // Fechar modal com ESC
-            window.addEventListener('keydown', function (event) {
-                if (event.key === 'Escape') {
+                if (event.target === document.getElementById('validationModal')) {
                     fecharModal();
                 }
             });
         });
     </script>
 </body>
-
 </html>
