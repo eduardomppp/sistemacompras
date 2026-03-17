@@ -154,8 +154,9 @@
             font-size: 11px;
             margin-top: 1px;
             opacity: 0.9;
-            white-space: normal;
-            word-break: break-word;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .col-material {
@@ -347,10 +348,12 @@
             font-size: 12px;
         }
 
+        /* ===== AJUSTES CRÍTICOS - TOTAIS ALINHADOS COM A TABELA ===== */
         .totais-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 5px;
+            /* Isso fará o grid ter EXATAMENTE a mesma quantidade de colunas que cotações */
+            grid-template-columns: repeat({{ cotacoes_salvas|length }}, 1fr);
+            gap: 6px;
         }
 
         .total-card-inferior {
@@ -358,23 +361,28 @@
             border-radius: 4px;
             background: white;
             overflow: hidden;
+            height: 100%; /* Garante que todos os cards tenham a mesma altura */
+            display: flex;
+            flex-direction: column;
         }
 
         .total-card-header-inferior {
             background: #0B2E59;
             color: white;
             padding: 4px 6px;
-            text-align: center;
-            font-size: 12px;
+            text-align: left;
+            font-size: 11px;
             font-weight: 600;
             border-bottom: 1px solid #1e4a7a;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            line-height: 1.3;
         }
 
         .total-card-body-inferior {
             padding: 5px;
+            flex: 1;
         }
 
         .total-line-inferior {
@@ -702,6 +710,7 @@
                 color: black !important;
                 border: 1px solid black !important;
                 padding: 2pt 3pt !important;
+                white-space: nowrap !important;
             }
 
             .total-value-inferior,
@@ -747,13 +756,15 @@
             }
 
             .totais-grid {
-                grid-template-columns: repeat(2, 1fr);
+                display: grid !important;
+                grid-template-columns: repeat({{ cotacoes_salvas|length }}, 1fr) !important;
                 gap: 3pt;
             }
 
             .total-card-inferior {
                 border: 1px solid black !important;
                 break-inside: avoid;
+                height: 100% !important;
             }
 
             .total-line-inferior {
@@ -814,6 +825,7 @@
 
             .cotacao-info {
                 font-size: 9pt !important;
+                white-space: nowrap !important;
             }
 
             body, .container, .info-bottom, .table-container {
@@ -875,11 +887,11 @@
                         <th class="tabela-header col-unidade" rowspan="2">Un</th>
                         {% for cotacao in cotacoes_salvas %}
                         <th colspan="3" class="cotacao-header-agrupado">
-                            <div style="font-weight: bold;">Cotação {{ loop.index }}</div>
-                            <div class="cotacao-info" style="font-size: 11px; line-height: 1.3;">
+                            <div style="font-weight: bold; display: inline;">Cotação {{ loop.index }} - </div>
+                            <div style="display: inline;" class="cotacao-info">
                                 {{ cotacao.fornecedor_nome_fantasia|truncate(15) if cotacao.fornecedor_nome_fantasia else 'N/D' }}
                                 {% if cotacao.fornecedor_telefone %}
-                                    <br><span style="font-size: 10px; opacity: 0.9;">📞 {{ cotacao.fornecedor_telefone }}</span>
+                                    📞 {{ cotacao.fornecedor_telefone }}
                                 {% endif %}
                             </div>
                         </th>
@@ -984,8 +996,11 @@
                     <div class="totais-grid">
                         {% for cotacao in cotacoes_salvas %}
                         <div class="total-card-inferior">
-                            <div class="total-card-header-inferior">
-                                Cotação {{ loop.index }} - {{ cotacao.fornecedor_nome_fantasia|truncate(12) if cotacao else 'N/D' }}
+                            <div class="total-card-header-inferior" title="Cotação {{ loop.index }} - {{ cotacao.fornecedor_nome_fantasia if cotacao else 'N/D' }} {% if cotacao.fornecedor_telefone %} 📞 {{ cotacao.fornecedor_telefone }}{% endif %}">
+                                Cotação {{ loop.index }} - {{ cotacao.fornecedor_nome_fantasia|truncate(20) if cotacao else 'N/D' }}
+                                {% if cotacao.fornecedor_telefone %}
+                                    📞 {{ cotacao.fornecedor_telefone }}
+                                {% endif %}
                             </div>
                             <div class="total-card-body-inferior">
                                 {% set ns = namespace(total_produtos=0) %}

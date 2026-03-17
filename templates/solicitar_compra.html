@@ -240,6 +240,88 @@
             color: var(--primary-color);
         }
 
+        /* FLASH MESSAGES STYLES */
+        .flash-messages {
+            margin: 20px 0;
+            width: 100%;
+        }
+
+        .alert {
+            padding: 15px;
+            margin-bottom: 20px;
+            border: 1px solid transparent;
+            border-radius: 8px;
+            white-space: pre-line;
+            position: relative;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .alert-error {
+            color: #721c24;
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            border-left: 5px solid #dc3545;
+        }
+
+        .alert-success {
+            color: #155724;
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+            border-left: 5px solid #28a745;
+        }
+
+        .alert-warning {
+            color: #856404;
+            background-color: #fff3cd;
+            border-color: #ffeeba;
+            border-left: 5px solid #ffc107;
+        }
+
+        .alert-info {
+            color: #0c5460;
+            background-color: #d1ecf1;
+            border-color: #bee5eb;
+            border-left: 5px solid #17a2b8;
+        }
+
+        .btn-close {
+            float: right;
+            font-size: 20px;
+            font-weight: bold;
+            line-height: 20px;
+            color: inherit;
+            background: none;
+            border: none;
+            cursor: pointer;
+            opacity: 0.5;
+            padding: 0 5px;
+        }
+
+        .btn-close:hover {
+            opacity: 0.75;
+        }
+
+        .alert strong {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 1.1em;
+        }
+
+        .alert span {
+            display: block;
+            line-height: 1.6;
+        }
+
+        /* Lista dentro do alert */
+        .alert ul {
+            margin: 10px 0 0 20px;
+            padding: 0;
+        }
+
+        .alert li {
+            margin-bottom: 5px;
+        }
+
         @media (max-width: 768px) {
             body {
                 padding: 10px;
@@ -258,6 +340,31 @@
 
 <body>
     <div class="container">
+        <!-- FLASH MESSAGES - ADICIONADO AQUI -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category if category != 'error' else 'error' }}" role="alert">
+                            <button type="button" class="btn-close" onclick="this.parentElement.style.display='none'">&times;</button>
+                            
+                            {% if category == 'error' %}
+                                <strong><i class="fas fa-exclamation-circle"></i> Erro!</strong>
+                            {% elif category == 'success' %}
+                                <strong><i class="fas fa-check-circle"></i> Sucesso!</strong>
+                            {% elif category == 'warning' %}
+                                <strong><i class="fas fa-exclamation-triangle"></i> Atenção!</strong>
+                            {% elif category == 'info' %}
+                                <strong><i class="fas fa-info-circle"></i> Info:</strong>
+                            {% endif %}
+                            
+                            <span>{{ message }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
         <!-- Cabeçalho -->
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1>
@@ -737,7 +844,7 @@
             const empresaSelected = empresasLista.includes(empresaUsuario) ? 'selected' : '';
             const empresaValue = empresasLista.includes(empresaUsuario) ? empresaUsuario : '';
 
-            // Template da nova solicitação - CORRIGIDO (removida a duplicação)
+            // Template da nova solicitação
             const novoSolicitacao = `
                 <div class="solicitacao-item" id="solicitacao-${solicitacaoCount}" data-index="${solicitacaoCount}">
                     <!-- Separador visual -->
@@ -1007,6 +1114,12 @@
                 return false;
             }
 
+            // Validar duplicatas no frontend
+            if (!validarDuplicatasFrontend()) {
+                e.preventDefault();
+                return false;
+            }
+
             let hasError = false;
             $('.solicitacao-item').each(function () {
                 const index = $(this).data('index');
@@ -1035,7 +1148,7 @@
                         return false;
                     }
 
-                    // NOVA VALIDAÇÃO: Verificar empresa
+                    // Validar empresa
                     if (!$(`#empresa-${index}`).val()) {
                         alert(`Solicitação #${index}: Empresa é obrigatória.`);
                         $(`#empresa-select-${index}`).focus();
@@ -1045,8 +1158,53 @@
                 }
             });
 
-            return !hasError;
+            if (hasError) {
+                e.preventDefault();
+                return false;
+            }
+
+            // Desabilitar botão de submit
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processando...';
+
+            return true;
         });
+
+        /**
+         * Função para validar duplicatas no frontend
+         */
+        function validarDuplicatasFrontend() {
+            const selects = document.querySelectorAll('.cod-material-hidden');
+            const valores = [];
+            let temDuplicata = false;
+            let mensagem = "Materiais duplicados detectados:\n";
+
+            selects.forEach((input, index) => {
+                const valor = input.value;
+                if (valor && valor !== '') {
+                    if (valores.includes(valor)) {
+                        const linhaOriginal = valores.indexOf(valor) + 1;
+                        const linhaAtual = index + 1;
+                        mensagem += `• Linha ${linhaAtual} (código ${valor}) é duplicado da linha ${linhaOriginal}\n`;
+                        
+                        // Destacar o campo duplicado
+                        $(`#pesquisa_material-${linhaAtual}`).css('border-color', 'red');
+                        temDuplicata = true;
+                    } else {
+                        valores.push(valor);
+                        $(`#pesquisa_material-${index + 1}`).css('border-color', '');
+                    }
+                }
+            });
+
+            if (temDuplicata) {
+                alert(mensagem);
+                return false;
+            }
+
+            return true;
+        }
 
         /**
          * Inicialização quando o documento estiver pronto
@@ -1061,6 +1219,11 @@
             setTimeout(function () {
                 inicializarTodasEmpresas();
             }, 500);
+
+            // Auto-fechar mensagens flash após 5 segundos
+            setTimeout(function() {
+                $('.alert').fadeOut('slow');
+            }, 5000);
 
             console.log('Sistema inicializado com sucesso!');
         });
