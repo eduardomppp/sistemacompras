@@ -1742,18 +1742,73 @@ def abrir_solicitacao():
         return redirect(url_for('routes_bp.login'))
     
     try:
+        # GERAR UM TOKEN ÚNICO PARA ESTA REQUISIÇÃO
+        import hashlib
+        import json
+        
         # Obter arrays do formulário
         cod_materiais = request.form.getlist('cod_material[]')
         especificacoes = request.form.getlist('especificacao[]')
         quantidades = request.form.getlist('quantidade[]')
         unidades_medida = request.form.getlist('unidade_medida[]')
-        aplicacoes = request.form.getlist('aplicacao[]')  # Aplicações específicas por item
+        aplicacoes = request.form.getlist('aplicacao[]')
         empresas = request.form.getlist('empresa[]')
         marcas = request.form.getlist('marca[]')
         ativos = request.form.getlist('ativo[]')
         nomes_ativos = request.form.getlist('nome_ativo[]')
         prioridades = request.form.getlist('prioridade[]')
         fotos = request.files.getlist('foto[]')
+
+        # 🔴 VALIDAÇÃO 1: Verificar se o número de elementos é consistente
+        if len(cod_materiais) != len(especificacoes) or \
+           len(cod_materiais) != len(quantidades) or \
+           len(cod_materiais) != len(unidades_medida) or \
+           len(cod_materiais) != len(empresas) or \
+           len(cod_materiais) != len(ativos) or \
+           len(cod_materiais) != len(prioridades):
+            flash('Inconsistência nos dados enviados. Por favor, tente novamente.', 'error')
+            return redirect(url_for('routes_bp.solicitar_compra'))
+        
+        # 🔴 VALIDAÇÃO 2: Verificar duplicatas na própria requisição
+        materiais_vistos = {}
+        indices_duplicados = []
+        
+        for i, cod in enumerate(cod_materiais):
+            if cod and cod.strip():  # Ignorar vazios
+                if cod in materiais_vistos:
+                    indices_duplicados.append({
+                        'linha': i + 1,
+                        'linha_original': materiais_vistos[cod] + 1,
+                        'codigo': cod
+                    })
+                else:
+                    materiais_vistos[cod] = i
+        
+        if indices_duplicados:
+            mensagem = "Materiais duplicados detectados:\n"
+            for dup in indices_duplicados:
+                mensagem += f"• Linha {dup['linha']} (código {dup['codigo']}) é duplicado da linha {dup['linha_original']}\n"
+            flash(mensagem, 'error')
+            return redirect(url_for('routes_bp.solicitar_compra'))
+        
+        # 🔴 VALIDAÇÃO 3: Proteção contra double-submit (CSRF token simples)
+        # Criar um hash único baseado nos dados e timestamp
+        dados_hash = hashlib.md5(
+            json.dumps({
+                'materiais': cod_materiais,
+                'quantidades': quantidades,
+                'timestamp': str(datetime.now().timestamp())
+            }, sort_keys=True).encode()
+        ).hexdigest()
+        
+        # Verificar se este conjunto já foi processado recentemente
+        ultimo_hash = session.get('ultimo_submit_hash')
+        if ultimo_hash == dados_hash:
+            flash('Esta solicitação já foi processada. Por favor, aguarde.', 'error')
+            return redirect(url_for('routes_bp.solicitar_compra'))
+        
+        # Salvar o hash na sessão
+        session['ultimo_submit_hash'] = dados_hash
 
         # DEBUG: Verificar o que está chegando
         aplicacao_geral = request.form.get('aplicacao', '').strip()
@@ -1766,6 +1821,7 @@ def abrir_solicitacao():
 
         # Processar cada solicitação
         solicitacoes_criadas = 0
+        erros = []
         
         for i, cod_material in enumerate(cod_materiais):
             if not cod_material:
@@ -1778,15 +1834,17 @@ def abrir_solicitacao():
                 if cod_material <= 0:
                     raise ValueError
             except ValueError:
-                flash(f'Código do material inválido na solicitação {i+1}.', 'error')
-                print(f"❌ Código material inválido: {cod_material}")
+                erro = f'Código do material inválido na solicitação {i+1}.'
+                erros.append(erro)
+                print(f"❌ {erro}")
                 continue
 
             # Verificar se o material existe
             material = db.session.get(Materiais, cod_material)
             if not material:
-                flash(f'Material com código {cod_material} não encontrado na solicitação {i+1}.', 'error')
-                print(f"❌ Material não encontrado: {cod_material}")
+                erro = f'Material com código {cod_material} não encontrado na solicitação {i+1}.'
+                erros.append(erro)
+                print(f"❌ {erro}")
                 continue
 
             # Validação dos campos obrigatórios para esta solicitação
@@ -1796,8 +1854,9 @@ def abrir_solicitacao():
                 i >= len(empresas) or not empresas[i] or
                 i >= len(ativos) or not ativos[i] or
                 i >= len(prioridades) or not prioridades[i]):
-                flash(f'Campos obrigatórios não preenchidos na solicitação {i+1}.', 'error')
-                print(f"❌ Campos obrigatórios faltando no índice {i}")
+                erro = f'Campos obrigatórios não preenchidos na solicitação {i+1}.'
+                erros.append(erro)
+                print(f"❌ {erro}")
                 continue
 
             # CORREÇÃO: Processar aplicação corretamente
@@ -1833,8 +1892,8 @@ def abrir_solicitacao():
                 especificacao=especificacoes[i],
                 quantidade=int(quantidades[i]),
                 unidade_medida=unidades_medida[i],
-                aplicacao = aplicacao.strip().lower(),  # Normaliza para evitar duplicidade
-                aplicacao_geral=aplicacao_geral,  # Salva a aplicação geral separadamente
+                aplicacao=aplicacao.strip().lower(),
+                aplicacao_geral=aplicacao_geral,
                 empresa=empresas[i],
                 usuario=session['usuario'],
                 foto_path=foto_path,
@@ -1842,20 +1901,38 @@ def abrir_solicitacao():
                 ativo=ativos[i],
                 nome_ativo=nomes_ativos[i] if i < len(nomes_ativos) and ativos[i] == 'Sim' and nomes_ativos[i] else None,
                 prioridade=prioridades[i],
-                status_aprovacao=None,  # Garantir que seja NULL
-                comprador_atribuido=get_next_comprador(aplicacao)  # 🔹 atribuição automática
+                status_aprovacao=None,
+                comprador_atribuido=get_next_comprador(aplicacao)
             )
             db.session.add(solicitacao)
             solicitacoes_criadas += 1
             print(f"✅ Solicitação {i+1} criada: Material {cod_material}, Qtd {quantidades[i]}, Aplicação: '{aplicacao}'")
 
+        # 🔴 VALIDAÇÃO 4: Verificar se o número de solicitações criadas é coerente
+        if solicitacoes_criadas > len(cod_materiais):
+            flash('Erro interno: número de solicitações criadas excede o esperado.', 'error')
+            db.session.rollback()
+            session.pop('ultimo_submit_hash', None)  # Limpar o hash em caso de erro
+            return redirect(url_for('routes_bp.solicitar_compra'))
+
+        # Mostrar erros se houver
+        if erros:
+            for erro in erros[:5]:  # Mostrar apenas os primeiros 5 erros
+                flash(erro, 'error')
+            if len(erros) > 5:
+                flash(f'E mais {len(erros) - 5} erro(s)...', 'warning')
+
         if solicitacoes_criadas > 0:
             db.session.commit()
             flash(f'{solicitacoes_criadas} solicitações de compra abertas com sucesso.', 'success')
             print(f"🎉 {solicitacoes_criadas} solicitações salvas no banco")
+            
+            # 🔴 Limpar o hash após sucesso
+            session.pop('ultimo_submit_hash', None)
         else:
             flash('Nenhuma solicitação válida para criar.', 'error')
             print("❌ Nenhuma solicitação criada")
+            session.pop('ultimo_submit_hash', None)  # Limpar o hash também
 
         return redirect(url_for('routes_bp.solicitar_compra'))
         
@@ -1864,6 +1941,7 @@ def abrir_solicitacao():
         logging.error(f"Error in abrir_solicitacao: {str(e)}")
         print(f"💥 ERRO CRÍTICO: {str(e)}")
         flash(f'Erro ao abrir solicitações: {str(e)}', 'error')
+        session.pop('ultimo_submit_hash', None)  # Limpar o hash em caso de erro
         return redirect(url_for('routes_bp.buscar_material'))
 
 def _get_compradores_from_file():
