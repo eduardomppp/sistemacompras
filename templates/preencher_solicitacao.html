@@ -146,32 +146,154 @@
             max-width: 140px;
         }
 
-        /* SEÇÕES DESTAQUE */
+        /* ===== SEÇÃO DESTAQUE ORGANIZADA ===== */
         .destaque-section {
-            background: rgba(10, 44, 92, 0.9);
-            padding: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+            padding: 15px 12px;
+            margin-top: 15px;
+        }
+
+        .destaque-titulo {
+            color: #FFD700;
+            font-size: 13px;
+            font-weight: 600;
+            margin: 0 0 15px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .destaque-titulo i {
+            font-size: 14px;
+        }
+
+        /* Tabela Destaque */
+        .destaque-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        .destaque-table th {
+            text-align: left;
+            font-size: 10px;
+            font-weight: 600;
+            color: #FFD700;
+            padding: 8px 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .destaque-table td {
+            padding: 10px 5px;
+            vertical-align: top;
+        }
+
+        /* Opções em vertical */
+        .opcoes-vertical {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .opcao-linha {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            color: white;
+            font-size: 11px;
+        }
+
+        .opcao-linha:hover {
+            color: #FFD700;
+        }
+
+        .opcao-check, .opcao-radio {
+            width: 14px;
+            height: 14px;
+            cursor: pointer;
+            accent-color: #FFD700;
+            margin: 0;
+        }
+
+        .opcao-linha span {
+            font-size: 11px;
+            line-height: 1.4;
+        }
+
+        /* Configurações extras */
+        .config-extra {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            margin-top: 10px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .config-bloco {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .config-label {
+            font-size: 10px;
+            font-weight: 600;
+            color: #FFD700;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        /* Grid para opções de pagamento */
+        .opcoes-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 10px;
             border-radius: 4px;
-            margin-top: 8px;
         }
 
-        .destaque-section h2 {
-            text-align: center;
-            margin-bottom: 6px;
-            font-size: 12px;
+        .opcao-grid {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+            color: white;
+            font-size: 11px;
         }
 
-        /* FORMULÁRIOS COMPACTOS */
-        .checkbox-item,
-        .pagamento-item {
-            font-size: 10px;
-            margin: 2px 0;
+        .opcao-grid:hover {
+            color: #FFD700;
         }
 
-        .justificativa textarea {
-            height: 45px;
-            font-size: 10px;
-            padding: 4px;
+        /* Textarea justificativa */
+        .config-textarea {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            padding: 10px;
+            color: white;
+            font-size: 11px;
+            line-height: 1.5;
+            min-height: 60px;
             resize: vertical;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        .config-textarea[readonly] {
+            cursor: default;
+            opacity: 0.9;
+        }
+
+        .config-textarea:focus {
+            outline: none;
+            border-color: #FFD700;
         }
 
         /* COLUNA DIREITA - COTAÇÕES */
@@ -217,8 +339,8 @@
             border-radius: 8px;
             padding: 15px;
             box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-            width: 500px;
-            min-width: 500px;
+            width: 800px;
+            min-width: 800px;
             flex-shrink: 0;
             position: relative;
             transition: transform 0.2s, box-shadow 0.2s;
@@ -277,12 +399,12 @@
             border-left: 3px solid #022855;
         }
 
-        /* TABELA DE MATERIAIS - SUPER OTIMIZADA */
+        /* TABELA DE MATERIAIS - MELHORADA COM MAIS ESPAÇO */
         .materiais-container {
             border: 1px solid #e1e5eb;
             border-radius: 4px;
             margin: 10px 0;
-            overflow: hidden;
+            overflow-x: auto;
             background: white;
         }
 
@@ -291,6 +413,7 @@
             border-collapse: collapse;
             font-size: 10px;
             table-layout: fixed;
+            min-width: 780px;
         }
 
         /* CABEÇALHO FIXO COM PERFORMANCE */
@@ -303,47 +426,52 @@
         .materiais-table th {
             background: #022855;
             color: white;
-            padding: 6px 4px;
+            padding: 8px 6px;
             font-weight: 600;
-            font-size: 9.5px;
+            font-size: 10px;
             border: 1px solid #e1e5eb;
             text-align: center;
-            height: 30px;
+            height: 36px;
+            white-space: nowrap;
         }
 
-        /* CÉLULAS OTIMIZADAS */
+        /* CÉLULAS OTIMIZADAS COM MAIS ESPAÇO */
         .materiais-table td {
-            padding: 4px;
+            padding: 6px 5px;
             border: 1px solid #e1e5eb;
             text-align: center;
             vertical-align: middle;
-            height: 32px;
+            height: 42px;
         }
 
-        /* LARGURAS OTIMIZADAS */
+        /* LARGURAS MELHORADAS PARA MELHOR VISIBILIDADE */
         .materiais-table .descricao {
-            width: 40%;
+            width: 25%;
             text-align: left;
-            padding: 4px 6px !important;
-            font-size: 9.5px;
-            line-height: 1.3;
+            padding: 6px 8px !important;
+            font-size: 10px;
+            line-height: 1.4;
             word-break: break-word;
         }
 
-        .materiais-table .quantidade,
+        .materiais-table .quantidade {
+            width: 8%;
+            font-size: 10px;
+        }
+
         .materiais-table .unidade {
             width: 7%;
-            font-size: 9.5px;
+            font-size: 10px;
         }
 
         .materiais-table .unitario {
             width: 12%;
             font-size: 10px;
         }
-        
+
         .materiais-table .marca {
-            width: 12%;
-            font-size: 9.5px;
+            width: 15%;
+            font-size: 10px;
         }
 
         .materiais-table .total {
@@ -353,37 +481,41 @@
 
         .materiais-table .acoes {
             width: 8%;
+            font-size: 10px;
         }
 
-        /* INPUTS OTIMIZADOS */
+        /* INPUTS MELHORADOS COM MAIS ESPAÇO */
         .materiais-table input {
             width: 100%;
-            height: 26px;
-            padding: 2px 4px;
+            height: 32px;
+            padding: 4px 8px;
             border: 1px solid #d1d5db;
-            border-radius: 3px;
-            font-size: 9.5px;
+            border-radius: 4px;
+            font-size: 10px;
             text-align: center;
             background: white;
-            transition: border-color 0.15s;
+            transition: border-color 0.15s, box-shadow 0.15s;
             box-sizing: border-box;
         }
 
         .materiais-table input:focus {
             outline: none;
             border-color: #022855;
-            box-shadow: 0 0 0 2px rgba(2, 40, 85, 0.1);
+            box-shadow: 0 0 0 3px rgba(2, 40, 85, 0.1);
         }
 
-        .materiais-table .descricao input {
+        .materiais-table .descricao input,
+        .materiais-table .descricao textarea {
             text-align: left;
             height: auto;
-            min-height: 26px;
+            min-height: 36px;
             white-space: normal;
             word-break: break-word;
-            font-size: 9.5px;
-            line-height: 1.3;
-            padding: 4px 6px;
+            font-size: 10px;
+            line-height: 1.4;
+            padding: 6px 8px;
+            width: 100%;
+            resize: none;
         }
 
         /* INPUTS READONLY */
@@ -393,44 +525,44 @@
             border-color: #e9ecef;
         }
 
-        /* Estilo para o input de marca */
+        /* Estilo melhorado para o input de marca */
         .materiais-table .marca input {
             width: 100%;
-            height: 26px;
-            padding: 2px 4px;
+            height: 32px;
+            padding: 4px 8px;
             border: 1px solid #d1d5db;
-            border-radius: 3px;
-            font-size: 9.5px;
+            border-radius: 4px;
+            font-size: 10px;
             text-align: left;
             background: white;
-            transition: border-color 0.15s;
+            transition: border-color 0.15s, box-shadow 0.15s;
             box-sizing: border-box;
         }
 
         .materiais-table .marca input:focus {
             outline: none;
             border-color: #022855;
-            box-shadow: 0 0 0 2px rgba(2, 40, 85, 0.1);
+            box-shadow: 0 0 0 3px rgba(2, 40, 85, 0.1);
         }
 
         .materiais-table .marca input::placeholder {
             color: #999;
-            font-size: 8px;
+            font-size: 9px;
         }
 
         /* BOTÕES DE AÇÃO */
         .btn-add-material,
         .btn-add-all {
             font-size: 10px;
-            padding: 4px 8px;
-            height: 26px;
+            padding: 6px 10px;
+            height: 30px;
             border: none;
-            border-radius: 3px;
+            border-radius: 4px;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
-            gap: 4px;
-            margin: 5px 5px 0 0;
+            gap: 6px;
+            margin: 8px 8px 0 0;
             transition: all 0.2s;
         }
 
@@ -449,33 +581,33 @@
             background: #f8fafc;
             border: 1px solid #e1e5eb;
             border-radius: 6px;
-            padding: 10px;
-            font-size: 11px;
-            margin-top: 10px;
+            padding: 12px;
+            font-size: 12px;
+            margin-top: 12px;
         }
 
         .total-line {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 3px;
-            padding: 2px 0;
+            margin-bottom: 4px;
+            padding: 3px 0;
         }
 
         .total-geral-fornecedor {
             background: #022855;
             color: white;
-            padding: 6px;
+            padding: 8px;
             border-radius: 4px;
             font-weight: 700;
-            font-size: 11px;
-            margin-top: 6px;
+            font-size: 12px;
+            margin-top: 8px;
             text-align: center;
         }
 
         /* BOTÕES PRINCIPAIS */
         .action-buttons {
             display: flex;
-            gap: 8px;
+            gap: 10px;
             margin-top: 15px;
             padding-top: 15px;
             border-top: 1px solid #e1e5eb;
@@ -483,8 +615,8 @@
 
         .btn {
             flex: 1;
-            padding: 6px 12px;
-            font-size: 11px;
+            padding: 8px 14px;
+            font-size: 12px;
             font-weight: 600;
             border: none;
             border-radius: 4px;
@@ -517,33 +649,33 @@
             background: #6c757d;
             color: white;
             border: none;
-            padding: 6px 12px;
+            padding: 8px 14px;
             border-radius: 4px;
-            font-size: 11px;
+            font-size: 12px;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
-            gap: 5px;
+            gap: 6px;
             transition: background 0.2s;
         }
 
         /* FOOTER */
         .footer {
-            margin: 10px 0;
+            margin: 15px 0;
             text-align: center;
-            font-size: 9px;
+            font-size: 10px;
             color: #6c757d;
         }
 
         .assinaturas {
             display: flex;
             justify-content: center;
-            gap: 60px;
-            margin-top: 15px;
+            gap: 80px;
+            margin-top: 20px;
         }
 
         .assinatura {
-            font-size: 10px;
+            font-size: 11px;
             text-align: center;
             color: #022855;
         }
@@ -563,8 +695,8 @@
         /* MEDIA QUERIES OTIMIZADAS */
         @media (max-width: 1400px) {
             .cotacao-card {
-                width: 480px;
-                min-width: 480px;
+                width: 750px;
+                min-width: 750px;
             }
         }
 
@@ -601,11 +733,27 @@
 
             .materiais-table {
                 font-size: 9px;
+                min-width: 700px;
             }
 
             .materiais-table th,
             .materiais-table td {
-                padding: 3px;
+                padding: 5px 3px;
+            }
+
+            .opcoes-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .destaque-table td {
+                display: block;
+                width: 100%;
+            }
+            
+            .opcoes-grid {
+                grid-template-columns: 1fr;
             }
         }
 
@@ -698,16 +846,16 @@
 
         .valor-simbolo {
             position: absolute;
-            left: 6px;
+            left: 8px;
             top: 50%;
             transform: translateY(-50%);
             color: #6c757d;
-            font-size: 9px;
+            font-size: 10px;
             pointer-events: none;
         }
 
         .valor-input input {
-            padding-left: 22px !important;
+            padding-left: 25px !important;
             text-align: right !important;
         }
 
@@ -715,14 +863,15 @@
             width: 100%;
             background: #f8f9fa;
             border: 1px solid #e9ecef;
-            border-radius: 3px;
-            font-size: 9.5px;
-            line-height: 1.3;
-            padding: 4px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            line-height: 1.4;
+            padding: 6px 8px;
             resize: none;
             overflow: hidden;
             word-break: break-word;
             white-space: pre-wrap;
+            min-height: 36px;
         }
     </style>
 </head>
@@ -825,67 +974,91 @@
                     </div>
                 </div>
 
+                <!-- SEÇÃO DESTAQUE ORGANIZADA -->
                 <div class="destaque-section">
-                    <h2>DESTAQUE</h2>
+                    <h2 class="destaque-titulo">
+                        <i class="bi bi-star-fill"></i>
+                        DESTAQUE
+                    </h2>
+
                     <table class="destaque-table">
                         <thead>
                             <tr>
-                                <th>Quant.</th>
-                                <th>Produto</th>
-                                <th>Ativo</th>
+                                <th>PRIORIDADE</th>
+                                <th>NOTA FISCAL</th>
+                                <th>ENTREGA</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
+                                <!-- Prioridade -->
                                 <td>
-                                    <div class="checkbox-duo">
-                                        <div class="checkbox-item"><input type="checkbox">Programado</div>
-                                        <div class="checkbox-item"><input type="checkbox" {{ 'checked' if
-                                                solicitacao.prioridade=='Urgente' else '' }}>Urgente</div>
+                                    <div class="opcoes-vertical">
+                                        <label class="opcao-linha">
+                                            <input type="checkbox" class="opcao-check">
+                                            <span>Programado</span>
+                                        </label>
+                                        <label class="opcao-linha">
+                                            <input type="checkbox" class="opcao-check" {{ 'checked' if
+                                                solicitacao.prioridade=='Urgente' else '' }}>
+                                            <span>Urgente</span>
+                                        </label>
                                     </div>
                                 </td>
+
+                                <!-- Nota Fiscal -->
                                 <td>
-                                    <div class="checkbox-duo">
-                                        <div class="checkbox-item"><input type="checkbox">Nota fiscal</div>
-                                        <div class="checkbox-item"><input type="checkbox">Sem nota</div>
+                                    <div class="opcoes-vertical">
+                                        <label class="opcao-linha">
+                                            <input type="checkbox" class="opcao-check">
+                                            <span>Com nota</span>
+                                        </label>
+                                        <label class="opcao-linha">
+                                            <input type="checkbox" class="opcao-check">
+                                            <span>Sem nota</span>
+                                        </label>
                                     </div>
                                 </td>
+
+                                <!-- Entrega -->
                                 <td>
-                                    <div class="entrega-group">
-                                        <span>Entrega do produto</span>
-                                        <div class="entrega-options">
-                                            <div><input type="radio" name="entrega">Sim</div>
-                                            <div><input type="radio" name="entrega">Não</div>
-                                        </div>
+                                    <div class="opcoes-vertical">
+                                        <label class="opcao-linha">
+                                            <input type="radio" name="entrega" class="opcao-radio">
+                                            <span>Sim</span>
+                                        </label>
+                                        <label class="opcao-linha">
+                                            <input type="radio" name="entrega" class="opcao-radio">
+                                            <span>Não</span>
+                                        </label>
                                     </div>
                                 </td>
                             </tr>
                         </tbody>
                     </table>
 
-                    <div class="forma-pagamento">
-                        <strong>Forma de pagamento</strong>
-                        <div class="pagamento-options">
-                            {% for fp in ['PA','Boleto','PIX','Dinheiro'] %}
-                            <div class="pagamento-item">
-                                <input type="radio" name="pagamento"> {{ fp }}
+                    <!-- Forma de Pagamento e Justificativa -->
+                    <div class="config-extra">
+                        <div class="config-bloco">
+                            <span class="config-label">FORMA DE PAGAMENTO</span>
+                            <div class="opcoes-grid">
+                                {% for fp in ['PA', 'Boleto', 'PIX', 'Dinheiro'] %}
+                                <label class="opcao-grid">
+                                    <input type="radio" name="pagamento" class="opcao-radio">
+                                    <span>{{ fp }}</span>
+                                </label>
+                                {% endfor %}
                             </div>
-                            {% endfor %}
+                        </div>
+
+                        <div class="config-bloco">
+                            <span class="config-label">JUSTIFICATIVA</span>
+                            <textarea class="config-textarea"
+                                readonly>{% if modo_grupo %}Grupo de {{ solicitacoes_grupo|length }} solicitações para {{ solicitacoes_grupo[0].aplicacao or solicitacoes_grupo[0].material.Aplicacao or 'aplicação' }}{% else %}{{ solicitacao.especificacao or 'Sem especificações adicionais' }}{% endif %}</textarea>
                         </div>
                     </div>
-
-                    <div class="justificativa">
-                        <strong>Justificativa</strong>
-                        <textarea readonly>
-{%- if modo_grupo -%}
-Grupo de {{ solicitacoes_grupo|length }} solicitações para {{ solicitacoes_grupo[0].aplicacao or solicitacoes_grupo[0].material.Aplicacao or 'aplicação' }}
-{%- else -%}
-{{ solicitacao.especificacao or 'Sem especificações adicionais' }}
-{%- endif -%}
-                        </textarea>
-                    </div>
                 </div>
-            </div>
+            </div>  <!-- Fim da left-column -->
 
             <!-- Coluna direita - Cotações -->
             <div class="right-column cotacoes-container">
@@ -929,7 +1102,6 @@ Grupo de {{ solicitacoes_grupo|length }} solicitações para {{ solicitacoes_gru
                                 </select>
                                 <input type="hidden" id="fornecedor_id_{{ cotacao_num }}" name="fornecedor_id[]"
                                     value="{{ cotacao.fornecedor_id if cotacao and cotacao.fornecedor_id else '' }}">
-                                <!-- CAMPO OCULTO PARA O ID DO PREENCHIMENTO -->
                                 <input type="hidden" id="preenchimento_id_{{ cotacao_num }}" name="preenchimento_id[]"
                                     value="{{ cotacao.materiais[0].preenchimento_id if cotacao and cotacao.materiais and cotacao.materiais[0] else '' }}">
                             </div>
@@ -959,21 +1131,19 @@ Grupo de {{ solicitacoes_grupo|length }} solicitações para {{ solicitacoes_gru
                         <!-- Botões de Materiais -->
                         <div id="botoes-materiais-{{ cotacao_num }}"
                             style="display: {% if cotacao and cotacao.fornecedor_id %}block{% else %}none{% endif %};">
-                            <button type="button" class="btn-add-all"
-                                onclick="adicionarTodosMateriais({{ cotacao_num }})">
+                            <button type="button" class="btn-add-all" onclick="adicionarTodosMateriais({{ cotacao_num }})">
                                 <i class="bi bi-list-check"></i> Adicionar Todos os Materiais
                             </button>
                         </div>
 
                         <!-- Informações Gerais da Cotação -->
                         <div class="cotacao-form mt-3">
-                            <!-- CAMPO DE FRETE -->
                             <div class="form-group">
                                 <label class="form-label">Valor do Frete (R$)</label>
                                 <div class="input-group valor-input">
                                     <span class="input-group-text">R$</span>
-                                    <input type="text" class="form-control valor-frete"
-                                        id="valor_frete_{{ cotacao_num }}" name="valor_frete[]" placeholder="0,00"
+                                    <input type="text" class="form-control valor-frete" id="valor_frete_{{ cotacao_num }}"
+                                        name="valor_frete[]" placeholder="0,00"
                                         value="{% if cotacao and cotacao.valor_frete %}{% if cotacao.valor_frete is number %}{{ '{:.2f}'.format(cotacao.valor_frete).replace('.', ',') }}{% else %}{{ cotacao.valor_frete | replace('.', ',') }}{% endif %}{% endif %}">
                                 </div>
                             </div>
@@ -985,7 +1155,6 @@ Grupo de {{ solicitacoes_grupo|length }} solicitações para {{ solicitacoes_gru
                                     value="{{ cotacao.prazo_entrega if cotacao else '' }}">
                             </div>
 
-                            <!-- CAMPO DE DESCONTO -->
                             <div class="form-group">
                                 <label class="form-label">Valor do Desconto (R$)</label>
                                 <div class="input-group valor-input">
@@ -996,7 +1165,6 @@ Grupo de {{ solicitacoes_grupo|length }} solicitações para {{ solicitacoes_gru
                                 </div>
                             </div>
 
-                            <!-- PDF -->
                             <div class="form-group">
                                 <label class="form-label">Anexar PDF da Cotação</label>
                                 <input type="file" class="form-control" id="pdf_file_{{ cotacao_num }}"
@@ -1011,7 +1179,6 @@ Grupo de {{ solicitacoes_grupo|length }} solicitações para {{ solicitacoes_gru
                                 {% endif %}
                             </div>
 
-                            <!-- Observações -->
                             <div class="form-group">
                                 <label class="form-label">Observações</label>
                                 <textarea class="form-control" id="observacao_{{ cotacao_num }}" name="observacao[]"
@@ -1032,7 +1199,6 @@ Grupo de {{ solicitacoes_grupo|length }} solicitações para {{ solicitacoes_gru
                                 Geral: R$ 0,00</div>
                         </div>
 
-                        <!-- Campo oculto para dados dos materiais salvos -->
                         <input type="hidden" id="materiais_salvos_{{ cotacao_num }}"
                             value='{{ cotacao.materiais | tojson | safe if cotacao and cotacao.materiais else "[]" }}'>
                     </div>
@@ -1055,8 +1221,8 @@ Grupo de {{ solicitacoes_grupo|length }} solicitações para {{ solicitacoes_gru
                         <i class="bi bi-check-circle"></i> Finalizar e Enviar para Aprovação
                     </button>
                 </div>
-            </div>
-        </div>
+            </div>  <!-- Fim da right-column -->
+        </div>  <!-- Fim da main-container -->
     </form>
 
     <div class="footer">
@@ -1215,7 +1381,6 @@ Grupo de {{ solicitacoes_grupo|length }} solicitações para {{ solicitacoes_gru
                 return;
             }
 
-            // Se a cotação tem um fornecedor_id no banco de dados, adicionar à lista de removidos
             if (fornecedorId && fornecedorId !== '') {
                 if (!fornecedoresRemovidos.includes(fornecedorId)) {
                     fornecedoresRemovidos.push(fornecedorId);
@@ -1223,24 +1388,16 @@ Grupo de {{ solicitacoes_grupo|length }} solicitações para {{ solicitacoes_gru
                 }
             }
 
-            // Remover o elemento do DOM
             $(`#cotacao-${id}`).remove();
-
-            // Atualizar contador
             contadorCotacoes = $('.cotacao-card').length;
 
-            // Esconder botão de remover da primeira se só tiver uma
             if ($('.cotacao-card').length === 1) {
                 $('#btn-remove-1').hide();
             } else {
                 $('#btn-remove-1').show();
             }
 
-            // Atualizar o campo hidden com todos os fornecedores removidos
             $('#fornecedores_removidos').val(JSON.stringify(fornecedoresRemovidos));
-
-            console.log('🗑️ Cotação removida. Restam:', $('.cotacao-card').length);
-            console.log('📋 Fornecedores para excluir no servidor:', fornecedoresRemovidos);
         }
 
         function adicionarNovaCotacao() {
@@ -1475,7 +1632,7 @@ Grupo de {{ solicitacoes_grupo|length }} solicitações para {{ solicitacoes_gru
                                    name="material_descricao_${cotacaoId}[]"
                                    title="${material.descricao || ''}"
                                    readonly
-                                   style="white-space: normal; word-break: break-word; overflow-wrap: break-word; height: auto; min-height: 38px; padding: 4px 6px; resize: none; border: 1px solid #e0e0e0; border-radius: 3px; font-size: 9.5px; line-height: 1.3; width: 100%; box-sizing: border-box;">${material.descricao || ''}</textarea>
+                                   style="white-space: normal; word-break: break-word; overflow-wrap: break-word; height: auto; min-height: 38px; padding: 6px 8px; resize: none; border: 1px solid #e0e0e0; border-radius: 4px; font-size: 10px; line-height: 1.4; width: 100%; box-sizing: border-box;">${material.descricao || ''}</textarea>
                             <input type="hidden" name="solicitacao_id[]" value="${material.id}">
                         </td>
                         <td class="quantidade">
@@ -1509,7 +1666,7 @@ Grupo de {{ solicitacoes_grupo|length }} solicitações para {{ solicitacoes_gru
                                    value="${material.marca || ''}"
                                    data-cotacao-id="${cotacaoId}"
                                    data-material-id="${materialId}"
-                                   style="width: 100%; padding: 4px; border: 1px solid #d1d5db; border-radius: 3px; font-size: 9.5px;">
+                                   style="width: 100%; padding: 6px 8px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 10px;">
                         </td>
                         <td class="total">
                             <input type="text" class="material-total-display" 
@@ -1549,9 +1706,6 @@ Grupo de {{ solicitacoes_grupo|length }} solicitações para {{ solicitacoes_gru
                 }
             });
 
-            console.log('Materiais adicionados: ' + materiaisSolicitacao.length + ' linhas');
-
-            // Verificar se há valores salvos para carregar
             const materiaisSalvos = $('#materiais_salvos_' + cotacaoId).val();
             if (materiaisSalvos && materiaisSalvos !== '[]') {
                 try {
@@ -1584,7 +1738,6 @@ Grupo de {{ solicitacoes_grupo|length }} solicitações para {{ solicitacoes_gru
                     const valorFormatado = formatarNumero(materialSalvo.valor_unitario, 4);
                     unitarioInput.val(valorFormatado);
 
-                    // Carregar a marca se existir nos dados salvos
                     if (materialSalvo.marca) {
                         const marcaInput = $(this).find('.material-marca');
                         marcaInput.val(materialSalvo.marca);
@@ -1625,7 +1778,7 @@ Grupo de {{ solicitacoes_grupo|length }} solicitações para {{ solicitacoes_gru
                                    name="material_descricao_${cotacaoId}[]"
                                    title="${material.descricao || ''}"
                                    readonly
-                                   style="white-space: normal; word-break: break-word; overflow-wrap: break-word; height: auto; min-height: 38px; padding: 4px 6px; resize: none; border: 1px solid #e0e0e0; border-radius: 3px; font-size: 9.5px; line-height: 1.3; width: 100%; box-sizing: border-box;">${material.descricao || ''}</textarea>
+                                   style="white-space: normal; word-break: break-word; overflow-wrap: break-word; height: auto; min-height: 38px; padding: 6px 8px; resize: none; border: 1px solid #e0e0e0; border-radius: 4px; font-size: 10px; line-height: 1.4; width: 100%; box-sizing: border-box;">${material.descricao || ''}</textarea>
                             <input type="hidden" name="solicitacao_id[]" value="${material.id}">
                         </td>
                         <td class="quantidade">
@@ -1660,7 +1813,7 @@ Grupo de {{ solicitacoes_grupo|length }} solicitações para {{ solicitacoes_gru
                                    value="${marcaSalva}"
                                    data-cotacao-id="${cotacaoId}"
                                    data-material-id="${materialId}"
-                                   style="width: 100%; padding: 4px; border: 1px solid #d1d5db; border-radius: 3px; font-size: 9.5px;">
+                                   style="width: 100%; padding: 6px 8px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 10px;">
                         </td>
                         <td class="total">
                             <input type="text" class="material-total-display" 
@@ -1808,7 +1961,6 @@ Grupo de {{ solicitacoes_grupo|length }} solicitações para {{ solicitacoes_gru
                 const cotacaoId = $(this).attr('id').replace('cotacao-', '');
                 const fornecedorId = $('#fornecedor_id_' + cotacaoId).val();
 
-                // Pular cotações com fornecedor na lista de removidos
                 if (fornecedoresRemovidos.includes(fornecedorId)) {
                     return;
                 }
@@ -1849,7 +2001,6 @@ Grupo de {{ solicitacoes_grupo|length }} solicitações para {{ solicitacoes_gru
 
             console.log('Botão clicado:', clickedButton.attr('name'));
 
-            // Determinar ação
             let finalAction = actionValue;
             if (!finalAction) {
                 if (clickedButton.attr('name') === 'salvar_finalizar') {
@@ -1865,14 +2016,11 @@ Grupo de {{ solicitacoes_grupo|length }} solicitações para {{ solicitacoes_gru
             console.log('Action final:', finalAction);
             const isFinalizar = finalAction === 'salvar_finalizar';
 
-            // Garantir que fornecedores removidos estão no campo hidden
             $('#fornecedores_removidos').val(JSON.stringify(fornecedoresRemovidos));
 
-            // Gerar JSON de materiais APENAS das cotações válidas
             const materiaisJson = gerarJsonMateriais();
             $('#materiais_json').val(materiaisJson);
 
-            // Formatar valores para envio
             $('.material-unitario').each(function () {
                 const valor = $(this).val();
                 if (valor) {
@@ -1897,7 +2045,6 @@ Grupo de {{ solicitacoes_grupo|length }} solicitações para {{ solicitacoes_gru
                 }
             });
 
-            // VALIDAÇÃO - IGNORAR FORNECEDORES NA LISTA DE REMOÇÃO
             let isValid = true;
             let hasValidCotacao = false;
             let errorMessage = '';
@@ -1906,7 +2053,6 @@ Grupo de {{ solicitacoes_grupo|length }} solicitações para {{ solicitacoes_gru
                 const cotacaoId = $(this).attr('id').replace('cotacao-', '');
                 const fornecedorId = $('#fornecedor_id_' + cotacaoId).val();
 
-                // Pular cotações com fornecedor na lista de removidos
                 if (fornecedoresRemovidos.includes(fornecedorId)) {
                     return;
                 }
@@ -1922,7 +2068,6 @@ Grupo de {{ solicitacoes_grupo|length }} solicitações para {{ solicitacoes_gru
                         return false;
                     }
 
-                    // Validar valores unitários
                     $('#materiais-body-' + cotacaoId + ' tr').each(function () {
                         const unitario = $(this).find('.material-unitario').val();
 
@@ -1976,7 +2121,6 @@ Grupo de {{ solicitacoes_grupo|length }} solicitações para {{ solicitacoes_gru
                 return false;
             }
 
-            // Adicionar o action ao formulário
             $('<input>').attr({
                 type: 'hidden',
                 name: 'action',
@@ -1987,7 +2131,6 @@ Grupo de {{ solicitacoes_grupo|length }} solicitações para {{ solicitacoes_gru
             console.log('📋 Fornecedores para exclusão (IDs):', fornecedoresRemovidos);
             console.log('📦 JSON de materiais:', $('#materiais_json').val());
 
-            // Remover event handler e submeter
             $(this).off('submit');
             this.submit();
         });
@@ -2000,7 +2143,6 @@ Grupo de {{ solicitacoes_grupo|length }} solicitações para {{ solicitacoes_gru
             console.log('Página carregada!');
             console.log('Materiais disponíveis:', materiaisSolicitacao);
 
-            // Dados salvos para cada cotação
             const cotacoesSalvasData = [
                 {% for cotacao in cotacoes_salvas %}
                 {
@@ -2047,7 +2189,6 @@ Grupo de {{ solicitacoes_grupo|length }} solicitações para {{ solicitacoes_gru
 
             contadorCotacoes = totalCotacoes;
 
-            // Eventos globais
             $(document).on('input', '.material-unitario, .valor-frete, [id^="condicao_pagamento_"]', function () {
                 aplicarMascaraMonetaria($(this));
 
