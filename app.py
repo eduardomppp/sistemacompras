@@ -114,7 +114,7 @@ if not app.secret_key:
 # Configuração do banco de dados SQLite
 DATABASE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'ComparasDB.db')
 
-# ===== Correcao Coluna Marca =====
+# ===== Correcao Coluna Marca teste_teste=====
 
 def garantir_colunas_necessarias():
     """Garante que TODAS as colunas necessárias existem"""
@@ -1742,73 +1742,18 @@ def abrir_solicitacao():
         return redirect(url_for('routes_bp.login'))
     
     try:
-        # GERAR UM TOKEN ÚNICO PARA ESTA REQUISIÇÃO
-        import hashlib
-        import json
-        
         # Obter arrays do formulário
         cod_materiais = request.form.getlist('cod_material[]')
         especificacoes = request.form.getlist('especificacao[]')
         quantidades = request.form.getlist('quantidade[]')
         unidades_medida = request.form.getlist('unidade_medida[]')
-        aplicacoes = request.form.getlist('aplicacao[]')
+        aplicacoes = request.form.getlist('aplicacao[]')  # Aplicações específicas por item
         empresas = request.form.getlist('empresa[]')
         marcas = request.form.getlist('marca[]')
         ativos = request.form.getlist('ativo[]')
         nomes_ativos = request.form.getlist('nome_ativo[]')
         prioridades = request.form.getlist('prioridade[]')
         fotos = request.files.getlist('foto[]')
-
-        # 🔴 VALIDAÇÃO 1: Verificar se o número de elementos é consistente
-        if len(cod_materiais) != len(especificacoes) or \
-           len(cod_materiais) != len(quantidades) or \
-           len(cod_materiais) != len(unidades_medida) or \
-           len(cod_materiais) != len(empresas) or \
-           len(cod_materiais) != len(ativos) or \
-           len(cod_materiais) != len(prioridades):
-            flash('Inconsistência nos dados enviados. Por favor, tente novamente.', 'error')
-            return redirect(url_for('routes_bp.solicitar_compra'))
-        
-        # 🔴 VALIDAÇÃO 2: Verificar duplicatas na própria requisição
-        materiais_vistos = {}
-        indices_duplicados = []
-        
-        for i, cod in enumerate(cod_materiais):
-            if cod and cod.strip():  # Ignorar vazios
-                if cod in materiais_vistos:
-                    indices_duplicados.append({
-                        'linha': i + 1,
-                        'linha_original': materiais_vistos[cod] + 1,
-                        'codigo': cod
-                    })
-                else:
-                    materiais_vistos[cod] = i
-        
-        if indices_duplicados:
-            mensagem = "Materiais duplicados detectados:\n"
-            for dup in indices_duplicados:
-                mensagem += f"• Linha {dup['linha']} (código {dup['codigo']}) é duplicado da linha {dup['linha_original']}\n"
-            flash(mensagem, 'error')
-            return redirect(url_for('routes_bp.solicitar_compra'))
-        
-        # 🔴 VALIDAÇÃO 3: Proteção contra double-submit (CSRF token simples)
-        # Criar um hash único baseado nos dados e timestamp
-        dados_hash = hashlib.md5(
-            json.dumps({
-                'materiais': cod_materiais,
-                'quantidades': quantidades,
-                'timestamp': str(datetime.now().timestamp())
-            }, sort_keys=True).encode()
-        ).hexdigest()
-        
-        # Verificar se este conjunto já foi processado recentemente
-        ultimo_hash = session.get('ultimo_submit_hash')
-        if ultimo_hash == dados_hash:
-            flash('Esta solicitação já foi processada. Por favor, aguarde.', 'error')
-            return redirect(url_for('routes_bp.solicitar_compra'))
-        
-        # Salvar o hash na sessão
-        session['ultimo_submit_hash'] = dados_hash
 
         # DEBUG: Verificar o que está chegando
         aplicacao_geral = request.form.get('aplicacao', '').strip()
@@ -1821,7 +1766,6 @@ def abrir_solicitacao():
 
         # Processar cada solicitação
         solicitacoes_criadas = 0
-        erros = []
         
         for i, cod_material in enumerate(cod_materiais):
             if not cod_material:
@@ -1834,17 +1778,15 @@ def abrir_solicitacao():
                 if cod_material <= 0:
                     raise ValueError
             except ValueError:
-                erro = f'Código do material inválido na solicitação {i+1}.'
-                erros.append(erro)
-                print(f"❌ {erro}")
+                flash(f'Código do material inválido na solicitação {i+1}.', 'error')
+                print(f"❌ Código material inválido: {cod_material}")
                 continue
 
             # Verificar se o material existe
             material = db.session.get(Materiais, cod_material)
             if not material:
-                erro = f'Material com código {cod_material} não encontrado na solicitação {i+1}.'
-                erros.append(erro)
-                print(f"❌ {erro}")
+                flash(f'Material com código {cod_material} não encontrado na solicitação {i+1}.', 'error')
+                print(f"❌ Material não encontrado: {cod_material}")
                 continue
 
             # Validação dos campos obrigatórios para esta solicitação
@@ -1854,9 +1796,8 @@ def abrir_solicitacao():
                 i >= len(empresas) or not empresas[i] or
                 i >= len(ativos) or not ativos[i] or
                 i >= len(prioridades) or not prioridades[i]):
-                erro = f'Campos obrigatórios não preenchidos na solicitação {i+1}.'
-                erros.append(erro)
-                print(f"❌ {erro}")
+                flash(f'Campos obrigatórios não preenchidos na solicitação {i+1}.', 'error')
+                print(f"❌ Campos obrigatórios faltando no índice {i}")
                 continue
 
             # CORREÇÃO: Processar aplicação corretamente
@@ -1892,8 +1833,8 @@ def abrir_solicitacao():
                 especificacao=especificacoes[i],
                 quantidade=int(quantidades[i]),
                 unidade_medida=unidades_medida[i],
-                aplicacao=aplicacao.strip().lower(),
-                aplicacao_geral=aplicacao_geral,
+                aplicacao = aplicacao.strip().lower(),  # Normaliza para evitar duplicidade
+                aplicacao_geral=aplicacao_geral,  # Salva a aplicação geral separadamente
                 empresa=empresas[i],
                 usuario=session['usuario'],
                 foto_path=foto_path,
@@ -1901,38 +1842,20 @@ def abrir_solicitacao():
                 ativo=ativos[i],
                 nome_ativo=nomes_ativos[i] if i < len(nomes_ativos) and ativos[i] == 'Sim' and nomes_ativos[i] else None,
                 prioridade=prioridades[i],
-                status_aprovacao=None,
-                comprador_atribuido=get_next_comprador(aplicacao)
+                status_aprovacao=None,  # Garantir que seja NULL
+                comprador_atribuido=get_next_comprador(aplicacao)  # 🔹 atribuição automática
             )
             db.session.add(solicitacao)
             solicitacoes_criadas += 1
             print(f"✅ Solicitação {i+1} criada: Material {cod_material}, Qtd {quantidades[i]}, Aplicação: '{aplicacao}'")
 
-        # 🔴 VALIDAÇÃO 4: Verificar se o número de solicitações criadas é coerente
-        if solicitacoes_criadas > len(cod_materiais):
-            flash('Erro interno: número de solicitações criadas excede o esperado.', 'error')
-            db.session.rollback()
-            session.pop('ultimo_submit_hash', None)  # Limpar o hash em caso de erro
-            return redirect(url_for('routes_bp.solicitar_compra'))
-
-        # Mostrar erros se houver
-        if erros:
-            for erro in erros[:5]:  # Mostrar apenas os primeiros 5 erros
-                flash(erro, 'error')
-            if len(erros) > 5:
-                flash(f'E mais {len(erros) - 5} erro(s)...', 'warning')
-
         if solicitacoes_criadas > 0:
             db.session.commit()
             flash(f'{solicitacoes_criadas} solicitações de compra abertas com sucesso.', 'success')
             print(f"🎉 {solicitacoes_criadas} solicitações salvas no banco")
-            
-            # 🔴 Limpar o hash após sucesso
-            session.pop('ultimo_submit_hash', None)
         else:
             flash('Nenhuma solicitação válida para criar.', 'error')
             print("❌ Nenhuma solicitação criada")
-            session.pop('ultimo_submit_hash', None)  # Limpar o hash também
 
         return redirect(url_for('routes_bp.solicitar_compra'))
         
@@ -1941,7 +1864,6 @@ def abrir_solicitacao():
         logging.error(f"Error in abrir_solicitacao: {str(e)}")
         print(f"💥 ERRO CRÍTICO: {str(e)}")
         flash(f'Erro ao abrir solicitações: {str(e)}', 'error')
-        session.pop('ultimo_submit_hash', None)  # Limpar o hash em caso de erro
         return redirect(url_for('routes_bp.buscar_material'))
 
 def _get_compradores_from_file():
@@ -2819,7 +2741,7 @@ def preencher_solicitacao(id):
             # === Captura de dados dos materiais ===
             todos_valores_unitarios = request.form.getlist('valor_unitario[]')
             todos_ids_solicitacao = request.form.getlist('solicitacao_id[]')
-            todas_marcas = request.form.getlist('marca[]')  # Capturar marcas
+            todas_marcas = request.form.getlist('marca[]')
             
             print(f"📋 Marcas recebidas: {todas_marcas}")
             print(f"📋 Preenchimento IDs recebidos: {preenchimento_ids}")
@@ -2852,14 +2774,14 @@ def preencher_solicitacao(id):
                 
                 print(f"🔍 Processando cotação {idx+1}: fornecedor {fornecedor_id}, preenchimento_id {preenchimento_id}")
                 
-                # === VALIDAÇÃO EXTRA PARA FINALIZAR ===
+                # === VALIDAÇÃO PARA FINALIZAR ===
                 if is_finalizar:
                     if not prazo:
                         erros_validacao.append(f'Cotação {idx+1}: Prazo de entrega é obrigatório.')
                     if not condicao:
                         erros_validacao.append(f'Cotação {idx+1}: Condição de pagamento é obrigatória.')
                 
-                # === CONVERSÃO SEGURA ===
+                # === CONVERSÃO DO FRETE ===
                 valor_frete = parse_br_currency_final(vf_str)
                 
                 # === Processar cada material desta cotação ===
@@ -2881,15 +2803,12 @@ def preencher_solicitacao(id):
                     
                     valor_unitario_str = todos_valores_unitarios[material_idx].strip()
                     
-                    if not valor_unitario_str or valor_unitario_str in ['0', '0.00', '0,00']:
-                        erros_validacao.append(f'Cotação {idx+1}, Material {i+1}: Valor unitário é obrigatório.')
-                        continue
-                    
+                    # 🔴 CORREÇÃO: PERMITIR VALOR ZERO (VAZIO) - REMOVIDA VALIDAÇÃO DE VALOR > 0
                     valor_unitario = parse_br_currency_final(valor_unitario_str)
                     
+                    # 🔴 APENAS LOG, SEM VALIDAÇÃO DE ERRO
                     if valor_unitario <= 0:
-                        erros_validacao.append(f'Cotação {idx+1}, Material {i+1}: Valor unitário deve ser maior que zero.')
-                        continue
+                        print(f"   ⚠️ Material {i+1}: Valor unitário = 0 (vazio ou não preenchido)")
                     
                     valor_total = round(valor_unitario * sol.quantidade, 2)
                     
@@ -2898,9 +2817,9 @@ def preencher_solicitacao(id):
                     if material_idx < len(todas_marcas):
                         marca = todas_marcas[material_idx].strip()
                     
-                    print(f"   📝 Material {i+1}: Marca = '{marca}'")
+                    print(f"   📝 Material {i+1}: Marca = '{marca}', Valor = {valor_unitario}")
                     
-                    # BUSCAR PREENCHIMENTO - PRIORIDADE 1: PELO ID ESPECÍFICO
+                    # BUSCAR PREENCHIMENTO
                     preenchimento = None
                     
                     if primeiro_material_desta_cotacao and preenchimento_id and preenchimento_id != '':
@@ -2910,7 +2829,6 @@ def preencher_solicitacao(id):
                         except:
                             pass
                     
-                    # BUSCAR PREENCHIMENTO - PRIORIDADE 2: PELA COMBINAÇÃO
                     if not preenchimento:
                         preenchimento = SolicitacoesPreenchidas.query.filter_by(
                             solicitacao_id=sol.id,
@@ -2919,7 +2837,6 @@ def preencher_solicitacao(id):
                         ).first()
                         print(f"   🔍 Busca por fornecedor {fornecedor_id} + solicitação {sol.id}: {'Encontrado' if preenchimento else 'Não encontrado'}")
                     
-                    # SE AINDA NÃO TEM, CRIAR NOVO (SALVANDO A MARCA NO PREENCHIMENTO)
                     if not preenchimento:
                         preenchimento = SolicitacoesPreenchidas(
                             solicitacao_id=sol.id,
@@ -2933,13 +2850,13 @@ def preencher_solicitacao(id):
                             data_preenchimento=get_local_time(),
                             usuario=usuario,
                             status='Rascunho' if is_rascunho else 'Aguardando Aprovacao',
-                            marca=marca  # 🔴 SALVAR MARCA NO PREENCHIMENTO
+                            marca=marca
                         )
                         db.session.add(preenchimento)
                         print(f"   ✅ Novo preenchimento criado para solicitação {sol.id} com marca '{marca}'")
                         
                     else:
-                        # ATUALIZAR PREENCHIMENTO EXISTENTE (INCLUINDO A MARCA)
+                        # ATUALIZAR PREENCHIMENTO EXISTENTE
                         print(f"   🔄 Atualizando preenchimento ID {preenchimento.id}")
                         
                         # Verificar mudanças para histórico
@@ -2969,7 +2886,7 @@ def preencher_solicitacao(id):
                             db.session.add(historico)
                             print(f"   📝 Histórico de desconto registrado")
                         
-                        # Atualizar dados (INCLUINDO A MARCA)
+                        # Atualizar dados
                         preenchimento.valor_unitario = valor_unitario
                         preenchimento.valor_total = valor_total
                         preenchimento.valor_frete = valor_frete if valor_frete > 0 else None
@@ -2979,7 +2896,7 @@ def preencher_solicitacao(id):
                         preenchimento.status = 'Rascunho' if is_rascunho else 'Aguardando Aprovacao'
                         preenchimento.data_preenchimento = get_local_time()
                         preenchimento.usuario = usuario
-                        preenchimento.marca = marca  # 🔴 ATUALIZAR MARCA NO PREENCHIMENTO
+                        preenchimento.marca = marca
                         
                         print(f"   ✅ Marca '{marca}' atualizada no preenchimento {preenchimento.id}")
                     
@@ -3130,7 +3047,7 @@ def preencher_solicitacao(id):
                     'descricao': solicitacao_match.material.DescricaoMaterial if solicitacao_match.material else '',
                     'quantidade': float(solicitacao_match.quantidade) if solicitacao_match.quantidade else 0.0,
                     'unidade': solicitacao_match.unidade_medida or 'un',
-                    'marca': cotacao.marca or '',  # 🔴 PEGAR MARCA DO PREENCHIMENTO (NÃO DA SOLICITAÇÃO)
+                    'marca': cotacao.marca or '',
                     'historico_descontos': historico_descontos
                 }
                 cotacao_estruturada['materiais'].append(material_info)
@@ -7429,8 +7346,8 @@ def atualizar_valores_cotacao():
         if not preenchimento_id:
             return jsonify({'success': False, 'message': 'ID do preenchimento é obrigatório'}), 400
         
-        if not valor_unitario_str:
-            return jsonify({'success': False, 'message': 'Valor unitário é obrigatório'}), 400
+        # 🔴 CORREÇÃO: PERMITIR VALOR UNITÁRIO VAZIO (SERÁ 0)
+        # Removida a validação que exigia valor_unitario_str
         
         # Função robusta para conversão
         def safe_currency_convert(value_str):
@@ -7456,9 +7373,10 @@ def atualizar_valores_cotacao():
         valor_frete = safe_currency_convert(valor_frete_str)
         valor_unitario_original = safe_currency_convert(valor_unitario_original_str)
         
-        # Valida se os valores são números válidos
+        # 🔴 CORREÇÃO: PERMITIR VALOR ZERO - REMOVIDA VALIDAÇÃO <= 0
+        # Apenas log informativo
         if valor_unitario <= 0:
-            return jsonify({'success': False, 'message': 'Valor unitário deve ser maior que zero'}), 400
+            print(f"⚠️ Atualizando com valor unitário ZERO para preenchimento {preenchimento_id}")
         
         # Buscar o preenchimento
         preenchimento = SolicitacoesPreenchidas.query.get_or_404(preenchimento_id)
@@ -7467,7 +7385,7 @@ def atualizar_valores_cotacao():
         valor_unitario_anterior = preenchimento.valor_unitario
         valor_frete_anterior = preenchimento.valor_frete
         
-        # Calcular novo valor total
+        # Calcular novo valor total (permite zero)
         quantidade = preenchimento.solicitacao.quantidade
         novo_valor_total = (valor_unitario * quantidade) + valor_frete
         
@@ -7476,6 +7394,23 @@ def atualizar_valores_cotacao():
         preenchimento.valor_frete = valor_frete if valor_frete > 0 else None
         preenchimento.valor_total = novo_valor_total
         preenchimento.observacoes = observacoes
+        
+        # Registrar histórico se houver mudança significativa
+        if abs(valor_unitario_anterior - valor_unitario) > 0.001 or \
+           (valor_frete_anterior is not None and abs(valor_frete_anterior - valor_frete) > 0.001) or \
+           (valor_frete_anterior is None and valor_frete > 0):
+            
+            historico = HistoricoDescontos(
+                preenchimento_id=preenchimento.id,
+                valor_unitario_anterior=valor_unitario_anterior,
+                valor_unitario_novo=valor_unitario,
+                valor_frete_anterior=valor_frete_anterior if valor_frete_anterior else None,
+                valor_frete_novo=valor_frete if valor_frete > 0 else None,
+                data_alteracao=get_local_time(),
+                usuario=session['usuario']
+            )
+            db.session.add(historico)
+            print(f"📝 Histórico registrado para preenchimento {preenchimento_id}")
         
         db.session.commit()
         
