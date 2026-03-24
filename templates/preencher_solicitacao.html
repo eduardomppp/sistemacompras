@@ -1183,7 +1183,7 @@
                                 <tbody id="materiais-body-{{ cotacao_num }}">
                                     <!-- As linhas de materiais serão inseridas aqui via JavaScript -->
                                 </tbody>
-                            </table>
+                             </table>
                         </div>
 
                         <!-- Botões de Materiais -->
@@ -1202,7 +1202,7 @@
                                     <span class="input-group-text">R$</span>
                                     <input type="text" class="form-control valor-frete" id="valor_frete_{{ cotacao_num }}"
                                         name="valor_frete[]" placeholder="0,00"
-                                        value="{% if cotacao and cotacao.valor_frete %}{% if cotacao.valor_frete is number %}{{ '{:.2f}'.format(cotacao.valor_frete).replace('.', ',') }}{% else %}{{ cotacao.valor_frete | replace('.', ',') }}{% endif %}{% endif %}">
+                                        value="{% if cotacao and cotacao.valor_frete and cotacao.valor_frete != 0 %}{% if cotacao.valor_frete is number %}{{ '{:.2f}'.format(cotacao.valor_frete).replace('.', ',') }}{% else %}{{ cotacao.valor_frete | replace('.', ',') }}{% endif %}{% endif %}">
                                 </div>
                             </div>
 
@@ -1219,7 +1219,7 @@
                                     <span class="input-group-text">R$</span>
                                     <input type="text" class="form-control" id="condicao_pagamento_{{ cotacao_num }}"
                                         name="condicao_pagamento[]" placeholder="0,00"
-                                        value="{% if cotacao and cotacao.condicao_pagamento %}{% if cotacao.condicao_pagamento is number %}{{ '{:.2f}'.format(cotacao.condicao_pagamento).replace('.', ',') }}{% else %}{{ cotacao.condicao_pagamento | replace('.', ',') }}{% endif %}{% endif %}">
+                                        value="{% if cotacao and cotacao.condicao_pagamento and cotacao.condicao_pagamento != 0 %}{% if cotacao.condicao_pagamento is number %}{{ '{:.2f}'.format(cotacao.condicao_pagamento).replace('.', ',') }}{% else %}{{ cotacao.condicao_pagamento | replace('.', ',') }}{% endif %}{% endif %}">
                                 </div>
                             </div>
 
@@ -1306,7 +1306,7 @@
         // VARIÁVEIS GLOBAIS
         // ============================================
         let contadorCotacoes = {{ cotacoes_salvas|length if cotacoes_salvas else 1 }};
-        const MAX_COTACOES = 5;
+        const MAX_COTACOES = 8;
         let fornecedoresRemovidos = [];
 
         // Dados dos materiais
@@ -2037,14 +2037,20 @@
 
                 if (dados.valor_frete && dados.valor_frete > 0) {
                     $('#valor_frete_' + cotacaoId).val(formatarNumero(dados.valor_frete, 2));
+                } else {
+                    $('#valor_frete_' + cotacaoId).val('');
                 }
 
                 if (dados.condicao_pagamento && dados.condicao_pagamento > 0) {
                     $('#condicao_pagamento_' + cotacaoId).val(formatarNumero(dados.condicao_pagamento, 2));
+                } else {
+                    $('#condicao_pagamento_' + cotacaoId).val('');
                 }
 
                 if (dados.prazo_entrega) {
                     $('#prazo_entrega_' + cotacaoId).val(dados.prazo_entrega);
+                } else {
+                    $('#prazo_entrega_' + cotacaoId).val('');
                 }
 
                 if (dados.observacoes) {
@@ -2105,7 +2111,7 @@
         }
 
         // ============================================
-        // SUBMISSÃO DO FORMULÁRIO (CORRIGIDA)
+        // SUBMISSÃO DO FORMULÁRIO
         // ============================================
 
         $('#cotacoes-form').on('submit', function (e) {
@@ -2115,7 +2121,6 @@
             let finalAction = clickedButton.val() || clickedButton.attr('name');
 
             console.log('Botão clicado:', finalAction);
-            console.log('Action final:', finalAction);
 
             // Atualizar fornecedores removidos
             $('#fornecedores_removidos').val(JSON.stringify(fornecedoresRemovidos));
@@ -2181,7 +2186,6 @@
                 if (!valor || valor === '' || valor === '0,00' || valor === '0,0000' || valor === '0,000000') {
                     $(this).val('0.0000');
                 } else {
-                    // Converter formato brasileiro (1.234,56) para formato do banco (1234.56)
                     let valorNumerico = formatarNumeroParaEnvio(valor);
                     $(this).val(valorNumerico.toFixed(4));
                 }
@@ -2189,21 +2193,21 @@
 
             $('.valor-frete').each(function () {
                 const valor = $(this).val();
-                if (valor) {
+                if (!valor || valor === '' || valor === '0,00') {
+                    $(this).val('0.00');
+                } else {
                     let valorNumerico = formatarNumeroParaEnvio(valor);
                     $(this).val(valorNumerico.toFixed(2));
-                } else {
-                    $(this).val('0.00');
                 }
             });
 
             $('[id^="condicao_pagamento_"]').each(function () {
                 const valor = $(this).val();
-                if (valor) {
+                if (!valor || valor === '' || valor === '0,00') {
+                    $(this).val('0.00');
+                } else {
                     let valorNumerico = formatarNumeroParaEnvio(valor);
                     $(this).val(valorNumerico.toFixed(2));
-                } else {
-                    $(this).val('0.00');
                 }
             });
 
@@ -2217,7 +2221,6 @@
             console.log('🚀 ENVIANDO FORMULÁRIO');
             console.log('📋 Fornecedores para exclusão (IDs):', fornecedoresRemovidos);
             console.log('📦 JSON de materiais:', $('#materiais_json').val());
-            console.log('🎯 Ação:', finalAction);
 
             // Enviar o formulário
             this.submit();
