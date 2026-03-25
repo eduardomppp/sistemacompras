@@ -284,7 +284,7 @@ class SolicitacoesCompra(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     cod_material = db.Column(db.Integer, db.ForeignKey('Materiais.CodMaterial'), nullable=False)
     especificacao = db.Column(db.Text, nullable=False)
-    quantidade = db.Column(db.Integer, nullable=False)
+    quantidade = db.Column(db.String(20), nullable=False)
     unidade_medida = db.Column(db.String(20), nullable=False, default='Unidade')
     aplicacao = db.Column(db.Text, nullable=True)  # Aplicação específica do item
     aplicacao_geral = db.Column(db.Text, nullable=True)  # NOVA COLUNA: Aplicação geral do formulário
@@ -1745,9 +1745,9 @@ def abrir_solicitacao():
         # Obter arrays do formulário
         cod_materiais = request.form.getlist('cod_material[]')
         especificacoes = request.form.getlist('especificacao[]')
-        quantidades = request.form.getlist('quantidade[]')
+        quantidades = request.form.getlist('quantidade[]')  # Recebe como string
         unidades_medida = request.form.getlist('unidade_medida[]')
-        aplicacoes = request.form.getlist('aplicacao[]')  # Aplicações específicas por item
+        aplicacoes = request.form.getlist('aplicacao[]')
         empresas = request.form.getlist('empresa[]')
         marcas = request.form.getlist('marca[]')
         ativos = request.form.getlist('ativo[]')
@@ -1755,7 +1755,6 @@ def abrir_solicitacao():
         prioridades = request.form.getlist('prioridade[]')
         fotos = request.files.getlist('foto[]')
 
-        # DEBUG: Verificar o que está chegando
         aplicacao_geral = request.form.get('aplicacao', '').strip()
         print(f"🔍 DEBUG - Dados recebidos:")
         print(f"  Total de itens: {len(cod_materiais)}")
@@ -1764,15 +1763,13 @@ def abrir_solicitacao():
         print(f"  Empresas: {empresas}")
         print(f"  Quantidades: {quantidades}")
 
-        # Processar cada solicitação
         solicitacoes_criadas = 0
         
         for i, cod_material in enumerate(cod_materiais):
             if not cod_material:
                 print(f"⚠️  Pular índice {i}: cod_material vazio")
-                continue  # Pular se não tem código de material
+                continue
                 
-            # Validação do cod_material
             try:
                 cod_material = int(cod_material)
                 if cod_material <= 0:
@@ -1782,14 +1779,12 @@ def abrir_solicitacao():
                 print(f"❌ Código material inválido: {cod_material}")
                 continue
 
-            # Verificar se o material existe
             material = db.session.get(Materiais, cod_material)
             if not material:
                 flash(f'Material com código {cod_material} não encontrado na solicitação {i+1}.', 'error')
                 print(f"❌ Material não encontrado: {cod_material}")
                 continue
 
-            # Validação dos campos obrigatórios para esta solicitação
             if (i >= len(especificacoes) or not especificacoes[i] or 
                 i >= len(quantidades) or not quantidades[i] or
                 i >= len(unidades_medida) or not unidades_medida[i] or
@@ -1800,24 +1795,34 @@ def abrir_solicitacao():
                 print(f"❌ Campos obrigatórios faltando no índice {i}")
                 continue
 
-            # CORREÇÃO: Processar aplicação corretamente
-            aplicacao = None
+            # 🔴 CORREÇÃO: Converter quantidade para float e depois para string para armazenar
+            quantidade_str = quantidades[i].strip()
+            try:
+                # Converte para float para validar, mas armazena como string
+                quantidade_float = float(quantidade_str.replace(',', '.'))
+                if quantidade_float <= 0:
+                    flash(f'Quantidade deve ser maior que zero na solicitação {i+1}.', 'error')
+                    continue
+                # Armazena como string com ponto decimal
+                quantidade_armazenar = str(quantidade_float).rstrip('0').rstrip('.') if '.' in str(quantidade_float) else str(quantidade_float)
+            except ValueError:
+                flash(f'Quantidade inválida na solicitação {i+1}. Use números como 6.2 ou 7.3', 'error')
+                continue
 
-            # Primeiro tenta pegar a aplicação específica do item
+            # Processar aplicação
+            aplicacao = None
             if i < len(aplicacoes) and aplicacoes[i] and aplicacoes[i].strip():
                 aplicacao = aplicacoes[i].strip()
                 print(f"✅ Aplicação específica encontrada para índice {i}: '{aplicacao}'")
             else:
-                # Se não tem aplicação específica, tenta a aplicação geral do formulário
                 if aplicacao_geral:
                     aplicacao = aplicacao_geral
                     print(f"✅ Usando aplicação geral do formulário: '{aplicacao}'")
                 else:
-                    # Se não tem aplicação geral, usa a do material como fallback
                     aplicacao = material.Aplicacao if material and material.Aplicacao else 'Aplicação não especificada'
                     print(f"ℹ️  Usando aplicação do material: '{aplicacao}'")
 
-            # Processar upload da foto se existir
+            # Processar upload da foto
             foto_path = None
             if i < len(fotos) and fotos[i] and fotos[i].filename:
                 foto = fotos[i]
@@ -1827,14 +1832,14 @@ def abrir_solicitacao():
                     foto.save(foto_path)
                     print(f"📸 Foto salva: {foto_path}")
 
-            # Criar a solicitação de compra
+            # 🔴 CRIAR SOLICITAÇÃO - quantidade como string
             solicitacao = SolicitacoesCompra(
                 cod_material=cod_material,
                 especificacao=especificacoes[i],
-                quantidade=int(quantidades[i]),
+                quantidade=quantidade_armazenar,  # Armazena como string
                 unidade_medida=unidades_medida[i],
-                aplicacao = aplicacao.strip().lower(),  # Normaliza para evitar duplicidade
-                aplicacao_geral=aplicacao_geral,  # Salva a aplicação geral separadamente
+                aplicacao=aplicacao.strip().lower(),
+                aplicacao_geral=aplicacao_geral,
                 empresa=empresas[i],
                 usuario=session['usuario'],
                 foto_path=foto_path,
@@ -1842,12 +1847,12 @@ def abrir_solicitacao():
                 ativo=ativos[i],
                 nome_ativo=nomes_ativos[i] if i < len(nomes_ativos) and ativos[i] == 'Sim' and nomes_ativos[i] else None,
                 prioridade=prioridades[i],
-                status_aprovacao=None,  # Garantir que seja NULL
-                comprador_atribuido=get_next_comprador(aplicacao)  # 🔹 atribuição automática
+                status_aprovacao=None,
+                comprador_atribuido=get_next_comprador(aplicacao)
             )
             db.session.add(solicitacao)
             solicitacoes_criadas += 1
-            print(f"✅ Solicitação {i+1} criada: Material {cod_material}, Qtd {quantidades[i]}, Aplicação: '{aplicacao}'")
+            print(f"✅ Solicitação {i+1} criada: Material {cod_material}, Qtd {quantidade_armazenar}, Aplicação: '{aplicacao}'")
 
         if solicitacoes_criadas > 0:
             db.session.commit()
@@ -1865,6 +1870,74 @@ def abrir_solicitacao():
         print(f"💥 ERRO CRÍTICO: {str(e)}")
         flash(f'Erro ao abrir solicitações: {str(e)}', 'error')
         return redirect(url_for('routes_bp.buscar_material'))
+    
+def migrate_quantidade_to_text():
+    """Migra a coluna quantidade de INTEGER para TEXT"""
+    try:
+        conn = sqlite3.connect(DATABASE)
+        cursor = conn.cursor()
+        
+        cursor.execute("PRAGMA table_info(SolicitacoesCompra)")
+        columns = cursor.fetchall()
+        quantidade_col = next((col for col in columns if col[1] == 'quantidade'), None)
+        
+        if quantidade_col and quantidade_col[2] in ['INTEGER', 'REAL', 'FLOAT']:
+            print("🔄 Migrando coluna quantidade para TEXT...")
+            
+            # Criar tabela temporária
+            cursor.execute("""
+                CREATE TABLE SolicitacoesCompra_temp (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    cod_material INTEGER NOT NULL,
+                    especificacao TEXT NOT NULL,
+                    quantidade TEXT NOT NULL,
+                    unidade_medida TEXT NOT NULL DEFAULT 'Unidade',
+                    aplicacao TEXT,
+                    aplicacao_geral TEXT,
+                    empresa TEXT NOT NULL,
+                    data_solicitacao DATETIME NOT NULL,
+                    usuario TEXT NOT NULL,
+                    foto_path TEXT,
+                    marca TEXT,
+                    ativo TEXT NOT NULL,
+                    nome_ativo TEXT,
+                    prioridade TEXT NOT NULL DEFAULT 'Programado',
+                    status_aprovacao TEXT,
+                    observacoes_col TEXT,
+                    comprador_atribuido TEXT
+                )
+            """)
+            
+            # Copiar dados
+            cursor.execute("""
+                INSERT INTO SolicitacoesCompra_temp (
+                    id, cod_material, especificacao, quantidade, unidade_medida,
+                    aplicacao, aplicacao_geral, empresa, data_solicitacao, usuario,
+                    foto_path, marca, ativo, nome_ativo, prioridade,
+                    status_aprovacao, observacoes_col, comprador_atribuido
+                )
+                SELECT 
+                    id, cod_material, especificacao, CAST(quantidade AS TEXT), unidade_medida,
+                    aplicacao, aplicacao_geral, empresa, data_solicitacao, usuario,
+                    foto_path, marca, ativo, nome_ativo, prioridade,
+                    status_aprovacao, observacoes_col, comprador_atribuido
+                FROM SolicitacoesCompra
+            """)
+            
+            cursor.execute("DROP TABLE SolicitacoesCompra")
+            cursor.execute("ALTER TABLE SolicitacoesCompra_temp RENAME TO SolicitacoesCompra")
+            
+            conn.commit()
+            print("✅ Coluna quantidade migrada para TEXT com sucesso!")
+        else:
+            print("✅ Coluna quantidade já é do tipo TEXT")
+        
+        conn.close()
+        return True
+        
+    except sqlite3.Error as e:
+        print(f"❌ Erro na migração: {str(e)}")
+        return False
 
 def _get_compradores_from_file():
     """Função interna para ler compradores do arquivo (usada apenas pelo cache)"""
@@ -2589,6 +2662,27 @@ def preencher_solicitacao(id):
         flash('Acesso não autorizado', 'error')
         return redirect(url_for('routes_bp.login'))
     
+    # === FUNÇÃO AUXILIAR PARA CONVERTER QUANTIDADE ===
+    def converter_quantidade_para_float(quantidade):
+        """Converte quantidade para float, seja string ou número"""
+        if quantidade is None:
+            return 0.0
+        if isinstance(quantidade, (int, float)):
+            return float(quantidade)
+        try:
+            # Substitui vírgula por ponto se necessário
+            qtd_str = str(quantidade).strip().replace(',', '.')
+            # Remove caracteres não numéricos exceto ponto
+            import re
+            qtd_str = re.sub(r'[^\d.]', '', qtd_str)
+            # Remove múltiplos pontos (mantém apenas o primeiro)
+            partes = qtd_str.split('.')
+            if len(partes) > 2:
+                qtd_str = partes[0] + '.' + ''.join(partes[1:])
+            return float(qtd_str) if qtd_str else 0.0
+        except (ValueError, TypeError):
+            return 0.0
+    
     # === FUNÇÃO AUXILIAR PARA CONVERSÃO DE VALORES ===
     def parse_br_currency_final(value_str):
         if not value_str:
@@ -2803,21 +2897,23 @@ def preencher_solicitacao(id):
                     
                     valor_unitario_str = todos_valores_unitarios[material_idx].strip()
                     
-                    # 🔴 CORREÇÃO: PERMITIR VALOR ZERO (VAZIO) - REMOVIDA VALIDAÇÃO DE VALOR > 0
+                    # Converter valor unitário
                     valor_unitario = parse_br_currency_final(valor_unitario_str)
+                    
+                    # 🔴 CORREÇÃO: Converter quantidade para float
+                    quantidade_float = converter_quantidade_para_float(sol.quantidade)
+                    valor_total = round(valor_unitario * quantidade_float, 2)
                     
                     # 🔴 APENAS LOG, SEM VALIDAÇÃO DE ERRO
                     if valor_unitario <= 0:
-                        print(f"   ⚠️ Material {i+1}: Valor unitário = 0 (vazio ou não preenchido)")
-                    
-                    valor_total = round(valor_unitario * sol.quantidade, 2)
+                        print(f"   ⚠️ Material {i+1}: Valor unitário = {valor_unitario}")
                     
                     # CAPTURAR A MARCA PARA ESTE MATERIAL
                     marca = ''
                     if material_idx < len(todas_marcas):
                         marca = todas_marcas[material_idx].strip()
                     
-                    print(f"   📝 Material {i+1}: Marca = '{marca}', Valor = {valor_unitario}")
+                    print(f"   📝 Material {i+1}: Marca = '{marca}', Valor = {valor_unitario}, Qtd = {quantidade_float}")
                     
                     # BUSCAR PREENCHIMENTO
                     preenchimento = None
@@ -3045,7 +3141,7 @@ def preencher_solicitacao(id):
                     'valor_unitario': float(cotacao.valor_unitario) if cotacao.valor_unitario else 0.0,
                     'valor_total': float(cotacao.valor_total) if cotacao.valor_total else 0.0,
                     'descricao': solicitacao_match.material.DescricaoMaterial if solicitacao_match.material else '',
-                    'quantidade': float(solicitacao_match.quantidade) if solicitacao_match.quantidade else 0.0,
+                    'quantidade': converter_quantidade_para_float(solicitacao_match.quantidade),
                     'unidade': solicitacao_match.unidade_medida or 'un',
                     'marca': cotacao.marca or '',
                     'historico_descontos': historico_descontos
@@ -6506,20 +6602,45 @@ def dashboard():
         elif periodo == '2024':
             data_inicio = datetime(2024, 1, 1)
         
-        # ✅ CORREÇÃO: Carregar apenas o necessário com joins apropriados
+        # Query com eager loading
         query = SolicitacoesCompra.query.options(
             joinedload(SolicitacoesCompra.material),
             joinedload(SolicitacoesCompra.preenchimentos_fornecidos)
         )
         
-        # Aplicar filtros de data
+        # Aplicar filtro de data
         if data_inicio:
             query = query.filter(SolicitacoesCompra.data_solicitacao >= data_inicio)
         
-        # Executar consulta principal
+        # Executar consulta
         solicitacoes = query.all()
         
-        # ✅ OTIMIZAÇÃO: Processar dados em memória (sem novas consultas)
+        # ============================================
+        # FUNÇÃO AUXILIAR PARA CONVERTER QUANTIDADE
+        # ============================================
+        def converter_quantidade_para_float(quantidade):
+            """Converte quantidade para float, seja string ou número"""
+            if quantidade is None:
+                return 0.0
+            if isinstance(quantidade, (int, float)):
+                return float(quantidade)
+            try:
+                # Substitui vírgula por ponto se necessário
+                qtd_str = str(quantidade).strip().replace(',', '.')
+                # Remove caracteres não numéricos exceto ponto
+                import re
+                qtd_str = re.sub(r'[^\d.]', '', qtd_str)
+                # Remove múltiplos pontos (mantém apenas o primeiro)
+                partes = qtd_str.split('.')
+                if len(partes) > 2:
+                    qtd_str = partes[0] + '.' + ''.join(partes[1:])
+                return float(qtd_str) if qtd_str else 0.0
+            except (ValueError, TypeError):
+                return 0.0
+        
+        # ============================================
+        # ESTRUTURAS DE DADOS
+        # ============================================
         total_solicitacoes = len(solicitacoes)
         
         # Dicionários para agregação
@@ -6533,7 +6654,9 @@ def dashboard():
         gastos_por_empresa = {}
         produtividade_por_empresa = {}
         
-        # Processar todas as solicitações em um único loop
+        # ============================================
+        # PROCESSAMENTO DAS SOLICITAÇÕES
+        # ============================================
         for solicitacao in solicitacoes:
             # Aplicar filtros em memória
             if empresa != 'Todas' and solicitacao.empresa != empresa:
@@ -6550,6 +6673,9 @@ def dashboard():
                     continue
                 elif status_filtro == 'Reprovado' and status != 'Reprovado':
                     continue
+            
+            # Converter quantidade para float
+            quantidade_float = converter_quantidade_para_float(solicitacao.quantidade)
             
             # 1. PRODUTIVIDADE DOS COMPRADORES
             comprador = solicitacao.comprador_atribuido or 'Não Atribuído'
@@ -6570,7 +6696,7 @@ def dashboard():
             elif status == 'Reprovado':
                 compradores_metrics[comprador]['rejeitadas'] += 1
             
-            # Calcular valor total (usando preenchimentos já carregados)
+            # Calcular valor total da solicitação
             valor_solicitacao = 0
             for preenchimento in solicitacao.preenchimentos_fornecidos:
                 if preenchimento.status != 'Rascunho' and preenchimento.valor_total:
@@ -6602,7 +6728,7 @@ def dashboard():
                         'dias_pendente': (data_atual - solicitacao.data_solicitacao).days if solicitacao.data_solicitacao else 0
                     }
                 
-                produtos_pendentes[chave]['quantidade'] += solicitacao.quantidade
+                produtos_pendentes[chave]['quantidade'] += quantidade_float
                 
                 # Valor estimado
                 if solicitacao.preenchimentos_fornecidos:
@@ -6610,7 +6736,7 @@ def dashboard():
                               if p.valor_unitario and p.status != 'Rascunho']
                     if valores:
                         valor_medio = sum(valores) / len(valores)
-                        produtos_pendentes[chave]['valor_total'] += valor_medio * solicitacao.quantidade
+                        produtos_pendentes[chave]['valor_total'] += valor_medio * quantidade_float
             
             # 3. VOLUME POR EMPRESA
             empresa_nome = solicitacao.empresa
@@ -6638,12 +6764,12 @@ def dashboard():
                 
                 gastos_por_veiculo[veiculo]['valor_total'] += valor_solicitacao
                 gastos_por_veiculo[veiculo]['solicitacoes'] += 1
-                gastos_por_veiculo[veiculo]['itens_total'] += solicitacao.quantidade
+                gastos_por_veiculo[veiculo]['itens_total'] += quantidade_float
                 
                 # 6. COMPRAS POR VEÍCULO
                 if veiculo not in compras_por_veiculo:
                     compras_por_veiculo[veiculo] = 0
-                compras_por_veiculo[veiculo] += solicitacao.quantidade
+                compras_por_veiculo[veiculo] += quantidade_float
             
             # 7. TEMPO EM ABERTO
             if status in [None, '', 'Pendente'] and solicitacao.data_solicitacao and solicitacao.material:
@@ -6683,8 +6809,11 @@ def dashboard():
                 produtividade_por_empresa[empresa_nome]['aprovadas'] += 1
             produtividade_por_empresa[empresa_nome]['valor_total'] += valor_solicitacao
         
-        # ✅ Converter dicionários para listas ordenadas
-        # Compradores
+        # ============================================
+        # FORMATAÇÃO DOS DADOS PARA O TEMPLATE
+        # ============================================
+        
+        # 1. Compradores
         compradores_lista = []
         for nome, dados in compradores_metrics.items():
             tempo_medio = dados['tempo_medio'] / dados['contador_tempo'] if dados['contador_tempo'] > 0 else 0
@@ -6703,14 +6832,14 @@ def dashboard():
             })
         compradores_lista.sort(key=lambda x: x['total'], reverse=True)
         
-        # Produtos pendentes
+        # 2. Produtos pendentes
         produtos_pendentes_lista = sorted(
             produtos_pendentes.values(),
             key=lambda x: x['dias_pendente'],
             reverse=True
         )[:8]
         
-        # Volume por empresa
+        # 3. Volume por empresa
         volume_total = sum(dados['total'] for dados in volume_por_empresa.values())
         volume_empresa_data = []
         for empresa_nome, dados in volume_por_empresa.items():
@@ -6724,7 +6853,7 @@ def dashboard():
             })
         volume_empresa_data.sort(key=lambda x: x['volume'], reverse=True)
         
-        # Pendências por empresa
+        # 4. Pendências por empresa
         pendencias_lista = []
         for empresa_nome, dados in pendencias_por_empresa.items():
             tempo_medio = dados['dias_total'] / dados['quantidade'] if dados['quantidade'] > 0 else 0
@@ -6736,7 +6865,7 @@ def dashboard():
             })
         pendencias_lista.sort(key=lambda x: x['pendencias'], reverse=True)
         
-        # Gastos por veículo
+        # 5. Gastos por veículo
         gastos_veiculo_lista = [
             {
                 'veiculo': veiculo,
@@ -6749,7 +6878,7 @@ def dashboard():
         ]
         gastos_veiculo_lista.sort(key=lambda x: x['valor_total'], reverse=True)
         
-        # Compras por veículo
+        # 6. Compras por veículo
         compras_veiculo_lista = [
             {
                 'veiculo': veiculo,
@@ -6760,11 +6889,11 @@ def dashboard():
         ]
         compras_veiculo_lista.sort(key=lambda x: x['quantidade_total'], reverse=True)
         
-        # Tempo em aberto
+        # 7. Tempo em aberto
         tempo_aberto_lista.sort(key=lambda x: x['prioridade'], reverse=True)
         tempo_aberto_lista = tempo_aberto_lista[:10]
         
-        # Gastos por empresa
+        # 8. Gastos por empresa
         gastos_empresa_lista = []
         for empresa_nome, gastos in gastos_por_empresa.items():
             tendencia = 'alta' if gastos > 100000 else ('estável' if gastos > 50000 else 'baixa')
@@ -6779,7 +6908,7 @@ def dashboard():
             })
         gastos_empresa_lista.sort(key=lambda x: x['gastos_total'], reverse=True)
         
-        # Produtividade por empresa
+        # 9. Produtividade por empresa
         produtividade_lista = []
         for empresa_nome, dados in produtividade_por_empresa.items():
             taxa_aprovacao = (dados['aprovadas'] / dados['solicitacoes'] * 100) if dados['solicitacoes'] > 0 else 0
@@ -6793,7 +6922,9 @@ def dashboard():
             })
         produtividade_lista.sort(key=lambda x: x['taxa_aprovacao'], reverse=True)
         
-        # Dados básicos
+        # ============================================
+        # DADOS BÁSICOS
+        # ============================================
         aprovadas = sum(1 for s in solicitacoes if s.status_aprovacao == 'Aprovado')
         pendentes = sum(1 for s in solicitacoes if s.status_aprovacao in [None, '', 'Pendente'])
         rejeitadas = sum(1 for s in solicitacoes if s.status_aprovacao == 'Reprovado')
@@ -6808,7 +6939,9 @@ def dashboard():
         # Valor médio por solicitação
         valor_medio_por_solicitacao = valor_total / total_solicitacoes if total_solicitacoes > 0 else 0
         
-        # ✅ Função auxiliar de formatação
+        # ============================================
+        # FUNÇÃO AUXILIAR DE FORMATAÇÃO
+        # ============================================
         def formatar_valor(valor):
             try:
                 valor = float(valor)
@@ -6821,7 +6954,9 @@ def dashboard():
             except:
                 return "R$ 0,00"
         
-        # ✅ Dados de exemplo para evolução (6 meses)
+        # ============================================
+        # DADOS PARA EVOLUÇÃO (6 meses)
+        # ============================================
         meses_nomes = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
         mes_atual = data_atual.month
         meses_labels = []
@@ -6833,14 +6968,20 @@ def dashboard():
                 ano -= 1
             meses_labels.append(f"{meses_nomes[mes_num - 1]}/{str(ano)[-2:]}")
         
-        # Evolução de compras (dados de exemplo)
-        empresas_existentes = list(set(s.empresa for s in solicitacoes))[:3]
+        # Evolução de compras (dados agregados por mês)
         evolucao_compras = {}
-        import random
-        for empresa_nome in empresas_existentes:
-            evolucao_compras[empresa_nome] = [random.randint(50, 200) for _ in range(6)]
+        empresas_existentes = list(set(s.empresa for s in solicitacoes if s.empresa))[:3]
         
-        # ✅ Filtros disponíveis
+        for empresa_nome in empresas_existentes:
+            evolucao_compras[empresa_nome] = []
+            for mes in meses_labels:
+                # Aqui você pode implementar a lógica real de agregação mensal
+                # Por enquanto, dados de exemplo
+                evolucao_compras[empresa_nome].append(random.randint(50, 200))
+        
+        # ============================================
+        # FILTROS DISPONÍVEIS
+        # ============================================
         empresas_filtro = ['Todas'] + list(set(s.empresa for s in solicitacoes if s.empresa))
         compradores_filtro = ['Todos'] + list(set(s.comprador_atribuido for s in solicitacoes if s.comprador_atribuido))
         
@@ -6848,6 +6989,9 @@ def dashboard():
         empresas_filtro.sort() if len(empresas_filtro) > 1 else None
         compradores_filtro.sort() if len(compradores_filtro) > 1 else None
         
+        # ============================================
+        # RENDERIZAR TEMPLATE
+        # ============================================
         return render_template(
             'dashboard.html',
             # Dados básicos
@@ -6920,7 +7064,6 @@ def dashboard():
             comprador_selecionado='Todos',
             formatar_valor=formatar_valor_fallback
         )
-    
 #------------------------------------------------------------------------------------
     
 @routes_bp.route('/dashboard/data', methods=['GET'])
@@ -8506,6 +8649,7 @@ if __name__ == '__main__':
             print("Falha na migração de requisicoes. Verifique os logs.")
         
         migrate_solicitacoes_compra()
+        migrate_quantidade_to_text()
         migrate_solicitacoes_compra_status_aprovacao()
         migrate_observacoes_col()
         add_observacoes_column_to_solicitacoes_preenchidas()
