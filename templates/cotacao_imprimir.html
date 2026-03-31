@@ -46,7 +46,6 @@
             flex-wrap: nowrap;
         }
 
-        /* EMPRESA 2/3 e COMPRADOR 1/3 */
         .empresa-destacado {
             background: rgba(255, 255, 255, 0.15);
             padding: 3px 10px;
@@ -55,7 +54,7 @@
             display: flex;
             align-items: center;
             gap: 5px;
-            flex: 2; /* 2/3 do espaço */
+            flex: 2;
             min-width: 0;
         }
 
@@ -67,7 +66,7 @@
             display: flex;
             align-items: center;
             gap: 5px;
-            flex: 1; /* 1/3 do espaço */
+            flex: 1;
             min-width: 0;
         }
 
@@ -179,28 +178,72 @@
             color: white !important;
             padding: 4px 3px !important;
             font-size: 11px;
+            vertical-align: middle;
+            position: relative;
         }
 
         .cotacao-info {
-            font-size: 9px;
-            margin-top: 1px;
-            opacity: 0.9;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 100%;
+            font-size: 11px;
+            line-height: 1.3;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+            width: 100%;
+            min-width: 0;
         }
         
-        .cotacao-info span {
+        .fornecedor-nome-wrapper {
+            position: relative;
+            width: 100%;
             display: inline-block;
-            max-width: 100%;
-            overflow: hidden;
-            text-overflow: ellipsis;
         }
-
-        .cotacao-info .telefone-info {
-            font-size: 8px;
+        
+        .fornecedor-nome {
+            font-weight: 700;
+            font-size: 11px;
+            word-wrap: break-word;
+            word-break: break-word;
+            white-space: normal;
+            max-width: 100%;
+            display: block;
+            line-height: 1.2;
+            cursor: pointer;
+            padding: 2px 4px;
+            border-radius: 3px;
+            transition: background-color 0.2s;
+        }
+        
+        .fornecedor-nome:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+        
+        .fornecedor-nome.editable {
+            background-color: rgba(255, 255, 255, 0.3);
+            border: 1px dashed rgba(255, 255, 255, 0.6);
+        }
+        
+        .fornecedor-input-edit {
+            width: 100%;
+            padding: 2px 4px;
+            font-size: 11px;
+            font-weight: 700;
+            text-align: center;
+            background: white;
+            color: #0B2E59;
+            border: 1px solid #0B2E59;
+            border-radius: 3px;
+            outline: none;
+        }
+        
+        .telefone-info {
+            font-size: 9px;
             display: inline-block;
+            white-space: normal;
+            word-break: keep-all;
+            opacity: 0.9;
         }
 
         .col-material {
@@ -305,9 +348,36 @@
             width: 100%;
         }
 
-        .fluxo-pagamento .campo-observacao,
-        .status-entrega .campo-data {
-            padding: 4px 6px;
+        .status-entrega .campo-status,
+        .status-entrega .campo-previsao {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 3px;
+            font-size: 12px;
+            margin-bottom: 8px;
+            background: white;
+            transition: border-color 0.2s;
+        }
+        
+        .status-entrega .campo-status:focus,
+        .status-entrega .campo-previsao:focus {
+            outline: none;
+            border-color: #0B2E59;
+            box-shadow: 0 0 0 2px rgba(11, 46, 89, 0.1);
+        }
+        
+        .status-entrega h4 {
+            margin-bottom: 8px;
+        }
+        
+        .status-entrega h4:last-of-type {
+            margin-top: 12px;
+            margin-bottom: 8px;
+        }
+
+        .fluxo-pagamento .campo-observacao {
+            padding: 8px 10px;
         }
 
         .observacao-comprador,
@@ -355,12 +425,13 @@
 
         .fluxo-pagamento .campo-observacao {
             margin: 0;
-            padding: 4px 8px;
+            padding: 8px 10px;
             border: 1px solid #cbd5e1;
             border-top: none;
             border-radius: 0 0 3px 3px;
             width: 100%;
-            min-height: 60px;
+            min-height: 70px;
+            resize: vertical;
         }
 
         .fluxo-pagamento {
@@ -392,14 +463,6 @@
             font-size: 12px;
         }
 
-        .opcao-pagamento {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            margin-bottom: 3px;
-            font-size: 12px;
-        }
-
         .totais-grid {
             display: grid;
             grid-template-columns: repeat({{ cotacoes_salvas|length }}, 1fr);
@@ -419,15 +482,53 @@
         .total-card-header-inferior {
             background: #0B2E59;
             color: white;
-            padding: 4px 6px;
-            text-align: left;
-            font-size: 10px;
+            padding: 6px 6px;
+            text-align: center;
+            font-size: 11px;
             font-weight: 600;
             border-bottom: 1px solid #1e4a7a;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            word-wrap: break-word;
+            word-break: break-word;
+            white-space: normal;
             line-height: 1.3;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .total-card-header-inferior:hover {
+            background: #1e4a7a;
+        }
+        
+        .total-card-header-inferior .fornecedor-nome-card {
+            display: block;
+            font-weight: 700;
+            word-break: break-word;
+            cursor: pointer;
+        }
+        
+        .total-card-header-inferior .fornecedor-nome-card:hover {
+            text-decoration: underline;
+        }
+        
+        .total-card-header-inferior .telefone-card {
+            display: block;
+            font-size: 9px;
+            font-weight: normal;
+            margin-top: 2px;
+            opacity: 0.9;
+        }
+        
+        .fornecedor-card-edit {
+            width: 100%;
+            padding: 4px 6px;
+            font-size: 11px;
+            font-weight: 700;
+            text-align: center;
+            background: white;
+            color: #0B2E59;
+            border: 1px solid #ffc107;
+            border-radius: 3px;
+            outline: none;
         }
 
         .total-card-body-inferior {
@@ -512,7 +613,7 @@
         }
 
         .info-value-editable {
-            padding: 4px 6px;
+            padding: 6px 8px;
             border: 1px solid #cbd5e1;
             border-radius: 3px;
             font-size: 12px;
@@ -641,7 +742,6 @@
             cursor: pointer;
         }
 
-        /* ===== AJUSTES NA IMPRESSÃO ===== */
         @media print {
             @page {
                 size: A4 landscape;
@@ -665,7 +765,6 @@
                 padding: 0;
             }
 
-            /* IMPORTANTE: Garantir que na impressão fique na mesma linha */
             .top-header {
                 background: white !important;
                 color: black !important;
@@ -687,7 +786,7 @@
                 background: white !important;
                 border: 1px solid black !important;
                 padding: 2px 5px !important;
-                flex: 2 !important; /* 2/3 na impressão */
+                flex: 2 !important;
                 display: flex !important;
                 flex-direction: row !important;
                 align-items: center !important;
@@ -698,7 +797,7 @@
                 background: white !important;
                 border: 1px solid black !important;
                 padding: 2px 5px !important;
-                flex: 1 !important; /* 1/3 na impressão */
+                flex: 1 !important;
                 display: flex !important;
                 flex-direction: row !important;
                 align-items: center !important;
@@ -767,6 +866,24 @@
                 -webkit-print-color-adjust: economy !important;
                 print-color-adjust: economy !important;
             }
+            
+            .cotacao-info {
+                display: flex;
+                flex-direction: column;
+                gap: 1px;
+            }
+            
+            .fornecedor-nome {
+                font-weight: bold;
+                font-size: 10pt;
+                white-space: normal;
+                word-break: break-word;
+            }
+            
+            .telefone-info {
+                font-size: 8pt;
+                white-space: normal;
+            }
 
             .col-material,
             .col-quantidade,
@@ -801,13 +918,19 @@
                 font-size: 10pt !important;
             }
 
-            .total-card-header-inferior,
+            .total-card-header-inferior {
+                background: white !important;
+                color: black !important;
+                border: 1px solid black !important;
+                padding: 4px 3px !important;
+                white-space: normal !important;
+                word-break: break-word;
+            }
+            
             .total-geral-inferior {
                 background: white !important;
                 color: black !important;
                 border: 1px solid black !important;
-                padding: 2pt 3pt !important;
-                white-space: nowrap !important;
             }
 
             .total-value-inferior,
@@ -838,11 +961,13 @@
                 font-size: 11pt !important;
             }
 
-            input, textarea, .campo-data, .campo-observacao, .info-value-editable {
+            input, textarea, .campo-data, .campo-observacao, .info-value-editable,
+            .status-entrega .campo-status,
+            .status-entrega .campo-previsao {
                 border: 1px solid black !important;
                 background: white !important;
                 color: black !important;
-                padding: 1pt 3pt !important;
+                padding: 2pt 4pt !important;
                 font-size: 10pt;
             }
 
@@ -920,11 +1045,6 @@
                 font-size: 8pt !important;
             }
 
-            .cotacao-info {
-                font-size: 8pt !important;
-                white-space: nowrap !important;
-            }
-
             body, .container, .info-bottom, .table-container {
                 max-height: 100%;
                 overflow: visible;
@@ -952,7 +1072,6 @@
             }
         }
         
-        /* Apenas em telas muito pequenas quebra a linha, mas na impressão NÃO quebra */
         @media (max-width: 600px) {
             .top-header {
                 flex-wrap: wrap;
@@ -977,7 +1096,6 @@
             </div>
         </div>
 
-        <!-- Cabeçalho: EMPRESA 2/3 e COMPRADOR 1/3 na mesma linha -->
         <div class="top-header">
             <div class="empresa-destacado">
                 <label for="empresa_top">EMPRESA:</label>
@@ -997,14 +1115,15 @@
                         <th class="tabela-header col-quantidade" rowspan="2">Qtd</th>
                         <th class="tabela-header col-unidade" rowspan="2">Un</th>
                         {% for cotacao in cotacoes_salvas %}
-                        <th colspan="3" class="cotacao-header-agrupado">
-                            <div style="font-weight: bold; display: inline;">Cotação {{ loop.index }} - </div>
-                            <div style="display: inline-block; max-width: 100%;" class="cotacao-info">
-                                <span title="{{ cotacao.fornecedor_nome_fantasia if cotacao.fornecedor_nome_fantasia else 'N/D' }}">
-                                    {{ cotacao.fornecedor_nome_fantasia|truncate(12) if cotacao.fornecedor_nome_fantasia else 'N/D' }}
-                                </span>
+                        <th colspan="3" class="cotacao-header-agrupado" data-fornecedor-idx="{{ loop.index0 }}">
+                            <div class="cotacao-info">
+                                <div class="fornecedor-nome-wrapper">
+                                    <span class="fornecedor-nome" data-fornecedor-idx="{{ loop.index0 }}" data-original-nome="{{ cotacao.fornecedor_nome_fantasia if cotacao.fornecedor_nome_fantasia else 'N/D' }}">
+                                        {{ cotacao.fornecedor_nome_fantasia if cotacao.fornecedor_nome_fantasia else 'N/D' }}
+                                    </span>
+                                </div>
                                 {% if cotacao.fornecedor_telefone %}
-                                    <span class="telefone-info">📞 {{ cotacao.fornecedor_telefone|truncate(14) }}</span>
+                                    <span class="telefone-info">📞 {{ cotacao.fornecedor_telefone }}</span>
                                 {% endif %}
                             </div>
                         </th>
@@ -1095,9 +1214,9 @@
 
                 <div class="status-entrega">
                     <h4>ENTREGA</h4>
-                    <input type="text" class="campo-data" placeholder="Status atual">
-                    <h4 style="margin-top: 4px;">PREVISÃO</h4>
-                    <input type="text" class="campo-data" placeholder="DD/MM/AAAA">
+                    <input type="text" class="campo-status" id="statusEntrega" placeholder="Digite o status atual da entrega...">
+                    <h4 style="margin-top: 8px;">PREVISÃO</h4>
+                    <input type="text" class="campo-previsao" id="previsaoEntrega" placeholder="DD/MM/AAAA ou descrição da previsão...">
                 </div>
             </div>
 
@@ -1106,11 +1225,13 @@
                     <h4>TOTAIS</h4>
                     <div class="totais-grid">
                         {% for cotacao in cotacoes_salvas %}
-                        <div class="total-card-inferior">
-                            <div class="total-card-header-inferior" title="Cotação {{ loop.index }} - {{ cotacao.fornecedor_nome_fantasia if cotacao else 'N/D' }} {% if cotacao.fornecedor_telefone %} 📞 {{ cotacao.fornecedor_telefone }}{% endif %}">
-                                Cotação {{ loop.index }} - {{ cotacao.fornecedor_nome_fantasia|truncate(18) if cotacao else 'N/D' }}
+                        <div class="total-card-inferior" data-card-fornecedor-idx="{{ loop.index0 }}">
+                            <div class="total-card-header-inferior" data-card-header-idx="{{ loop.index0 }}">
+                                <span class="fornecedor-nome-card" data-card-nome-idx="{{ loop.index0 }}" data-original-nome="{{ cotacao.fornecedor_nome_fantasia if cotacao.fornecedor_nome_fantasia else 'N/D' }}">
+                                    {{ cotacao.fornecedor_nome_fantasia if cotacao.fornecedor_nome_fantasia else 'N/D' }}
+                                </span>
                                 {% if cotacao.fornecedor_telefone %}
-                                    📞 {{ cotacao.fornecedor_telefone|truncate(12) }}
+                                    <span class="telefone-card">📞 {{ cotacao.fornecedor_telefone }}</span>
                                 {% endif %}
                             </div>
                             <div class="total-card-body-inferior">
@@ -1223,31 +1344,102 @@
     </div>
 
     <script>
-        function validarEImprimir() {
-            const campoPagamento = document.getElementById('formaPagamento');
-            const errorMessage = document.getElementById('errorMessage');
-            const modal = document.getElementById('validationModal');
-
-            if (campoPagamento.value.trim() === '') {
-                campoPagamento.classList.add('required');
-                campoPagamento.style.borderColor = '#dc2626';
-                errorMessage.classList.add('show');
-                modal.classList.add('show');
-                return false;
-            } else {
-                campoPagamento.classList.remove('required');
-                campoPagamento.style.borderColor = '#cbd5e1';
-                errorMessage.classList.remove('show');
-                window.print();
+        // Função para permitir edição do nome do fornecedor
+        function tornarFornecedorEditavel(elemento, idx, isCard = false) {
+            const nomeOriginal = elemento.getAttribute('data-original-nome') || elemento.innerText;
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = nomeOriginal;
+            input.className = isCard ? 'fornecedor-card-edit' : 'fornecedor-input-edit';
+            
+            // Substituir o elemento pelo input
+            const parent = elemento.parentNode;
+            parent.replaceChild(input, elemento);
+            input.focus();
+            
+            // Função para salvar a edição
+            function salvarEdicao() {
+                const novoNome = input.value.trim() !== '' ? input.value.trim() : nomeOriginal;
+                
+                // Criar novo elemento span com o nome editado
+                const novoSpan = document.createElement('span');
+                if (!isCard) {
+                    novoSpan.className = 'fornecedor-nome';
+                    novoSpan.setAttribute('data-fornecedor-idx', idx);
+                    novoSpan.setAttribute('data-original-nome', novoNome);
+                    novoSpan.textContent = novoNome;
+                    
+                    // Adicionar evento de duplo clique para editar novamente
+                    novoSpan.addEventListener('dblclick', function(e) {
+                        e.stopPropagation();
+                        tornarFornecedorEditavel(novoSpan, idx, false);
+                    });
+                    
+                    parent.replaceChild(novoSpan, input);
+                } else {
+                    novoSpan.className = 'fornecedor-nome-card';
+                    novoSpan.setAttribute('data-card-nome-idx', idx);
+                    novoSpan.setAttribute('data-original-nome', novoNome);
+                    novoSpan.textContent = novoNome;
+                    
+                    // Adicionar evento de duplo clique para editar novamente
+                    novoSpan.addEventListener('dblclick', function(e) {
+                        e.stopPropagation();
+                        tornarFornecedorEditavel(novoSpan, idx, true);
+                    });
+                    
+                    parent.replaceChild(novoSpan, input);
+                }
+                
+                // Atualizar também o nome no local correspondente (tabela ou card)
+                if (!isCard) {
+                    const cardNome = document.querySelector(`.fornecedor-nome-card[data-card-nome-idx="${idx}"]`);
+                    if (cardNome) {
+                        cardNome.textContent = novoNome;
+                        cardNome.setAttribute('data-original-nome', novoNome);
+                    }
+                } else {
+                    const tabelaNome = document.querySelector(`.fornecedor-nome[data-fornecedor-idx="${idx}"]`);
+                    if (tabelaNome) {
+                        tabelaNome.textContent = novoNome;
+                        tabelaNome.setAttribute('data-original-nome', novoNome);
+                    }
+                }
             }
+            
+            // Eventos para salvar
+            input.addEventListener('blur', salvarEdicao);
+            input.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    salvarEdicao();
+                }
+            });
         }
-
-        function fecharModal() {
-            const modal = document.getElementById('validationModal');
-            modal.classList.remove('show');
-        }
-
-        document.addEventListener('DOMContentLoaded', function () {
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // Configurar edição dos nomes dos fornecedores no cabeçalho da tabela
+            const fornecedoresNomes = document.querySelectorAll('.fornecedor-nome');
+            fornecedoresNomes.forEach(function(elemento) {
+                const idx = elemento.getAttribute('data-fornecedor-idx');
+                // Adicionar evento de duplo clique para editar
+                elemento.addEventListener('dblclick', function(e) {
+                    e.stopPropagation();
+                    tornarFornecedorEditavel(elemento, idx, false);
+                });
+            });
+            
+            // Configurar edição dos nomes dos fornecedores nos cards
+            const cardNomes = document.querySelectorAll('.fornecedor-nome-card');
+            cardNomes.forEach(function(elemento) {
+                const idx = elemento.getAttribute('data-card-nome-idx');
+                // Adicionar evento de duplo clique para editar
+                elemento.addEventListener('dblclick', function(e) {
+                    e.stopPropagation();
+                    tornarFornecedorEditavel(elemento, idx, true);
+                });
+            });
+            
             const campoPagamento = document.getElementById('formaPagamento');
             const errorMessage = document.getElementById('errorMessage');
 
@@ -1280,6 +1472,30 @@
                 }
             });
         });
+        
+        function validarEImprimir() {
+            const campoPagamento = document.getElementById('formaPagamento');
+            const errorMessage = document.getElementById('errorMessage');
+            const modal = document.getElementById('validationModal');
+
+            if (campoPagamento.value.trim() === '') {
+                campoPagamento.classList.add('required');
+                campoPagamento.style.borderColor = '#dc2626';
+                errorMessage.classList.add('show');
+                modal.classList.add('show');
+                return false;
+            } else {
+                campoPagamento.classList.remove('required');
+                campoPagamento.style.borderColor = '#cbd5e1';
+                errorMessage.classList.remove('show');
+                window.print();
+            }
+        }
+
+        function fecharModal() {
+            const modal = document.getElementById('validationModal');
+            modal.classList.remove('show');
+        }
     </script>
 </body>
 </html>
