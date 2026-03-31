@@ -220,12 +220,24 @@
             background-color: rgba(255, 255, 255, 0.2);
         }
         
-        .fornecedor-nome.editable {
-            background-color: rgba(255, 255, 255, 0.3);
-            border: 1px dashed rgba(255, 255, 255, 0.6);
+        .telefone-info {
+            font-size: 9px;
+            display: inline-block;
+            white-space: normal;
+            word-break: keep-all;
+            opacity: 0.9;
+            cursor: pointer;
+            padding: 2px 4px;
+            border-radius: 3px;
+            transition: background-color 0.2s;
         }
         
-        .fornecedor-input-edit {
+        .telefone-info:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+        
+        .fornecedor-input-edit,
+        .telefone-input-edit {
             width: 100%;
             padding: 2px 4px;
             font-size: 11px;
@@ -238,12 +250,9 @@
             outline: none;
         }
         
-        .telefone-info {
-            font-size: 9px;
-            display: inline-block;
-            white-space: normal;
-            word-break: keep-all;
-            opacity: 0.9;
+        .telefone-input-edit {
+            font-weight: normal;
+            font-size: 10px;
         }
 
         .col-material {
@@ -491,12 +500,6 @@
             word-break: break-word;
             white-space: normal;
             line-height: 1.3;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-        
-        .total-card-header-inferior:hover {
-            background: #1e4a7a;
         }
         
         .total-card-header-inferior .fornecedor-nome-card {
@@ -504,10 +507,13 @@
             font-weight: 700;
             word-break: break-word;
             cursor: pointer;
+            padding: 2px 4px;
+            border-radius: 3px;
+            transition: background-color 0.2s;
         }
         
         .total-card-header-inferior .fornecedor-nome-card:hover {
-            text-decoration: underline;
+            background-color: rgba(255, 255, 255, 0.2);
         }
         
         .total-card-header-inferior .telefone-card {
@@ -516,9 +522,18 @@
             font-weight: normal;
             margin-top: 2px;
             opacity: 0.9;
+            cursor: pointer;
+            padding: 2px 4px;
+            border-radius: 3px;
+            transition: background-color 0.2s;
         }
         
-        .fornecedor-card-edit {
+        .total-card-header-inferior .telefone-card:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+        
+        .fornecedor-card-edit,
+        .telefone-card-edit {
             width: 100%;
             padding: 4px 6px;
             font-size: 11px;
@@ -529,6 +544,11 @@
             border: 1px solid #ffc107;
             border-radius: 3px;
             outline: none;
+        }
+        
+        .telefone-card-edit {
+            font-weight: normal;
+            font-size: 10px;
         }
 
         .total-card-body-inferior {
@@ -1123,7 +1143,9 @@
                                     </span>
                                 </div>
                                 {% if cotacao.fornecedor_telefone %}
-                                    <span class="telefone-info">📞 {{ cotacao.fornecedor_telefone }}</span>
+                                    <span class="telefone-info" data-fornecedor-telefone-idx="{{ loop.index0 }}" data-original-telefone="{{ cotacao.fornecedor_telefone }}">
+                                        📞 {{ cotacao.fornecedor_telefone }}
+                                    </span>
                                 {% endif %}
                             </div>
                         </th>
@@ -1231,7 +1253,9 @@
                                     {{ cotacao.fornecedor_nome_fantasia if cotacao.fornecedor_nome_fantasia else 'N/D' }}
                                 </span>
                                 {% if cotacao.fornecedor_telefone %}
-                                    <span class="telefone-card">📞 {{ cotacao.fornecedor_telefone }}</span>
+                                    <span class="telefone-card" data-card-telefone-idx="{{ loop.index0 }}" data-original-telefone="{{ cotacao.fornecedor_telefone }}">
+                                        📞 {{ cotacao.fornecedor_telefone }}
+                                    </span>
                                 {% endif %}
                             </div>
                             <div class="total-card-body-inferior">
@@ -1352,62 +1376,107 @@
             input.value = nomeOriginal;
             input.className = isCard ? 'fornecedor-card-edit' : 'fornecedor-input-edit';
             
-            // Substituir o elemento pelo input
             const parent = elemento.parentNode;
             parent.replaceChild(input, elemento);
             input.focus();
             
-            // Função para salvar a edição
             function salvarEdicao() {
                 const novoNome = input.value.trim() !== '' ? input.value.trim() : nomeOriginal;
                 
-                // Criar novo elemento span com o nome editado
                 const novoSpan = document.createElement('span');
                 if (!isCard) {
                     novoSpan.className = 'fornecedor-nome';
                     novoSpan.setAttribute('data-fornecedor-idx', idx);
                     novoSpan.setAttribute('data-original-nome', novoNome);
                     novoSpan.textContent = novoNome;
-                    
-                    // Adicionar evento de duplo clique para editar novamente
                     novoSpan.addEventListener('dblclick', function(e) {
                         e.stopPropagation();
                         tornarFornecedorEditavel(novoSpan, idx, false);
                     });
-                    
                     parent.replaceChild(novoSpan, input);
                 } else {
                     novoSpan.className = 'fornecedor-nome-card';
                     novoSpan.setAttribute('data-card-nome-idx', idx);
                     novoSpan.setAttribute('data-original-nome', novoNome);
                     novoSpan.textContent = novoNome;
-                    
-                    // Adicionar evento de duplo clique para editar novamente
                     novoSpan.addEventListener('dblclick', function(e) {
                         e.stopPropagation();
                         tornarFornecedorEditavel(novoSpan, idx, true);
                     });
-                    
                     parent.replaceChild(novoSpan, input);
                 }
                 
-                // Atualizar também o nome no local correspondente (tabela ou card)
-                if (!isCard) {
-                    const cardNome = document.querySelector(`.fornecedor-nome-card[data-card-nome-idx="${idx}"]`);
-                    if (cardNome) {
-                        cardNome.textContent = novoNome;
-                        cardNome.setAttribute('data-original-nome', novoNome);
-                    }
-                } else {
-                    const tabelaNome = document.querySelector(`.fornecedor-nome[data-fornecedor-idx="${idx}"]`);
-                    if (tabelaNome) {
-                        tabelaNome.textContent = novoNome;
-                        tabelaNome.setAttribute('data-original-nome', novoNome);
-                    }
+                const cardNome = document.querySelector(`.fornecedor-nome-card[data-card-nome-idx="${idx}"]`);
+                if (cardNome && !isCard) {
+                    cardNome.textContent = novoNome;
+                    cardNome.setAttribute('data-original-nome', novoNome);
+                }
+                const tabelaNome = document.querySelector(`.fornecedor-nome[data-fornecedor-idx="${idx}"]`);
+                if (tabelaNome && isCard) {
+                    tabelaNome.textContent = novoNome;
+                    tabelaNome.setAttribute('data-original-nome', novoNome);
                 }
             }
             
-            // Eventos para salvar
+            input.addEventListener('blur', salvarEdicao);
+            input.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    salvarEdicao();
+                }
+            });
+        }
+        
+        // Função para permitir edição do telefone do fornecedor
+        function tornarTelefoneEditavel(elemento, idx, isCard = false) {
+            const telefoneOriginal = elemento.getAttribute('data-original-telefone') || elemento.innerText.replace('📞', '').trim();
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = telefoneOriginal;
+            input.className = isCard ? 'telefone-card-edit' : 'telefone-input-edit';
+            
+            const parent = elemento.parentNode;
+            parent.replaceChild(input, elemento);
+            input.focus();
+            
+            function salvarEdicao() {
+                const novoTelefone = input.value.trim() !== '' ? input.value.trim() : telefoneOriginal;
+                
+                const novoSpan = document.createElement('span');
+                if (!isCard) {
+                    novoSpan.className = 'telefone-info';
+                    novoSpan.setAttribute('data-fornecedor-telefone-idx', idx);
+                    novoSpan.setAttribute('data-original-telefone', novoTelefone);
+                    novoSpan.textContent = `📞 ${novoTelefone}`;
+                    novoSpan.addEventListener('dblclick', function(e) {
+                        e.stopPropagation();
+                        tornarTelefoneEditavel(novoSpan, idx, false);
+                    });
+                    parent.replaceChild(novoSpan, input);
+                } else {
+                    novoSpan.className = 'telefone-card';
+                    novoSpan.setAttribute('data-card-telefone-idx', idx);
+                    novoSpan.setAttribute('data-original-telefone', novoTelefone);
+                    novoSpan.textContent = `📞 ${novoTelefone}`;
+                    novoSpan.addEventListener('dblclick', function(e) {
+                        e.stopPropagation();
+                        tornarTelefoneEditavel(novoSpan, idx, true);
+                    });
+                    parent.replaceChild(novoSpan, input);
+                }
+                
+                const cardTelefone = document.querySelector(`.telefone-card[data-card-telefone-idx="${idx}"]`);
+                if (cardTelefone && !isCard) {
+                    cardTelefone.textContent = `📞 ${novoTelefone}`;
+                    cardTelefone.setAttribute('data-original-telefone', novoTelefone);
+                }
+                const tabelaTelefone = document.querySelector(`.telefone-info[data-fornecedor-telefone-idx="${idx}"]`);
+                if (tabelaTelefone && isCard) {
+                    tabelaTelefone.textContent = `📞 ${novoTelefone}`;
+                    tabelaTelefone.setAttribute('data-original-telefone', novoTelefone);
+                }
+            }
+            
             input.addEventListener('blur', salvarEdicao);
             input.addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') {
@@ -1422,22 +1491,44 @@
             const fornecedoresNomes = document.querySelectorAll('.fornecedor-nome');
             fornecedoresNomes.forEach(function(elemento) {
                 const idx = elemento.getAttribute('data-fornecedor-idx');
-                // Adicionar evento de duplo clique para editar
                 elemento.addEventListener('dblclick', function(e) {
                     e.stopPropagation();
                     tornarFornecedorEditavel(elemento, idx, false);
                 });
             });
             
+            // Configurar edição dos telefones no cabeçalho da tabela
+            const telefonesInfo = document.querySelectorAll('.telefone-info');
+            telefonesInfo.forEach(function(elemento) {
+                const idx = elemento.getAttribute('data-fornecedor-telefone-idx');
+                if (idx) {
+                    elemento.addEventListener('dblclick', function(e) {
+                        e.stopPropagation();
+                        tornarTelefoneEditavel(elemento, idx, false);
+                    });
+                }
+            });
+            
             // Configurar edição dos nomes dos fornecedores nos cards
             const cardNomes = document.querySelectorAll('.fornecedor-nome-card');
             cardNomes.forEach(function(elemento) {
                 const idx = elemento.getAttribute('data-card-nome-idx');
-                // Adicionar evento de duplo clique para editar
                 elemento.addEventListener('dblclick', function(e) {
                     e.stopPropagation();
                     tornarFornecedorEditavel(elemento, idx, true);
                 });
+            });
+            
+            // Configurar edição dos telefones nos cards
+            const telefonesCard = document.querySelectorAll('.telefone-card');
+            telefonesCard.forEach(function(elemento) {
+                const idx = elemento.getAttribute('data-card-telefone-idx');
+                if (idx) {
+                    elemento.addEventListener('dblclick', function(e) {
+                        e.stopPropagation();
+                        tornarTelefoneEditavel(elemento, idx, true);
+                    });
+                }
             });
             
             const campoPagamento = document.getElementById('formaPagamento');
