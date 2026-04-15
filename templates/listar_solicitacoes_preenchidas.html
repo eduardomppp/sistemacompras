@@ -125,6 +125,8 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 0.5rem;
         }
         .solicitacao-id { color: #495057; font-size: 0.9rem; }
         .solicitacao-info { background: #f1f3f5; padding: 0.75rem 1rem; border-bottom: 1px solid #dee2e6; }
@@ -272,6 +274,11 @@
                                         {% set is_bloqueada = true %}
                                     {% endif %}
                                 {% endfor %}
+                                
+                                {# 🔴 CORREÇÃO: Converter quantidade para float #}
+                                {% set quantidade_float = solicitacao.quantidade|float %}
+                                {% set valor_unitario = p.valor_unitario|default(0) %}
+                                {% set subtotal = quantidade_float * valor_unitario %}
 
                                 <div class="cotacao-col">
                                     <div class="material-card {% if is_aprovada %}cotacao-aprovada{% elif is_rascunho %}cotacao-rascunho{% elif is_bloqueada %}cotacao-bloqueada{% endif %}">
@@ -293,7 +300,7 @@
                                         <div class="p-3">
                                             <div class="row g-2 mb-3 small">
                                                 <div class="col-6"><strong>Valor unitário:</strong></div>
-                                                <div class="col-6">R$ {{ "%.2f"|format(p.valor_unitario|default(0)) }}</div>
+                                                <div class="col-6">R$ {{ "%.2f"|format(valor_unitario) }}</div>
                                                 <div class="col-6"><strong>Entrega:</strong></div>
                                                 <div class="col-6">{{ p.prazo_entrega or 'Não informado' }}</div>
                                                 <div class="col-12 mt-2">
@@ -305,19 +312,19 @@
                                             <div class="valores-container">
                                                 <div class="valor-item">
                                                     <span>Quantidade solicitada:</span>
-                                                    <span>{{ solicitacao.quantidade }} {{ solicitacao.unidade_medida }}</span>
+                                                    <span>{{ quantidade_float }} {{ solicitacao.unidade_medida }}</span>
                                                 </div>
                                                 <div class="valor-item">
                                                     <span>Valor unitário:</span>
-                                                    <span>R$ {{ "%.2f"|format(p.valor_unitario|default(0)) }}</span>
+                                                    <span>R$ {{ "%.2f"|format(valor_unitario) }}</span>
                                                 </div>
                                                 <div class="valor-item">
                                                     <span>Subtotal produtos:</span>
-                                                    <span>R$ {{ "%.2f"|format(solicitacao.quantidade * p.valor_unitario|default(0)) }}</span>
+                                                    <span>R$ {{ "%.2f"|format(subtotal) }}</span>
                                                 </div>
                                                 <div class="valor-item valor-total">
                                                     <strong>Total produtos:</strong>
-                                                    <strong>R$ {{ "%.2f"|format(solicitacao.quantidade * p.valor_unitario|default(0)) }}</strong>
+                                                    <strong>R$ {{ "%.2f"|format(subtotal) }}</strong>
                                                 </div>
                                             </div>
                                             
@@ -385,7 +392,8 @@
                                     {% set _ = ordem_fornecedores.append(forn) %}
                                 {% endif %}
 
-                                {% set qtd = solicitacao.quantidade|float(0) %}
+                                {# 🔴 CORREÇÃO: Converter quantidade para float #}
+                                {% set qtd = solicitacao.quantidade|float %}
                                 {% set vu = p.valor_unitario|default(0.0)|float %}
                                 {% set subt = qtd * vu %}
 
@@ -460,7 +468,7 @@
                                             {% for item in dados.itens %}
                                                 <div class="small mb-1">
                                                     <span class="badge bg-light text-dark">#{{ item.solicitacao_id }}</span>
-                                                    {{ item.material }} ({{ item.quantidade }} un)
+                                                    {{ item.material }} ({{ "%.2f"|format(item.quantidade) }} un)
                                                 </div>
                                             {% endfor %}
                                         </div>
