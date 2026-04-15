@@ -3075,29 +3075,32 @@ def preencher_solicitacao(id):
             'endereco': ''
         }
         
-        conn = get_db_connection(DB_PATH_FORNECEDORES)
-        if conn:
-            cursor = conn.cursor()
-            cursor.execute("""
-                SELECT nome_fantasia, cnpj, telefone, endereco, bairro, cidade, estado
-                FROM fornecedores
-                WHERE id = ?
-            """, (fornecedor_id,))
-            row = cursor.fetchone()
-            conn.close()
-            
-            if row:
-                fornecedor_info['nome_fantasia'] = row[0] or ''
-                fornecedor_info['cnpj'] = format_cnpj(row[1]) if row[1] else ''
-                fornecedor_info['telefone'] = row[2] or ''
-                endereco_parts = []
-                if row[3]:
-                    endereco_parts.append(row[3])
-                if row[4]:
-                    endereco_parts.append(row[4])
-                if row[5] and row[6]:
-                    endereco_parts.append(f"{row[5]}/{row[6]}")
-                fornecedor_info['endereco'] = ', '.join(endereco_parts) if endereco_parts else 'Não informado'
+        try:
+            conn = get_db_connection(DB_PATH_FORNECEDORES)
+            if conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    SELECT nome_fantasia, cnpj, telefone, endereco, bairro, cidade, estado
+                    FROM fornecedores
+                    WHERE id = ?
+                """, (fornecedor_id,))
+                row = cursor.fetchone()
+                conn.close()
+                
+                if row:
+                    fornecedor_info['nome_fantasia'] = row[0] or ''
+                    fornecedor_info['cnpj'] = format_cnpj(row[1]) if row[1] else ''
+                    fornecedor_info['telefone'] = row[2] or ''
+                    endereco_parts = []
+                    if row[3]:
+                        endereco_parts.append(row[3])
+                    if row[4]:
+                        endereco_parts.append(row[4])
+                    if row[5] and row[6]:
+                        endereco_parts.append(f"{row[5]}/{row[6]}")
+                    fornecedor_info['endereco'] = ', '.join(endereco_parts) if endereco_parts else 'Não informado'
+        except Exception as e:
+            print(f"Erro ao buscar fornecedor {fornecedor_id}: {str(e)}")
         
         cotacao_estruturada = {
             'fornecedor_id': fornecedor_id,
@@ -3716,18 +3719,81 @@ def listar_solicitacoes_preenchidas():
             usuarios=[],
             filtros=filtros
         )
-
 def get_fornecedor_nome(fornecedor_id):
-    conn = get_db_connection(DB_PATH_FORNECEDORES)
-    if conn:
-        try:
-            cursor = conn.cursor()
-            cursor.execute('SELECT nome_fantasia FROM fornecedores WHERE id = ?', (fornecedor_id,))
-            result = cursor.fetchone()
-            return result['nome_fantasia'] if result else 'Fornecedor não encontrado'
-        finally:
-            conn.close()
-    return 'Fornecedor não encontrado'
+    """Retorna o nome do fornecedor pelo ID (com fallback)"""
+    if not fornecedor_id:
+        return 'Fornecedor não informado'
+    
+    fornecedor = get_fornecedor_completo(fornecedor_id)
+    if fornecedor and fornecedor['nome_fantasia']:
+        return fornecedor['nome_fantasia']
+    
+    # Fallback: tentar buscar apenas o nome diretamente
+    try:
+        conn = sqlite3.connect(DB_PATH_FORNECEDORES)
+        cursor = conn.cursor()
+        cursor.execute('SELECT nome_fantasia FROM fornecedores WHERE id = ?', (fornecedor_id,))
+        result = cursor.fetchone()
+        conn.close()
+        if result and result[0]:
+            return result[0]
+    except:
+        pass
+    
+    return f'Fornecedor ID {fornecedor_id} (não encontrado)'
+
+def get_fornecedor_completo(fornecedor_id):
+    """
+    Busca todos os dados do fornecedor pelo ID.
+    Retorna um dicionário com todas as informações ou None se não encontrado.
+    """
+    if not fornecedor_id:
+        return None
+    
+    try:
+        conn = sqlite3.connect(DB_PATH_FORNECEDORES)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        cursor.execute('''
+            SELECT id, nome_fantasia, cnpj, telefone, email, endereco, bairro, cidade, estado, contato, materiais
+            FROM fornecedores 
+            WHERE id = ?
+        ''', (fornecedor_id,))
+        result = cursor.fetchone()
+        conn.close()
+        
+        if result:
+            # Construir endereço completo
+            endereco_parts = []
+            if result['endereco']:
+                endereco_parts.append(result['endereco'])
+            if result['bairro']:
+                endereco_parts.append(result['bairro'])
+            if result['cidade'] and result['estado']:
+                endereco_parts.append(f"{result['cidade']}/{result['estado']}")
+            elif result['cidade']:
+                endereco_parts.append(result['cidade'])
+            elif result['estado']:
+                endereco_parts.append(result['estado'])
+            
+            return {
+                'id': result['id'],
+                'nome_fantasia': result['nome_fantasia'] or '',
+                'cnpj': result['cnpj'] or '',
+                'telefone': result['telefone'] or '',
+                'endereco': ', '.join(endereco_parts) if endereco_parts else 'Não informado',
+                'email': result['email'] or '',
+                'contato': result['contato'] or '',
+                'materiais': result['materiais'] or ''
+            }
+        return None
+    except sqlite3.Error as e:
+        logging.error(f"Erro ao buscar fornecedor completo {fornecedor_id}: {str(e)}")
+        return None
+    except Exception as e:
+        logging.error(f"Erro inesperado ao buscar fornecedor {fornecedor_id}: {str(e)}")
+        return None
+
 
 @routes_bp.route('/download_pdf/<int:preenchimento_id>', methods=['GET'])
 def download_pdf(preenchimento_id):
@@ -8669,5 +8735,7 @@ if __name__ == '__main__':
         datefmt='%Y-%m-%d %H:%M:%S',
         encoding='utf-8'
     )
-    
+
     app.run(debug=True, host='0.0.0.0', port=80, threaded=False, use_reloader=False)
+    #app.run(debug=True, host='0.0.0.0', port=5000, threaded=False, use_reloader=False)
+    
