@@ -2020,20 +2020,31 @@
 
             if (!dados.fornecedor_id) return;
 
-            const option = new Option(dados.fornecedor_nome_fantasia + ' - CNPJ: ' + formatCNPJ(dados.fornecedor_cnpj), dados.fornecedor_id, true, true);
+            // Verificar se os dados do fornecedor estão completos
+            const nomeFornecedor = dados.fornecedor_nome_fantasia || 'Fornecedor não encontrado';
+            const cnpjFormatado = dados.fornecedor_cnpj ? formatCNPJ(dados.fornecedor_cnpj) : '';
+            
+            const optionText = nomeFornecedor + (cnpjFormatado ? ' - CNPJ: ' + cnpjFormatado : '');
+            const option = new Option(optionText, dados.fornecedor_id, true, true);
             $('#fornecedor_' + cotacaoId).append(option).trigger('change');
             $('#fornecedor_id_' + cotacaoId).val(dados.fornecedor_id);
 
-            $('#fornecedor-nome-display-' + cotacaoId).text(dados.fornecedor_nome_fantasia || '');
-            $('#fornecedor-cnpj-display-' + cotacaoId).text(formatCNPJ(dados.fornecedor_cnpj) || '');
-            $('#fornecedor-telefone-display-' + cotacaoId).text(dados.fornecedor_telefone || '');
-            $('#fornecedor-endereco-display-' + cotacaoId).text(dados.fornecedor_endereco || '');
+            // Preencher informações do fornecedor com fallbacks
+            $('#fornecedor-nome-display-' + cotacaoId).text(nomeFornecedor);
+            $('#fornecedor-cnpj-display-' + cotacaoId).text(cnpjFormatado);
+            $('#fornecedor-telefone-display-' + cotacaoId).text(dados.fornecedor_telefone || 'Não informado');
+            $('#fornecedor-endereco-display-' + cotacaoId).text(dados.fornecedor_endereco || 'Não informado');
 
             $('#materiais-container-' + cotacaoId).show();
             $('#botoes-materiais-' + cotacaoId).show();
 
             setTimeout(function () {
-                adicionarMateriaisComValores(cotacaoId, dados.materiais || []);
+                // Garantir que os materiais sejam carregados mesmo se não tiver valores salvos
+                if (dados.materiais && dados.materiais.length > 0) {
+                    adicionarMateriaisComValores(cotacaoId, dados.materiais || []);
+                } else {
+                    adicionarTodosMateriais(cotacaoId);
+                }
 
                 if (dados.valor_frete && dados.valor_frete > 0) {
                     $('#valor_frete_' + cotacaoId).val(formatarNumero(dados.valor_frete, 2));
@@ -2049,8 +2060,6 @@
 
                 if (dados.prazo_entrega) {
                     $('#prazo_entrega_' + cotacaoId).val(dados.prazo_entrega);
-                } else {
-                    $('#prazo_entrega_' + cotacaoId).val('');
                 }
 
                 if (dados.observacoes) {
