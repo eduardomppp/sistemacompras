@@ -3471,38 +3471,27 @@ def cotacao_imprimir(id):
 
 @routes_bp.route('/listar_solicitacoes_preenchidas', methods=['GET'])
 def listar_solicitacoes_preenchidas():
-    """Lista solicitações preenchidas com tratamento robusto de erros"""
+    """Lista solicitações preenchidas com status Aguardando Aprovacao"""
     
-    # Verificação de autenticação
     if 'usuario' not in session:
-        flash('🔒 Acesso não autorizado. Faça login para continuar.', 'warning')
+        flash('🔒 Acesso não autorizado.', 'warning')
         return redirect(url_for('routes_bp.login'))
     
-    # Inicializar variáveis com valores padrão
-    preenchimentos_por_material = {}
-    empresas = []
-    usuarios = []
-    filtros = {
-        'empresa': '',
-        'usuario': '',
-        'data_inicio': '',
-        'data_fim': ''
-    }
-    
     try:
-        # 1. Coletar e validar parâmetros de filtro
+        # Parâmetros de filtro
         empresa = request.args.get('empresa', '').strip()
         usuario = request.args.get('usuario', '').strip()
         data_inicio_str = request.args.get('data_inicio', '').strip()
         data_fim_str = request.args.get('data_fim', '').strip()
         
-        # Armazenar filtros para o template
-        filtros['empresa'] = empresa
-        filtros['usuario'] = usuario
-        filtros['data_inicio'] = data_inicio_str
-        filtros['data_fim'] = data_fim_str
+        filtros = {
+            'empresa': empresa,
+            'usuario': usuario,
+            'data_inicio': data_inicio_str,
+            'data_fim': data_fim_str
+        }
         
-        # 2. Validar e converter datas
+        # Converter datas
         data_inicio = None
         data_fim = None
         
@@ -3510,169 +3499,94 @@ def listar_solicitacoes_preenchidas():
             try:
                 data_inicio = datetime.strptime(data_inicio_str, '%Y-%m-%d')
             except ValueError:
-                flash('⚠️ Data inicial inválida. Use o formato AAAA-MM-DD.', 'warning')
-                data_inicio_str = ''
-                filtros['data_inicio'] = ''
+                flash('⚠️ Data inicial inválida.', 'warning')
         
         if data_fim_str:
             try:
-                data_fim = datetime.strptime(data_fim_str, '%Y-%m-%d')
-                # Adicionar 1 dia para incluir todo o dia final
-                data_fim_ajustada = data_fim + timedelta(days=1)
+                data_fim = datetime.strptime(data_fim_str, '%Y-%m-%d') + timedelta(days=1)
             except ValueError:
-                flash('⚠️ Data final inválida. Use o formato AAAA-MM-DD.', 'warning')
-                data_fim_str = ''
-                filtros['data_fim'] = ''
+                flash('⚠️ Data final inválida.', 'warning')
         
-        # 3. Construir query com tratamento seguro
-        query = SolicitacoesPreenchidas.query
+        # Query base - buscar APENAS status 'Aguardando Aprovacao'
+        query = SolicitacoesPreenchidas.query.filter(
+            SolicitacoesPreenchidas.status == 'Aguardando Aprovacao'
+        )
         
-        # Join com SolicitacoesCompra para filtros de empresa
+        # Join com SolicitacoesCompra
         query = query.join(SolicitacoesCompra)
         
-        # Aplicar filtros com validação
+        # Aplicar filtros
         if empresa:
-            # Verificar se a empresa existe na tabela
-            empresa_existe = db.session.query(
-                SolicitacoesCompra.empresa
-            ).filter(SolicitacoesCompra.empresa == empresa).first()
-            
-            if empresa_existe:
-                query = query.filter(SolicitacoesCompra.empresa == empresa)
-            else:
-                flash(f'⚠️ Empresa "{empresa}" não encontrada nos registros.', 'warning')
+            query = query.filter(SolicitacoesCompra.empresa == empresa)
         
         if usuario:
-            # Verificar se o usuário existe
-            usuario_existe = db.session.query(
-                SolicitacoesPreenchidas.usuario
-            ).filter(SolicitacoesPreenchidas.usuario == usuario).first()
-            
-            if usuario_existe:
-                query = query.filter(SolicitacoesPreenchidas.usuario == usuario)
-            else:
-                flash(f'⚠️ Usuário "{usuario}" não encontrado nos registros.', 'warning')
+            query = query.filter(SolicitacoesPreenchidas.usuario == usuario)
         
         if data_inicio:
             query = query.filter(SolicitacoesPreenchidas.data_preenchimento >= data_inicio)
         
         if data_fim:
-            query = query.filter(SolicitacoesPreenchidas.data_preenchimento <= data_fim_ajustada)
+            query = query.filter(SolicitacoesPreenchidas.data_preenchimento <= data_fim)
         
-        # 4. Executar query com timeout
-        try:
-            preenchimentos = query.order_by(
-                SolicitacoesPreenchidas.data_preenchimento.desc()
-            ).all()
-            
-            app.logger.info(f'✅ Query executada: {len(preenchimentos)} preenchimentos encontrados')
-            
-        except SQLAlchemyError as db_error:
-            app.logger.error(f'❌ Erro de banco de dados: {str(db_error)}', exc_info=True)
-            flash('⛔ Erro ao acessar o banco de dados. Tente novamente.', 'danger')
-            raise
+        # Executar query
+        preenchimentos = query.order_by(
+            SolicitacoesPreenchidas.data_preenchimento.desc()
+        ).all()
         
-        # 5. Processar resultados com tratamento de erros individuais
+        # Estruturar dados para o template
         preenchimentos_por_material = {}
-        contador_processados = 0
-        contador_erros = 0
         
         for p in preenchimentos:
-            try:
-                # Obter nome do material com fallback
-                material_nome = 'N/A'
-                if p.solicitacao and p.solicitacao.material:
-                    material_nome = p.solicitacao.material.DescricaoMaterial or 'Material sem descrição'
-                elif p.solicitacao:
-                    material_nome = f'Solicitação #{p.solicitacao.id} (material não encontrado)'
-                else:
-                    material_nome = 'Solicitação não encontrada'
-                    app.logger.warning(f'⚠️ Preenchimento {p.id} sem solicitação associada')
-                
-                # Obter nome do fornecedor com tratamento de erro
-                fornecedor_nome = 'Fornecedor não encontrado'
-                try:
-                    fornecedor_nome = get_fornecedor_nome(p.fornecedor_id)
-                except Exception as fornecedor_error:
-                    app.logger.warning(f'⚠️ Erro ao buscar fornecedor {p.fornecedor_id}: {str(fornecedor_error)}')
-                
-                # Garantir que valores numéricos não sejam None
-                valor_unitario = p.valor_unitario if p.valor_unitario is not None else 0.0
-                valor_frete = p.valor_frete if p.valor_frete is not None else 0.0
-                valor_total = p.valor_total if p.valor_total is not None else 0.0
-                
-                # Processar histórico de descontos com tratamento seguro
-                historico_descontos = []
-                try:
-                    if hasattr(p, 'historico_descontos'):
-                        historico_descontos = [h.to_dict() for h in p.historico_descontos]
-                except Exception as historico_error:
-                    app.logger.warning(f'⚠️ Erro ao processar histórico de descontos para {p.id}: {str(historico_error)}')
-                
-                # Criar estrutura do preenchimento
-                preenchimento_info = {
-                    'id': p.id,
-                    'fornecedor_nome': fornecedor_nome,
-                    'solicitacao': p.solicitacao,
-                    'valor_unitario': valor_unitario,
-                    'valor_frete': valor_frete,
-                    'valor_total': valor_total,
-                    'prazo_entrega': p.prazo_entrega or 'Não informado',
-                    'condicao_pagamento': p.condicao_pagamento or 'Não informada',
-                    'status': p.status or 'Desconhecido',
-                    'usuario': p.usuario or 'Não informado',
-                    'pdf_path': p.pdf_path,
-                    'historico_descontos': historico_descontos,
-                    'observacoes': p.observacoes or ''
-                }
-                
-                # Agrupar por material
-                if material_nome not in preenchimentos_por_material:
-                    preenchimentos_por_material[material_nome] = []
-                
-                preenchimentos_por_material[material_nome].append(preenchimento_info)
-                contador_processados += 1
-                
-            except Exception as process_error:
-                contador_erros += 1
-                app.logger.error(f'❌ Erro ao processar preenchimento {p.id}: {str(process_error)}', exc_info=True)
+            if not p.solicitacao:
                 continue
+                
+            material_nome = p.solicitacao.material.DescricaoMaterial if p.solicitacao.material else 'Material não encontrado'
+            
+            # Obter nome do fornecedor
+            fornecedor_nome = get_fornecedor_nome(p.fornecedor_id)
+            
+            preenchimento_info = {
+                'id': p.id,
+                'fornecedor_nome': fornecedor_nome,
+                'solicitacao': p.solicitacao,
+                'valor_unitario': p.valor_unitario or 0,
+                'valor_frete': p.valor_frete or 0,
+                'valor_total': p.valor_total or 0,
+                'prazo_entrega': p.prazo_entrega or 'Não informado',
+                'condicao_pagamento': p.condicao_pagamento or 'Não informada',
+                'status': p.status,
+                'usuario': p.usuario,
+                'pdf_path': p.pdf_path,
+                'observacoes': p.observacoes or ''
+            }
+            
+            if material_nome not in preenchimentos_por_material:
+                preenchimentos_por_material[material_nome] = []
+            
+            preenchimentos_por_material[material_nome].append(preenchimento_info)
         
-        # Log de processamento
-        if contador_erros > 0:
-            app.logger.warning(f'⚠️ {contador_erros} erro(s) durante o processamento de preenchimentos')
-        
-        # 6. Obter listas para filtros
+        # Obter listas para filtros
+        empresas = []
         try:
-            empresas_query = db.session.query(
-                SolicitacoesCompra.empresa
-            ).distinct().order_by(
-                SolicitacoesCompra.empresa
-            ).all()
-            
-            empresas = [e[0] for e in empresas_query if e[0]]
-            
-            usuarios_query = db.session.query(
-                SolicitacoesPreenchidas.usuario
-            ).distinct().order_by(
-                SolicitacoesPreenchidas.usuario
-            ).all()
-            
-            usuarios = [u[0] for u in usuarios_query if u[0]]
-            
-        except SQLAlchemyError as filter_error:
-            app.logger.error(f'❌ Erro ao buscar filtros: {str(filter_error)}')
-            # Continuar com listas vazias
+            empresas_query = db.session.query(SolicitacoesCompra.empresa).distinct().all()
+            empresas = sorted([e[0] for e in empresas_query if e[0]])
+        except:
+            pass
         
-        # 7. Mensagem informativa
-        if not preenchimentos_por_material:
-            flash('📭 Nenhuma solicitação preenchida encontrada com os filtros aplicados.', 'info')
+        usuarios = []
+        try:
+            usuarios_query = db.session.query(SolicitacoesPreenchidas.usuario).distinct().all()
+            usuarios = sorted([u[0] for u in usuarios_query if u[0]])
+        except:
+            pass
+        
+        # Mensagem informativa
+        total_cotacoes = sum(len(cotacoes) for cotacoes in preenchimentos_por_material.values())
+        if total_cotacoes == 0:
+            flash('📭 Nenhuma solicitação aguardando aprovação.', 'info')
         else:
-            total_materiais = len(preenchimentos_por_material)
-            total_cotacoes = sum(len(cotacoes) for cotacoes in preenchimentos_por_material.values())
-            flash(f'📊 {total_cotacoes} cotações encontradas em {total_materiais} materiais diferentes.', 'success')
+            flash(f'📊 {total_cotacoes} cotações aguardando aprovação.', 'success')
         
-        # 8. Renderizar template
         return render_template(
             'listar_solicitacoes_preenchidas.html',
             preenchimentos_por_material=preenchimentos_por_material,
@@ -3680,45 +3594,54 @@ def listar_solicitacoes_preenchidas():
             usuarios=usuarios,
             filtros=filtros
         )
-    
-    except SQLAlchemyError as db_error:
-        # Erro específico do banco de dados
-        app.logger.error(f'❌ Erro de banco de dados em listar_solicitacoes_preenchidas: {str(db_error)}', exc_info=True)
-        flash('⛔ Erro crítico no banco de dados. Entre em contato com o administrador.', 'danger')
         
-        return render_template(
-            'listar_solicitacoes_preenchidas.html',
-            preenchimentos_por_material={},
-            empresas=[],
-            usuarios=[],
-            filtros=filtros
-        )
-    
-    except ValueError as val_error:
-        # Erro de validação
-        app.logger.error(f'❌ Erro de validação: {str(val_error)}', exc_info=True)
-        flash(f'⚠️ Erro de validação: {str(val_error)}', 'warning')
-        
-        return render_template(
-            'listar_solicitacoes_preenchidas.html',
-            preenchimentos_por_material={},
-            empresas=[],
-            usuarios=[],
-            filtros=filtros
-        )
-    
     except Exception as e:
-        # Erro geral não tratado
-        app.logger.error(f'❌ Erro inesperado em listar_solicitacoes_preenchidas: {str(e)}', exc_info=True)
-        flash('⛔ Ocorreu um erro inesperado. Tente novamente ou entre em contato com o suporte.', 'danger')
+        app.logger.error(f'❌ Erro em listar_solicitacoes_preenchidas: {str(e)}', exc_info=True)
+        flash(f'Erro ao carregar solicitações: {str(e)}', 'danger')
         
         return render_template(
             'listar_solicitacoes_preenchidas.html',
             preenchimentos_por_material={},
             empresas=[],
             usuarios=[],
-            filtros=filtros
+            filtros={}
         )
+# Rota de debug - adicione temporariamente no app.py
+@routes_bp.route('/debug_preenchimentos')
+def debug_preenchimentos():
+    if 'usuario' not in session:
+        return jsonify({'error': 'Não autorizado'}), 401
+    
+    try:
+        # Contar por status
+        from sqlalchemy import func
+        
+        status_counts = db.session.query(
+            SolicitacoesPreenchidas.status, 
+            func.count(SolicitacoesPreenchidas.id)
+        ).group_by(SolicitacoesPreenchidas.status).all()
+        
+        # Buscar alguns registros com status 'Aguardando Aprovacao'
+        aguardando = SolicitacoesPreenchidas.query.filter_by(
+            status='Aguardando Aprovacao'
+        ).limit(5).all()
+        
+        return jsonify({
+            'status_counts': [{'status': s[0], 'count': s[1]} for s in status_counts],
+            'aguardando_aprovacao': [
+                {
+                    'id': p.id,
+                    'solicitacao_id': p.solicitacao_id,
+                    'fornecedor_id': p.fornecedor_id,
+                    'status': p.status,
+                    'usuario': p.usuario,
+                    'data_preenchimento': str(p.data_preenchimento)
+                } for p in aguardando
+            ]
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
 def get_fornecedor_nome(fornecedor_id):
     """Retorna o nome do fornecedor pelo ID (com fallback)"""
     if not fornecedor_id:
@@ -8696,6 +8619,384 @@ def segmentar_grupo():
             'success': False, 
             'error': f'Erro ao segmentar grupo: {str(e)}'
         }), 500
+
+# ===================================================
+# RELATÓRIO DE PEDIDOS DE COMPRA
+# ===================================================
+
+@routes_bp.route('/relatorio_pedidos', methods=['GET'])
+def relatorio_pedidos():
+    """Relatório agrupado por Pedido de Compra"""
+    if 'usuario' not in session:
+        return redirect(url_for('routes_bp.login'))
+    
+    try:
+        # Parâmetros de filtro
+        empresa = request.args.get('empresa')
+        status = request.args.get('status')
+        data_inicio = request.args.get('data_inicio')
+        data_fim = request.args.get('data_fim')
+        numero_pedido = request.args.get('numero_pedido')
+        
+        # Query base
+        query = db.session.query(PedidosCompra)
+        
+        # Aplicar filtros
+        if status:
+            query = query.filter(PedidosCompra.status == status)
+        
+        if numero_pedido:
+            query = query.filter(PedidosCompra.numero_pedido.ilike(f'%{numero_pedido}%'))
+        
+        if data_inicio:
+            query = query.filter(PedidosCompra.data_criacao >= data_inicio)
+        
+        if data_fim:
+            dt_fim = datetime.strptime(data_fim, '%Y-%m-%d') + timedelta(days=1)
+            query = query.filter(PedidosCompra.data_criacao < dt_fim)
+        
+        # Executar query
+        pedidos = query.order_by(PedidosCompra.data_criacao.desc()).all()
+        
+        # Estruturar dados para o relatório
+        relatorio_data = []
+        
+        for pedido in pedidos:
+            # Obter informações das solicitações associadas
+            empresas_solicitacoes = set()
+            compradores_set = set()
+            materiais_list = []
+            valor_total_pedido = 0
+            
+            for preenchimento in pedido.preenchimentos:
+                solicitacao = preenchimento.solicitacao
+                if solicitacao:
+                    empresas_solicitacoes.add(solicitacao.empresa)
+                    if solicitacao.comprador_atribuido:
+                        compradores_set.add(solicitacao.comprador_atribuido)
+                    
+                    # Converter quantidade para float se for string
+                    quantidade = solicitacao.quantidade
+                    if isinstance(quantidade, str):
+                        try:
+                            quantidade = float(quantidade.replace(',', '.'))
+                        except:
+                            quantidade = 0
+                    
+                    material_info = {
+                        'id_solicitacao': solicitacao.id,
+                        'material': solicitacao.material.DescricaoMaterial if solicitacao.material else 'N/A',
+                        'cod_material': solicitacao.cod_material,
+                        'especificacao': solicitacao.especificacao,
+                        'quantidade': quantidade,
+                        'unidade': solicitacao.unidade_medida,
+                        'marca': solicitacao.marca or 'Não informado',
+                        'valor_unitario': preenchimento.valor_unitario or 0,
+                        'valor_total_item': preenchimento.valor_total or 0,
+                        'fornecedor': get_fornecedor_nome(preenchimento.fornecedor_id),
+                        'prazo_entrega': preenchimento.prazo_entrega or 'N/A',
+                        'condicao_pagamento': preenchimento.condicao_pagamento or 'N/A'
+                    }
+                    materiais_list.append(material_info)
+                    valor_total_pedido += (preenchimento.valor_total or 0)
+            
+            # Obter fornecedores do pedido
+            fornecedores_pedido = set()
+            for p in pedido.preenchimentos:
+                fornecedores_pedido.add(get_fornecedor_nome(p.fornecedor_id))
+            
+            # Aplicar filtro de empresa (se necessário)
+            if empresa and empresa not in empresas_solicitacoes:
+                continue
+            
+            # Calcular estatísticas
+            total_itens = len(materiais_list)
+            total_fornecedores = len(fornecedores_pedido)
+            
+            relatorio_data.append({
+                'pedido': pedido,
+                'numero_pedido': pedido.numero_pedido,
+                'data_criacao': pedido.data_criacao,
+                'status': pedido.status,
+                'usuario': pedido.usuario,
+                'empresas': ', '.join(sorted(empresas_solicitacoes)) if empresas_solicitacoes else 'N/A',
+                'compradores': ', '.join(sorted(compradores_set)) if compradores_set else 'Não atribuído',
+                'fornecedores': ', '.join(sorted(fornecedores_pedido)) if fornecedores_pedido else 'N/A',
+                'valor_total': valor_total_pedido,
+                'valor_frete': pedido.valor_frete or 0,
+                'valor_liquido': pedido.valor_liquido,
+                'forma_pagamento': pedido.forma_pagamento or 'N/A',
+                'observacoes': pedido.observacoes or '',
+                'total_itens': total_itens,
+                'total_fornecedores': total_fornecedores,
+                'materiais': materiais_list,
+                'preenchimentos': pedido.preenchimentos
+            })
+        
+        # Obter listas para filtros
+        empresas_list = []
+        try:
+            empresas_query = db.session.query(SolicitacoesCompra.empresa).distinct().all()
+            empresas_list = sorted([e[0] for e in empresas_query if e[0]])
+        except:
+            pass
+        
+        status_list = ['Gerado', 'Aprovado', 'AgPagamento', 'AgEntrega', 'Entregue', 'Reprovado']
+        
+        return render_template(
+            'relatorio_pedidos.html',
+            relatorio=relatorio_data,
+            empresas=empresas_list,
+            status_list=status_list,
+            filtros={
+                'empresa': empresa,
+                'status': status,
+                'data_inicio': data_inicio,
+                'data_fim': data_fim,
+                'numero_pedido': numero_pedido
+            }
+        )
+        
+    except Exception as e:
+        flash(f'Erro ao gerar relatório: {str(e)}', 'error')
+        app.logger.error(f'Erro em relatorio_pedidos: {str(e)}', exc_info=True)
+        return render_template('relatorio_pedidos.html', relatorio=[], empresas=[], status_list=[], filtros={})
+
+
+@routes_bp.route('/exportar_relatorio_pedidos_excel', methods=['GET'])
+def exportar_relatorio_pedidos_excel():
+    """Exporta o relatório de pedidos para Excel"""
+    if 'usuario' not in session:
+        return redirect(url_for('routes_bp.login'))
+    
+    try:
+        # Parâmetros de filtro
+        empresa = request.args.get('empresa')
+        status = request.args.get('status')
+        data_inicio = request.args.get('data_inicio')
+        data_fim = request.args.get('data_fim')
+        numero_pedido = request.args.get('numero_pedido')
+        
+        # Query base
+        query = db.session.query(PedidosCompra)
+        
+        if status:
+            query = query.filter(PedidosCompra.status == status)
+        if numero_pedido:
+            query = query.filter(PedidosCompra.numero_pedido.ilike(f'%{numero_pedido}%'))
+        if data_inicio:
+            query = query.filter(PedidosCompra.data_criacao >= data_inicio)
+        if data_fim:
+            dt_fim = datetime.strptime(data_fim, '%Y-%m-%d') + timedelta(days=1)
+            query = query.filter(PedidosCompra.data_criacao < dt_fim)
+        
+        pedidos = query.order_by(PedidosCompra.data_criacao.desc()).all()
+        
+        # Criar workbook
+        wb = Workbook()
+        
+        # ============================================
+        # PLANILHA 1: Resumo dos Pedidos
+        # ============================================
+        ws_resumo = wb.active
+        ws_resumo.title = "Resumo dos Pedidos"
+        
+        # Estilos
+        header_font = Font(bold=True, color="FFFFFF")
+        header_fill = PatternFill(start_color="022855", end_color="022855", fill_type="solid")
+        header_alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+        
+        # Cabeçalhos do resumo
+        headers_resumo = [
+            'Nº Pedido', 'Data Criação', 'Status', 'Usuário', 'Empresas', 
+            'Compradores', 'Fornecedores', 'Qtd Itens', 'Valor Total (R$)', 
+            'Valor Frete (R$)', 'Valor Líquido (R$)', 'Forma Pagamento', 'Observações'
+        ]
+        
+        for col_num, header in enumerate(headers_resumo, 1):
+            cell = ws_resumo.cell(row=1, column=col_num, value=header)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = header_alignment
+        
+        # Dados do resumo
+        row_num = 2
+        for pedido in pedidos:
+            # Aplicar filtro de empresa em memória
+            empresas_set = set()
+            compradores_set = set()
+            fornecedores_set = set()
+            valor_total = 0
+            total_itens = 0
+            
+            for preenchimento in pedido.preenchimentos:
+                solicitacao = preenchimento.solicitacao
+                if solicitacao:
+                    empresas_set.add(solicitacao.empresa)
+                    if solicitacao.comprador_atribuido:
+                        compradores_set.add(solicitacao.comprador_atribuido)
+                    valor_total += (preenchimento.valor_total or 0)
+                    total_itens += 1
+                fornecedores_set.add(get_fornecedor_nome(preenchimento.fornecedor_id))
+            
+            # Pular se filtro de empresa não corresponder
+            if empresa and empresa not in empresas_set:
+                continue
+            
+            ws_resumo.cell(row=row_num, column=1, value=pedido.numero_pedido)
+            ws_resumo.cell(row=row_num, column=2, value=pedido.data_criacao.strftime('%d/%m/%Y %H:%M') if pedido.data_criacao else '')
+            ws_resumo.cell(row=row_num, column=3, value=pedido.status)
+            ws_resumo.cell(row=row_num, column=4, value=pedido.usuario)
+            ws_resumo.cell(row=row_num, column=5, value=', '.join(sorted(empresas_set)))
+            ws_resumo.cell(row=row_num, column=6, value=', '.join(sorted(compradores_set)) if compradores_set else 'Não atribuído')
+            ws_resumo.cell(row=row_num, column=7, value=', '.join(sorted(fornecedores_set)))
+            ws_resumo.cell(row=row_num, column=8, value=total_itens)
+            ws_resumo.cell(row=row_num, column=9, value=round(valor_total, 2))
+            ws_resumo.cell(row=row_num, column=10, value=round(pedido.valor_frete or 0, 2))
+            ws_resumo.cell(row=row_num, column=11, value=round(pedido.valor_liquido or 0, 2))
+            ws_resumo.cell(row=row_num, column=12, value=pedido.forma_pagamento or 'N/A')
+            ws_resumo.cell(row=row_num, column=13, value=pedido.observacoes or '')
+            row_num += 1
+        
+        # ============================================
+        # PLANILHA 2: Detalhamento dos Itens
+        # ============================================
+        ws_detalhes = wb.create_sheet("Detalhamento dos Itens")
+        
+        headers_detalhes = [
+            'Nº Pedido', 'Data Pedido', 'Status Pedido', 'ID Solicitação', 
+            'Material', 'Cód Material', 'Especificação', 'Quantidade', 'Unidade',
+            'Marca', 'Valor Unitário (R$)', 'Valor Total Item (R$)', 
+            'Fornecedor', 'Prazo Entrega', 'Condição Pagamento', 'Empresa', 'Comprador'
+        ]
+        
+        for col_num, header in enumerate(headers_detalhes, 1):
+            cell = ws_detalhes.cell(row=1, column=col_num, value=header)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = header_alignment
+        
+        row_num = 2
+        for pedido in pedidos:
+            for preenchimento in pedido.preenchimentos:
+                solicitacao = preenchimento.solicitacao
+                if solicitacao:
+                    # Aplicar filtro de empresa
+                    if empresa and solicitacao.empresa != empresa:
+                        continue
+                    
+                    # Converter quantidade
+                    quantidade = solicitacao.quantidade
+                    if isinstance(quantidade, str):
+                        try:
+                            quantidade = float(quantidade.replace(',', '.'))
+                        except:
+                            quantidade = 0
+                    
+                    ws_detalhes.cell(row=row_num, column=1, value=pedido.numero_pedido)
+                    ws_detalhes.cell(row=row_num, column=2, value=pedido.data_criacao.strftime('%d/%m/%Y %H:%M') if pedido.data_criacao else '')
+                    ws_detalhes.cell(row=row_num, column=3, value=pedido.status)
+                    ws_detalhes.cell(row=row_num, column=4, value=solicitacao.id)
+                    ws_detalhes.cell(row=row_num, column=5, value=solicitacao.material.DescricaoMaterial if solicitacao.material else 'N/A')
+                    ws_detalhes.cell(row=row_num, column=6, value=solicitacao.cod_material)
+                    ws_detalhes.cell(row=row_num, column=7, value=solicitacao.especificacao or '')
+                    ws_detalhes.cell(row=row_num, column=8, value=float(quantidade) if isinstance(quantidade, (int, float)) else 0)
+                    ws_detalhes.cell(row=row_num, column=9, value=solicitacao.unidade_medida or 'Un')
+                    ws_detalhes.cell(row=row_num, column=10, value=solicitacao.marca or '')
+                    ws_detalhes.cell(row=row_num, column=11, value=round(preenchimento.valor_unitario or 0, 2))
+                    ws_detalhes.cell(row=row_num, column=12, value=round(preenchimento.valor_total or 0, 2))
+                    ws_detalhes.cell(row=row_num, column=13, value=get_fornecedor_nome(preenchimento.fornecedor_id))
+                    ws_detalhes.cell(row=row_num, column=14, value=preenchimento.prazo_entrega or '')
+                    ws_detalhes.cell(row=row_num, column=15, value=preenchimento.condicao_pagamento or '')
+                    ws_detalhes.cell(row=row_num, column=16, value=solicitacao.empresa)
+                    ws_detalhes.cell(row=row_num, column=17, value=solicitacao.comprador_atribuido or '')
+                    row_num += 1
+        
+        # ============================================
+        # PLANILHA 3: Estatísticas por Empresa
+        # ============================================
+        ws_estatisticas = wb.create_sheet("Estatísticas por Empresa")
+        
+        headers_estatisticas = [
+            'Empresa', 'Total Pedidos', 'Total Itens', 'Valor Total (R$)', 
+            'Valor Médio por Pedido (R$)', 'Status Mais Frequente'
+        ]
+        
+        for col_num, header in enumerate(headers_estatisticas, 1):
+            cell = ws_estatisticas.cell(row=1, column=col_num, value=header)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = header_alignment
+        
+        # Agrupar dados por empresa
+        empresas_stats = {}
+        for pedido in pedidos:
+            for preenchimento in pedido.preenchimentos:
+                solicitacao = preenchimento.solicitacao
+                if solicitacao:
+                    empresa_nome = solicitacao.empresa
+                    if empresa_nome not in empresas_stats:
+                        empresas_stats[empresa_nome] = {
+                            'total_pedidos': 0,
+                            'total_itens': 0,
+                            'valor_total': 0,
+                            'status_count': {}
+                        }
+                    
+                    empresas_stats[empresa_nome]['total_pedidos'] += 1
+                    empresas_stats[empresa_nome]['total_itens'] += 1
+                    empresas_stats[empresa_nome]['valor_total'] += (preenchimento.valor_total or 0)
+                    
+                    if pedido.status not in empresas_stats[empresa_nome]['status_count']:
+                        empresas_stats[empresa_nome]['status_count'][pedido.status] = 0
+                    empresas_stats[empresa_nome]['status_count'][pedido.status] += 1
+        
+        row_num = 2
+        for empresa_nome, stats in empresas_stats.items():
+            # Encontrar status mais frequente
+            status_mais_frequente = max(stats['status_count'].items(), key=lambda x: x[1])[0] if stats['status_count'] else 'N/A'
+            
+            ws_estatisticas.cell(row=row_num, column=1, value=empresa_nome)
+            ws_estatisticas.cell(row=row_num, column=2, value=stats['total_pedidos'])
+            ws_estatisticas.cell(row=row_num, column=3, value=stats['total_itens'])
+            ws_estatisticas.cell(row=row_num, column=4, value=round(stats['valor_total'], 2))
+            ws_estatisticas.cell(row=row_num, column=5, value=round(stats['valor_total'] / stats['total_pedidos'] if stats['total_pedidos'] > 0 else 0, 2))
+            ws_estatisticas.cell(row=row_num, column=6, value=status_mais_frequente)
+            row_num += 1
+        
+        # Ajustar largura das colunas para todas as planilhas
+        for ws in [ws_resumo, ws_detalhes, ws_estatisticas]:
+            for column in ws.columns:
+                max_length = 0
+                column_letter = get_column_letter(column[0].column)
+                for cell in column:
+                    try:
+                        if cell.value and len(str(cell.value)) > max_length:
+                            max_length = len(str(cell.value))
+                    except:
+                        pass
+                adjusted_width = min(max_length + 3, 50)
+                ws.column_dimensions[column_letter].width = adjusted_width
+        
+        # Salvar arquivo
+        output = BytesIO()
+        wb.save(output)
+        output.seek(0)
+        
+        # Nome do arquivo com timestamp
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f"relatorio_pedidos_{timestamp}.xlsx"
+        
+        response = make_response(output.getvalue())
+        response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        response.headers['Content-Disposition'] = f'attachment; filename={filename}'
+        
+        return response
+        
+    except Exception as e:
+        flash(f'Erro ao exportar relatório: {str(e)}', 'error')
+        app.logger.error(f'Erro em exportar_relatorio_pedidos_excel: {str(e)}', exc_info=True)
+        return redirect(url_for('routes_bp.relatorio_pedidos'))
     
   # Registro do Blueprint (apenas uma vez)
 app.register_blueprint(routes_bp)  
@@ -8738,4 +9039,4 @@ if __name__ == '__main__':
 
     app.run(debug=True, host='0.0.0.0', port=80, threaded=False, use_reloader=False)
     #app.run(debug=True, host='0.0.0.0', port=5000, threaded=False, use_reloader=False)
-    
+
