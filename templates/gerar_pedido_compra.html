@@ -622,7 +622,7 @@
                                     data-valor="{{ preenchimento.valor_total }}" data-material="{{ material_nome }}"
                                     data-aplicacao="{{ aplicacao }}">
                                     <td class="checkbox-cell">
-                                        <input type="checkbox" name="preenchimento_ids" value="{{ preenchimento.id }}"
+                                        <input type="checkbox" name="preenchimento_ids[]" value="{{ preenchimento.id }}"
                                             class="form-check-input cotacao-checkbox"
                                             data-comprador="{{ preenchimento.solicitacao.comprador_atribuido | default('Não Atribuído') }}"
                                             data-valor="{{ preenchimento.valor_total }}"
