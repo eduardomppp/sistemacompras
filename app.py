@@ -3842,6 +3842,7 @@ def atualizar_status_preenchimento(id):
 @routes_bp.route('/gerar_pedido_compra', methods=['GET', 'POST'])
 def gerar_pedido_compra():
     if 'usuario' not in session:
+        flash('Acesso não autorizado', 'error')
         return redirect(url_for('routes_bp.login'))
 
     try:
@@ -3849,38 +3850,124 @@ def gerar_pedido_compra():
         # POST
         # ==========================
         if request.method == 'POST':
-
-            preenchimento_ids = request.form.getlist('preenchimento_ids')
+            import time
+            time.sleep(0.3)
+            
+            # 🔴 CORREÇÃO: Múltiplas estratégias para capturar os IDs
+            preenchimento_ids = []
+            
+            # Estratégia 1: Tentar getlist com colchetes
+            if 'preenchimento_ids[]' in request.form:
+                preenchimento_ids = request.form.getlist('preenchimento_ids[]')
+                print(f"Estratégia 1 - getlist com []: {preenchimento_ids}")
+            
+            # Estratégia 2: Tentar getlist sem colchetes
+            if not preenchimento_ids and 'preenchimento_ids' in request.form:
+                preenchimento_ids = request.form.getlist('preenchimento_ids')
+                print(f"Estratégia 2 - getlist sem []: {preenchimento_ids}")
+            
+            # Estratégia 3: Tentar get simples (se veio como string única)
+            if not preenchimento_ids:
+                single_value = request.form.get('preenchimento_ids[]')
+                if single_value:
+                    preenchimento_ids = [single_value]
+                    print(f"Estratégia 3 - get simples: {preenchimento_ids}")
+            
+            # Estratégia 4: Procurar em todas as chaves do formulário
+            if not preenchimento_ids:
+                for key, value in request.form.items():
+                    if 'preenchimento' in key.lower() and value:
+                        if isinstance(value, list):
+                            preenchimento_ids.extend(value)
+                        else:
+                            preenchimento_ids.append(value)
+                print(f"Estratégia 4 - varredura total: {preenchimento_ids}")
+            
+            # Filtrar valores vazios e converter para inteiros
+            preenchimento_ids = [pid for pid in preenchimento_ids if pid and str(pid).strip()]
+            
+            print(f"🔴 IDs finais após processamento: {preenchimento_ids}")
+            
             forma_pagamento = request.form.get('forma_pagamento', '').strip()
             condicao_pagamento = request.form.get('condicao_pagamento', '').strip()
             observacoes = request.form.get('observacoes', '').strip()
 
             if not preenchimento_ids:
-                flash('Nenhum preenchimento selecionado.', 'error')
+                flash('Nenhum item selecionado. Marque os checkboxes dos itens desejados.', 'error')
+                print("❌ ERRO: Nenhum preenchimento ID encontrado!")
                 return redirect(url_for('routes_bp.gerar_pedido_compra'))
 
-            preenchimentos = SolicitacoesPreenchidas.query.filter(
-                SolicitacoesPreenchidas.id.in_(preenchimento_ids)
-            ).all()
-
-            for preenchimento in preenchimentos:
-                if preenchimento.status != 'Aprovado':
-                    flash(f'O preenchimento ID {preenchimento.id} não está aprovado.', 'error')
+            # Converter para inteiros
+            try:
+                preenchimento_ids_int = [int(pid) for pid in preenchimento_ids]
+            except ValueError as e:
+                flash(f'Erro ao processar IDs selecionados: {str(e)}', 'error')
+                return redirect(url_for('routes_bp.gerar_pedido_compra'))
+            
+            # 🔴 VERIFICAR SE OS ITENS JÁ ESTÃO EM ALGUM PEDIDO
+            from sqlalchemy import exists
+            
+            for pid in preenchimento_ids_int:
+                existe = db.session.query(
+                    exists().where(
+                        pedido_preenchimento_associacao.c.preenchimento_id == pid
+                    )
+                ).scalar()
+                
+                if existe:
+                    flash(f'Item ID {pid} já foi adicionado a outro pedido. Recarregue a página.', 'error')
                     return redirect(url_for('routes_bp.gerar_pedido_compra'))
 
-            # Número sequencial
-            ultimo_pedido = PedidosCompra.query.order_by(PedidosCompra.id.desc()).first()
-            proximo_numero = (ultimo_pedido.id + 1) if ultimo_pedido else 1
-            numero_pedido = f"PC{datetime.now().year}{proximo_numero:04d}"
+            # Buscar TODOS os preenchimentos selecionados
+            preenchimentos = SolicitacoesPreenchidas.query.filter(
+                SolicitacoesPreenchidas.id.in_(preenchimento_ids_int)
+            ).all()
+            
+            print(f"🔴 {len(preenchimentos)} preenchimentos encontrados no banco")
+
+            if not preenchimentos:
+                flash('Nenhum preenchimento válido encontrado.', 'error')
+                return redirect(url_for('routes_bp.gerar_pedido_compra'))
+
+            # Validar status
+            for preenchimento in preenchimentos:
+                if preenchimento.status != 'Aprovado':
+                    flash(f'Item do fornecedor {get_fornecedor_nome(preenchimento.fornecedor_id)} não está aprovado.', 'error')
+                    return redirect(url_for('routes_bp.gerar_pedido_compra'))
+
+            # Gerar número sequencial por ANO
+            ano_atual = datetime.now().year
+            
+            # Buscar o maior número sequencial do ano atual
+            from sqlalchemy import func
+            ultimo_numero_registro = db.session.query(
+                func.max(PedidosCompra.id)
+            ).filter(
+                PedidosCompra.numero_pedido.like(f'PC{ano_atual}%')
+            ).scalar()
+            
+            if ultimo_numero_registro:
+                ultimo_pedido = PedidosCompra.query.get(ultimo_numero_registro)
+                import re
+                match = re.search(rf'PC{ano_atual}(\d+)', ultimo_pedido.numero_pedido)
+                if match:
+                    proximo_numero = int(match.group(1)) + 1
+                else:
+                    proximo_numero = 1
+            else:
+                proximo_numero = 1
+            
+            numero_pedido = f"PC{ano_atual}{proximo_numero:04d}"
+            
+            print(f"🔴 Número do pedido: {numero_pedido}")
 
             # Totais
-            valor_total = sum(p.valor_total for p in preenchimentos)
-            valor_frete_total = sum(p.valor_frete if p.valor_frete else 0 for p in preenchimentos)
-            valor_liquido = valor_total - valor_frete_total
+            valor_total = sum(p.valor_total or 0 for p in preenchimentos)
+            valor_frete_total = sum(p.valor_frete or 0 for p in preenchimentos)
+            valor_liquido = valor_total + valor_frete_total
 
-            # 🔥 LÓGICA FLEXÍVEL (campo não obrigatório)
+            # Forma de pagamento
             forma_condicao_final = None
-
             if forma_pagamento and condicao_pagamento:
                 forma_condicao_final = f"{forma_pagamento} - {condicao_pagamento}"
             elif forma_pagamento:
@@ -3888,7 +3975,7 @@ def gerar_pedido_compra():
             elif condicao_pagamento:
                 forma_condicao_final = condicao_pagamento
 
-            # Criar pedido
+            # CRIAR UM ÚNICO PEDIDO
             pedido = PedidosCompra(
                 numero_pedido=numero_pedido,
                 usuario=session['usuario'],
@@ -3901,138 +3988,63 @@ def gerar_pedido_compra():
                 data_criacao=datetime.now()
             )
 
-            pedido.preenchimentos = preenchimentos
             db.session.add(pedido)
+            db.session.flush()
 
+            # ASSOCIAR TODOS OS PREENCHIMENTOS
             for preenchimento in preenchimentos:
-                preenchimento.status = 'Em Processamento'
+                existe_associacao = db.session.query(
+                    exists().where(
+                        pedido_preenchimento_associacao.c.preenchimento_id == preenchimento.id
+                    )
+                ).scalar()
+                
+                if not existe_associacao:
+                    db.session.execute(
+                        pedido_preenchimento_associacao.insert().values(
+                            pedido_id=pedido.id,
+                            preenchimento_id=preenchimento.id
+                        )
+                    )
+                    preenchimento.status = 'Em Processamento'
+                    print(f"🔴 Associado preenchimento {preenchimento.id}")
 
             db.session.commit()
-
-            # ==========================
-            # PDF
-            # ==========================
-
-            materiais_por_fornecedor = {}
-            fornecedor_ids = {p.fornecedor_id for p in preenchimentos}
-
-            fornecedores_info = {}
-            if fornecedor_ids:
-                conn = get_db_connection(DB_PATH_FORNECEDORES)
-                if conn:
-                    try:
-                        cursor = conn.cursor()
-                        cursor.execute(f'''
-                            SELECT id, nome_fantasia, cnpj, telefone, email, endereco, cidade, estado 
-                            FROM fornecedores 
-                            WHERE id IN ({",".join("?"*len(fornecedor_ids))})
-                        ''', list(fornecedor_ids))
-
-                        for row in cursor.fetchall():
-                            fornecedores_info[row[0]] = {
-                                'nome': row[1],
-                                'cnpj': format_cnpj(row[2]) if row[2] else 'N/A',
-                                'telefone': row[3],
-                                'email': row[4],
-                                'endereco': f"{row[5]}, {row[6]}/{row[7]}"
-                            }
-                    finally:
-                        conn.close()
-
-            for preenchimento in preenchimentos:
-                fornecedor_id = preenchimento.fornecedor_id
-
-                if fornecedor_id not in materiais_por_fornecedor:
-                    materiais_por_fornecedor[fornecedor_id] = {
-                        'info': fornecedores_info.get(fornecedor_id, {
-                            'nome': 'Fornecedor não encontrado',
-                            'cnpj': 'N/A',
-                            'telefone': 'N/A',
-                            'email': 'N/A',
-                            'endereco': 'N/A'
-                        }),
-                        'itens': []
-                    }
-
-                materiais_por_fornecedor[fornecedor_id]['itens'].append({
-                    'material': preenchimento.solicitacao.material.DescricaoMaterial,
-                    'marca': preenchimento.solicitacao.marca or 'Não especificado',
-                    'especificacao': preenchimento.solicitacao.especificacao,
-                    'quantidade': preenchimento.solicitacao.quantidade,
-                    'unidade': preenchimento.solicitacao.unidade_medida,
-                    'valor_unitario': preenchimento.valor_unitario,
-                    'valor_total': preenchimento.valor_total,
-                    'prazo_entrega': preenchimento.prazo_entrega,
-                    'prioridade': preenchimento.solicitacao.prioridade
-                })
-
-            upload_dir = app.config['UPLOAD_FOLDER']
-            if not os.path.exists(upload_dir):
-                os.makedirs(upload_dir)
-
-            pdf_filename = f"pedido_{numero_pedido}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
-            pdf_path = os.path.join(upload_dir, pdf_filename)
-
-            html_content = render_template(
-                'pedido_compra_pdf.html',
-                pedido=pedido,
-                materiais_por_fornecedor=materiais_por_fornecedor,
-                data_criacao=datetime.now().strftime('%d/%m/%Y %H:%M:%S'),
-                usuario=session['usuario'],
-                total_itens=len(preenchimento_ids),
-                fornecedores_count=len(materiais_por_fornecedor),
-                observacoes=observacoes
-            )
-
-            wkhtmltopdf_path = shutil.which('wkhtmltopdf')
-            if not wkhtmltopdf_path:
-                raise FileNotFoundError("wkhtmltopdf não encontrado no sistema.")
-
-            config = pdfkit.configuration(wkhtmltopdf=wkhtmltopdf_path)
-
-            options = {
-                'encoding': 'UTF-8',
-                'enable-local-file-access': '',
-                'margin-top': '10mm',
-                'margin-right': '10mm',
-                'margin-bottom': '10mm',
-                'margin-left': '10mm'
-            }
-
-            pdfkit.from_string(html_content, pdf_path, configuration=config, options=options)
-
-            pedido.pdf_path = pdf_path
-            db.session.commit()
-
-            flash(f'Pedido {numero_pedido} gerado com sucesso!', 'success')
+            
+            print(f"✅ Pedido {numero_pedido} criado com {len(preenchimentos)} itens")
+            
+            flash(f'✅ Pedido {numero_pedido} gerado com sucesso! {len(preenchimentos)} item(ns) incluído(s).', 'success')
             return redirect(url_for('routes_bp.auditoria_solicitacoes'))
 
         # ==========================
-        # GET
+        # GET - Carregar página
         # ==========================
-
         preenchimentos = SolicitacoesPreenchidas.query.filter_by(status='Aprovado')\
             .join(SolicitacoesCompra)\
             .join(Materiais)\
             .order_by(Materiais.DescricaoMaterial)\
             .all()
 
-        # 🔥 PUXA AUTOMÁTICO PARA O INPUT (editável)
-        condicao_pagamento_padrao = ''
-        if preenchimentos:
-            condicao_pagamento_padrao = preenchimentos[0].condicao_pagamento or ''
-
+        # Agrupar por material
         preenchimentos_por_material = {}
         for preenchimento in preenchimentos:
+            if not preenchimento.solicitacao or not preenchimento.solicitacao.material:
+                continue
             material_nome = preenchimento.solicitacao.material.DescricaoMaterial
             if material_nome not in preenchimentos_por_material:
                 preenchimentos_por_material[material_nome] = []
             preenchimentos_por_material[material_nome].append(preenchimento)
 
+        formas_pagamento = ['À Vista', 'A Prazo', 'Boleto', 'Cartão de Crédito', 'Transferência Bancária']
+        
+        condicao_pagamento_padrao = ''
+        if preenchimentos:
+            condicao_pagamento_padrao = preenchimentos[0].condicao_pagamento or ''
+
         return render_template(
             'gerar_pedido_compra.html',
             preenchimentos_por_material=preenchimentos_por_material,
-            formas_pagamento=['À Vista', 'A Prazo', 'Boleto', 'Cartão de Crédito', 'Transferência Bancária'],
+            formas_pagamento=formas_pagamento,
             condicao_pagamento_padrao=condicao_pagamento_padrao
         )
 
@@ -4041,8 +4053,7 @@ def gerar_pedido_compra():
         logging.error(f"Erro em gerar_pedido_compra: {str(e)}", exc_info=True)
         flash(f'Erro ao gerar pedido: {str(e)}', 'error')
         return redirect(url_for('routes_bp.listar_solicitacoes_preenchidas'))
-
-
+    
 #testeaqui
 @routes_bp.route('/pedido/<int:pedido_id>/view')
 def view_pedido_pdf(pedido_id):
@@ -4275,9 +4286,7 @@ def listar_pedidos_compra():
         return redirect(url_for('routes_bp.login'))
 
     try:
-        # ────────────────────────────────────────────────
-        # 1. Captura de parâmetros
-        # ────────────────────────────────────────────────
+        # Parâmetros
         pagina       = request.args.get('pagina', 1, type=int)
         por_pagina   = request.args.get('por_pagina', 50, type=int)
         status       = request.args.get('status')
@@ -4287,18 +4296,71 @@ def listar_pedidos_compra():
         data_fim     = request.args.get('data_fim')
         numero_pedido = request.args.get('numero_pedido')
 
-        # Validação básica
         if por_pagina not in [50, 100]:
             por_pagina = 50
         if pagina < 1:
             pagina = 1
 
-        logging.info(f"→ Requisição GET /listar_pedidos_compra | página={pagina} | por_pagina={por_pagina}")
-        logging.info(f"   Filtros recebidos: status={status}, empresa={empresa}, comprador_atribuido={comprador_atribuido}, data_inicio={data_inicio}, data_fim={data_fim}, numero_pedido={numero_pedido}")
+        # 🔴 CORREÇÃO: Query base sem JOIN que causa duplicação
+        query = db.session.query(PedidosCompra)
 
-        # ────────────────────────────────────────────────
-        # 2. Carregar empresas e compradores do senhas.txt
-        # ────────────────────────────────────────────────
+        # Filtros
+        if status:
+            query = query.filter(PedidosCompra.status == status)
+            
+        if numero_pedido:
+            query = query.filter(PedidosCompra.numero_pedido.ilike(f'%{numero_pedido}%'))
+            
+        if data_inicio:
+            query = query.filter(PedidosCompra.data_criacao >= data_inicio)
+            
+        if data_fim:
+            try:
+                dt_fim = datetime.strptime(data_fim, '%Y-%m-%d') + timedelta(days=1)
+                query = query.filter(PedidosCompra.data_criacao < dt_fim)
+            except:
+                pass
+
+        # 🔴 CORREÇÃO: Aplicar filtros de empresa e comprador APÓS buscar os pedidos
+        # Primeiro, buscar todos os pedidos com os filtros básicos
+        pedidos = query.order_by(PedidosCompra.data_criacao.desc()).all()
+        
+        # 🔴 CORREÇÃO: Filtrar em memória para evitar duplicação por JOIN
+        pedidos_filtrados = []
+        for pedido in pedidos:
+            # Buscar empresas e compradores dos preenchimentos
+            empresas_pedido = set()
+            compradores_pedido = set()
+            
+            for preenchimento in pedido.preenchimentos:
+                solicitacao = preenchimento.solicitacao
+                if solicitacao:
+                    empresas_pedido.add(solicitacao.empresa)
+                    if solicitacao.comprador_atribuido:
+                        compradores_pedido.add(solicitacao.comprador_atribuido)
+            
+            # Aplicar filtro de empresa
+            if empresa and empresa not in empresas_pedido:
+                continue
+            
+            # Aplicar filtro de comprador
+            if comprador_atribuido and comprador_atribuido not in compradores_pedido:
+                continue
+            
+            pedidos_filtrados.append(pedido)
+        
+        # Paginação em memória
+        total_itens = len(pedidos_filtrados)
+        total_paginas = max(1, (total_itens + por_pagina - 1) // por_pagina)
+        
+        if pagina > total_paginas:
+            pagina = total_paginas
+        
+        inicio = (pagina - 1) * por_pagina
+        fim = inicio + por_pagina
+        pedidos_paginados = pedidos_filtrados[inicio:fim]
+
+        # Carregar empresas e compradores do arquivo senhas.txt
         compradores_empresas = {}
         empresas_unicas = set()
         compradores_unicos = set()
@@ -4317,96 +4379,12 @@ def listar_pedidos_compra():
                         if 'comprador' in pagina_usuario:
                             compradores_unicos.add(usuario)
                             compradores_empresas[usuario] = empresa_usuario
-                            logging.debug(f"Comprador encontrado: {usuario} - Empresa: {empresa_usuario}")
-                        
         except Exception as e:
             logging.error(f"Erro lendo senhas.txt: {str(e)}")
 
-        logging.info(f"Compradores carregados: {sorted(compradores_unicos)}")
-        logging.info(f"Empresas carregadas: {sorted(empresas_unicas)}")
-
-        # ────────────────────────────────────────────────
-        # 3. Query base
-        # ────────────────────────────────────────────────
-        query = db.session.query(PedidosCompra).join(
-            pedido_preenchimento_associacao, PedidosCompra.id == pedido_preenchimento_associacao.c.pedido_id
-        ).join(
-            SolicitacoesPreenchidas, pedido_preenchimento_associacao.c.preenchimento_id == SolicitacoesPreenchidas.id
-        ).join(
-            SolicitacoesCompra, SolicitacoesPreenchidas.solicitacao_id == SolicitacoesCompra.id
-        )
-
-        # Filtros
-        if status:
-            query = query.filter(PedidosCompra.status == status)
-            
-        if numero_pedido:
-            query = query.filter(PedidosCompra.numero_pedido.ilike(f'%{numero_pedido}%'))
-            
-        if empresa:
-            query = query.filter(
-                or_(
-                    SolicitacoesCompra.empresa == empresa,
-                    PedidosCompra.usuario.in_([u for u, e in compradores_empresas.items() if e == empresa])
-                )
-            )
-            
-        if comprador_atribuido:
-            query = query.filter(SolicitacoesCompra.comprador_atribuido == comprador_atribuido)
-            
-        if data_inicio:
-            query = query.filter(PedidosCompra.data_criacao >= data_inicio)
-            
-        if data_fim:
-            try:
-                dt_fim = datetime.strptime(data_fim, '%Y-%m-%d') + timedelta(days=1)
-                query = query.filter(PedidosCompra.data_criacao < dt_fim)
-            except:
-                logging.warning("Formato inválido em data_fim")
-
-        # ────────────────────────────────────────────────
-        # 4. Contagem e paginação
-        # ────────────────────────────────────────────────
-        ids_distintos = query.with_entities(PedidosCompra.id)\
-            .distinct()\
-            .order_by(
-                PedidosCompra.data_criacao.desc(),
-                PedidosCompra.id.desc()
-            ).all()
-
-        ids_distintos = [row[0] for row in ids_distintos]
-        total_itens = len(ids_distintos)
-        total_paginas = max(1, (total_itens + por_pagina - 1) // por_pagina)
-
-        if pagina > total_paginas:
-            pagina = total_paginas
-
-        inicio = (pagina - 1) * por_pagina
-        fim = inicio + por_pagina
-        ids_page = ids_distintos[inicio:fim]
-
-        pedidos = db.session.query(PedidosCompra)\
-            .join(
-                pedido_preenchimento_associacao,
-                PedidosCompra.id == pedido_preenchimento_associacao.c.pedido_id
-            ).join(
-                SolicitacoesPreenchidas,
-                pedido_preenchimento_associacao.c.preenchimento_id == SolicitacoesPreenchidas.id
-            ).join(
-                SolicitacoesCompra,
-                SolicitacoesPreenchidas.solicitacao_id == SolicitacoesCompra.id
-            ).filter(
-                PedidosCompra.id.in_(ids_page)
-            ).distinct().order_by(
-                PedidosCompra.data_criacao.desc(),
-                PedidosCompra.id.desc()
-            ).all()
-
-        # ────────────────────────────────────────────────
-        # 5. Buscar informações de fornecedores
-        # ────────────────────────────────────────────────
+        # Buscar informações de fornecedores
         fornecedor_ids = set()
-        for pedido in pedidos:
+        for pedido in pedidos_paginados:
             for preenchimento in pedido.preenchimentos:
                 if preenchimento.fornecedor_id:
                     fornecedor_ids.add(preenchimento.fornecedor_id)
@@ -4417,7 +4395,7 @@ def listar_pedidos_compra():
             if conn:
                 try:
                     cursor = conn.cursor()
-                    placeholders = ','.join(['?' for _ in fornecedor_ids])
+                    placeholders = ','.join('?' * len(fornecedor_ids))
                     cursor.execute(f'SELECT id, nome_fantasia, cnpj FROM fornecedores WHERE id IN ({placeholders})', 
                                  list(fornecedor_ids))
                     for row in cursor.fetchall():
@@ -4430,11 +4408,9 @@ def listar_pedidos_compra():
                 finally:
                     conn.close()
 
-        # ────────────────────────────────────────────────
-        # 6. Estruturar dados para o template - ADICIONAR comprador_atribuido AQUI
-        # ────────────────────────────────────────────────
+        # Estruturar dados para o template
         pedidos_completos = []
-        for pedido in pedidos:
+        for pedido in pedidos_paginados:
             preenchimentos_info = []
             for preenchimento in pedido.preenchimentos:
                 fornecedor_info = fornecedores.get(preenchimento.fornecedor_id, {
@@ -4442,33 +4418,31 @@ def listar_pedidos_compra():
                     'cnpj': 'N/A'
                 })
                 
+                solicitacao = preenchimento.solicitacao
                 empresa_usuario = compradores_empresas.get(pedido.usuario, '')
-                if not empresa_usuario and preenchimento.solicitacao:
-                    empresa_usuario = preenchimento.solicitacao.empresa
+                if not empresa_usuario and solicitacao:
+                    empresa_usuario = solicitacao.empresa
                 
-                marca = preenchimento.solicitacao.marca if preenchimento.solicitacao and preenchimento.solicitacao.marca else 'Não informado'
+                marca = solicitacao.marca if solicitacao and solicitacao.marca else 'Não informado'
                 
-                # 🔥 CORREÇÃO: Adicionar comprador_atribuido ao preenchimentos_info
                 preenchimentos_info.append({
                     'id': preenchimento.id,
                     'marca': marca,
                     'fornecedor_nome': fornecedor_info['nome_fantasia'],
                     'fornecedor_cnpj': fornecedor_info.get('cnpj', 'N/A'),
                     'fornecedor_id': preenchimento.fornecedor_id,
-                    'material': preenchimento.solicitacao.material.DescricaoMaterial if preenchimento.solicitacao and preenchimento.solicitacao.material else 'N/A',
+                    'material': solicitacao.material.DescricaoMaterial if solicitacao and solicitacao.material else 'N/A',
                     'empresa': empresa_usuario,
-                    'comprador_atribuido': preenchimento.solicitacao.comprador_atribuido if preenchimento.solicitacao else None,  # NOVO CAMPO
-                    'pdf_path': preenchimento.pdf_path  # ADICIONE ESTA LINHA
+                    'comprador_atribuido': solicitacao.comprador_atribuido if solicitacao else None,
+                    'pdf_path': preenchimento.pdf_path
                 })
-                pedidos_completos.append({
-                    'pedido': pedido,
-                    'preenchimentos': preenchimentos_info,
-                    'observacoes': pedido.observacoes
-                })
+            
+            pedidos_completos.append({
+                'pedido': pedido,
+                'preenchimentos': preenchimentos_info,
+                'observacoes': pedido.observacoes
+            })
 
-        # ────────────────────────────────────────────────
-        # 7. Renderizar template
-        # ────────────────────────────────────────────────
         return render_template(
             'listar_pedidos_compra.html', 
             pedidos_completos=pedidos_completos,
@@ -4504,7 +4478,6 @@ def listar_pedidos_compra():
             por_pagina=50,
             request=request
         )
-    
     
 #Nova Pagina pagamento
 @routes_bp.route('/listar_pedidos_compras_pg', methods=['GET'])
