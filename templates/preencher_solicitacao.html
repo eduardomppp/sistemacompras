@@ -491,7 +491,7 @@
 
     <div class="aviso-campos-vazios" id="avisoCamposVazios" style="display: none;">
         <i class="bi bi-exclamation-triangle-fill"></i>
-        <span>Existem campos de valor unitário em branco. Serão salvos como R$ 0,00.</span>
+        <span>Existem campos de valor unitário em branco. Serão salvos como R$ 0,000000.</span>
     </div>
 
     <form method="POST" action="{{ url_for('routes_bp.preencher_solicitacao', id=solicitacao.id) }}{% if grupo_ids %}?grupo_ids={{ grupo_ids }}{% endif %}" enctype="multipart/form-data" id="cotacoes-form">
@@ -585,7 +585,7 @@
                             </div>
 
                             <div class="form-group">
-                                <label class="form-label">Condição de Pagamento</label>
+                                <label class="form-label">Valor Desconto</label>
                                 <input type="text" class="form-control" id="condicao_pagamento_{{ cotacao_num }}" name="condicao_pagamento[]" placeholder="Ex.: 30 dias" value="{{ cotacao.condicao_pagamento if cotacao else '' }}">
                             </div>
 
@@ -675,7 +675,11 @@
             {% endif %}
         ];
 
-        function formatarNumero(numero, casasDecimais = 2) {
+        // ============================================
+        // FUNÇÕES DE FORMATAÇÃO COM 6 CASAS DECIMAIS
+        // ============================================
+        
+        function formatarNumero(numero, casasDecimais = 6) {
             if (isNaN(numero)) numero = 0;
             return numero.toLocaleString('pt-BR', {
                 minimumFractionDigits: casasDecimais,
@@ -683,44 +687,42 @@
             });
         }
 
-        function formatarNumeroParaEnvio(numero) {
+        function formatarNumeroParaEnvio(numero, casasDecimais = 6) {
             if (typeof numero === 'string') {
-                if (numero.includes('.') && !numero.includes(',')) {
-                    const resultado = parseFloat(numero);
-                    return isNaN(resultado) ? 0 : resultado;
-                }
                 let limpo = numero.toString().replace(/[^\d,.-]/g, '');
                 if (!limpo) return 0;
                 if (limpo.includes(',')) {
-                    const ultimoPonto = limpo.lastIndexOf('.');
-                    const ultimaVirgula = limpo.lastIndexOf(',');
-                    if (ultimaVirgula > ultimoPonto) {
-                        limpo = limpo.replace(/\./g, '');
-                        limpo = limpo.replace(',', '.');
-                    } else if (ultimoPonto > ultimaVirgula) {
-                        limpo = limpo.replace(/,/g, '');
-                    }
+                    limpo = limpo.replace(/\./g, '');
+                    limpo = limpo.replace(',', '.');
                 }
                 const resultado = parseFloat(limpo);
-                return isNaN(resultado) ? 0 : resultado;
+                return isNaN(resultado) ? 0 : parseFloat(resultado.toFixed(casasDecimais));
             }
-            return numero;
+            return parseFloat((numero || 0).toFixed(casasDecimais));
         }
 
         function aplicarMascaraMonetaria(input) {
             let valor = input.val();
+            const isUnitario = input.hasClass('material-unitario');
+            const casasDecimais = isUnitario ? 6 : 2;
+            
             if (valor === '') {
                 input.val('');
                 return '';
             }
+            
             valor = valor.replace(/\D/g, '');
+            
             if (valor === '') {
                 input.val('');
                 return '';
             }
-            const numero = parseInt(valor) / 100;
-            const formatado = formatarNumero(numero, 2);
+            
+            const divisor = Math.pow(10, casasDecimais);
+            const numero = parseInt(valor) / divisor;
+            const formatado = formatarNumero(numero, casasDecimais);
             input.val(formatado);
+            
             return numero.toString();
         }
 
@@ -730,6 +732,10 @@
             if (apenasNumeros.length !== 14) return cnpj;
             return apenasNumeros.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5");
         }
+
+        // ============================================
+        // GERENCIAMENTO DE COTAÇÕES
+        // ============================================
 
         function removerCotacao(id, fornecedorId = null) {
             const totalCotacoes = $('.cotacao-card').length;
@@ -894,7 +900,7 @@
                         <td class="unidade"><input type="text" class="material-unidade" name="material_unidade_${cotacaoId}[]" value="${material.unidade}" readonly style="background: #f5f5f5; cursor: not-allowed;"></td>
                         <td class="unitario">
                             <div class="valor-input" style="position: relative;">
-                                <input type="text" class="material-unitario" name="valor_unitario[]" placeholder="0,00" data-cotacao-id="${cotacaoId}" data-material-id="${materialId}">
+                                <input type="text" class="material-unitario" name="valor_unitario[]" placeholder="0,000000" data-cotacao-id="${cotacaoId}" data-material-id="${materialId}">
                                 <span class="valor-simbolo">R$</span>
                             </div>
                         </td>
@@ -936,7 +942,7 @@
                 const materialSalvo = materiaisPorSolicitacao[parseInt(solicitacaoId)];
                 if (materialSalvo && materialSalvo.valor_unitario > 0) {
                     const unitarioInput = $(this).find('.material-unitario');
-                    const valorFormatado = formatarNumero(materialSalvo.valor_unitario, 2);
+                    const valorFormatado = formatarNumero(materialSalvo.valor_unitario, 6);
                     unitarioInput.val(valorFormatado);
                     if (materialSalvo.marca) $(this).find('.material-marca').val(materialSalvo.marca);
                     calcularTotalLinha(unitarioInput[0], cotacaoId);
@@ -949,8 +955,9 @@
             const row = $(input).closest('tr');
             const quantidade = parseFloat(row.find('.material-quantidade').val()) || 0;
             const unitarioStr = $(input).val();
-            const unitario = formatarNumeroParaEnvio(unitarioStr);
+            const unitario = formatarNumeroParaEnvio(unitarioStr, 6);
             const total = quantidade * unitario;
+            
             row.find('.material-total-display').val('R$ ' + formatarNumero(total, 2));
             calcularTotalCotacao(cotacaoId);
         }
@@ -984,7 +991,7 @@
                 if (!fornecedorId || fornecedoresRemovidos.includes(fornecedorId)) return;
                 $('#materiais-body-' + cotacaoId + ' tr').each(function() {
                     const unitario = $(this).find('.material-unitario').val();
-                    if (!unitario || unitario === '' || unitario === '0,00') {
+                    if (!unitario || unitario === '' || unitario === '0,00' || unitario === '0,000000') {
                         temCampoVazio = true;
                         $(this).find('.material-unitario').css('border-color', '#ffc107');
                     } else {
@@ -1008,8 +1015,8 @@
                     const unitario = $(this).find('.material-unitario').val();
                     const marca = $(this).find('.material-marca').val();
                     let valorUnitario = 0;
-                    if (unitario && unitario !== '' && unitario !== '0,00') {
-                        valorUnitario = formatarNumeroParaEnvio(unitario);
+                    if (unitario && unitario !== '' && unitario !== '0,00' && unitario !== '0,000000') {
+                        valorUnitario = formatarNumeroParaEnvio(unitario, 6);
                     }
                     materiaisPorCotacao[cotacaoId].push({
                         solicitacao_id: parseInt(solicitacaoId),
@@ -1037,6 +1044,10 @@
             console.log('=====================');
         }
 
+        // ============================================
+        // SUBMISSÃO DO FORMULÁRIO
+        // ============================================
+
         $('#cotacoes-form').on('submit', function(e) {
             e.preventDefault();
             const clickedButton = $(e.originalEvent.submitter || document.activeElement);
@@ -1052,7 +1063,7 @@
                 $('#materiais-body-' + cotacaoId + ' tr').each(function() {
                     const unitario = $(this).find('.material-unitario').val();
                     const descricao = $(this).find('.material-descricao').text().trim() || 'Material sem descrição';
-                    if (!unitario || unitario === '' || unitario === '0,00') {
+                    if (!unitario || unitario === '' || unitario === '0,00' || unitario === '0,000000') {
                         camposVazios.push({ cotacao: cotacaoId, descricao: descricao.substring(0, 50) });
                     }
                 });
@@ -1070,7 +1081,7 @@
                     porCotacao[cotacao].forEach(desc => mensagem += `  • ${desc}\n`);
                     mensagem += '\n';
                 }
-                mensagem += "Estes materiais serão salvos com valor ZERO (R$ 0,00).\nDeseja continuar?";
+                mensagem += "Estes materiais serão salvos com valor ZERO (R$ 0,000000).\nDeseja continuar?";
                 if (!confirm(mensagem)) return false;
             }
 
@@ -1082,11 +1093,11 @@
                 $('#materiais-body-' + cotacaoId + ' tr').each(function() {
                     const unitarioInput = $(this).find('.material-unitario');
                     const valor = unitarioInput.val();
-                    if (!valor || valor === '' || valor === '0,00') {
-                        unitarioInput.val('0.00');
+                    if (!valor || valor === '' || valor === '0,00' || valor === '0,000000') {
+                        unitarioInput.val('0.000000');
                     } else {
-                        let valorNumerico = formatarNumeroParaEnvio(valor);
-                        unitarioInput.val(valorNumerico.toFixed(2));
+                        let valorNumerico = formatarNumeroParaEnvio(valor, 6);
+                        unitarioInput.val(valorNumerico.toFixed(6));
                     }
                 });
                 
@@ -1109,6 +1120,10 @@
             debugCotacoes();
             this.submit();
         });
+
+        // ============================================
+        // INICIALIZAÇÃO
+        // ============================================
 
         $(document).ready(function() {
             const cotacoesSalvasData = [
@@ -1189,14 +1204,14 @@
                 const materialSalvo = materiaisPorSolicitacao[material.id];
                 const valorUnitarioSalvo = materialSalvo ? materialSalvo.valor_unitario : 0;
                 const marcaSalva = materialSalvo ? (materialSalvo.marca || '') : '';
-                const valorUnitarioParaInput = valorUnitarioSalvo > 0 ? formatarNumero(valorUnitarioSalvo, 2) : '';
+                const valorUnitarioParaInput = valorUnitarioSalvo > 0 ? formatarNumero(valorUnitarioSalvo, 6) : '';
                 const valorTotal = valorUnitarioSalvo > 0 ? valorUnitarioSalvo * material.quantidade : 0;
                 const rowHTML = `
                     <tr id="material-${cotacaoId}-${materialId}">
                         <td class="descricao"><textarea class="material-descricao" readonly style="white-space: normal; word-break: break-word; overflow-wrap: break-word; height: auto; min-height: 38px; padding: 6px 8px; resize: none; border: 1px solid #e0e0e0; border-radius: 4px; font-size: 10px; line-height: 1.4; width: 100%; box-sizing: border-box;">${material.descricao || ''}</textarea><input type="hidden" name="solicitacao_id[]" value="${material.id}"></td>
                         <td class="quantidade"><input type="text" class="material-quantidade" name="quantidade[]" value="${material.quantidade}" readonly style="background: #f5f5f5; cursor: not-allowed;"></td>
                         <td class="unidade"><input type="text" class="material-unidade" name="material_unidade_${cotacaoId}[]" value="${material.unidade}" readonly style="background: #f5f5f5; cursor: not-allowed;"></td>
-                        <td class="unitario"><div class="valor-input" style="position: relative;"><input type="text" class="material-unitario" name="valor_unitario[]" placeholder="0,00" value="${valorUnitarioParaInput}" data-cotacao-id="${cotacaoId}" data-material-id="${materialId}"><span class="valor-simbolo">R$</span></div></td>
+                        <td class="unitario"><div class="valor-input" style="position: relative;"><input type="text" class="material-unitario" name="valor_unitario[]" placeholder="0,000000" value="${valorUnitarioParaInput}" data-cotacao-id="${cotacaoId}" data-material-id="${materialId}"><span class="valor-simbolo">R$</span></div></td>
                         <td class="marca"><input type="text" class="material-marca" name="marca[]" placeholder="Marca" value="${marcaSalva}" style="width: 100%; padding: 6px 8px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 10px;"></td>
                         <td class="total"><input type="text" class="material-total-display" id="material-total-${cotacaoId}-${materialId}" value="${valorUnitarioSalvo > 0 ? 'R$ ' + formatarNumero(valorTotal, 2) : 'R$ 0,00'}" readonly style="background: #f0f8ff; cursor: not-allowed;"></td>
                         <td class="acoes">#${material.id}</td>
