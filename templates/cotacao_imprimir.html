@@ -1367,226 +1367,559 @@
         </div>
     </div>
 
-    <script>
-        // Função para permitir edição do nome do fornecedor
-        function tornarFornecedorEditavel(elemento, idx, isCard = false) {
-            const nomeOriginal = elemento.getAttribute('data-original-nome') || elemento.innerText;
-            const input = document.createElement('input');
-            input.type = 'text';
-            input.value = nomeOriginal;
-            input.className = isCard ? 'fornecedor-card-edit' : 'fornecedor-input-edit';
-            
-            const parent = elemento.parentNode;
-            parent.replaceChild(input, elemento);
-            input.focus();
-            
-            function salvarEdicao() {
-                const novoNome = input.value.trim() !== '' ? input.value.trim() : nomeOriginal;
-                
-                const novoSpan = document.createElement('span');
-                if (!isCard) {
-                    novoSpan.className = 'fornecedor-nome';
-                    novoSpan.setAttribute('data-fornecedor-idx', idx);
-                    novoSpan.setAttribute('data-original-nome', novoNome);
-                    novoSpan.textContent = novoNome;
-                    novoSpan.addEventListener('dblclick', function(e) {
-                        e.stopPropagation();
-                        tornarFornecedorEditavel(novoSpan, idx, false);
-                    });
-                    parent.replaceChild(novoSpan, input);
-                } else {
-                    novoSpan.className = 'fornecedor-nome-card';
-                    novoSpan.setAttribute('data-card-nome-idx', idx);
-                    novoSpan.setAttribute('data-original-nome', novoNome);
-                    novoSpan.textContent = novoNome;
-                    novoSpan.addEventListener('dblclick', function(e) {
-                        e.stopPropagation();
-                        tornarFornecedorEditavel(novoSpan, idx, true);
-                    });
-                    parent.replaceChild(novoSpan, input);
-                }
-                
-                const cardNome = document.querySelector(`.fornecedor-nome-card[data-card-nome-idx="${idx}"]`);
-                if (cardNome && !isCard) {
-                    cardNome.textContent = novoNome;
-                    cardNome.setAttribute('data-original-nome', novoNome);
-                }
-                const tabelaNome = document.querySelector(`.fornecedor-nome[data-fornecedor-idx="${idx}"]`);
-                if (tabelaNome && isCard) {
-                    tabelaNome.textContent = novoNome;
-                    tabelaNome.setAttribute('data-original-nome', novoNome);
-                }
-            }
-            
-            input.addEventListener('blur', salvarEdicao);
-            input.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    salvarEdicao();
-                }
-            });
-        }
-        
-        // Função para permitir edição do telefone do fornecedor
-        function tornarTelefoneEditavel(elemento, idx, isCard = false) {
-            const telefoneOriginal = elemento.getAttribute('data-original-telefone') || elemento.innerText.replace('📞', '').trim();
-            const input = document.createElement('input');
-            input.type = 'text';
-            input.value = telefoneOriginal;
-            input.className = isCard ? 'telefone-card-edit' : 'telefone-input-edit';
-            
-            const parent = elemento.parentNode;
-            parent.replaceChild(input, elemento);
-            input.focus();
-            
-            function salvarEdicao() {
-                const novoTelefone = input.value.trim() !== '' ? input.value.trim() : telefoneOriginal;
-                
-                const novoSpan = document.createElement('span');
-                if (!isCard) {
-                    novoSpan.className = 'telefone-info';
-                    novoSpan.setAttribute('data-fornecedor-telefone-idx', idx);
-                    novoSpan.setAttribute('data-original-telefone', novoTelefone);
-                    novoSpan.textContent = `📞 ${novoTelefone}`;
-                    novoSpan.addEventListener('dblclick', function(e) {
-                        e.stopPropagation();
-                        tornarTelefoneEditavel(novoSpan, idx, false);
-                    });
-                    parent.replaceChild(novoSpan, input);
-                } else {
-                    novoSpan.className = 'telefone-card';
-                    novoSpan.setAttribute('data-card-telefone-idx', idx);
-                    novoSpan.setAttribute('data-original-telefone', novoTelefone);
-                    novoSpan.textContent = `📞 ${novoTelefone}`;
-                    novoSpan.addEventListener('dblclick', function(e) {
-                        e.stopPropagation();
-                        tornarTelefoneEditavel(novoSpan, idx, true);
-                    });
-                    parent.replaceChild(novoSpan, input);
-                }
-                
-                const cardTelefone = document.querySelector(`.telefone-card[data-card-telefone-idx="${idx}"]`);
-                if (cardTelefone && !isCard) {
-                    cardTelefone.textContent = `📞 ${novoTelefone}`;
-                    cardTelefone.setAttribute('data-original-telefone', novoTelefone);
-                }
-                const tabelaTelefone = document.querySelector(`.telefone-info[data-fornecedor-telefone-idx="${idx}"]`);
-                if (tabelaTelefone && isCard) {
-                    tabelaTelefone.textContent = `📞 ${novoTelefone}`;
-                    tabelaTelefone.setAttribute('data-original-telefone', novoTelefone);
-                }
-            }
-            
-            input.addEventListener('blur', salvarEdicao);
-            input.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    salvarEdicao();
-                }
-            });
-        }
-        
-        document.addEventListener('DOMContentLoaded', function() {
-            // Configurar edição dos nomes dos fornecedores no cabeçalho da tabela
-            const fornecedoresNomes = document.querySelectorAll('.fornecedor-nome');
-            fornecedoresNomes.forEach(function(elemento) {
-                const idx = elemento.getAttribute('data-fornecedor-idx');
-                elemento.addEventListener('dblclick', function(e) {
-                    e.stopPropagation();
-                    tornarFornecedorEditavel(elemento, idx, false);
-                });
-            });
-            
-            // Configurar edição dos telefones no cabeçalho da tabela
-            const telefonesInfo = document.querySelectorAll('.telefone-info');
-            telefonesInfo.forEach(function(elemento) {
-                const idx = elemento.getAttribute('data-fornecedor-telefone-idx');
-                if (idx) {
-                    elemento.addEventListener('dblclick', function(e) {
-                        e.stopPropagation();
-                        tornarTelefoneEditavel(elemento, idx, false);
-                    });
-                }
-            });
-            
-            // Configurar edição dos nomes dos fornecedores nos cards
-            const cardNomes = document.querySelectorAll('.fornecedor-nome-card');
-            cardNomes.forEach(function(elemento) {
-                const idx = elemento.getAttribute('data-card-nome-idx');
-                elemento.addEventListener('dblclick', function(e) {
-                    e.stopPropagation();
-                    tornarFornecedorEditavel(elemento, idx, true);
-                });
-            });
-            
-            // Configurar edição dos telefones nos cards
-            const telefonesCard = document.querySelectorAll('.telefone-card');
-            telefonesCard.forEach(function(elemento) {
-                const idx = elemento.getAttribute('data-card-telefone-idx');
-                if (idx) {
-                    elemento.addEventListener('dblclick', function(e) {
-                        e.stopPropagation();
-                        tornarTelefoneEditavel(elemento, idx, true);
-                    });
-                }
-            });
-            
-            const campoPagamento = document.getElementById('formaPagamento');
-            const errorMessage = document.getElementById('errorMessage');
+<script>
+// ====================================================
+// FUNÇÕES PARA SALVAR/CARREGAR DADOS NO BACKEND
+// ====================================================
 
-            if (campoPagamento) {
-                campoPagamento.addEventListener('input', function () {
-                    if (this.value.trim() !== '') {
-                        this.classList.remove('required');
-                        errorMessage.classList.remove('show');
+// Obter ID do template (pode ser o ID da solicitação ou grupo)
+function getTemplateId() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const grupoIds = urlParams.get('grupo_ids');
+    if (grupoIds) {
+        return `grupo_${grupoIds}`;
+    }
+    
+    const solicitacaoId = urlParams.get('id');
+    if (solicitacaoId) {
+        return `solicitacao_${solicitacaoId}`;
+    }
+    
+    return `usuario_${new Date().toISOString().split('T')[0]}`;
+}
+
+// Função para capturar todos os dados do formulário
+function capturarDadosCompletos() {
+    // Capturar campos do ÚLTIMO PREÇO
+    const ultimoPrecoInputs = document.querySelectorAll('.ultimo-preco .campo-data');
+    
+    const dados = {
+        empresa_top: document.getElementById('empresa_top')?.value || '',
+        comprador_top: document.getElementById('comprador_top')?.value || '',
+        
+        // 🔴 CORREÇÃO: Capturar corretamente os campos do ÚLTIMO PREÇO
+        ultimo_preco: {
+            fornecedor: ultimoPrecoInputs[0]?.value || '',
+            valor_total: ultimoPrecoInputs[1]?.value || '',
+            data: ultimoPrecoInputs[2]?.value || ''
+        },
+        
+        forma_pagamento: document.getElementById('formaPagamento')?.value || '',
+        status_entrega: document.getElementById('statusEntrega')?.value || '',
+        previsao_entrega: document.getElementById('previsaoEntrega')?.value || '',
+        
+        info_gerais: {
+            setor: document.querySelector('.info-grid .info-item:nth-child(1) input')?.value || '',
+            aplicacao: document.querySelector('.info-grid .info-item:nth-child(2) input')?.value || '',
+            prioridade: document.querySelector('.info-grid .info-item:nth-child(3) input')?.value || '',
+            data_solic: document.querySelector('.info-grid .info-item:nth-child(4) input')?.value || '',
+            solicitante: document.querySelector('.info-grid .info-item:nth-child(5) input')?.value || ''
+        },
+        
+        observacao: document.querySelector('.observacao-comprador .campo-observacao')?.value || '',
+        
+        fornecedores: [],
+        ultima_atualizacao: new Date().toLocaleString('pt-BR')
+    };
+    
+    // Capturar nomes e telefones dos fornecedores
+    const fornecedoresNomes = document.querySelectorAll('.fornecedor-nome, .fornecedor-nome-card');
+    fornecedoresNomes.forEach((nome) => {
+        let telefone = '';
+        let idx = '';
+        
+        if (nome.classList.contains('fornecedor-nome')) {
+            idx = nome.getAttribute('data-fornecedor-idx');
+            const telefoneElem = document.querySelector(`.telefone-info[data-fornecedor-telefone-idx="${idx}"]`);
+            if (telefoneElem) {
+                telefone = telefoneElem.getAttribute('data-original-telefone') || telefoneElem.textContent.replace('📞', '').trim();
+            }
+        } else {
+            idx = nome.getAttribute('data-card-nome-idx');
+            const telefoneElem = document.querySelector(`.telefone-card[data-card-telefone-idx="${idx}"]`);
+            if (telefoneElem) {
+                telefone = telefoneElem.getAttribute('data-original-telefone') || telefoneElem.textContent.replace('📞', '').trim();
+            }
+        }
+        
+        dados.fornecedores.push({
+            idx: idx,
+            nome: nome.getAttribute('data-original-nome') || nome.textContent,
+            telefone: telefone
+        });
+    });
+    
+    return dados;
+}
+
+// Função para restaurar dados no formulário
+function restaurarDadosCompletos(dados) {
+    if (!dados) return;
+    
+    console.log('Restaurando dados:', dados);
+    
+    // Restaurar campos do topo
+    if (document.getElementById('empresa_top')) 
+        document.getElementById('empresa_top').value = dados.empresa_top || '';
+    if (document.getElementById('comprador_top')) 
+        document.getElementById('comprador_top').value = dados.comprador_top || '';
+    
+    // 🔴 CORREÇÃO: Restaurar ÚLTIMO PREÇO corretamente
+    if (dados.ultimo_preco) {
+        const ultimoPrecoInputs = document.querySelectorAll('.ultimo-preco .campo-data');
+        if (ultimoPrecoInputs.length >= 3) {
+            ultimoPrecoInputs[0].value = dados.ultimo_preco.fornecedor || '';
+            ultimoPrecoInputs[1].value = dados.ultimo_preco.valor_total || '';
+            ultimoPrecoInputs[2].value = dados.ultimo_preco.data || '';
+            console.log('✅ Último preço restaurado:', dados.ultimo_preco);
+        }
+    }
+    
+    // Restaurar pagamento e entrega
+    if (document.getElementById('formaPagamento'))
+        document.getElementById('formaPagamento').value = dados.forma_pagamento || '';
+    if (document.getElementById('statusEntrega'))
+        document.getElementById('statusEntrega').value = dados.status_entrega || '';
+    if (document.getElementById('previsaoEntrega'))
+        document.getElementById('previsaoEntrega').value = dados.previsao_entrega || '';
+    
+    // Restaurar informações gerais
+    if (dados.info_gerais) {
+        const infoInputs = document.querySelectorAll('.info-grid .info-item input');
+        if (infoInputs.length >= 5) {
+            infoInputs[0].value = dados.info_gerais.setor || '';
+            infoInputs[1].value = dados.info_gerais.aplicacao || '';
+            infoInputs[2].value = dados.info_gerais.prioridade || '';
+            infoInputs[3].value = dados.info_gerais.data_solic || '';
+            infoInputs[4].value = dados.info_gerais.solicitante || '';
+        }
+    }
+    
+    // Restaurar observação
+    const obsCampo = document.querySelector('.observacao-comprador .campo-observacao');
+    if (obsCampo) obsCampo.value = dados.observacao || '';
+    
+    // Restaurar fornecedores
+    if (dados.fornecedores && dados.fornecedores.length > 0) {
+        dados.fornecedores.forEach(forn => {
+            if (forn.idx) {
+                const nomeTabela = document.querySelector(`.fornecedor-nome[data-fornecedor-idx="${forn.idx}"]`);
+                if (nomeTabela) {
+                    nomeTabela.textContent = forn.nome;
+                    nomeTabela.setAttribute('data-original-nome', forn.nome);
+                }
+                
+                const telefoneTabela = document.querySelector(`.telefone-info[data-fornecedor-telefone-idx="${forn.idx}"]`);
+                if (telefoneTabela && forn.telefone) {
+                    telefoneTabela.textContent = `📞 ${forn.telefone}`;
+                    telefoneTabela.setAttribute('data-original-telefone', forn.telefone);
+                }
+                
+                const nomeCard = document.querySelector(`.fornecedor-nome-card[data-card-nome-idx="${forn.idx}"]`);
+                if (nomeCard) {
+                    nomeCard.textContent = forn.nome;
+                    nomeCard.setAttribute('data-original-nome', forn.nome);
+                }
+                
+                const telefoneCard = document.querySelector(`.telefone-card[data-card-telefone-idx="${forn.idx}"]`);
+                if (telefoneCard && forn.telefone) {
+                    telefoneCard.textContent = `📞 ${forn.telefone}`;
+                    telefoneCard.setAttribute('data-original-telefone', forn.telefone);
+                }
+            }
+        });
+    }
+}
+
+// Função para salvar no servidor
+async function salvarNoServidor() {
+    const dados = capturarDadosCompletos();
+    const templateId = getTemplateId();
+    
+    // Mostrar indicador de salvamento
+    const btnSalvar = document.querySelector('.btn-salvar-auto');
+    if (btnSalvar) {
+        btnSalvar.textContent = '💾 Salvando...';
+        btnSalvar.disabled = true;
+    }
+    
+    try {
+        const response = await fetch('/api/salvar_dados_template', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                template_id: templateId,
+                ...dados
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (btnSalvar) {
+            if (result.success) {
+                btnSalvar.textContent = '💾 Salvo!';
+                setTimeout(() => {
+                    btnSalvar.textContent = '💾 Salvar';
+                    btnSalvar.disabled = false;
+                }, 1500);
+            } else {
+                btnSalvar.textContent = '💾 Salvar';
+                btnSalvar.disabled = false;
+                console.error('Erro ao salvar:', result.error);
+            }
+        }
+        
+        // Salvar também no localStorage como backup
+        localStorage.setItem(`template_${templateId}`, JSON.stringify(dados));
+        
+    } catch (error) {
+        console.error('Erro ao salvar:', error);
+        // Fallback para localStorage
+        localStorage.setItem(`template_${templateId}`, JSON.stringify(dados));
+        if (btnSalvar) {
+            btnSalvar.textContent = '💾 Salvo localmente';
+            setTimeout(() => {
+                btnSalvar.textContent = '💾 Salvar';
+                btnSalvar.disabled = false;
+            }, 1500);
+        }
+    }
+}
+
+// Função para carregar do servidor (automático)
+async function carregarAutomatico() {
+    const templateId = getTemplateId();
+    
+    try {
+        const response = await fetch(`/api/carregar_dados_template?template_id=${templateId}`);
+        
+        if (response.status === 404) {
+            // Tentar carregar do localStorage
+            const localData = localStorage.getItem(`template_${templateId}`);
+            if (localData) {
+                restaurarDadosCompletos(JSON.parse(localData));
+                console.log('📂 Dados carregados do cache local');
+            }
+            return;
+        }
+        
+        const result = await response.json();
+        
+        if (result.success && result.dados) {
+            restaurarDadosCompletos(result.dados);
+            console.log('✅ Dados carregados automaticamente!');
+        }
+    } catch (error) {
+        console.error('Erro ao carregar:', error);
+        const localData = localStorage.getItem(`template_${templateId}`);
+        if (localData) {
+            restaurarDadosCompletos(JSON.parse(localData));
+            console.log('📂 Dados carregados do cache local');
+        }
+    }
+}
+
+// Criar botão de salvar único
+function criarBotaoSalvar() {
+    // Verificar se já existe
+    if (document.querySelector('.btn-salvar-auto')) return;
+    
+    const btnSalvar = document.createElement('button');
+    btnSalvar.textContent = '💾 Salvar';
+    btnSalvar.className = 'btn-salvar-auto';
+    btnSalvar.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: #0B2E59;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        z-index: 1000;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        transition: all 0.3s ease;
+    `;
+    
+    btnSalvar.onmouseover = () => btnSalvar.style.opacity = '0.9';
+    btnSalvar.onmouseout = () => btnSalvar.style.opacity = '1';
+    btnSalvar.onclick = salvarNoServidor;
+    
+    document.body.appendChild(btnSalvar);
+}
+
+// Auto-salvar em campos específicos
+function configurarAutoSaveCampos() {
+    // Selecionar todos os campos editáveis
+    const camposParaAutoSave = [
+        '#empresa_top',
+        '#comprador_top',
+        '#formaPagamento',
+        '#statusEntrega',
+        '#previsaoEntrega',
+        '.ultimo-preco .campo-data',
+        '.info-grid .info-item input',
+        '.observacao-comprador .campo-observacao'
+    ];
+    
+    const seletores = camposParaAutoSave.join(',');
+    const campos = document.querySelectorAll(seletores);
+    
+    campos.forEach(campo => {
+        campo.addEventListener('blur', () => {
+            console.log('Campo alterado, salvando...');
+            salvarNoServidor();
+        });
+        
+        // Para inputs de texto, salvar após digitar
+        if (campo.tagName === 'INPUT' || campo.tagName === 'TEXTAREA') {
+            campo.addEventListener('input', () => {
+                // Debounce para não salvar a cada tecla
+                clearTimeout(campo.saveTimeout);
+                campo.saveTimeout = setTimeout(() => {
+                    salvarNoServidor();
+                }, 1000);
+            });
+        }
+    });
+}
+
+// Configurar auto-save para fornecedores editáveis
+function configurarAutoSaveFornecedores() {
+    // Observer para detectar quando os spans são substituídos por inputs
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.type === 'childList') {
+                mutation.addedNodes.forEach(function(node) {
+                    if (node.nodeType === 1) {
+                        if (node.classList && (
+                            node.classList.contains('fornecedor-nome') ||
+                            node.classList.contains('telefone-info') ||
+                            node.classList.contains('fornecedor-nome-card') ||
+                            node.classList.contains('telefone-card')
+                        )) {
+                            // Adicionar evento de salvamento após edição
+                            const observerSalvar = new MutationObserver(() => {
+                                salvarNoServidor();
+                            });
+                            observerSalvar.observe(node, { 
+                                attributes: true, 
+                                attributeFilter: ['data-original-nome', 'data-original-telefone'] 
+                            });
+                        }
                     }
                 });
             }
-
-            const empresaTop = document.getElementById('empresa_top');
-            const empresaSalva = localStorage.getItem('empresa_top');
-            if (empresaSalva) empresaTop.value = empresaSalva;
-            empresaTop.addEventListener('input', function () {
-                localStorage.setItem('empresa_top', this.value);
-            });
-            
-            const compradorTop = document.getElementById('comprador_top');
-            const compradorSalvo = localStorage.getItem('comprador_top');
-            if (compradorSalvo) compradorTop.value = compradorSalvo;
-            compradorTop.addEventListener('input', function () {
-                localStorage.setItem('comprador_top', this.value);
-            });
-
-            window.addEventListener('click', function (event) {
-                if (event.target === document.getElementById('validationModal')) {
-                    fecharModal();
-                }
-            });
         });
+    });
+    
+    observer.observe(document.body, { childList: true, subtree: true });
+}
+
+// Inicialização
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Inicializando auto-save...');
+    
+    // Criar botão de salvar
+    criarBotaoSalvar();
+    
+    // Carregar dados automaticamente
+    setTimeout(() => {
+        carregarAutomatico();
+    }, 500);
+    
+    // Configurar auto-save em campos
+    setTimeout(() => {
+        configurarAutoSaveCampos();
+        configurarAutoSaveFornecedores();
+    }, 1000);
+    
+    // Salvar antes de fechar a página
+    window.addEventListener('beforeunload', function() {
+        salvarNoServidor();
+    });
+    
+    // Salvar periodicamente a cada 60 segundos (backup)
+    setInterval(() => {
+        console.log('🔄 Backup automático...');
+        salvarNoServidor();
+    }, 60000);
+});
+
+// Funções de edição originais (mantidas do seu código)
+function tornarFornecedorEditavel(elemento, idx, isCard = false) {
+    const nomeOriginal = elemento.getAttribute('data-original-nome') || elemento.innerText;
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.value = nomeOriginal;
+    input.className = isCard ? 'fornecedor-card-edit' : 'fornecedor-input-edit';
+    
+    const parent = elemento.parentNode;
+    parent.replaceChild(input, elemento);
+    input.focus();
+    
+    function salvarEdicao() {
+        const novoNome = input.value.trim() !== '' ? input.value.trim() : nomeOriginal;
         
-        function validarEImprimir() {
-            const campoPagamento = document.getElementById('formaPagamento');
-            const errorMessage = document.getElementById('errorMessage');
-            const modal = document.getElementById('validationModal');
-
-            if (campoPagamento.value.trim() === '') {
-                campoPagamento.classList.add('required');
-                campoPagamento.style.borderColor = '#dc2626';
-                errorMessage.classList.add('show');
-                modal.classList.add('show');
-                return false;
-            } else {
-                campoPagamento.classList.remove('required');
-                campoPagamento.style.borderColor = '#cbd5e1';
-                errorMessage.classList.remove('show');
-                window.print();
-            }
+        const novoSpan = document.createElement('span');
+        if (!isCard) {
+            novoSpan.className = 'fornecedor-nome';
+            novoSpan.setAttribute('data-fornecedor-idx', idx);
+            novoSpan.setAttribute('data-original-nome', novoNome);
+            novoSpan.textContent = novoNome;
+            novoSpan.addEventListener('dblclick', function(e) {
+                e.stopPropagation();
+                tornarFornecedorEditavel(novoSpan, idx, false);
+            });
+            parent.replaceChild(novoSpan, input);
+        } else {
+            novoSpan.className = 'fornecedor-nome-card';
+            novoSpan.setAttribute('data-card-nome-idx', idx);
+            novoSpan.setAttribute('data-original-nome', novoNome);
+            novoSpan.textContent = novoNome;
+            novoSpan.addEventListener('dblclick', function(e) {
+                e.stopPropagation();
+                tornarFornecedorEditavel(novoSpan, idx, true);
+            });
+            parent.replaceChild(novoSpan, input);
         }
-
-        function fecharModal() {
-            const modal = document.getElementById('validationModal');
-            modal.classList.remove('show');
+        
+        // Auto-salvar após edição
+        setTimeout(() => salvarNoServidor(), 100);
+    }
+    
+    input.addEventListener('blur', salvarEdicao);
+    input.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            salvarEdicao();
         }
-    </script>
+    });
+}
+
+function tornarTelefoneEditavel(elemento, idx, isCard = false) {
+    const telefoneOriginal = elemento.getAttribute('data-original-telefone') || elemento.innerText.replace('📞', '').trim();
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.value = telefoneOriginal;
+    input.className = isCard ? 'telefone-card-edit' : 'telefone-input-edit';
+    
+    const parent = elemento.parentNode;
+    parent.replaceChild(input, elemento);
+    input.focus();
+    
+    function salvarEdicao() {
+        const novoTelefone = input.value.trim() !== '' ? input.value.trim() : telefoneOriginal;
+        
+        const novoSpan = document.createElement('span');
+        if (!isCard) {
+            novoSpan.className = 'telefone-info';
+            novoSpan.setAttribute('data-fornecedor-telefone-idx', idx);
+            novoSpan.setAttribute('data-original-telefone', novoTelefone);
+            novoSpan.textContent = `📞 ${novoTelefone}`;
+            novoSpan.addEventListener('dblclick', function(e) {
+                e.stopPropagation();
+                tornarTelefoneEditavel(novoSpan, idx, false);
+            });
+            parent.replaceChild(novoSpan, input);
+        } else {
+            novoSpan.className = 'telefone-card';
+            novoSpan.setAttribute('data-card-telefone-idx', idx);
+            novoSpan.setAttribute('data-original-telefone', novoTelefone);
+            novoSpan.textContent = `📞 ${novoTelefone}`;
+            novoSpan.addEventListener('dblclick', function(e) {
+                e.stopPropagation();
+                tornarTelefoneEditavel(novoSpan, idx, true);
+            });
+            parent.replaceChild(novoSpan, input);
+        }
+        
+        // Auto-salvar após edição
+        setTimeout(() => salvarNoServidor(), 100);
+    }
+    
+    input.addEventListener('blur', salvarEdicao);
+    input.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            salvarEdicao();
+        }
+    });
+}
+
+// Configurar eventos de edição originais
+document.addEventListener('DOMContentLoaded', function() {
+    const fornecedoresNomes = document.querySelectorAll('.fornecedor-nome');
+    fornecedoresNomes.forEach(function(elemento) {
+        const idx = elemento.getAttribute('data-fornecedor-idx');
+        elemento.addEventListener('dblclick', function(e) {
+            e.stopPropagation();
+            tornarFornecedorEditavel(elemento, idx, false);
+        });
+    });
+    
+    const telefonesInfo = document.querySelectorAll('.telefone-info');
+    telefonesInfo.forEach(function(elemento) {
+        const idx = elemento.getAttribute('data-fornecedor-telefone-idx');
+        if (idx) {
+            elemento.addEventListener('dblclick', function(e) {
+                e.stopPropagation();
+                tornarTelefoneEditavel(elemento, idx, false);
+            });
+        }
+    });
+    
+    const cardNomes = document.querySelectorAll('.fornecedor-nome-card');
+    cardNomes.forEach(function(elemento) {
+        const idx = elemento.getAttribute('data-card-nome-idx');
+        elemento.addEventListener('dblclick', function(e) {
+            e.stopPropagation();
+            tornarFornecedorEditavel(elemento, idx, true);
+        });
+    });
+    
+    const telefonesCard = document.querySelectorAll('.telefone-card');
+    telefonesCard.forEach(function(elemento) {
+        const idx = elemento.getAttribute('data-card-telefone-idx');
+        if (idx) {
+            elemento.addEventListener('dblclick', function(e) {
+                e.stopPropagation();
+                tornarTelefoneEditavel(elemento, idx, true);
+            });
+        }
+    });
+});
+
+// Função de validação para impressão (mantida original)
+function validarEImprimir() {
+    const campoPagamento = document.getElementById('formaPagamento');
+    const errorMessage = document.getElementById('errorMessage');
+    const modal = document.getElementById('validationModal');
+
+    if (campoPagamento.value.trim() === '') {
+        campoPagamento.classList.add('required');
+        campoPagamento.style.borderColor = '#dc2626';
+        if (errorMessage) errorMessage.classList.add('show');
+        if (modal) modal.classList.add('show');
+        return false;
+    } else {
+        campoPagamento.classList.remove('required');
+        campoPagamento.style.borderColor = '#cbd5e1';
+        if (errorMessage) errorMessage.classList.remove('show');
+        window.print();
+    }
+}
+
+function fecharModal() {
+    const modal = document.getElementById('validationModal');
+    if (modal) modal.classList.remove('show');
+}
+</script>
+
 </body>
 </html>
