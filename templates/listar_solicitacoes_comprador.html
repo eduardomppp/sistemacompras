@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Listar Solicitações Aprovadas/Reprovadas</title>
+    <title>Solicitações Aprovadas - Preencher Cotação</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
@@ -20,6 +20,8 @@
             --status-aprovado: #28a745;
             --status-reprovado: #dc3545;
             --status-pendente: #ffc107;
+            --rascunho-color: #fd7e14;
+            --rascunho-bg: #fff3e0;
         }
 
         body {
@@ -52,6 +54,7 @@
             color: var(--primary-color);
             margin: 0;
             font-weight: 600;
+            font-size: 24px;
         }
 
         .btn-novo-pedido {
@@ -78,12 +81,152 @@
             text-decoration: none;
         }
 
-        h4 {
-            margin-top: 20px;
+        /* ESTILOS DAS ABAS */
+        .tabs-container {
+            margin-bottom: 25px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .tabs {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            font-size: 15px;
+            font-weight: 600;
+            color: #6c757d;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-radius: 8px 8px 0 0;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .tab-btn i {
+            font-size: 16px;
+        }
+
+        .tab-btn:hover {
+            background-color: var(--light-gray);
             color: var(--primary-color);
+        }
+
+        .tab-btn.active {
+            color: var(--primary-color);
+            border-bottom: 3px solid var(--primary-color);
+            background-color: white;
+        }
+
+        .tab-btn.rascunho-tab.active {
+            color: var(--rascunho-color);
+            border-bottom-color: var(--rascunho-color);
+        }
+
+        .tab-badge {
+            background-color: #e9ecef;
+            color: #495057;
+            border-radius: 20px;
+            padding: 2px 8px;
+            font-size: 12px;
+            margin-left: 8px;
+        }
+
+        .tab-btn.rascunho-tab .tab-badge {
+            background-color: #fff3e0;
+            color: var(--rascunho-color);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        h4 {
+            margin: 0;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 18px;
+        }
+
+        .group-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            margin-bottom: 10px;
+            padding: 12px 15px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid var(--primary-color);
+            transition: all 0.3s ease;
+        }
+
+        .group-header.has-rascunho {
+            background-color: var(--rascunho-bg);
+            border-left-color: var(--rascunho-color);
+        }
+
+        .group-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .group-info {
+            font-size: 13px;
+            color: #6c757d;
+            margin-left: 10px;
+        }
+
+        .rascunho-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background-color: var(--rascunho-color);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 12px;
+        }
+
+        .rascunho-indicator i {
+            font-size: 11px;
+        }
+
+        .rascunho-badge {
+            background-color: var(--rascunho-color);
+            color: white;
+            border-radius: 20px;
+            padding: 2px 8px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+            text-align: center;
+            min-width: 80px;
+        }
+
+        .status-aprovado {
+            background-color: #d4edda;
+            color: var(--status-aprovado);
         }
 
         .table-responsive {
@@ -137,25 +280,8 @@
             white-space: nowrap;
         }
 
-        .btn-preencher {
-            background-color: var(--accent-color);
-        }
-
-        .btn-preencher:hover {
-            background-color: var(--hover-color);
-            transform: translateY(-1px);
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        }
-
-        .btn-preencher:disabled {
-            background-color: #6c757d;
-            cursor: not-allowed;
-            opacity: 0.6;
-        }
-
         .btn-preencher-grupo {
             background-color: #28a745;
-            margin-right: 10px;
         }
 
         .btn-preencher-grupo:hover {
@@ -166,7 +292,6 @@
 
         .btn-print-group {
             background-color: #6f42c1;
-            margin-left: 10px;
         }
 
         .btn-print-group:hover {
@@ -175,63 +300,21 @@
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
 
-        .status-badge {
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-            display: inline-block;
-            text-align: center;
-            min-width: 80px;
-        }
-
-        .status-aprovado {
-            background-color: #d4edda;
-            color: var(--status-aprovado);
-        }
-
-        .status-reprovado {
-            background-color: #f8d7da;
-            color: var(--status-reprovado);
-        }
-
-        .status-pendente {
-            background-color: #fff3cd;
-            color: var(--status-pendente);
-        }
-
-        .alert {
-            padding: 12px 20px;
-            margin-bottom: 25px;
-            border-radius: 6px;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .alert-error {
-            background-color: #f8d7da;
-            color: #721c24;
-            border-left: 4px solid #f5c6cb;
-        }
-
-        .alert-success {
-            background-color: #d4edda;
-            color: #155724;
-            border-left: 4px solid #c3e6cb;
-        }
-
         .empty-state {
             text-align: center;
-            padding: 40px;
+            padding: 60px 40px;
             color: #6c757d;
         }
 
         .empty-state i {
-            font-size: 50px;
+            font-size: 60px;
             margin-bottom: 20px;
             color: #dee2e6;
+        }
+
+        .empty-state h3 {
+            font-size: 20px;
+            margin-bottom: 10px;
         }
 
         .search-filter-container {
@@ -272,6 +355,11 @@
             background-color: white;
         }
 
+        .filter-group select:disabled {
+            background-color: #e9ecef;
+            cursor: not-allowed;
+        }
+
         .date-range-picker {
             display: flex;
             gap: 10px;
@@ -309,56 +397,95 @@
             gap: 5px;
         }
 
-        .user-info {
-            background-color: #e7f3ff;
-            padding: 10px 15px;
-            border-radius: 6px;
-            margin-bottom: 20px;
-            border-left: 4px solid var(--primary-color);
-        }
-
-        .user-info strong {
-            color: var(--primary-color);
-        }
-
-        .group-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-            padding: 10px;
-            background-color: #f8f9fa;
-            border-radius: 6px;
-            border-left: 4px solid var(--primary-color);
-        }
-
-        .group-actions {
-            display: flex;
-            gap: 10px;
-        }
-
-        .group-info {
-            font-size: 14px;
+        .text-muted {
+            font-size: 12px;
             color: #6c757d;
-            margin-left: 10px;
+            margin-top: 5px;
+            display: block;
+        }
+
+        /* Scroll suave */
+        html {
+            scroll-behavior: smooth;
         }
 
         @media (max-width: 1200px) {
-            .container { padding: 15px; }
-            th, td { padding: 10px 12px; font-size: 14px; }
-            .btn { padding: 6px 12px; font-size: 13px; }
+            .container {
+                padding: 15px;
+            }
+
+            th,
+            td {
+                padding: 10px 12px;
+                font-size: 14px;
+            }
+
+            .btn {
+                padding: 6px 12px;
+                font-size: 13px;
+            }
+
+            .tab-btn {
+                padding: 10px 16px;
+                font-size: 14px;
+            }
         }
 
         @media (max-width: 768px) {
-            .page-header { flex-direction: column; align-items: flex-start; gap: 15px; }
-            .filter-row { flex-direction: column; }
-            .filter-group { min-width: 100%; }
-            .date-range-picker { flex-direction: column; align-items: flex-start; }
-            .table-responsive { font-size: 14px; }
-            th, td { padding: 8px 10px; }
-            .group-header { flex-direction: column; align-items: flex-start; gap: 10px; }
-            .group-actions { flex-direction: column; width: 100%; }
-            .btn-preencher-grupo, .btn-print-group { margin: 5px 0; width: 100%; justify-content: center; }
+            .page-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+
+            .filter-row {
+                flex-direction: column;
+            }
+
+            .filter-group {
+                min-width: 100%;
+            }
+
+            .date-range-picker {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .table-responsive {
+                font-size: 14px;
+            }
+
+            th,
+            td {
+                padding: 8px 10px;
+            }
+
+            .group-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            .group-actions {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .btn-preencher-grupo,
+            .btn-print-group {
+                margin: 5px 0;
+                width: 100%;
+                justify-content: center;
+            }
+
+            .tabs {
+                justify-content: center;
+            }
+
+            .tab-btn {
+                flex: 1;
+                justify-content: center;
+            }
         }
     </style>
 </head>
@@ -367,7 +494,7 @@
     <div class="container">
         <div class="page-header">
             <h1>
-                <i class="fas fa-clipboard-list"></i> Solicitações de Compras
+                <i class="fas fa-clipboard-list"></i> Minhas Solicitações Aprovadas
             </h1>
             <a href="{{ url_for('routes_bp.gerar_pedido_compra') }}" class="btn-novo-pedido">
                 <i class="bi bi-cart-plus"></i> Novo Pedido
@@ -388,7 +515,7 @@
                 </div>
 
                 <div class="filter-group">
-                    <label for="usuarioFilter">Usuário</label>
+                    <label for="usuarioFilter">Solicitante</label>
                     <select id="usuarioFilter" class="form-select">
                         <option value="">Todos usuários</option>
                         {% for usuario in usuarios %}
@@ -408,19 +535,13 @@
                 </div>
 
                 <div class="filter-group">
-                    <label for="statusFilter">Status</label>
-                    <select id="statusFilter" class="form-select">
-                        <option value="">Todos status</option>
-                        <option value="Aprovado">Aprovado</option>
-                        <option value="Reprovado">Reprovado</option>
-                    </select>
-                </div>
-
-                <div class="filter-group">
                     <label for="compradorFilter">Comprador Atribuído</label>
-                    <select id="compradorFilter" class="form-select">
-                        <option value="{{ session['usuario'] }}">{{ session['usuario'] }}</option>
+                    <select id="compradorFilter" class="form-select" disabled>
+                        <option value="{{ comprador_atual }}">{{ comprador_atual }}</option>
                     </select>
+                    <small class="text-muted">
+                        <i class="fas fa-user-check"></i> Você está visualizando apenas suas solicitações
+                    </small>
                 </div>
 
                 <div class="filter-group">
@@ -443,135 +564,285 @@
             </div>
         </div>
 
-        {% if solicitacoes %}
-        <div id="tablesContainer">
-            {% set grouped = {} %}
+        <!-- ABAS DE NAVEGAÇÃO -->
+        <div class="tabs-container">
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="sem-rascunho">
+                    <i class="fas fa-file-alt"></i> Sem Rascunho
+                    <span class="tab-badge">{{ grupos_sem_rascunho|length }}</span>
+                </button>
+                <button class="tab-btn rascunho-tab" data-tab="com-rascunho">
+                    <i class="fas fa-pen-fancy"></i> Com Rascunho Salvo
+                    <span class="tab-badge">{{ grupos_com_rascunho|length }}</span>
+                </button>
+            </div>
+        </div>
 
-            {# Agrupamento por aplicação + data + hora (formato string 'YYYY-MM-DD HH:MM') #}
-            {% for s in solicitacoes if s.status_aprovacao and s.status_aprovacao != 'Pendente' %}
-                {% set aplic = s.aplicacao or s.material.Aplicacao or 'Sem Aplicação' %}
-                {% set data_hora_str = s.data_solicitacao.strftime('%Y-%m-%d %H:%M') %}
-                {% set key = aplic ~ ' | ' ~ data_hora_str %}
+        <!-- ============================================ -->
+        <!-- TAB 1: SEM RASCUNHO -->
+        <!-- ============================================ -->
+        <div id="tab-sem-rascunho" class="tab-content active">
+            {% if grupos_sem_rascunho %}
+                {% for chave, items in grupos_sem_rascunho %}
+                    {% set parts = chave.split(' | ') %}
+                    {% set aplicacao = parts[0] %}
+                    {% set data_hora = parts[1] %}
+                    {% set ids_grupo = items|map(attribute='id')|join(',') %}
 
-                {% if key not in grouped %}
-                    {% set _ = grouped.update({key: []}) %}
-                {% endif %}
-                {% set _ = grouped[key].append(s) %}
-            {% endfor %}
-
-            {% for group_key, items in grouped.items() | sort(reverse=true) %}
-                {% set parts = group_key.split(' | ') %}
-                {% set aplicacao = parts[0] %}
-                {% set data_hora = parts[1] %}
-
-                <div class="application-group" data-aplicacao="{{ aplicacao }}" data-data-hora="{{ data_hora }}">
-                    <div class="group-header">
-                        <div>
-                            <h4 style="margin: 0;">{{ aplicacao }}</h4>
-                            <span class="group-info">
-                                {{ items|length }} solicitação(ões) aprovada(s) – {{ data_hora }}
-                            </span>
+                    <div class="application-group" data-aplicacao="{{ aplicacao }}">
+                        <div class="group-header">
+                            <div>
+                                <h4>
+                                    <i class="fas fa-folder-open"></i>
+                                    {{ aplicacao }}
+                                </h4>
+                                <span class="group-info">
+                                    <i class="far fa-calendar-alt"></i> {{ data_hora }} | 
+                                    <i class="fas fa-boxes"></i> {{ items|length }} item(ns)
+                                </span>
+                            </div>
+                            <div class="group-actions">
+                                <a href="{{ url_for('routes_bp.preencher_solicitacao', id=items[0].id) }}?grupo_ids={{ ids_grupo }}"
+                                   class="btn btn-preencher-grupo">
+                                    <i class="fas fa-edit"></i> Preencher Grupo ({{ items|length }} itens)
+                                </a>
+                                <a href="{{ url_for('routes_bp.cotacao_imprimir', id=items[0].id) }}?grupo_ids={{ ids_grupo }}"
+                                   class="btn btn-print-group">
+                                    <i class="fas fa-print"></i> Preparar para Impressão
+                                </a>
+                            </div>
                         </div>
-                        <div class="group-actions">
-                            <a href="{{ url_for('routes_bp.preencher_solicitacao', id=items[0].id) }}?grupo_ids={{ items|map(attribute='id')|join(',') }}"
-                               class="btn btn-preencher-grupo">
-                                <i class="fas fa-edit"></i> Preencher Grupo ({{ items|length }} itens)
-                            </a>
-                            <a href="{{ url_for('routes_bp.cotacao_imprimir', id=items[0].id) }}?grupo_ids={{ items|map(attribute='id')|join(',') }}"
-                               class="btn btn-print-group">
-                                <i class="fas fa-print"></i> Preparar para Impressão
-                            </a>
+
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Material</th>
+                                        <th>Especificação</th>
+                                        <th>Quantidade</th>
+                                        <th>Empresa</th>
+                                        <th>Aplicação</th>
+                                        <th>Data Solicitação</th>
+                                        <th>Solicitante</th>
+                                        <th>Status</th>
+                                        <th>Comprador</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for s in items | sort(attribute='data_solicitacao', reverse=true) %}
+                                    <tr data-id="{{ s.id }}">
+                                        <td>{{ s.id }}</td>
+                                        <td>{{ s.material.DescricaoMaterial if s.material else 'N/A' }}</td>
+                                        <td>{{ s.especificacao or '-' }}</td>
+                                        <td>{{ s.quantidade }}</td>
+                                        <td>{{ s.empresa }}</td>
+                                        <td>{{ s.aplicacao or (s.material.Aplicacao if s.material else '-') }}</td>
+                                        <td data-order="{{ s.data_solicitacao.strftime('%Y-%m-%d') }}">
+                                            {{ s.data_solicitacao | format_brasil_time }}
+                                        </td>
+                                        <td>{{ s.usuario }}</td>
+                                        <td>
+                                            <span class="status-badge status-aprovado">Aprovado</span>
+                                        </td>
+                                        <td>
+                                            {% if s.comprador_atribuido %}
+                                                <span class="badge bg-primary">{{ s.comprador_atribuido }}</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">Não atribuído</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
-
-                    <div class="table-responsive">
-                        <table class="table table-bordered">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Material</th>
-                                    <th>Especificação</th>
-                                    <th>Quantidade</th>
-                                    <th>Empresa</th>
-                                    <th>Aplicação</th>
-                                    <th>Data Solicitação</th>
-                                    <th>Usuário</th>
-                                    <th>Status</th>
-                                    <th>Comprador Atribuído</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for solicitacao in items | sort(attribute='data_solicitacao', reverse=true) %}
-                                <tr data-id="{{ solicitacao.id }}" data-aplicacao="{{ aplicacao }}">
-                                    <td>{{ solicitacao.id }}</td>
-                                    <td>{{ solicitacao.material.DescricaoMaterial }}</td>
-                                    <td>{{ solicitacao.especificacao or '-' }}</td>
-                                    <td>{{ solicitacao.quantidade }}</td>
-                                    <td>{{ solicitacao.empresa }}</td>
-                                    <td>{{ solicitacao.aplicacao or solicitacao.material.Aplicacao or '-' }}</td>
-                                    <td data-order="{{ solicitacao.data_solicitacao.strftime('%Y-%m-%d') }}">
-                                        {{ solicitacao.data_solicitacao | format_brasil_time }}
-                                    </td>
-                                    <td>{{ solicitacao.usuario }}</td>
-                                    <td>
-                                        {% set raw_status = solicitacao.status_aprovacao %}
-                                        {% set status = (raw_status | default('Pendente') | trim) %}
-                                        {% set status_upper = status.upper() %}
-
-                                        <span class="status-badge 
-                                            {% if status_upper == 'APROVADO' %}status-aprovado
-                                            {% elif status_upper == 'REPROVADO' %}status-reprovado
-                                            {% else %}status-pendente{% endif %}">
-                                            {{ status }}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        {% if solicitacao.comprador_atribuido %}
-                                            <span class="badge bg-primary">{{ solicitacao.comprador_atribuido }}</span>
-                                        {% else %}
-                                            <span class="badge bg-secondary">Não atribuído</span>
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">
+                    <i class="far fa-folder-open"></i>
+                    <h3>Nenhuma solicitação sem rascunho</h3>
+                    <p>Todas as suas solicitações já possuem rascunho ou não há solicitações aprovadas para você.</p>
                 </div>
-            {% endfor %}
+            {% endif %}
         </div>
-        {% else %}
-        <div class="empty-state">
-            <i class="far fa-folder-open"></i>
-            <h3>Nenhuma solicitação finalizada encontrada</h3>
-            <p>Não há solicitações de compra aprovadas ou reprovadas no momento.</p>
+
+        <!-- ============================================ -->
+        <!-- TAB 2: COM RASCUNHO -->
+        <!-- ============================================ -->
+        <div id="tab-com-rascunho" class="tab-content">
+            {% if grupos_com_rascunho %}
+                {% for chave, items in grupos_com_rascunho %}
+                    {% set parts = chave.split(' | ') %}
+                    {% set aplicacao = parts[0] %}
+                    {% set data_hora = parts[1] %}
+                    {% set ids_grupo = items|map(attribute='id')|join(',') %}
+
+                    <div class="application-group" data-aplicacao="{{ aplicacao }}">
+                        <div class="group-header has-rascunho">
+                            <div>
+                                <h4>
+                                    <i class="fas fa-folder-open"></i>
+                                    {{ aplicacao }}
+                                    <span class="rascunho-indicator">
+                                        <i class="fas fa-save"></i> Rascunho Salvo
+                                    </span>
+                                </h4>
+                                <span class="group-info">
+                                    <i class="far fa-calendar-alt"></i> {{ data_hora }} | 
+                                    <i class="fas fa-boxes"></i> {{ items|length }} item(ns)
+                                </span>
+                            </div>
+                            <div class="group-actions">
+                                <a href="{{ url_for('routes_bp.preencher_solicitacao', id=items[0].id) }}?grupo_ids={{ ids_grupo }}"
+                                   class="btn btn-preencher-grupo">
+                                    <i class="fas fa-edit"></i> Continuar Preenchimento
+                                </a>
+                                <a href="{{ url_for('routes_bp.cotacao_imprimir', id=items[0].id) }}?grupo_ids={{ ids_grupo }}"
+                                   class="btn btn-print-group">
+                                    <i class="fas fa-print"></i> Preparar para Impressão
+                                </a>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Material</th>
+                                        <th>Especificação</th>
+                                        <th>Quantidade</th>
+                                        <th>Empresa</th>
+                                        <th>Aplicação</th>
+                                        <th>Data Solicitação</th>
+                                        <th>Solicitante</th>
+                                        <th>Status</th>
+                                        <th>Comprador</th>
+                                        <th>Rascunho</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for s in items | sort(attribute='data_solicitacao', reverse=true) %}
+                                    <tr data-id="{{ s.id }}">
+                                        <td>{{ s.id }}</td>
+                                        <td>{{ s.material.DescricaoMaterial if s.material else 'N/A' }}</td>
+                                        <td>{{ s.especificacao or '-' }}</td>
+                                        <td>{{ s.quantidade }}</td>
+                                        <td>{{ s.empresa }}</td>
+                                        <td>{{ s.aplicacao or (s.material.Aplicacao if s.material else '-') }}</td>
+                                        <td data-order="{{ s.data_solicitacao.strftime('%Y-%m-%d') }}">
+                                            {{ s.data_solicitacao | format_brasil_time }}
+                                        </td>
+                                        <td>{{ s.usuario }}</td>
+                                        <td>
+                                            <span class="status-badge status-aprovado">Aprovado</span>
+                                        </td>
+                                        <td>
+                                            {% if s.comprador_atribuido %}
+                                                <span class="badge bg-primary">{{ s.comprador_atribuido }}</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">Não atribuído</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="rascunho-badge">
+                                                <i class="fas fa-save"></i> Salvo
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">
+                    <i class="far fa-save"></i>
+                    <h3>Nenhum rascunho salvo</h3>
+                    <p>Você ainda não salvou nenhum rascunho. Comece preenchendo uma cotação!</p>
+                </div>
+            {% endif %}
         </div>
-        {% endif %}
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // Salvar a aba ativa no sessionStorage para manter entre recarregamentos
+        function saveActiveTab(tabId) {
+            sessionStorage.setItem('activeTab', tabId);
+        }
+
+        function getActiveTab() {
+            return sessionStorage.getItem('activeTab') || 'sem-rascunho';
+        }
+
+        function switchTab(tabId) {
+            // Esconder todos os conteúdos
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // Remover active de todos os botões
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Mostrar o conteúdo selecionado
+            const selectedContent = document.getElementById(`tab-${tabId}`);
+            if (selectedContent) {
+                selectedContent.classList.add('active');
+            }
+            
+            // Ativar o botão correspondente
+            const selectedBtn = document.querySelector(`.tab-btn[data-tab="${tabId}"]`);
+            if (selectedBtn) {
+                selectedBtn.classList.add('active');
+            }
+            
+            // Salvar no storage
+            saveActiveTab(tabId);
+        }
+
         document.addEventListener('DOMContentLoaded', function () {
+            // Configurar datas padrão (últimos 30 dias)
             const thirtyDaysAgo = new Date();
             thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-            document.getElementById('dataInicio').valueAsDate = thirtyDaysAgo;
-            document.getElementById('dataFim').valueAsDate = new Date();
+            const dataInicio = document.getElementById('dataInicio');
+            const dataFim = document.getElementById('dataFim');
+            if (dataInicio) dataInicio.valueAsDate = thirtyDaysAgo;
+            if (dataFim) dataFim.valueAsDate = new Date();
 
-            applyFilters();
-
-            document.getElementById('applyFilters').addEventListener('click', applyFilters);
-            document.getElementById('clearFilters').addEventListener('click', clearFilters);
+            // Configurar abas
+            const tabs = document.querySelectorAll('.tab-btn');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const tabId = this.getAttribute('data-tab');
+                    switchTab(tabId);
+                });
+            });
+            
+            // Restaurar a última aba ativa
+            const lastActiveTab = getActiveTab();
+            switchTab(lastActiveTab);
+            
+            // Configurar filtros
+            const applyBtn = document.getElementById('applyFilters');
+            const clearBtn = document.getElementById('clearFilters');
+            if (applyBtn) applyBtn.addEventListener('click', applyFilters);
+            if (clearBtn) clearBtn.addEventListener('click', clearFilters);
         });
 
         function applyFilters() {
-            const empresaFilter = document.getElementById('empresaFilter').value.toLowerCase();
-            const usuarioFilter = document.getElementById('usuarioFilter').value.toLowerCase();
-            const statusFilter = document.getElementById('statusFilter').value.toLowerCase();
-            const aplicacaoFilter = document.getElementById('aplicacaoFilter').value.toLowerCase();
-            const compradorFilter = document.getElementById('compradorFilter').value.toLowerCase();
-            const dataInicio = document.getElementById('dataInicio').value;
-            const dataFim = document.getElementById('dataFim').value;
+            const empresaFilter = document.getElementById('empresaFilter')?.value.toLowerCase() || '';
+            const usuarioFilter = document.getElementById('usuarioFilter')?.value.toLowerCase() || '';
+            const aplicacaoFilter = document.getElementById('aplicacaoFilter')?.value.toLowerCase() || '';
+            const dataInicio = document.getElementById('dataInicio')?.value || '';
+            const dataFim = document.getElementById('dataFim')?.value || '';
 
+            // Aplicar filtros em ambas as abas
             const groups = document.querySelectorAll('.application-group');
 
             groups.forEach(group => {
@@ -579,23 +850,18 @@
                 const rows = group.querySelectorAll('tbody tr');
 
                 rows.forEach(row => {
-                    const empresa = row.cells[4].textContent.trim().toLowerCase();
-                    const aplicacao = row.cells[5].textContent.trim().toLowerCase();
-                    const dataSolicitacao = row.cells[6].getAttribute('data-order');
-                    const usuario = row.cells[7].textContent.trim().toLowerCase();
-                    const status = row.cells[8].textContent.trim().toLowerCase();
-                    const comprador = row.cells[9].textContent.trim().toLowerCase();
+                    const empresa = row.cells[4]?.textContent.trim().toLowerCase() || '';
+                    const aplicacao = row.cells[5]?.textContent.trim().toLowerCase() || '';
+                    const dataSolicitacao = row.cells[6]?.getAttribute('data-order') || '';
+                    const usuario = row.cells[7]?.textContent.trim().toLowerCase() || '';
 
                     const empresaMatch = !empresaFilter || empresa === empresaFilter;
                     const usuarioMatch = !usuarioFilter || usuario === usuarioFilter;
-                    const statusMatch = !statusFilter || status === statusFilter;
                     const aplicacaoMatch = !aplicacaoFilter || aplicacao === aplicacaoFilter;
-                    const compradorMatch = !compradorFilter ||
-                        (compradorFilter === 'não atribuído' ? comprador.includes('não atribuído') : comprador.includes(compradorFilter));
                     const dataMatch = (!dataInicio || dataSolicitacao >= dataInicio) &&
                                       (!dataFim || dataSolicitacao <= dataFim);
 
-                    if (empresaMatch && usuarioMatch && statusMatch && aplicacaoMatch && compradorMatch && dataMatch) {
+                    if (empresaMatch && usuarioMatch && aplicacaoMatch && dataMatch) {
                         row.style.display = '';
                         anyVisible = true;
                     } else {
@@ -605,37 +871,25 @@
 
                 group.style.display = anyVisible ? '' : 'none';
             });
-
-            const anyGroupVisible = Array.from(groups).some(g => g.style.display !== 'none');
-            const noResults = document.querySelector('.no-results-message');
-            if (!anyGroupVisible) {
-                if (!noResults) {
-                    const container = document.getElementById('tablesContainer');
-                    const newEmptyState = document.createElement('div');
-                    newEmptyState.className = 'empty-state no-results-message';
-                    newEmptyState.innerHTML = `
-                        <i class="far fa-search"></i>
-                        <h3>Nenhum resultado encontrado</h3>
-                        <p>Nenhuma solicitação corresponde aos filtros aplicados.</p>
-                    `;
-                    container.parentNode.insertBefore(newEmptyState, container.nextSibling);
-                }
-            } else if (noResults) {
-                noResults.remove();
-            }
         }
 
         function clearFilters() {
-            document.getElementById('empresaFilter').value = '';
-            document.getElementById('usuarioFilter').value = '';
-            document.getElementById('statusFilter').value = '';
-            document.getElementById('aplicacaoFilter').value = '';
-            document.getElementById('compradorFilter').value = '';
+            const empresaFilter = document.getElementById('empresaFilter');
+            const usuarioFilter = document.getElementById('usuarioFilter');
+            const aplicacaoFilter = document.getElementById('aplicacaoFilter');
+            
+            if (empresaFilter) empresaFilter.value = '';
+            if (usuarioFilter) usuarioFilter.value = '';
+            if (aplicacaoFilter) aplicacaoFilter.value = '';
+            
             const today = new Date();
             const thirtyDaysAgo = new Date();
             thirtyDaysAgo.setDate(today.getDate() - 30);
-            document.getElementById('dataInicio').valueAsDate = thirtyDaysAgo;
-            document.getElementById('dataFim').valueAsDate = today;
+            
+            const dataInicio = document.getElementById('dataInicio');
+            const dataFim = document.getElementById('dataFim');
+            if (dataInicio) dataInicio.valueAsDate = thirtyDaysAgo;
+            if (dataFim) dataFim.valueAsDate = today;
 
             applyFilters();
         }

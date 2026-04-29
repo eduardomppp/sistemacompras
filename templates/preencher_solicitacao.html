@@ -516,7 +516,7 @@
                     <h2 style="margin-top: 15px;">MATERIAIS DO GRUPO</h2>
                     <div class="mini-table-container">
                         <table class="mini-table">
-                            <thead><tr><th class="qtd">Qtd</th><th>Descrição</th><th class="ativo">ID</th></tr></thead>
+                            <thead><tr><th class="qtd">Qtd</th><th>Descrição</th><th class="ativo">ID</th><tr></thead>
                             <tbody>
                                 {% for sol in (solicitacoes_grupo if modo_grupo else [solicitacao]) %}
                                 <tr>
@@ -585,8 +585,11 @@
                             </div>
 
                             <div class="form-group">
-                                <label class="form-label">Valor Desconto</label>
-                                <input type="text" class="form-control" id="condicao_pagamento_{{ cotacao_num }}" name="condicao_pagamento[]" placeholder="Ex.: 30 dias" value="{{ cotacao.condicao_pagamento if cotacao else '' }}">
+                                <label class="form-label">Valor Desconto (R$)</label>
+                                <div class="input-group valor-input">
+                                    <span class="input-group-text">R$</span>
+                                    <input type="text" class="form-control" id="desconto_{{ cotacao_num }}" name="desconto[]" placeholder="0,00" value="{% if cotacao and cotacao.desconto and cotacao.desconto != 0 %}{% if cotacao.desconto is number %}{{ '{:.2f}'.format(cotacao.desconto).replace('.', ',') }}{% else %}{{ cotacao.desconto | replace('.', ',') }}{% endif %}{% endif %}">
+                                </div>
                             </div>
 
                             <div class="form-group">
@@ -608,6 +611,7 @@
                         <div class="total-fornecedor">
                             <div class="total-line"><span>Total Produtos:</span><span class="total-produtos" id="total-produtos-{{ cotacao_num }}">R$ 0,00</span></div>
                             <div class="total-line frete-line"><span>Frete:</span><span class="total-frete" id="total-frete-display-{{ cotacao_num }}">R$ 0,00</span></div>
+                            <div class="total-line desconto-line"><span>Desconto:</span><span class="total-desconto" id="total-desconto-display-{{ cotacao_num }}">R$ 0,00</span></div>
                             <div class="total-geral-fornecedor" id="total-geral-fornecedor-{{ cotacao_num }}">Total Geral: R$ 0,00</div>
                         </div>
 
@@ -676,7 +680,7 @@
         ];
 
         // ============================================
-        // FUNÇÕES DE FORMATAÇÃO COM 6 CASAS DECIMAIS
+        // FUNÇÕES DE FORMATAÇÃO
         // ============================================
         
         function formatarNumero(numero, casasDecimais = 6) {
@@ -731,6 +735,48 @@
             const apenasNumeros = cnpj.replace(/\D/g, '');
             if (apenasNumeros.length !== 14) return cnpj;
             return apenasNumeros.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5");
+        }
+
+        // Função para extrair desconto da condição de pagamento
+        function extrairDescontoDaCondicao(condicaoPagamento) {
+            if (!condicaoPagamento) return 0;
+            
+            const matchValor = condicaoPagamento.match(/DESCONTO:\s*R?\$?\s*(\d+(?:[.,]\d+)?)/i);
+            if (matchValor) {
+                return parseFloat(matchValor[1].replace(',', '.'));
+            }
+            
+            const matchPercent = condicaoPagamento.match(/DESC\s*(\d+(?:[.,]\d+)?)\s*%/i);
+            if (matchPercent) {
+                return parseFloat(matchPercent[1].replace(',', '.'));
+            }
+            
+            return 0;
+        }
+
+        // ============================================
+        // FUNÇÃO PRINCIPAL COM DESCONTO
+        // ============================================
+        
+        function calcularTotalCotacaoComDesconto(cotacaoId) {
+            let totalProdutos = 0;
+            $('#materiais-body-' + cotacaoId + ' tr').each(function() {
+                const totalText = $(this).find('.material-total-display').val();
+                if (totalText) totalProdutos += formatarNumeroParaEnvio(totalText);
+            });
+            
+            const freteStr = $('#valor_frete_' + cotacaoId).val() || '0';
+            const frete = formatarNumeroParaEnvio(freteStr);
+            
+            const descontoStr = $('#desconto_' + cotacaoId).val() || '0';
+            const desconto = formatarNumeroParaEnvio(descontoStr);
+            
+            const totalGeral = totalProdutos + frete - desconto;
+            
+            $('#total-produtos-' + cotacaoId).text('R$ ' + formatarNumero(totalProdutos, 2));
+            $('#total-frete-display-' + cotacaoId).text('R$ ' + formatarNumero(frete, 2));
+            $('#total-desconto-display-' + cotacaoId).text('R$ ' + formatarNumero(desconto, 2));
+            $('#total-geral-fornecedor-' + cotacaoId).text('Total Geral: R$ ' + formatarNumero(totalGeral, 2));
         }
 
         // ============================================
@@ -798,13 +844,14 @@
                     <div class="cotacao-form mt-3">
                         <div class="form-group"><label class="form-label">Valor do Frete (R$)</label><div class="input-group valor-input"><span class="input-group-text">R$</span><input type="text" class="form-control valor-frete" id="valor_frete_${novoId}" name="valor_frete[]" placeholder="0,00"></div></div>
                         <div class="form-group"><label class="form-label">Prazo de Entrega</label><input type="text" class="form-control" id="prazo_entrega_${novoId}" name="prazo_entrega[]" placeholder="Ex.: 10 dias úteis"></div>
-                        <div class="form-group"><label class="form-label">Condição de Pagamento</label><input type="text" class="form-control" id="condicao_pagamento_${novoId}" name="condicao_pagamento[]" placeholder="Ex.: 30 dias"></div>
+                        <div class="form-group"><label class="form-label">Valor Desconto (R$)</label><div class="input-group valor-input"><span class="input-group-text">R$</span><input type="text" class="form-control" id="desconto_${novoId}" name="desconto[]" placeholder="0,00"></div></div>
                         <div class="form-group"><label class="form-label">Anexar PDF da Cotação</label><input type="file" class="form-control" id="pdf_file_${novoId}" name="pdf_file[]" accept=".pdf"></div>
                         <div class="form-group"><label class="form-label">Observações</label><textarea class="form-control" id="observacao_${novoId}" name="observacao[]" rows="2" placeholder="Informações adicionais..."></textarea></div>
                     </div>
                     <div class="total-fornecedor">
                         <div class="total-line"><span>Total Produtos:</span><span class="total-produtos" id="total-produtos-${novoId}">R$ 0,00</span></div>
                         <div class="total-line frete-line"><span>Frete:</span><span class="total-frete" id="total-frete-display-${novoId}">R$ 0,00</span></div>
+                        <div class="total-line desconto-line"><span>Desconto:</span><span class="total-desconto" id="total-desconto-display-${novoId}">R$ 0,00</span></div>
                         <div class="total-geral-fornecedor" id="total-geral-fornecedor-${novoId}">Total Geral: R$ 0,00</div>
                     </div>
                     <input type="hidden" id="materiais_salvos_${novoId}" value="[]">
@@ -871,7 +918,7 @@
                 $('#materiais-container-' + id).hide();
                 $('#botoes-materiais-' + id).hide();
                 $('#materiais-body-' + id).empty();
-                calcularTotalCotacao(id);
+                calcularTotalCotacaoComDesconto(id);
                 $('#fornecedor-nome-display-' + id).text('');
                 $('#fornecedor-cnpj-display-' + id).text('');
                 $('#fornecedor-telefone-display-' + id).text('');
@@ -959,27 +1006,18 @@
             const total = quantidade * unitario;
             
             row.find('.material-total-display').val('R$ ' + formatarNumero(total, 2));
-            calcularTotalCotacao(cotacaoId);
-        }
-
-        function calcularTotalCotacao(cotacaoId) {
-            let totalProdutos = 0;
-            $('#materiais-body-' + cotacaoId + ' tr').each(function() {
-                const totalText = $(this).find('.material-total-display').val();
-                if (totalText) totalProdutos += formatarNumeroParaEnvio(totalText);
-            });
-            const freteStr = $('#valor_frete_' + cotacaoId).val() || '0';
-            const frete = formatarNumeroParaEnvio(freteStr);
-            const totalGeral = totalProdutos + frete;
-            $('#total-produtos-' + cotacaoId).text('R$ ' + formatarNumero(totalProdutos, 2));
-            $('#total-frete-display-' + cotacaoId).text('R$ ' + formatarNumero(frete, 2));
-            $('#total-geral-fornecedor-' + cotacaoId).text('Total Geral: R$ ' + formatarNumero(totalGeral, 2));
+            calcularTotalCotacaoComDesconto(cotacaoId);
         }
 
         function configurarEventosCotacao(id) {
             $('#valor_frete_' + id).off('input').on('input', function() {
                 aplicarMascaraMonetaria($(this));
-                calcularTotalCotacao(id);
+                calcularTotalCotacaoComDesconto(id);
+            });
+            
+            $('#desconto_' + id).off('input').on('input', function() {
+                aplicarMascaraMonetaria($(this));
+                calcularTotalCotacaoComDesconto(id);
             });
         }
 
@@ -1109,6 +1147,15 @@
                     let freteNumerico = formatarNumeroParaEnvio(freteValor);
                     freteInput.val(freteNumerico.toFixed(2));
                 }
+                
+                const descontoInput = $('#desconto_' + cotacaoId);
+                const descontoValor = descontoInput.val();
+                if (!descontoValor || descontoValor === '' || descontoValor === '0,00') {
+                    descontoInput.val('0.00');
+                } else {
+                    let descontoNumerico = formatarNumeroParaEnvio(descontoValor);
+                    descontoInput.val(descontoNumerico.toFixed(2));
+                }
             });
 
             const materiaisJson = gerarJsonMateriais();
@@ -1135,8 +1182,9 @@
                     fornecedor_telefone: '{{ cotacao.fornecedor_telefone or "" }}',
                     fornecedor_endereco: '{{ cotacao.fornecedor_endereco or "" }}',
                     valor_frete: {{ cotacao.valor_frete if cotacao.valor_frete else 0 }},
+                    desconto: {{ cotacao.desconto if cotacao.desconto else 0 }},
+                    condicao_pagamento: '{{ cotacao.condicao_pagamento or "" | replace("'", "\\'") }}',
                     prazo_entrega: '{{ cotacao.prazo_entrega or "" }}',
-                    condicao_pagamento: '{{ cotacao.condicao_pagamento or "" }}',
                     observacoes: '{{ cotacao.observacoes or "" }}',
                     materiais: [
                         {% for material in cotacao.materiais %}
@@ -1180,6 +1228,7 @@
             $('#fornecedor-endereco-display-' + cotacaoId).text(dados.fornecedor_endereco || 'Não informado');
             $('#materiais-container-' + cotacaoId).show();
             $('#botoes-materiais-' + cotacaoId).show();
+            
             setTimeout(() => {
                 if (dados.materiais && dados.materiais.length > 0) {
                     adicionarMateriaisComValores(cotacaoId, dados.materiais);
@@ -1187,10 +1236,22 @@
                     adicionarTodosMateriais(cotacaoId);
                 }
                 if (dados.valor_frete && dados.valor_frete > 0) $('#valor_frete_' + cotacaoId).val(formatarNumero(dados.valor_frete, 2));
+                
+                // 🔴 TENTAR OBTER DESCONTO DE VÁRIAS FONTES
+                let valorDesconto = 0;
+                if (dados.desconto && dados.desconto > 0) {
+                    valorDesconto = dados.desconto;
+                } else if (dados.condicao_pagamento) {
+                    valorDesconto = extrairDescontoDaCondicao(dados.condicao_pagamento);
+                }
+                
+                if (valorDesconto > 0) {
+                    $('#desconto_' + cotacaoId).val(formatarNumero(valorDesconto, 2));
+                }
+                
                 if (dados.prazo_entrega) $('#prazo_entrega_' + cotacaoId).val(dados.prazo_entrega);
-                if (dados.condicao_pagamento) $('#condicao_pagamento_' + cotacaoId).val(dados.condicao_pagamento);
                 if (dados.observacoes) $('#observacao_' + cotacaoId).val(dados.observacoes);
-                calcularTotalCotacao(cotacaoId);
+                calcularTotalCotacaoComDesconto(cotacaoId);
                 verificarCamposVazios();
             }, 200);
         }
