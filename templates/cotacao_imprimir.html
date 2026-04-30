@@ -474,7 +474,7 @@
 
         .totais-grid {
             display: grid;
-            grid-template-columns: repeat({{ cotacoes_salvas|length }}, 1fr);
+            grid-template-columns: repeat({{ cotacoes_salvas|length if cotacoes_salvas else 1 }}, 1fr);
             gap: 6px;
         }
 
@@ -552,25 +552,32 @@
         }
 
         .total-card-body-inferior {
-            padding: 5px;
+            padding: 8px;
             flex: 1;
         }
 
         .total-line-inferior {
             display: flex;
             justify-content: space-between;
-            padding: 2px 0;
-            font-size: 11px;
-            border-bottom: 1px dashed #e2e8f0;
+            align-items: center;
+            padding: 6px 0;
+            font-size: 12px;
+            border-bottom: 1px solid #e2e8f0;
+            gap: 16px;
         }
 
         .total-label-inferior {
             color: #475569;
+            font-weight: 500;
+            flex-shrink: 0;
         }
 
         .total-value-inferior {
             color: #0B2E59;
             font-weight: 600;
+            text-align: right;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 0.5px;
         }
 
         .desconto-inferior {
@@ -580,13 +587,24 @@
         .total-geral-inferior {
             background: #0B2E59;
             color: white;
-            padding: 4px 6px;
-            border-radius: 3px;
-            font-size: 12px;
+            padding: 8px 10px;
+            border-radius: 4px;
+            font-size: 13px;
             font-weight: 700;
-            margin-top: 4px;
+            margin-top: 6px;
             display: flex;
             justify-content: space-between;
+            align-items: center;
+        }
+
+        .total-geral-inferior span:first-child {
+            font-weight: 700;
+        }
+
+        .total-geral-inferior span:last-child {
+            font-family: 'Courier New', monospace;
+            font-weight: 700;
+            font-size: 14px;
         }
 
         .observacao-cotacao {
@@ -999,7 +1017,7 @@
 
             .totais-grid {
                 display: grid !important;
-                grid-template-columns: repeat({{ cotacoes_salvas|length }}, 1fr) !important;
+                grid-template-columns: repeat({{ cotacoes_salvas|length if cotacoes_salvas else 1 }}, 1fr) !important;
                 gap: 3pt;
             }
 
@@ -1011,7 +1029,7 @@
 
             .total-line-inferior {
                 font-size: 9pt;
-                padding: 1pt 0;
+                padding: 2pt 0;
                 border-bottom: 1px dashed black !important;
             }
 
@@ -1135,27 +1153,31 @@
                         <th class="tabela-header col-quantidade" rowspan="2">Qtd</th>
                         <th class="tabela-header col-unidade" rowspan="2">Un</th>
                         {% for cotacao in cotacoes_salvas %}
-                        <th colspan="3" class="cotacao-header-agrupado" data-fornecedor-idx="{{ loop.index0 }}">
-                            <div class="cotacao-info">
-                                <div class="fornecedor-nome-wrapper">
-                                    <span class="fornecedor-nome" data-fornecedor-idx="{{ loop.index0 }}" data-original-nome="{{ cotacao.fornecedor_nome_fantasia if cotacao.fornecedor_nome_fantasia else 'N/D' }}">
-                                        {{ cotacao.fornecedor_nome_fantasia if cotacao.fornecedor_nome_fantasia else 'N/D' }}
-                                    </span>
+                            {% if cotacao.fornecedor_nome_fantasia and cotacao.fornecedor_nome_fantasia != '' %}
+                            <th colspan="3" class="cotacao-header-agrupado" data-fornecedor-idx="{{ loop.index0 }}">
+                                <div class="cotacao-info">
+                                    <div class="fornecedor-nome-wrapper">
+                                        <span class="fornecedor-nome" data-fornecedor-idx="{{ loop.index0 }}" data-original-nome="{{ cotacao.fornecedor_nome_fantasia }}">
+                                            {{ cotacao.fornecedor_nome_fantasia }}
+                                        </span>
+                                    </div>
+                                    {% if cotacao.fornecedor_telefone and cotacao.fornecedor_telefone != '' %}
+                                        <span class="telefone-info" data-fornecedor-telefone-idx="{{ loop.index0 }}" data-original-telefone="{{ cotacao.fornecedor_telefone }}">
+                                            📞 {{ cotacao.fornecedor_telefone }}
+                                        </span>
+                                    {% endif %}
                                 </div>
-                                {% if cotacao.fornecedor_telefone %}
-                                    <span class="telefone-info" data-fornecedor-telefone-idx="{{ loop.index0 }}" data-original-telefone="{{ cotacao.fornecedor_telefone }}">
-                                        📞 {{ cotacao.fornecedor_telefone }}
-                                    </span>
-                                {% endif %}
-                            </div>
-                        </th>
+                            </th>
+                            {% endif %}
                         {% endfor %}
                     </tr>
                     <tr>
                         {% for cotacao in cotacoes_salvas %}
-                        <th class="tabela-header col-cotacao-unit">Unit</th>
-                        <th class="tabela-header col-cotacao-marca">Marca</th>
-                        <th class="tabela-header col-cotacao-total">Total</th>
+                            {% if cotacao.fornecedor_nome_fantasia and cotacao.fornecedor_nome_fantasia != '' %}
+                            <th class="tabela-header col-cotacao-unit">Unit</th>
+                            <th class="tabela-header col-cotacao-marca">Marca</th>
+                            <th class="tabela-header col-cotacao-total">Total</th>
+                            {% endif %}
                         {% endfor %}
                     </tr>
                 </thead>
@@ -1170,21 +1192,24 @@
                             <td class="col-quantidade">{{ solicitacao.quantidade }}</td>
                             <td class="col-unidade">{{ solicitacao.unidade_medida | default('UN') }}</td>
                             {% for cotacao in cotacoes_salvas %}
-                                {% set mat = cotacao.materiais|selectattr("solicitacao_id", "equalto", solicitacao.id)|first if cotacao and cotacao.materiais else none %}
-                                <td class="col-cotacao-unit">
-                                    {% if mat and mat.valor_unitario %}
-                                        R$ {{ "%.2f"|format(mat.valor_unitario|float)|replace('.', ',') }}
-                                    {% else %}-{% endif %}
-                                </td>
-                                <td class="col-cotacao-marca">
-                                    {% if mat and mat.marca %}{{ mat.marca|truncate(10) }}{% else %}-{% endif %}
-                                </td>
-                                <td class="col-cotacao-total">
-                                    {% if mat and mat.valor_unitario %}
-                                        {% set tot = mat.valor_unitario|float * solicitacao.quantidade|float %}
-                                        R$ {{ "%.2f"|format(tot)|replace('.', ',') }}
-                                    {% else %}-{% endif %}
-                                </td>
+                                {% if cotacao.fornecedor_nome_fantasia and cotacao.fornecedor_nome_fantasia != '' %}
+                                    {% set material_cotacao = cotacao.materiais|selectattr("solicitacao_id", "equalto", solicitacao.id)|first %}
+                                    {% if material_cotacao %}
+                                        <td class="col-cotacao-unit">
+                                            R$ {{ "%.2f"|format(material_cotacao.valor_unitario|float)|replace('.', ',') }}
+                                        </td>
+                                        <td class="col-cotacao-marca">
+                                            {{ material_cotacao.marca if material_cotacao.marca else '-' }}
+                                        </td>
+                                        <td class="col-cotacao-total">
+                                            R$ {{ "%.2f"|format(material_cotacao.valor_total|float)|replace('.', ',') }}
+                                        </td>
+                                    {% else %}
+                                        <td class="col-cotacao-unit">-</td>
+                                        <td class="col-cotacao-marca">-</td>
+                                        <td class="col-cotacao-total">-</td>
+                                    {% endif %}
+                                {% endif %}
                             {% endfor %}
                         </tr>
                         {% endfor %}
@@ -1197,21 +1222,24 @@
                             <td class="col-quantidade">{{ solicitacao.quantidade }}</td>
                             <td class="col-unidade">{{ solicitacao.unidade_medida | default('UN') }}</td>
                             {% for cotacao in cotacoes_salvas %}
-                                {% set mat = cotacao.materiais|first if cotacao and cotacao.materiais else none %}
-                                <td class="col-cotacao-unit">
-                                    {% if mat and mat.valor_unitario %}
-                                        R$ {{ "%.2f"|format(mat.valor_unitario|float)|replace('.', ',') }}
-                                    {% else %}-{% endif %}
-                                </td>
-                                <td class="col-cotacao-marca">
-                                    {% if mat and mat.marca %}{{ mat.marca|truncate(10) }}{% else %}-{% endif %}
-                                </td>
-                                <td class="col-cotacao-total">
-                                    {% if mat and mat.valor_unitario %}
-                                        {% set tot = mat.valor_unitario|float * solicitacao.quantidade|float %}
-                                        R$ {{ "%.2f"|format(tot)|replace('.', ',') }}
-                                    {% else %}-{% endif %}
-                                </td>
+                                {% if cotacao.fornecedor_nome_fantasia and cotacao.fornecedor_nome_fantasia != '' %}
+                                    {% set material_cotacao = cotacao.materiais|first if cotacao.materiais else none %}
+                                    {% if material_cotacao %}
+                                        <td class="col-cotacao-unit">
+                                            R$ {{ "%.2f"|format(material_cotacao.valor_unitario|float)|replace('.', ',') }}
+                                        </td>
+                                        <td class="col-cotacao-marca">
+                                            {{ material_cotacao.marca if material_cotacao.marca else '-' }}
+                                        </td>
+                                        <td class="col-cotacao-total">
+                                            R$ {{ "%.2f"|format(material_cotacao.valor_total|float)|replace('.', ',') }}
+                                        </td>
+                                    {% else %}
+                                        <td class="col-cotacao-unit">-</td>
+                                        <td class="col-cotacao-marca">-</td>
+                                        <td class="col-cotacao-total">-</td>
+                                    {% endif %}
+                                {% endif %}
                             {% endfor %}
                         </tr>
                     {% endif %}
@@ -1247,76 +1275,70 @@
                     <h4>TOTAIS</h4>
                     <div class="totais-grid">
                         {% for cotacao in cotacoes_salvas %}
-                        <div class="total-card-inferior" data-card-fornecedor-idx="{{ loop.index0 }}">
-                            <div class="total-card-header-inferior" data-card-header-idx="{{ loop.index0 }}">
-                                <span class="fornecedor-nome-card" data-card-nome-idx="{{ loop.index0 }}" data-original-nome="{{ cotacao.fornecedor_nome_fantasia if cotacao.fornecedor_nome_fantasia else 'N/D' }}">
-                                    {{ cotacao.fornecedor_nome_fantasia if cotacao.fornecedor_nome_fantasia else 'N/D' }}
-                                </span>
-                                {% if cotacao.fornecedor_telefone %}
-                                    <span class="telefone-card" data-card-telefone-idx="{{ loop.index0 }}" data-original-telefone="{{ cotacao.fornecedor_telefone }}">
-                                        📞 {{ cotacao.fornecedor_telefone }}
+                            {% if cotacao.fornecedor_nome_fantasia and cotacao.fornecedor_nome_fantasia != '' %}
+                            <div class="total-card-inferior" data-card-fornecedor-idx="{{ loop.index0 }}">
+                                <div class="total-card-header-inferior" data-card-header-idx="{{ loop.index0 }}">
+                                    <span class="fornecedor-nome-card" data-card-nome-idx="{{ loop.index0 }}" data-original-nome="{{ cotacao.fornecedor_nome_fantasia }}">
+                                        {{ cotacao.fornecedor_nome_fantasia }}
                                     </span>
-                                {% endif %}
-                            </div>
-                            <div class="total-card-body-inferior">
-                                {% set ns = namespace(total_produtos=0) %}
-                                {% if cotacao and cotacao.materiais %}
-                                    {% if modo_grupo %}
-                                        {% for solicitacao in solicitacoes_grupo %}
-                                            {% set material_cotacao = cotacao.materiais|selectattr("solicitacao_id", "equalto", solicitacao.id)|first %}
-                                            {% if material_cotacao and material_cotacao.valor_unitario %}
-                                                {% set ns.total_produtos = ns.total_produtos + (material_cotacao.valor_unitario|float * solicitacao.quantidade|float) %}
-                                            {% endif %}
-                                        {% endfor %}
-                                    {% else %}
-                                        {% set material_cotacao = cotacao.materiais|first %}
-                                        {% if material_cotacao and material_cotacao.valor_unitario %}
-                                            {% set ns.total_produtos = material_cotacao.valor_unitario|float * solicitacao.quantidade|float %}
-                                        {% endif %}
+                                    {% if cotacao.fornecedor_telefone and cotacao.fornecedor_telefone != '' %}
+                                        <span class="telefone-card" data-card-telefone-idx="{{ loop.index0 }}" data-original-telefone="{{ cotacao.fornecedor_telefone }}">
+                                            📞 {{ cotacao.fornecedor_telefone }}
+                                        </span>
                                     {% endif %}
-                                {% endif %}
+                                </div>
+                                <div class="total-card-body-inferior">
+                                    {% set ns = namespace(total_produtos=0) %}
+                                    {% for material in cotacao.materiais %}
+                                        {% set ns.total_produtos = ns.total_produtos + (material.valor_total|float) %}
+                                    {% endfor %}
+                                    {% set valor_frete = cotacao.valor_frete|float if cotacao.valor_frete else 0.0 %}
+                                    
+                                    <!-- VALORES BASE (serão atualizados pelo JavaScript) -->
+                                    {% set observacao = cotacao.observacoes if cotacao.observacoes else '' %}
+                                    
+                                    <!-- SUBTOTAL -->
+                                    <div class="total-line-inferior">
+                                        <span class="total-label-inferior">Subtotal:</span>
+                                        <span class="total-value-inferior" data-subtotal="{{ ns.total_produtos }}">R$ {{ "%.2f"|format(ns.total_produtos)|replace('.', ',') }}</span>
+                                    </div>
 
-                                {% set valor_frete = cotacao.valor_frete|float if cotacao and cotacao.valor_frete else 0.0 %}
-                                {% set desconto = 0.0 %}
-                                {% if cotacao %}
-                                    {% set fonte = cotacao.condicao_pagamento or cotacao.desconto_valor or '' %}
-                                    {% if fonte|trim %}
-                                        {% set desconto = fonte|trim|replace(',', '.')|replace(' ', '')|replace('R$', '')|replace('%', '')|float(0.0) %}
+                                    <!-- FRETE -->
+                                    <div class="total-line-inferior">
+                                        <span class="total-label-inferior">Frete:</span>
+                                        <span class="total-value-inferior" data-frete="{{ valor_frete }}">R$ {{ "%.2f"|format(valor_frete)|replace('.', ',') }}</span>
+                                    </div>
+
+                                    <!-- DESCONTO (será preenchido pelo JavaScript) -->
+                                    <div class="total-line-inferior">
+                                        <span class="total-label-inferior">Desconto:</span>
+                                        <span class="total-value-inferior" data-desconto="0">R$ 0,00</span>
+                                    </div>
+
+                                    <!-- TOTAL (será atualizado pelo JavaScript) -->
+                                    <div class="total-geral-inferior">
+                                        <span>TOTAL:</span>
+                                        <span class="total-valor-final" data-total="{{ ns.total_produtos + valor_frete }}">R$ {{ "%.2f"|format(ns.total_produtos + valor_frete)|replace('.', ',') }}</span>
+                                    </div>
+
+                                    <!-- OBSERVAÇÃO DA COTAÇÃO -->
+                                    {% if observacao %}
+                                    <div class="observacao-cotacao">
+                                        <strong>📝 OBSERVAÇÃO:</strong>
+                                        <p>{{ observacao }}</p>
+                                    </div>
                                     {% endif %}
-                                {% endif %}
 
-                                <div class="total-line-inferior">
-                                    <span class="total-label-inferior">Subtotal:</span>
-                                    <span class="total-value-inferior">R$ {{ "%.2f"|format(ns.total_produtos)|replace('.', ',') }}</span>
+                                    <!-- CONDIÇÃO DE PAGAMENTO (será processada pelo JavaScript para extrair o desconto) -->
+                                    {% if cotacao.condicao_pagamento and cotacao.condicao_pagamento != '' %}
+                                        <div class="observacao-cotacao condicao-pagamento-box" style="margin-top: 4px; background: #f0f9ff;">
+                                            <strong>💰 CONDIÇÃO DE PAGAMENTO:</strong>
+                                            <p class="condicao-pagamento-texto">{{ cotacao.condicao_pagamento }}</p>
+                                        </div>
+                                    {% endif %}
                                 </div>
-
-                                {% if valor_frete > 0 %}
-                                <div class="total-line-inferior">
-                                    <span class="total-label-inferior">Frete:</span>
-                                    <span class="total-value-inferior">R$ {{ "%.2f"|format(valor_frete)|replace('.', ',') }}</span>
-                                </div>
-                                {% endif %}
-
-                                {% if desconto > 0 %}
-                                <div class="total-line-inferior">
-                                    <span class="total-label-inferior">Desconto:</span>
-                                    <span class="total-value-inferior desconto-inferior">-R$ {{ "%.2f"|format(desconto)|replace('.', ',') }}</span>
-                                </div>
-                                {% endif %}
-
-                                <div class="total-geral-inferior">
-                                    <span>TOTAL:</span>
-                                    <span>R$ {{ "%.2f"|format(ns.total_produtos + valor_frete - desconto)|replace('.', ',') }}</span>
-                                </div>
-
-                                {% if cotacao.observacoes %}
-                                <div class="observacao-cotacao">
-                                    <strong>📝 OBSERVAÇÃO:</strong>
-                                    <p>{{ cotacao.observacoes }}</p>
-                                </div>
-                                {% endif %}
                             </div>
-                        </div>
+                            {% endif %}
                         {% endfor %}
                     </div>
                 </div>
@@ -1369,10 +1391,78 @@
 
 <script>
 // ====================================================
+// FUNÇÃO PRINCIPAL PARA PROCESSAR DESCONTOS
+// ====================================================
+function processarDescontos() {
+    // Para cada card de total
+    document.querySelectorAll('.total-card-inferior').forEach(card => {
+        // Procura a condição de pagamento
+        const condicaoBox = card.querySelector('.condicao-pagamento-box');
+        if (condicaoBox) {
+            const textoCondicao = condicaoBox.querySelector('.condicao-pagamento-texto')?.innerText || '';
+            
+            // Extrai o valor do desconto usando regex (suporta vários formatos)
+            // Formatos suportados: "DESCONTO: R$ 10,00", "DESCONTO: 10,00", "DESCONTO 10", "DESCONTO R$10,00"
+            const descontoMatch = textoCondicao.match(/DESCONTO\s*:?\s*R?\$?\s*(\d+[.,]\d+)/i);
+            
+            if (descontoMatch) {
+                // Converte o valor do desconto (vírgula para ponto)
+                let descontoValor = descontoMatch[1].replace(',', '.');
+                descontoValor = parseFloat(descontoValor);
+                
+                if (!isNaN(descontoValor) && descontoValor > 0) {
+                    // Encontra os elementos no card
+                    const subtotalSpan = card.querySelector('[data-subtotal]');
+                    const freteSpan = card.querySelector('[data-frete]');
+                    const descontoSpan = card.querySelector('[data-desconto]');
+                    const totalSpan = card.querySelector('.total-valor-final');
+                    
+                    if (subtotalSpan && freteSpan && descontoSpan && totalSpan) {
+                        // Extrai os valores dos atributos data
+                        let subtotal = parseFloat(subtotalSpan.getAttribute('data-subtotal') || 0);
+                        let frete = parseFloat(freteSpan.getAttribute('data-frete') || 0);
+                        
+                        // Se não conseguiu pelos atributos, tenta pelo texto
+                        if (isNaN(subtotal) || subtotal === 0) {
+                            subtotal = parseFloat(subtotalSpan.innerText.replace('R$', '').replace(',', '.').trim());
+                        }
+                        if (isNaN(frete) || frete === 0) {
+                            frete = parseFloat(freteSpan.innerText.replace('R$', '').replace(',', '.').trim());
+                        }
+                        
+                        if (!isNaN(subtotal) && !isNaN(frete)) {
+                            // Calcula novo total
+                            let novoTotal = subtotal + frete - descontoValor;
+                            
+                            // Atualiza o desconto no display
+                            descontoSpan.innerHTML = `- R$ ${descontoValor.toFixed(2).replace('.', ',')}`;
+                            descontoSpan.classList.add('desconto-inferior');
+                            descontoSpan.setAttribute('data-desconto', descontoValor);
+                            
+                            // Atualiza o total
+                            totalSpan.innerHTML = `R$ ${novoTotal.toFixed(2).replace('.', ',')}`;
+                            totalSpan.setAttribute('data-total', novoTotal);
+                            
+                            // Remove o texto do desconto da condição de pagamento
+                            const novoTexto = textoCondicao.replace(/DESCONTO\s*:?\s*R?\$?\s*\d+[.,]\d+/i, '').replace(/\s+/g, ' ').trim();
+                            if (novoTexto) {
+                                condicaoBox.querySelector('.condicao-pagamento-texto').innerText = novoTexto;
+                            } else {
+                                // Se ficou vazio, remove o box inteiro
+                                condicaoBox.remove();
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+// ====================================================
 // FUNÇÕES PARA SALVAR/CARREGAR DADOS NO BACKEND
 // ====================================================
 
-// Obter ID do template (pode ser o ID da solicitação ou grupo)
 function getTemplateId() {
     const urlParams = new URLSearchParams(window.location.search);
     const grupoIds = urlParams.get('grupo_ids');
@@ -1388,16 +1478,13 @@ function getTemplateId() {
     return `usuario_${new Date().toISOString().split('T')[0]}`;
 }
 
-// Função para capturar todos os dados do formulário
 function capturarDadosCompletos() {
-    // Capturar campos do ÚLTIMO PREÇO
     const ultimoPrecoInputs = document.querySelectorAll('.ultimo-preco .campo-data');
     
     const dados = {
         empresa_top: document.getElementById('empresa_top')?.value || '',
         comprador_top: document.getElementById('comprador_top')?.value || '',
         
-        // 🔴 CORREÇÃO: Capturar corretamente os campos do ÚLTIMO PREÇO
         ultimo_preco: {
             fornecedor: ultimoPrecoInputs[0]?.value || '',
             valor_total: ultimoPrecoInputs[1]?.value || '',
@@ -1422,7 +1509,6 @@ function capturarDadosCompletos() {
         ultima_atualizacao: new Date().toLocaleString('pt-BR')
     };
     
-    // Capturar nomes e telefones dos fornecedores
     const fornecedoresNomes = document.querySelectorAll('.fornecedor-nome, .fornecedor-nome-card');
     fornecedoresNomes.forEach((nome) => {
         let telefone = '';
@@ -1452,30 +1538,25 @@ function capturarDadosCompletos() {
     return dados;
 }
 
-// Função para restaurar dados no formulário
 function restaurarDadosCompletos(dados) {
     if (!dados) return;
     
     console.log('Restaurando dados:', dados);
     
-    // Restaurar campos do topo
     if (document.getElementById('empresa_top')) 
         document.getElementById('empresa_top').value = dados.empresa_top || '';
     if (document.getElementById('comprador_top')) 
         document.getElementById('comprador_top').value = dados.comprador_top || '';
     
-    // 🔴 CORREÇÃO: Restaurar ÚLTIMO PREÇO corretamente
     if (dados.ultimo_preco) {
         const ultimoPrecoInputs = document.querySelectorAll('.ultimo-preco .campo-data');
         if (ultimoPrecoInputs.length >= 3) {
             ultimoPrecoInputs[0].value = dados.ultimo_preco.fornecedor || '';
             ultimoPrecoInputs[1].value = dados.ultimo_preco.valor_total || '';
             ultimoPrecoInputs[2].value = dados.ultimo_preco.data || '';
-            console.log('✅ Último preço restaurado:', dados.ultimo_preco);
         }
     }
     
-    // Restaurar pagamento e entrega
     if (document.getElementById('formaPagamento'))
         document.getElementById('formaPagamento').value = dados.forma_pagamento || '';
     if (document.getElementById('statusEntrega'))
@@ -1483,7 +1564,6 @@ function restaurarDadosCompletos(dados) {
     if (document.getElementById('previsaoEntrega'))
         document.getElementById('previsaoEntrega').value = dados.previsao_entrega || '';
     
-    // Restaurar informações gerais
     if (dados.info_gerais) {
         const infoInputs = document.querySelectorAll('.info-grid .info-item input');
         if (infoInputs.length >= 5) {
@@ -1495,11 +1575,9 @@ function restaurarDadosCompletos(dados) {
         }
     }
     
-    // Restaurar observação
     const obsCampo = document.querySelector('.observacao-comprador .campo-observacao');
     if (obsCampo) obsCampo.value = dados.observacao || '';
     
-    // Restaurar fornecedores
     if (dados.fornecedores && dados.fornecedores.length > 0) {
         dados.fornecedores.forEach(forn => {
             if (forn.idx) {
@@ -1529,17 +1607,18 @@ function restaurarDadosCompletos(dados) {
             }
         });
     }
+    
+    // Após restaurar, processa os descontos novamente
+    setTimeout(processarDescontos, 100);
 }
 
-// Função para salvar no servidor
 async function salvarNoServidor() {
     const dados = capturarDadosCompletos();
     const templateId = getTemplateId();
     
-    // Mostrar indicador de salvamento
     const btnSalvar = document.querySelector('.btn-salvar-auto');
     if (btnSalvar) {
-        btnSalvar.textContent = '💾 Salvando...';
+        btnSalvar.textContent = '💾';
         btnSalvar.disabled = true;
     }
     
@@ -1559,36 +1638,33 @@ async function salvarNoServidor() {
         
         if (btnSalvar) {
             if (result.success) {
-                btnSalvar.textContent = '💾 Salvo!';
+                btnSalvar.textContent = '...';
                 setTimeout(() => {
-                    btnSalvar.textContent = '💾 Salvar';
+                    btnSalvar.textContent = '💾';
                     btnSalvar.disabled = false;
                 }, 1500);
             } else {
-                btnSalvar.textContent = '💾 Salvar';
+                btnSalvar.textContent = '💾';
                 btnSalvar.disabled = false;
                 console.error('Erro ao salvar:', result.error);
             }
         }
         
-        // Salvar também no localStorage como backup
         localStorage.setItem(`template_${templateId}`, JSON.stringify(dados));
         
     } catch (error) {
         console.error('Erro ao salvar:', error);
-        // Fallback para localStorage
         localStorage.setItem(`template_${templateId}`, JSON.stringify(dados));
         if (btnSalvar) {
-            btnSalvar.textContent = '💾 Salvo localmente';
+            btnSalvar.textContent = '...';
             setTimeout(() => {
-                btnSalvar.textContent = '💾 Salvar';
+                btnSalvar.textContent = '💾';
                 btnSalvar.disabled = false;
             }, 1500);
         }
     }
 }
 
-// Função para carregar do servidor (automático)
 async function carregarAutomatico() {
     const templateId = getTemplateId();
     
@@ -1596,7 +1672,6 @@ async function carregarAutomatico() {
         const response = await fetch(`/api/carregar_dados_template?template_id=${templateId}`);
         
         if (response.status === 404) {
-            // Tentar carregar do localStorage
             const localData = localStorage.getItem(`template_${templateId}`);
             if (localData) {
                 restaurarDadosCompletos(JSON.parse(localData));
@@ -1621,13 +1696,11 @@ async function carregarAutomatico() {
     }
 }
 
-// Criar botão de salvar único
 function criarBotaoSalvar() {
-    // Verificar se já existe
     if (document.querySelector('.btn-salvar-auto')) return;
     
     const btnSalvar = document.createElement('button');
-    btnSalvar.textContent = '💾 Salvar';
+    btnSalvar.textContent = '💾';
     btnSalvar.className = 'btn-salvar-auto';
     btnSalvar.style.cssText = `
         position: fixed;
@@ -1653,9 +1726,7 @@ function criarBotaoSalvar() {
     document.body.appendChild(btnSalvar);
 }
 
-// Auto-salvar em campos específicos
 function configurarAutoSaveCampos() {
-    // Selecionar todos os campos editáveis
     const camposParaAutoSave = [
         '#empresa_top',
         '#comprador_top',
@@ -1672,14 +1743,11 @@ function configurarAutoSaveCampos() {
     
     campos.forEach(campo => {
         campo.addEventListener('blur', () => {
-            console.log('Campo alterado, salvando...');
             salvarNoServidor();
         });
         
-        // Para inputs de texto, salvar após digitar
         if (campo.tagName === 'INPUT' || campo.tagName === 'TEXTAREA') {
             campo.addEventListener('input', () => {
-                // Debounce para não salvar a cada tecla
                 clearTimeout(campo.saveTimeout);
                 campo.saveTimeout = setTimeout(() => {
                     salvarNoServidor();
@@ -1689,69 +1757,6 @@ function configurarAutoSaveCampos() {
     });
 }
 
-// Configurar auto-save para fornecedores editáveis
-function configurarAutoSaveFornecedores() {
-    // Observer para detectar quando os spans são substituídos por inputs
-    const observer = new MutationObserver(function(mutations) {
-        mutations.forEach(function(mutation) {
-            if (mutation.type === 'childList') {
-                mutation.addedNodes.forEach(function(node) {
-                    if (node.nodeType === 1) {
-                        if (node.classList && (
-                            node.classList.contains('fornecedor-nome') ||
-                            node.classList.contains('telefone-info') ||
-                            node.classList.contains('fornecedor-nome-card') ||
-                            node.classList.contains('telefone-card')
-                        )) {
-                            // Adicionar evento de salvamento após edição
-                            const observerSalvar = new MutationObserver(() => {
-                                salvarNoServidor();
-                            });
-                            observerSalvar.observe(node, { 
-                                attributes: true, 
-                                attributeFilter: ['data-original-nome', 'data-original-telefone'] 
-                            });
-                        }
-                    }
-                });
-            }
-        });
-    });
-    
-    observer.observe(document.body, { childList: true, subtree: true });
-}
-
-// Inicialização
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 Inicializando auto-save...');
-    
-    // Criar botão de salvar
-    criarBotaoSalvar();
-    
-    // Carregar dados automaticamente
-    setTimeout(() => {
-        carregarAutomatico();
-    }, 500);
-    
-    // Configurar auto-save em campos
-    setTimeout(() => {
-        configurarAutoSaveCampos();
-        configurarAutoSaveFornecedores();
-    }, 1000);
-    
-    // Salvar antes de fechar a página
-    window.addEventListener('beforeunload', function() {
-        salvarNoServidor();
-    });
-    
-    // Salvar periodicamente a cada 60 segundos (backup)
-    setInterval(() => {
-        console.log('🔄 Backup automático...');
-        salvarNoServidor();
-    }, 60000);
-});
-
-// Funções de edição originais (mantidas do seu código)
 function tornarFornecedorEditavel(elemento, idx, isCard = false) {
     const nomeOriginal = elemento.getAttribute('data-original-nome') || elemento.innerText;
     const input = document.createElement('input');
@@ -1789,7 +1794,6 @@ function tornarFornecedorEditavel(elemento, idx, isCard = false) {
             parent.replaceChild(novoSpan, input);
         }
         
-        // Auto-salvar após edição
         setTimeout(() => salvarNoServidor(), 100);
     }
     
@@ -1839,7 +1843,6 @@ function tornarTelefoneEditavel(elemento, idx, isCard = false) {
             parent.replaceChild(novoSpan, input);
         }
         
-        // Auto-salvar após edição
         setTimeout(() => salvarNoServidor(), 100);
     }
     
@@ -1852,7 +1855,62 @@ function tornarTelefoneEditavel(elemento, idx, isCard = false) {
     });
 }
 
-// Configurar eventos de edição originais
+function validarEImprimir() {
+    const campoPagamento = document.getElementById('formaPagamento');
+    const errorMessage = document.getElementById('errorMessage');
+    const modal = document.getElementById('validationModal');
+
+    if (campoPagamento.value.trim() === '') {
+        campoPagamento.classList.add('required');
+        campoPagamento.style.borderColor = '#dc2626';
+        if (errorMessage) errorMessage.classList.add('show');
+        if (modal) modal.classList.add('show');
+        return false;
+    } else {
+        campoPagamento.classList.remove('required');
+        campoPagamento.style.borderColor = '#cbd5e1';
+        if (errorMessage) errorMessage.classList.remove('show');
+        window.print();
+    }
+}
+
+function fecharModal() {
+    const modal = document.getElementById('validationModal');
+    if (modal) modal.classList.remove('show');
+}
+
+// ====================================================
+// INICIALIZAÇÃO
+// ====================================================
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Inicializando...');
+    
+    criarBotaoSalvar();
+    
+    setTimeout(() => {
+        carregarAutomatico();
+    }, 500);
+    
+    setTimeout(() => {
+        configurarAutoSaveCampos();
+    }, 1000);
+    
+    // Processa os descontos após a página carregar
+    setTimeout(() => {
+        processarDescontos();
+    }, 200);
+    
+    window.addEventListener('beforeunload', function() {
+        salvarNoServidor();
+    });
+    
+    setInterval(() => {
+        console.log('🔄 Backup automático...');
+        salvarNoServidor();
+    }, 60000);
+});
+
+// Event listeners para edição de fornecedores
 document.addEventListener('DOMContentLoaded', function() {
     const fornecedoresNomes = document.querySelectorAll('.fornecedor-nome');
     fornecedoresNomes.forEach(function(elemento) {
@@ -1894,31 +1952,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
-
-// Função de validação para impressão (mantida original)
-function validarEImprimir() {
-    const campoPagamento = document.getElementById('formaPagamento');
-    const errorMessage = document.getElementById('errorMessage');
-    const modal = document.getElementById('validationModal');
-
-    if (campoPagamento.value.trim() === '') {
-        campoPagamento.classList.add('required');
-        campoPagamento.style.borderColor = '#dc2626';
-        if (errorMessage) errorMessage.classList.add('show');
-        if (modal) modal.classList.add('show');
-        return false;
-    } else {
-        campoPagamento.classList.remove('required');
-        campoPagamento.style.borderColor = '#cbd5e1';
-        if (errorMessage) errorMessage.classList.remove('show');
-        window.print();
-    }
-}
-
-function fecharModal() {
-    const modal = document.getElementById('validationModal');
-    if (modal) modal.classList.remove('show');
-}
 </script>
 
 </body>
