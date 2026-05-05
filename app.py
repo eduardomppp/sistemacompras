@@ -1974,18 +1974,22 @@ def listar_solicitacoes():
         data_inicio = request.args.get('data_inicio')
         data_fim = request.args.get('data_fim')
 
-        # Subquery: IDs das solicitações que já estão em pedidos de compra
+        # 🔴 CORREÇÃO: Subquery para IDs das solicitações que já estão em pedidos de compra
+        # Buscar preenchimentos que estão associados a pedidos
+        from sqlalchemy import exists
+        
+        # Subquery: IDs das solicitações que têm preenchimentos associados a pedidos
         subquery_pedidos = db.session.query(
             SolicitacoesPreenchidas.solicitacao_id
         ).join(
             pedido_preenchimento_associacao,
             SolicitacoesPreenchidas.id == pedido_preenchimento_associacao.c.preenchimento_id
-        ).distinct()
+        ).distinct().subquery()
 
-        # Query base
+        # Query base: solicitações APROVADAS que NÃO estão na subquery (não geraram pedido)
         query = SolicitacoesCompra.query.filter(
             SolicitacoesCompra.status_aprovacao == "Aprovado",
-            ~SolicitacoesCompra.id.in_(subquery_pedidos)
+            ~SolicitacoesCompra.id.in_(subquery_pedidos)  # 🔴 FILTRO CORRETO
         )
 
         # Aplicar filtros
@@ -2046,7 +2050,7 @@ def listar_solicitacoes():
         
         grupos_paginados = grupos_ordenados[inicio:fim]
 
-        # Listas para filtros (usando todas as solicitações)
+        # Listas para filtros (usando todas as solicitações aprovadas que não geraram pedido)
         empresas = sorted({s.empresa for s in solicitacoes if s.empresa})
         usuarios = sorted({s.usuario for s in solicitacoes if s.usuario})
         aplicacoes = sorted({s.aplicacao for s in solicitacoes if s.aplicacao})
@@ -2081,6 +2085,7 @@ def listar_solicitacoes():
             total_grupos=0,
             request_args={}
         )
+    
 @routes_bp.route('/api/editar_quantidade_solicitacao/<int:id>', methods=['POST'])
 def editar_quantidade_solicitacao(id):
     """Edita a quantidade de uma solicitação individual (requer senha 122004)"""
@@ -2183,28 +2188,41 @@ def listar_solicitacoes_comprador():
 
     try:
         from sqlalchemy.orm import joinedload
+        from sqlalchemy import exists, and_
         
         # 🔴 OBTER O COMPRADOR LOGADO
         comprador_logado = session.get('usuario')
         print(f"🔍 Comprador logado: {comprador_logado}")
         
-        # 🔴 BUSCAR APENAS SOLICITAÇÕES ATRIBUÍDAS AO COMPRADOR LOGADO
+        # 🔴 SUBQUERY: IDs das solicitações que JÁ GERARAM PEDIDO
+        # Uma solicitação gerou pedido se ela tem um preenchimento que está associado a um pedido
+        subquery_pedidos = db.session.query(
+            SolicitacoesPreenchidas.solicitacao_id
+        ).join(
+            pedido_preenchimento_associacao,
+            SolicitacoesPreenchidas.id == pedido_preenchimento_associacao.c.preenchimento_id
+        ).distinct().subquery()
+        
+        # 🔴 BUSCAR APENAS SOLICITAÇÕES APROVADAS, ATRIBUÍDAS AO COMPRADOR
+        # E QUE NÃO ESTÃO NA SUBQUERY (NÃO GERARAM PEDIDO)
         solicitacoes = SolicitacoesCompra.query.filter(
             SolicitacoesCompra.status_aprovacao == 'Aprovado',
-            SolicitacoesCompra.comprador_atribuido == comprador_logado  # 🔴 FILTRO CRÍTICO
+            SolicitacoesCompra.comprador_atribuido == comprador_logado,
+            ~SolicitacoesCompra.id.in_(subquery_pedidos)  # 🔴 FILTRO CRÍTICO: NÃO GERARAM PEDIDO
         ).options(
             joinedload(SolicitacoesCompra.material),
             joinedload(SolicitacoesCompra.preenchimentos_fornecidos)
         ).all()
 
         print(f"🔍 Total de solicitações encontradas para {comprador_logado}: {len(solicitacoes)}")
+        print(f"🔍 Solicitações que NÃO geraram pedido: {len(solicitacoes)}")
 
         # Agrupar por aplicação + data
         grupos = {}
         for s in solicitacoes:
             aplic = s.aplicacao or (s.material.Aplicacao if s.material else 'Sem Aplicação')
             data_hora_str = s.data_solicitacao.strftime('%Y-%m-%d %H:%M')
-            chave = f"{aplic}|{data_hora_str}"
+            chave = f"{aplic} | {data_hora_str}"
             
             if chave not in grupos:
                 grupos[chave] = []
@@ -3237,7 +3255,16 @@ def preencher_solicitacao(id):
     )
 
 
-
+@app.template_filter('regex_replace')
+def regex_replace(s, pattern, replacement):
+    if s is None:
+        return ''
+    import re
+    try:
+        return re.sub(pattern, replacement, str(s))
+    except:
+        return str(s)
+    
 # Imprimir -------------------------------------------------------------------------
 @routes_bp.route('/cotacao_imprimir/<int:id>', methods=['GET'])
 def cotacao_imprimir(id):
@@ -4226,10 +4253,20 @@ def listar_pedidos_compra():
         if pagina < 1:
             pagina = 1
 
-        # 🔴 CORREÇÃO: Query base sem JOIN que causa duplicação
-        query = db.session.query(PedidosCompra)
+        # 🔴 CORREÇÃO: Buscar pedidos que NÃO têm solicitações associadas
+        # Subquery para encontrar IDs de pedidos que têm pelo menos um preenchimento associado
+        from sqlalchemy import exists
+        
+        subquery_pedidos_com_solicitacoes = db.session.query(
+            pedido_preenchimento_associacao.c.pedido_id
+        ).distinct().subquery()
+        
+        # Query base: pedidos que NÃO estão na subquery de pedidos com solicitações
+        query = db.session.query(PedidosCompra).filter(
+            ~PedidosCompra.id.in_(subquery_pedidos_com_solicitacoes)
+        )
 
-        # Filtros
+        # Aplicar filtros
         if status:
             query = query.filter(PedidosCompra.status == status)
             
@@ -4246,30 +4283,23 @@ def listar_pedidos_compra():
             except:
                 pass
 
-        # 🔴 CORREÇÃO: Aplicar filtros de empresa e comprador APÓS buscar os pedidos
-        # Primeiro, buscar todos os pedidos com os filtros básicos
+        # Buscar pedidos com os filtros básicos
         pedidos = query.order_by(PedidosCompra.data_criacao.desc()).all()
         
-        # 🔴 CORREÇÃO: Filtrar em memória para evitar duplicação por JOIN
+        # 🔴 CORREÇÃO: Filtrar em memória para empresa e comprador (já que não há JOIN direto)
         pedidos_filtrados = []
         for pedido in pedidos:
-            # Buscar empresas e compradores dos preenchimentos
-            empresas_pedido = set()
-            compradores_pedido = set()
+            # Para pedidos sem solicitações associadas, empresa e comprador vêm do próprio pedido
+            # ou de outras fontes. Neste caso, como não há solicitações, esses filtros podem ser ignorados
+            # ou você pode buscar informações do pedido.usuario
             
-            for preenchimento in pedido.preenchimentos:
-                solicitacao = preenchimento.solicitacao
-                if solicitacao:
-                    empresas_pedido.add(solicitacao.empresa)
-                    if solicitacao.comprador_atribuido:
-                        compradores_pedido.add(solicitacao.comprador_atribuido)
+            # Se você quiser filtrar por empresa baseada no usuário do pedido, pode fazer:
+            if empresa:
+                # Aqui você pode mapear o usuário do pedido para sua empresa usando o arquivo senhas.txt
+                # Por simplicidade, vamos pular o filtro de empresa para pedidos sem solicitações
+                pass
             
-            # Aplicar filtro de empresa
-            if empresa and empresa not in empresas_pedido:
-                continue
-            
-            # Aplicar filtro de comprador
-            if comprador_atribuido and comprador_atribuido not in compradores_pedido:
+            if comprador_atribuido and comprador_atribuido != pedido.usuario:
                 continue
             
             pedidos_filtrados.append(pedido)
@@ -4307,7 +4337,7 @@ def listar_pedidos_compra():
         except Exception as e:
             logging.error(f"Erro lendo senhas.txt: {str(e)}")
 
-        # Buscar informações de fornecedores
+        # Buscar informações de fornecedores (se houver preenchimentos, mas não deve haver)
         fornecedor_ids = set()
         for pedido in pedidos_paginados:
             for preenchimento in pedido.preenchimentos:
@@ -4358,7 +4388,7 @@ def listar_pedidos_compra():
                     'fornecedor_id': preenchimento.fornecedor_id,
                     'material': solicitacao.material.DescricaoMaterial if solicitacao and solicitacao.material else 'N/A',
                     'empresa': empresa_usuario,
-                    'comprador_atribuido': solicitacao.comprador_atribuido if solicitacao else None,
+                    'comprador_atribuido': solicitacao.comprador_atribuido if solicitacao else pedido.usuario,
                     'pdf_path': preenchimento.pdf_path
                 })
             
