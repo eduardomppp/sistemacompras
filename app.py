@@ -2188,14 +2188,13 @@ def listar_solicitacoes_comprador():
 
     try:
         from sqlalchemy.orm import joinedload
-        from sqlalchemy import exists, and_
+        from sqlalchemy import exists, and_, not_
         
         # 🔴 OBTER O COMPRADOR LOGADO
         comprador_logado = session.get('usuario')
         print(f"🔍 Comprador logado: {comprador_logado}")
         
-        # 🔴 SUBQUERY: IDs das solicitações que JÁ GERARAM PEDIDO
-        # Uma solicitação gerou pedido se ela tem um preenchimento que está associado a um pedido
+        # 🔴 SUBQUERY 1: IDs das solicitações que JÁ GERARAM PEDIDO
         subquery_pedidos = db.session.query(
             SolicitacoesPreenchidas.solicitacao_id
         ).join(
@@ -2203,19 +2202,31 @@ def listar_solicitacoes_comprador():
             SolicitacoesPreenchidas.id == pedido_preenchimento_associacao.c.preenchimento_id
         ).distinct().subquery()
         
-        # 🔴 BUSCAR APENAS SOLICITAÇÕES APROVADAS, ATRIBUÍDAS AO COMPRADOR
-        # E QUE NÃO ESTÃO NA SUBQUERY (NÃO GERARAM PEDIDO)
+        # 🔴 SUBQUERY 2: IDs das solicitações que têm preenchimentos FINALIZADOS (enviados para aprovação)
+        # Status que indicam que o comprador já finalizou: 'Aguardando Aprovacao', 'Aprovado', 'Reprovado', etc.
+        subquery_finalizados = db.session.query(
+            SolicitacoesPreenchidas.solicitacao_id
+        ).filter(
+            SolicitacoesPreenchidas.status != 'Rascunho'  # Qualquer status que não seja rascunho
+        ).distinct().subquery()
+        
+        # 🔴 BUSCAR APENAS SOLICITAÇÕES:
+        # 1. Aprovadas
+        # 2. Atribuídas ao comprador logado
+        # 3. Que NÃO geraram pedido
+        # 4. Que NÃO têm preenchimentos finalizados (ainda estão em rascunho ou sem preenchimento)
         solicitacoes = SolicitacoesCompra.query.filter(
             SolicitacoesCompra.status_aprovacao == 'Aprovado',
             SolicitacoesCompra.comprador_atribuido == comprador_logado,
-            ~SolicitacoesCompra.id.in_(subquery_pedidos)  # 🔴 FILTRO CRÍTICO: NÃO GERARAM PEDIDO
+            ~SolicitacoesCompra.id.in_(subquery_pedidos),  # Não gerou pedido
+            ~SolicitacoesCompra.id.in_(subquery_finalizados)  # 🔴 NÃO tem preenchimento finalizado
         ).options(
             joinedload(SolicitacoesCompra.material),
             joinedload(SolicitacoesCompra.preenchimentos_fornecidos)
         ).all()
 
         print(f"🔍 Total de solicitações encontradas para {comprador_logado}: {len(solicitacoes)}")
-        print(f"🔍 Solicitações que NÃO geraram pedido: {len(solicitacoes)}")
+        print(f"🔍 Solicitações disponíveis para preenchimento: {len(solicitacoes)}")
 
         # Agrupar por aplicação + data
         grupos = {}
@@ -2248,7 +2259,7 @@ def listar_solicitacoes_comprador():
             else:
                 grupos_sem_rascunho.append((chave, items))
 
-        # 🔴 LISTA DE COMPRADORES: APENAS O LOGADO (para o filtro)
+        # 🔴 LISTA DE COMPRADORES: APENAS O LOGADO
         compradores = [comprador_logado]
 
         # Coletar dados para outros filtros
@@ -2266,8 +2277,8 @@ def listar_solicitacoes_comprador():
             empresas=sorted(empresas),
             usuarios=sorted(usuarios),
             aplicacoes=sorted(aplicacoes),
-            compradores=compradores,  # 🔴 APENAS O COMPRADOR LOGADO
-            comprador_atual=comprador_logado,  # 🔴 PASSAR PARA O TEMPLATE
+            compradores=compradores,
+            comprador_atual=comprador_logado,
             titulo_pagina="Solicitações Aprovadas - Preencher Cotação"
         )
 
