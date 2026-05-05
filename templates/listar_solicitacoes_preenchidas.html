@@ -383,6 +383,7 @@
                                         'frete': p.valor_frete|default(0.0)|float,
                                         'total': 0.0,
                                         'desconto_raw': p.condicao_pagamento or '',
+                                        'desconto_direto': p.desconto|default(0.0)|float,
                                         'desconto_valor': 0.0,
                                         'desconto_perc': 0.0,
                                         'aprovada': none,
@@ -422,18 +423,42 @@
                     {% endfor %}
                 {% endfor %}
 
+                {# 🔴 NOVA LÓGICA DE EXTRAÇÃO DE DESCONTO - SUPORTA AMBOS OS FORMATOS #}
                 {% for forn in resumo_fornecedores.keys() %}
                     {% set dados = resumo_fornecedores[forn] %}
                     {% set desc_raw = dados.desconto_raw %}
+                    {% set desc_direto = dados.desconto_direto %}
                     {% set desc_valor = 0.0 %}
                     {% set desc_perc = 0.0 %}
-
-                    {% if '%' in desc_raw %}
-                        {% set desc_perc = desc_raw.replace('%','').strip()|float(default=0.0) %}
-                        {% set desc_valor = dados.subtotal * (desc_perc / 100) %}
-                    {% elif desc_raw and desc_raw|float(default=0) > 0 %}
-                        {% set desc_valor = desc_raw|float %}
+                    
+                    {# PRIORIDADE 1: Usar o campo desconto direto (NOVO FORMATO) #}
+                    {% if desc_direto > 0 %}
+                        {% set desc_valor = desc_direto %}
                         {% set desc_perc = (desc_valor / dados.subtotal * 100) if dados.subtotal > 0 else 0.0 %}
+                    {% else %}
+                        {# PRIORIDADE 2: Extrair da condição de pagamento (FORMATO ANTIGO) #}
+                        {% if desc_raw %}
+                            {# Tenta extrair valor em R$ (ex: "DESCONTO: R$ 50,00" ou "DESCONTO: R$50.00") #}
+                            {% set r_matches = desc_raw|regex_replace('.*DESCONTO:\\s*R?\\$?\\s*(\\d+(?:[.,]\\d+)?).*', '\\1') %}
+                            {% if r_matches and r_matches != desc_raw %}
+                                {% set desc_valor = r_matches|replace(',', '.')|float %}
+                                {% set desc_perc = (desc_valor / dados.subtotal * 100) if dados.subtotal > 0 else 0.0 %}
+                            {% else %}
+                                {# Tenta extrair percentual (ex: "DESCONTO: 10%" ou "10% de desconto") #}
+                                {% set p_matches = desc_raw|regex_replace('.*?(\\d+(?:[.,]\\d+)?)\\s*%.*', '\\1') %}
+                                {% if p_matches and p_matches != desc_raw %}
+                                    {% set desc_perc = p_matches|replace(',', '.')|float %}
+                                    {% set desc_valor = dados.subtotal * (desc_perc / 100) %}
+                                {% else %}
+                                    {# Tenta extrair número solto (ex: "DESCONTO 50") #}
+                                    {% set n_matches = desc_raw|regex_replace('.*DESCONTO\\s*(\\d+(?:[.,]\\d+)?).*', '\\1') %}
+                                    {% if n_matches and n_matches != desc_raw %}
+                                        {% set desc_valor = n_matches|replace(',', '.')|float %}
+                                        {% set desc_perc = (desc_valor / dados.subtotal * 100) if dados.subtotal > 0 else 0.0 %}
+                                    {% endif %}
+                                {% endif %}
+                            {% endif %}
+                        {% endif %}
                     {% endif %}
 
                     {% set total_com_desconto = dados.subtotal - desc_valor + dados.frete %}
@@ -459,6 +484,11 @@
                                                 <span class="badge bg-success">Aprovada #{{ dados.aprovada.id }}</span>
                                             {% elif dados.rascunho %}
                                                 <span class="badge" style="background-color: var(--draft);">Rascunho #{{ dados.rascunho.id }}</span>
+                                            {% endif %}
+                                            {% if dados.desconto_valor > 0 %}
+                                                <span class="badge-desconto" style="background-color: var(--danger); color: white; padding: 0.2rem 0.5rem; border-radius: 20px; font-size: 0.7rem;">
+                                                    <i class="bi bi-tag"></i> {{ "%.1f"|format(dados.desconto_perc) }}% OFF
+                                                </span>
                                             {% endif %}
                                         </div>
                                     </div>
@@ -498,6 +528,13 @@
                                                 <strong>R$ {{ "%.2f"|format(dados.total) }}</strong>
                                             </div>
                                         </div>
+                                        
+                                        {# Exibe a condição de pagamento original se tiver desconto #}
+                                        {% if dados.desconto_raw and dados.desconto_valor > 0 %}
+                                            <div class="small text-muted mt-2 pt-2 border-top">
+                                                <i class="bi bi-info-circle"></i> Condição: {{ dados.desconto_raw|truncate(60) }}
+                                            </div>
+                                        {% endif %}
                                     </div>
                                 </div>
                             </div>
