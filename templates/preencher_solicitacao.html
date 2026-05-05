@@ -58,8 +58,6 @@
             color: white;
             padding: 12px;
             border-radius: 6px;
-            display: flex;
-            flex-direction: column;
             position: sticky;
             top: 0;
             max-height: calc(100vh - 120px);
@@ -96,18 +94,12 @@
             word-break: break-word;
         }
 
-        .mini-table-container {
-            margin: 8px 0 12px 0;
-        }
-
         .mini-table {
             width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
+            border-collapse: collapse;
             font-size: 9px;
             background: #0A2C5C;
             border-radius: 4px;
-            overflow: hidden;
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
@@ -126,7 +118,6 @@
         .right-column {
             flex: 1;
             min-width: 0;
-            overflow: visible;
         }
 
         .cotacoes-dinamicas {
@@ -162,6 +153,7 @@
             min-width: 800px;
             flex-shrink: 0;
             position: relative;
+            transition: transform 0.2s, box-shadow 0.2s;
         }
 
         .cotacao-card:hover {
@@ -191,13 +183,11 @@
             border-radius: 50%;
             color: white;
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
             position: absolute;
             top: 10px;
             right: 10px;
             z-index: 100;
+            transition: transform 0.2s;
         }
 
         .btn-remove-cotacao:hover {
@@ -229,12 +219,6 @@
             min-width: 780px;
         }
 
-        .materiais-table thead {
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-
         .materiais-table th {
             background: #022855;
             color: white;
@@ -252,11 +236,7 @@
             vertical-align: middle;
         }
 
-        .materiais-table .descricao {
-            width: 25%;
-            text-align: left;
-        }
-
+        .materiais-table .descricao { width: 25%; text-align: left; }
         .materiais-table .quantidade { width: 8%; }
         .materiais-table .unidade { width: 7%; }
         .materiais-table .unitario { width: 12%; }
@@ -295,7 +275,6 @@
             line-height: 1.4;
             padding: 6px 8px;
             resize: none;
-            overflow: hidden;
             word-break: break-word;
             white-space: pre-wrap;
             min-height: 36px;
@@ -366,10 +345,6 @@
         .btn-success { background: #198754; color: white; }
         .btn-warning { background: #ffc107; color: #000; }
 
-        .add-cotacao-container {
-            margin-top: 10px;
-        }
-
         .btn-add-cotacao {
             background: #6c757d;
             color: white;
@@ -425,25 +400,6 @@
             display: flex;
             align-items: center;
             gap: 10px;
-        }
-
-        .valor-input {
-            position: relative;
-        }
-
-        .valor-simbolo {
-            position: absolute;
-            left: 8px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #6c757d;
-            font-size: 10px;
-            pointer-events: none;
-        }
-
-        .valor-input input {
-            padding-left: 25px !important;
-            text-align: right !important;
         }
 
         @media (max-width: 1200px) {
@@ -516,7 +472,7 @@
                     <h2 style="margin-top: 15px;">MATERIAIS DO GRUPO</h2>
                     <div class="mini-table-container">
                         <table class="mini-table">
-                            <thead><tr><th class="qtd">Qtd</th><th>Descrição</th><th class="ativo">ID</th><tr></thead>
+                            <thead><tr><th class="qtd">Qtd</th><th>Descrição</th><th class="ativo">ID</th></tr></thead>
                             <tbody>
                                 {% for sol in (solicitacoes_grupo if modo_grupo else [solicitacao]) %}
                                 <tr>
@@ -542,10 +498,10 @@
                         <button type="button" class="btn-remove-cotacao" onclick="removerCotacao({{ cotacao_num }}, '{{ cotacao.fornecedor_id if cotacao and cotacao.fornecedor_id else '' }}')" id="btn-remove-{{ cotacao_num }}" style="display: {% if cotacao_num == 1 and total_cotacoes <= 1 %}none{% else %}block{% endif %};"><i class="bi bi-x"></i></button>
 
                         <div class="fornecedor-info">
-                            <div><strong>Nome:</strong> <span id="fornecedor-nome-display-{{ cotacao_num }}">{{ cotacao.fornecedor_nome_fantasia if cotacao else '' }}</span></div>
-                            <div><strong>CNPJ:</strong> <span id="fornecedor-cnpj-display-{{ cotacao_num }}">{{ cotacao.fornecedor_cnpj if cotacao else '' }}</span></div>
-                            <div><strong>Telefone:</strong> <span id="fornecedor-telefone-display-{{ cotacao_num }}">{{ cotacao.fornecedor_telefone if cotacao else '' }}</span></div>
-                            <div><strong>Endereço:</strong> <span id="fornecedor-endereco-display-{{ cotacao_num }}">{{ cotacao.fornecedor_endereco if cotacao else '' }}</span></div>
+                            <div><strong>Nome:</strong> <span class="fornecedor-nome-display" data-cotacao="{{ cotacao_num }}">{{ cotacao.fornecedor_nome_fantasia if cotacao else '' }}</span></div>
+                            <div><strong>CNPJ:</strong> <span class="fornecedor-cnpj-display" data-cotacao="{{ cotacao_num }}">{{ cotacao.fornecedor_cnpj if cotacao else '' }}</span></div>
+                            <div><strong>Telefone:</strong> <span class="fornecedor-telefone-display" data-cotacao="{{ cotacao_num }}">{{ cotacao.fornecedor_telefone if cotacao else '' }}</span></div>
+                            <div><strong>Endereço:</strong> <span class="fornecedor-endereco-display" data-cotacao="{{ cotacao_num }}">{{ cotacao.fornecedor_endereco if cotacao else '' }}</span></div>
                         </div>
 
                         <div class="cotacao-form">
@@ -554,44 +510,41 @@
                                 <select class="form-select fornecedor-select" id="fornecedor_{{ cotacao_num }}" name="fornecedor[]">
                                     <option value="">Selecione um fornecedor</option>
                                 </select>
-                                <input type="hidden" id="fornecedor_id_{{ cotacao_num }}" name="fornecedor_id[]" value="{{ cotacao.fornecedor_id if cotacao and cotacao.fornecedor_id else '' }}">
-                                <input type="hidden" id="preenchimento_id_{{ cotacao_num }}" name="preenchimento_id[]" value="{{ cotacao.materiais[0].preenchimento_id if cotacao and cotacao.materiais and cotacao.materiais[0] else '' }}">
+                                <input type="hidden" class="fornecedor-id-input" data-cotacao="{{ cotacao_num }}" name="fornecedor_id[]" value="{{ cotacao.fornecedor_id if cotacao and cotacao.fornecedor_id else '' }}">
+                                <input type="hidden" class="preenchimento-id-input" data-cotacao="{{ cotacao_num }}" name="preenchimento_id[]" value="{{ cotacao.materiais[0].preenchimento_id if cotacao and cotacao.materiais and cotacao.materiais[0] else '' }}">
                             </div>
                         </div>
 
                         <div class="materiais-container" id="materiais-container-{{ cotacao_num }}" style="display: {% if cotacao and cotacao.fornecedor_id %}block{% else %}none{% endif %};">
-                            <table class="materiais-table" id="materiais-table-{{ cotacao_num }}">
+                            <table class="materiais-table">
                                 <thead><tr><th class="descricao">Descrição</th><th class="quantidade">Qtd</th><th class="unidade">Unidade</th><th class="unitario">Unitário (R$)</th><th class="marca">Marca</th><th class="total">Total (R$)</th><th class="acoes">ID</th></tr></thead>
-                                <tbody id="materiais-body-{{ cotacao_num }}"></tbody>
+                                <tbody class="materiais-body" data-cotacao="{{ cotacao_num }}"></tbody>
                             </table>
                         </div>
 
-                        <div id="botoes-materiais-{{ cotacao_num }}" style="display: {% if cotacao and cotacao.fornecedor_id %}block{% else %}none{% endif %};">
+                        <div class="botoes-materiais" data-cotacao="{{ cotacao_num }}" style="display: {% if cotacao and cotacao.fornecedor_id %}block{% else %}none{% endif %};">
                             <button type="button" class="btn-add-all" onclick="adicionarTodosMateriais({{ cotacao_num }})"><i class="bi bi-list-check"></i> Adicionar Todos os Materiais</button>
                         </div>
 
                         <div class="cotacao-form mt-3">
                             <div class="form-group">
                                 <label class="form-label">Valor do Frete (R$)</label>
-                                <div class="input-group valor-input">
+                                <div class="input-group">
                                     <span class="input-group-text">R$</span>
                                     <input type="text" class="form-control valor-frete" id="valor_frete_{{ cotacao_num }}" name="valor_frete[]" placeholder="0,00" value="{% if cotacao and cotacao.valor_frete and cotacao.valor_frete != 0 %}{% if cotacao.valor_frete is number %}{{ '{:.2f}'.format(cotacao.valor_frete).replace('.', ',') }}{% else %}{{ cotacao.valor_frete | replace('.', ',') }}{% endif %}{% endif %}">
                                 </div>
                             </div>
-
                             <div class="form-group">
                                 <label class="form-label">Prazo de Entrega</label>
                                 <input type="text" class="form-control" id="prazo_entrega_{{ cotacao_num }}" name="prazo_entrega[]" placeholder="Ex.: 10 dias úteis" value="{{ cotacao.prazo_entrega if cotacao else '' }}">
                             </div>
-
                             <div class="form-group">
                                 <label class="form-label">Valor Desconto (R$)</label>
-                                <div class="input-group valor-input">
+                                <div class="input-group">
                                     <span class="input-group-text">R$</span>
                                     <input type="text" class="form-control" id="desconto_{{ cotacao_num }}" name="desconto[]" placeholder="0,00" value="{% if cotacao and cotacao.desconto and cotacao.desconto != 0 %}{% if cotacao.desconto is number %}{{ '{:.2f}'.format(cotacao.desconto).replace('.', ',') }}{% else %}{{ cotacao.desconto | replace('.', ',') }}{% endif %}{% endif %}">
                                 </div>
                             </div>
-
                             <div class="form-group">
                                 <label class="form-label">Anexar PDF da Cotação</label>
                                 <input type="file" class="form-control" id="pdf_file_{{ cotacao_num }}" name="pdf_file[]" accept=".pdf">
@@ -601,7 +554,6 @@
                                 </div>
                                 {% endif %}
                             </div>
-
                             <div class="form-group">
                                 <label class="form-label">Observações</label>
                                 <textarea class="form-control" id="observacao_{{ cotacao_num }}" name="observacao[]" rows="2" placeholder="Informações adicionais...">{{ cotacao.observacoes if cotacao else '' }}</textarea>
@@ -610,12 +562,12 @@
 
                         <div class="total-fornecedor">
                             <div class="total-line"><span>Total Produtos:</span><span class="total-produtos" id="total-produtos-{{ cotacao_num }}">R$ 0,00</span></div>
-                            <div class="total-line frete-line"><span>Frete:</span><span class="total-frete" id="total-frete-display-{{ cotacao_num }}">R$ 0,00</span></div>
-                            <div class="total-line desconto-line"><span>Desconto:</span><span class="total-desconto" id="total-desconto-display-{{ cotacao_num }}">R$ 0,00</span></div>
+                            <div class="total-line frete-line"><span>Frete:</span><span class="total-frete-display" id="total-frete-display-{{ cotacao_num }}">R$ 0,00</span></div>
+                            <div class="total-line desconto-line"><span>Desconto:</span><span class="total-desconto-display" id="total-desconto-display-{{ cotacao_num }}">R$ 0,00</span></div>
                             <div class="total-geral-fornecedor" id="total-geral-fornecedor-{{ cotacao_num }}">Total Geral: R$ 0,00</div>
                         </div>
 
-                        <input type="hidden" id="materiais_salvos_{{ cotacao_num }}" value='{{ cotacao.materiais | tojson | safe if cotacao and cotacao.materiais else "[]" }}'>
+                        <input type="hidden" class="materiais-salvos" data-cotacao="{{ cotacao_num }}" value='{{ cotacao.materiais | tojson | safe if cotacao and cotacao.materiais else "[]" }}'>
                     </div>
                     {% endfor %}
                 </div>
@@ -651,11 +603,13 @@
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
     <script>
+        // ============================================
+        // CONFIGURAÇÃO INICIAL
+        // ============================================
         let contadorCotacoes = {{ cotacoes_salvas|length if cotacoes_salvas else 1 }};
         const MAX_COTACOES = 8;
         let fornecedoresRemovidos = [];
-
-        const materiaisSolicitacao = [
+        let materiaisSolicitacao = [
             {% if modo_grupo %}
             {% for sol in solicitacoes_grupo %}
             {
@@ -679,10 +633,12 @@
             {% endif %}
         ];
 
+        // Cache de elementos frequentemente usados
+        let cotacoesContainer = null;
+
         // ============================================
-        // FUNÇÕES DE FORMATAÇÃO
+        // FUNÇÕES DE FORMATAÇÃO (otimizadas)
         // ============================================
-        
         function formatarNumero(numero, casasDecimais = 6) {
             if (isNaN(numero)) numero = 0;
             return numero.toLocaleString('pt-BR', {
@@ -705,31 +661,6 @@
             return parseFloat((numero || 0).toFixed(casasDecimais));
         }
 
-        function aplicarMascaraMonetaria(input) {
-            let valor = input.val();
-            const isUnitario = input.hasClass('material-unitario');
-            const casasDecimais = isUnitario ? 6 : 2;
-            
-            if (valor === '') {
-                input.val('');
-                return '';
-            }
-            
-            valor = valor.replace(/\D/g, '');
-            
-            if (valor === '') {
-                input.val('');
-                return '';
-            }
-            
-            const divisor = Math.pow(10, casasDecimais);
-            const numero = parseInt(valor) / divisor;
-            const formatado = formatarNumero(numero, casasDecimais);
-            input.val(formatado);
-            
-            return numero.toString();
-        }
-
         function formatCNPJ(cnpj) {
             if (!cnpj) return '';
             const apenasNumeros = cnpj.replace(/\D/g, '');
@@ -737,46 +668,278 @@
             return apenasNumeros.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5");
         }
 
-        // Função para extrair desconto da condição de pagamento
-        function extrairDescontoDaCondicao(condicaoPagamento) {
-            if (!condicaoPagamento) return 0;
-            
-            const matchValor = condicaoPagamento.match(/DESCONTO:\s*R?\$?\s*(\d+(?:[.,]\d+)?)/i);
-            if (matchValor) {
-                return parseFloat(matchValor[1].replace(',', '.'));
-            }
-            
-            const matchPercent = condicaoPagamento.match(/DESC\s*(\d+(?:[.,]\d+)?)\s*%/i);
-            if (matchPercent) {
-                return parseFloat(matchPercent[1].replace(',', '.'));
-            }
-            
-            return 0;
-        }
-
         // ============================================
-        // FUNÇÃO PRINCIPAL COM DESCONTO
+        // FUNÇÕES DE MANIPULAÇÃO DOM (otimizadas)
         // ============================================
         
-        function calcularTotalCotacaoComDesconto(cotacaoId) {
+        function recalcularTotaisCotacao(cotacaoId) {
             let totalProdutos = 0;
-            $('#materiais-body-' + cotacaoId + ' tr').each(function() {
-                const totalText = $(this).find('.material-total-display').val();
-                if (totalText) totalProdutos += formatarNumeroParaEnvio(totalText);
-            });
+            const rows = document.querySelectorAll(`#materiais-container-${cotacaoId} .materiais-body tr`);
+            for (let row of rows) {
+                const totalSpan = row.querySelector('.material-total-display');
+                if (totalSpan && totalSpan.value) {
+                    totalProdutos += formatarNumeroParaEnvio(totalSpan.value);
+                }
+            }
             
-            const freteStr = $('#valor_frete_' + cotacaoId).val() || '0';
-            const frete = formatarNumeroParaEnvio(freteStr);
+            const freteInput = document.getElementById(`valor_frete_${cotacaoId}`);
+            const frete = freteInput ? formatarNumeroParaEnvio(freteInput.value) : 0;
             
-            const descontoStr = $('#desconto_' + cotacaoId).val() || '0';
-            const desconto = formatarNumeroParaEnvio(descontoStr);
+            const descontoInput = document.getElementById(`desconto_${cotacaoId}`);
+            const desconto = descontoInput ? formatarNumeroParaEnvio(descontoInput.value) : 0;
             
             const totalGeral = totalProdutos + frete - desconto;
             
-            $('#total-produtos-' + cotacaoId).text('R$ ' + formatarNumero(totalProdutos, 2));
-            $('#total-frete-display-' + cotacaoId).text('R$ ' + formatarNumero(frete, 2));
-            $('#total-desconto-display-' + cotacaoId).text('R$ ' + formatarNumero(desconto, 2));
-            $('#total-geral-fornecedor-' + cotacaoId).text('Total Geral: R$ ' + formatarNumero(totalGeral, 2));
+            document.getElementById(`total-produtos-${cotacaoId}`).innerText = 'R$ ' + formatarNumero(totalProdutos, 2);
+            document.getElementById(`total-frete-display-${cotacaoId}`).innerText = 'R$ ' + formatarNumero(frete, 2);
+            document.getElementById(`total-desconto-display-${cotacaoId}`).innerText = 'R$ ' + formatarNumero(desconto, 2);
+            document.getElementById(`total-geral-fornecedor-${cotacaoId}`).innerHTML = 'Total Geral: R$ ' + formatarNumero(totalGeral, 2);
+        }
+
+        function calcularTotalLinha(element) {
+            const row = element.closest('tr');
+            if (!row) return;
+            
+            const quantidade = parseFloat(row.querySelector('.material-quantidade')?.value) || 0;
+            const unitario = formatarNumeroParaEnvio(element.value, 6);
+            const total = quantidade * unitario;
+            
+            const totalDisplay = row.querySelector('.material-total-display');
+            if (totalDisplay) {
+                totalDisplay.value = 'R$ ' + formatarNumero(total, 2);
+            }
+            
+            const cotacaoId = element.getAttribute('data-cotacao-id');
+            if (cotacaoId) recalcularTotaisCotacao(cotacaoId);
+            
+            verificarCamposVazios();
+        }
+
+        function handleMonetaryInput(element) {
+            let valor = element.value;
+            const isUnitario = element.classList.contains('material-unitario');
+            const casasDecimais = isUnitario ? 6 : 2;
+            
+            if (valor === '') return;
+            
+            valor = valor.replace(/\D/g, '');
+            if (valor === '') {
+                element.value = '';
+                return;
+            }
+            
+            const divisor = Math.pow(10, casasDecimais);
+            const numero = parseInt(valor) / divisor;
+            element.value = formatarNumero(numero, casasDecimais);
+        }
+
+        function verificarCamposVazios() {
+            let temCampoVazio = false;
+            const cotacoes = document.querySelectorAll('.cotacao-card');
+            
+            for (let cotacao of cotacoes) {
+                const cotacaoId = cotacao.id.replace('cotacao-', '');
+                const fornecedorId = document.querySelector(`.fornecedor-id-input[data-cotacao="${cotacaoId}"]`)?.value;
+                if (!fornecedorId || fornecedoresRemovidos.includes(fornecedorId)) continue;
+                
+                const linhas = document.querySelectorAll(`#materiais-container-${cotacaoId} .materiais-body tr`);
+                for (let linha of linhas) {
+                    const unitario = linha.querySelector('.material-unitario')?.value;
+                    if (!unitario || unitario === '' || unitario === '0,00' || unitario === '0,000000') {
+                        temCampoVazio = true;
+                        if (linha.querySelector('.material-unitario')) {
+                            linha.querySelector('.material-unitario').style.borderColor = '#ffc107';
+                        }
+                    } else if (linha.querySelector('.material-unitario')) {
+                        linha.querySelector('.material-unitario').style.borderColor = '#d1d5db';
+                    }
+                }
+            }
+            
+            const aviso = document.getElementById('avisoCamposVazios');
+            if (aviso) aviso.style.display = temCampoVazio ? 'flex' : 'none';
+            return temCampoVazio;
+        }
+
+        // ============================================
+        // CRIAÇÃO DE MATERIAIS (DOM Fragment para performance)
+        // ============================================
+        
+        function criarLinhaMaterial(cotacaoId, material, index, valorUnitario = null, marcaSalva = null) {
+            const materialId = index + 1;
+            const valorUnitarioFinal = valorUnitario !== null ? valorUnitario : 0;
+            const marcaFinal = marcaSalva !== null ? marcaSalva : (material.marca || '');
+            const valorUnitarioParaInput = valorUnitarioFinal > 0 ? formatarNumero(valorUnitarioFinal, 6) : '';
+            const valorTotal = valorUnitarioFinal > 0 ? valorUnitarioFinal * material.quantidade : 0;
+            
+            const tr = document.createElement('tr');
+            tr.id = `material-${cotacaoId}-${materialId}`;
+            
+            // Descrição
+            const tdDesc = document.createElement('td');
+            tdDesc.className = 'descricao';
+            const textarea = document.createElement('textarea');
+            textarea.className = 'material-descricao';
+            textarea.readOnly = true;
+            textarea.style.cssText = 'white-space: normal; word-break: break-word; overflow-wrap: break-word; height: auto; min-height: 38px; padding: 6px 8px; resize: none; border: 1px solid #e0e0e0; border-radius: 4px; font-size: 10px; line-height: 1.4; width: 100%; box-sizing: border-box;';
+            textarea.value = material.descricao || '';
+            tdDesc.appendChild(textarea);
+            const hiddenInput = document.createElement('input');
+            hiddenInput.type = 'hidden';
+            hiddenInput.name = 'solicitacao_id[]';
+            hiddenInput.value = material.id;
+            tdDesc.appendChild(hiddenInput);
+            tr.appendChild(tdDesc);
+            
+            // Quantidade
+            const tdQtd = document.createElement('td');
+            tdQtd.className = 'quantidade';
+            const qtdInput = document.createElement('input');
+            qtdInput.type = 'text';
+            qtdInput.className = 'material-quantidade';
+            qtdInput.name = 'quantidade[]';
+            qtdInput.value = material.quantidade;
+            qtdInput.readOnly = true;
+            qtdInput.style.cssText = 'background: #f5f5f5; cursor: not-allowed;';
+            tdQtd.appendChild(qtdInput);
+            tr.appendChild(tdQtd);
+            
+            // Unidade
+            const tdUnidade = document.createElement('td');
+            tdUnidade.className = 'unidade';
+            const unidadeInput = document.createElement('input');
+            unidadeInput.type = 'text';
+            unidadeInput.className = 'material-unidade';
+            unidadeInput.name = `material_unidade_${cotacaoId}[]`;
+            unidadeInput.value = material.unidade;
+            unidadeInput.readOnly = true;
+            unidadeInput.style.cssText = 'background: #f5f5f5; cursor: not-allowed;';
+            tdUnidade.appendChild(unidadeInput);
+            tr.appendChild(tdUnidade);
+            
+            // Unitário
+            const tdUnitario = document.createElement('td');
+            tdUnitario.className = 'unitario';
+            const unitarioContainer = document.createElement('div');
+            unitarioContainer.className = 'valor-input';
+            unitarioContainer.style.position = 'relative';
+            const unitarioInput = document.createElement('input');
+            unitarioInput.type = 'text';
+            unitarioInput.className = 'material-unitario';
+            unitarioInput.name = 'valor_unitario[]';
+            unitarioInput.placeholder = '0,000000';
+            unitarioInput.value = valorUnitarioParaInput;
+            unitarioInput.setAttribute('data-cotacao-id', cotacaoId);
+            unitarioInput.setAttribute('data-material-id', materialId);
+            const simbolo = document.createElement('span');
+            simbolo.className = 'valor-simbolo';
+            simbolo.innerText = 'R$';
+            simbolo.style.cssText = 'position: absolute; left: 8px; top: 50%; transform: translateY(-50%); color: #6c757d; font-size: 10px; pointer-events: none;';
+            unitarioContainer.appendChild(unitarioInput);
+            unitarioContainer.appendChild(simbolo);
+            tdUnitario.appendChild(unitarioContainer);
+            tr.appendChild(tdUnitario);
+            
+            // Marca
+            const tdMarca = document.createElement('td');
+            tdMarca.className = 'marca';
+            const marcaInput = document.createElement('input');
+            marcaInput.type = 'text';
+            marcaInput.className = 'material-marca';
+            marcaInput.name = 'marca[]';
+            marcaInput.placeholder = 'Digite a marca';
+            marcaInput.value = marcaFinal;
+            marcaInput.style.cssText = 'width: 100%; padding: 6px 8px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 10px;';
+            tdMarca.appendChild(marcaInput);
+            tr.appendChild(tdMarca);
+            
+            // Total
+            const tdTotal = document.createElement('td');
+            tdTotal.className = 'total';
+            const totalInput = document.createElement('input');
+            totalInput.type = 'text';
+            totalInput.className = 'material-total-display';
+            totalInput.id = `material-total-${cotacaoId}-${materialId}`;
+            totalInput.value = valorUnitarioFinal > 0 ? 'R$ ' + formatarNumero(valorTotal, 2) : 'R$ 0,00';
+            totalInput.readOnly = true;
+            totalInput.style.cssText = 'background: #f0f8ff; cursor: not-allowed;';
+            tdTotal.appendChild(totalInput);
+            tr.appendChild(tdTotal);
+            
+            // ID
+            const tdId = document.createElement('td');
+            tdId.className = 'acoes';
+            tdId.innerText = `#${material.id}`;
+            tr.appendChild(tdId);
+            
+            return tr;
+        }
+
+        function adicionarTodosMateriais(cotacaoId) {
+            if (!materiaisSolicitacao || materiaisSolicitacao.length === 0) {
+                alert('Erro: Nenhum material encontrado para esta solicitação.');
+                return;
+            }
+            
+            const tbody = document.querySelector(`#materiais-container-${cotacaoId} .materiais-body`);
+            if (!tbody) return;
+            
+            // Limpar tbody de forma eficiente
+            while (tbody.firstChild) tbody.removeChild(tbody.firstChild);
+            
+            // Usar DocumentFragment para melhor performance
+            const fragment = document.createDocumentFragment();
+            
+            materiaisSolicitacao.forEach((material, index) => {
+                const linha = criarLinhaMaterial(cotacaoId, material, index);
+                fragment.appendChild(linha);
+            });
+            
+            tbody.appendChild(fragment);
+            
+            // Adicionar event listeners
+            const unitarios = tbody.querySelectorAll('.material-unitario');
+            for (let input of unitarios) {
+                input.addEventListener('input', function() {
+                    handleMonetaryInput(this);
+                    calcularTotalLinha(this);
+                });
+            }
+            
+            // Carregar valores salvos se existirem
+            const materiaisSalvos = document.querySelector(`.materiais-salvos[data-cotacao="${cotacaoId}"]`)?.value;
+            if (materiaisSalvos && materiaisSalvos !== '[]') {
+                try {
+                    const dados = JSON.parse(materiaisSalvos);
+                    if (dados && dados.length > 0) {
+                        setTimeout(() => carregarValoresMateriais(cotacaoId, dados), 100);
+                    }
+                } catch(e) { console.error('Erro ao carregar materiais salvos:', e); }
+            }
+            
+            verificarCamposVazios();
+        }
+
+        function carregarValoresMateriais(cotacaoId, materiaisSalvos) {
+            const materiaisPorSolicitacao = {};
+            materiaisSalvos.forEach(material => {
+                materiaisPorSolicitacao[material.solicitacao_id] = material;
+            });
+            
+            const linhas = document.querySelectorAll(`#materiais-container-${cotacaoId} .materiais-body tr`);
+            for (let linha of linhas) {
+                const solicitacaoId = linha.querySelector('input[name="solicitacao_id[]"]')?.value;
+                const materialSalvo = materiaisPorSolicitacao[parseInt(solicitacaoId)];
+                if (materialSalvo && materialSalvo.valor_unitario > 0) {
+                    const unitarioInput = linha.querySelector('.material-unitario');
+                    if (unitarioInput) {
+                        unitarioInput.value = formatarNumero(materialSalvo.valor_unitario, 6);
+                        const marcaInput = linha.querySelector('.material-marca');
+                        if (marcaInput && materialSalvo.marca) marcaInput.value = materialSalvo.marca;
+                        calcularTotalLinha(unitarioInput);
+                    }
+                }
+            }
         }
 
         // ============================================
@@ -784,96 +947,109 @@
         // ============================================
 
         function removerCotacao(id, fornecedorId = null) {
-            const totalCotacoes = $('.cotacao-card').length;
+            const totalCotacoes = document.querySelectorAll('.cotacao-card').length;
             if (totalCotacoes <= 1) {
                 alert('Não é possível remover a única cotação.');
                 return;
             }
             if (!confirm('Tem certeza que deseja remover esta cotação?')) return;
 
-            if (fornecedorId && fornecedorId !== '') {
-                if (!fornecedoresRemovidos.includes(fornecedorId)) {
-                    fornecedoresRemovidos.push(fornecedorId);
-                }
+            if (fornecedorId && fornecedorId !== '' && !fornecedoresRemovidos.includes(fornecedorId)) {
+                fornecedoresRemovidos.push(fornecedorId);
             }
 
-            $(`#cotacao-${id}`).remove();
-            contadorCotacoes = $('.cotacao-card').length;
+            const cotacao = document.getElementById(`cotacao-${id}`);
+            if (cotacao) cotacao.remove();
+            
+            contadorCotacoes = document.querySelectorAll('.cotacao-card').length;
 
-            if ($('.cotacao-card').length === 1) $('#btn-remove-1').hide();
-            else $('#btn-remove-1').show();
+            const btnRemove1 = document.getElementById('btn-remove-1');
+            if (btnRemove1) btnRemove1.style.display = contadorCotacoes <= 1 ? 'none' : 'block';
 
-            $('#fornecedores_removidos').val(JSON.stringify(fornecedoresRemovidos));
+            document.getElementById('fornecedores_removidos').value = JSON.stringify(fornecedoresRemovidos);
             verificarCamposVazios();
         }
 
         function adicionarNovaCotacao() {
-            const cotacoesAtuais = $('.cotacao-card').length;
+            const cotacoesAtuais = document.querySelectorAll('.cotacao-card').length;
             if (cotacoesAtuais >= MAX_COTACOES) {
                 alert(`Limite máximo de ${MAX_COTACOES} cotações atingido.`);
                 return;
             }
 
             const novoId = contadorCotacoes + 1;
-            const novaCotacaoHTML = `
-                <div class="cotacao-card" id="cotacao-${novoId}" data-cotacao-numero="Cotação #${novoId}">
-                    <button type="button" class="btn-remove-cotacao" onclick="removerCotacao(${novoId}, '')" id="btn-remove-${novoId}" style="display: block;"><i class="bi bi-x"></i></button>
-                    <div class="fornecedor-info">
-                        <div><strong>Nome:</strong> <span id="fornecedor-nome-display-${novoId}"></span></div>
-                        <div><strong>CNPJ:</strong> <span id="fornecedor-cnpj-display-${novoId}"></span></div>
-                        <div><strong>Telefone:</strong> <span id="fornecedor-telefone-display-${novoId}"></span></div>
-                        <div><strong>Endereço:</strong> <span id="fornecedor-endereco-display-${novoId}"></span></div>
-                    </div>
-                    <div class="cotacao-form">
-                        <div class="form-group">
-                            <label class="form-label">Fornecedor *</label>
-                            <select class="form-select fornecedor-select" id="fornecedor_${novoId}" name="fornecedor[]"><option value="">Selecione um fornecedor</option></select>
-                            <input type="hidden" id="fornecedor_id_${novoId}" name="fornecedor_id[]" value="">
-                            <input type="hidden" id="preenchimento_id_${novoId}" name="preenchimento_id[]" value="">
-                        </div>
-                    </div>
-                    <div class="materiais-container" id="materiais-container-${novoId}" style="display: none;">
-                        <table class="materiais-table" id="materiais-table-${novoId}">
-                            <thead><tr><th class="descricao">Descrição</th><th class="quantidade">Qtd</th><th class="unidade">Unidade</th><th class="unitario">Unitário (R$)</th><th class="marca">Marca</th><th class="total">Total (R$)</th><th class="acoes">ID</th></tr></thead>
-                            <tbody id="materiais-body-${novoId}"></tbody>
-                        </table>
-                    </div>
-                    <div id="botoes-materiais-${novoId}" style="display: none;">
-                        <button type="button" class="btn-add-all" onclick="adicionarTodosMateriais(${novoId})"><i class="bi bi-list-check"></i> Adicionar Todos os Materiais</button>
-                    </div>
-                    <div class="cotacao-form mt-3">
-                        <div class="form-group"><label class="form-label">Valor do Frete (R$)</label><div class="input-group valor-input"><span class="input-group-text">R$</span><input type="text" class="form-control valor-frete" id="valor_frete_${novoId}" name="valor_frete[]" placeholder="0,00"></div></div>
-                        <div class="form-group"><label class="form-label">Prazo de Entrega</label><input type="text" class="form-control" id="prazo_entrega_${novoId}" name="prazo_entrega[]" placeholder="Ex.: 10 dias úteis"></div>
-                        <div class="form-group"><label class="form-label">Valor Desconto (R$)</label><div class="input-group valor-input"><span class="input-group-text">R$</span><input type="text" class="form-control" id="desconto_${novoId}" name="desconto[]" placeholder="0,00"></div></div>
-                        <div class="form-group"><label class="form-label">Anexar PDF da Cotação</label><input type="file" class="form-control" id="pdf_file_${novoId}" name="pdf_file[]" accept=".pdf"></div>
-                        <div class="form-group"><label class="form-label">Observações</label><textarea class="form-control" id="observacao_${novoId}" name="observacao[]" rows="2" placeholder="Informações adicionais..."></textarea></div>
-                    </div>
-                    <div class="total-fornecedor">
-                        <div class="total-line"><span>Total Produtos:</span><span class="total-produtos" id="total-produtos-${novoId}">R$ 0,00</span></div>
-                        <div class="total-line frete-line"><span>Frete:</span><span class="total-frete" id="total-frete-display-${novoId}">R$ 0,00</span></div>
-                        <div class="total-line desconto-line"><span>Desconto:</span><span class="total-desconto" id="total-desconto-display-${novoId}">R$ 0,00</span></div>
-                        <div class="total-geral-fornecedor" id="total-geral-fornecedor-${novoId}">Total Geral: R$ 0,00</div>
-                    </div>
-                    <input type="hidden" id="materiais_salvos_${novoId}" value="[]">
+            const cotacoesDinamicas = document.getElementById('cotacoes-dinamicas');
+            if (!cotacoesDinamicas) return;
+            
+            const novaCotacao = document.createElement('div');
+            novaCotacao.className = 'cotacao-card';
+            novaCotacao.id = `cotacao-${novoId}`;
+            novaCotacao.setAttribute('data-cotacao-numero', `Cotação #${novoId}`);
+            
+            novaCotacao.innerHTML = `
+                <button type="button" class="btn-remove-cotacao" onclick="removerCotacao(${novoId}, '')" id="btn-remove-${novoId}" style="display: block;"><i class="bi bi-x"></i></button>
+                <div class="fornecedor-info">
+                    <div><strong>Nome:</strong> <span class="fornecedor-nome-display" data-cotacao="${novoId}"></span></div>
+                    <div><strong>CNPJ:</strong> <span class="fornecedor-cnpj-display" data-cotacao="${novoId}"></span></div>
+                    <div><strong>Telefone:</strong> <span class="fornecedor-telefone-display" data-cotacao="${novoId}"></span></div>
+                    <div><strong>Endereço:</strong> <span class="fornecedor-endereco-display" data-cotacao="${novoId}"></span></div>
                 </div>
+                <div class="cotacao-form">
+                    <div class="form-group">
+                        <label class="form-label">Fornecedor *</label>
+                        <select class="form-select fornecedor-select" id="fornecedor_${novoId}" name="fornecedor[]"><option value="">Selecione um fornecedor</option></select>
+                        <input type="hidden" class="fornecedor-id-input" data-cotacao="${novoId}" name="fornecedor_id[]" value="">
+                        <input type="hidden" class="preenchimento-id-input" data-cotacao="${novoId}" name="preenchimento_id[]" value="">
+                    </div>
+                </div>
+                <div class="materiais-container" id="materiais-container-${novoId}" style="display: none;">
+                    <table class="materiais-table">
+                        <thead><tr><th class="descricao">Descrição</th><th class="quantidade">Qtd</th><th class="unidade">Unidade</th><th class="unitario">Unitário (R$)</th><th class="marca">Marca</th><th class="total">Total (R$)</th><th class="acoes">ID</th></tr></thead>
+                        <tbody class="materiais-body" data-cotacao="${novoId}"></tbody>
+                    </table>
+                </div>
+                <div class="botoes-materiais" data-cotacao="${novoId}" style="display: none;">
+                    <button type="button" class="btn-add-all" onclick="adicionarTodosMateriais(${novoId})"><i class="bi bi-list-check"></i> Adicionar Todos os Materiais</button>
+                </div>
+                <div class="cotacao-form mt-3">
+                    <div class="form-group"><label class="form-label">Valor do Frete (R$)</label><div class="input-group"><span class="input-group-text">R$</span><input type="text" class="form-control valor-frete" id="valor_frete_${novoId}" name="valor_frete[]" placeholder="0,00"></div></div>
+                    <div class="form-group"><label class="form-label">Prazo de Entrega</label><input type="text" class="form-control" id="prazo_entrega_${novoId}" name="prazo_entrega[]" placeholder="Ex.: 10 dias úteis"></div>
+                    <div class="form-group"><label class="form-label">Valor Desconto (R$)</label><div class="input-group"><span class="input-group-text">R$</span><input type="text" class="form-control" id="desconto_${novoId}" name="desconto[]" placeholder="0,00"></div></div>
+                    <div class="form-group"><label class="form-label">Anexar PDF da Cotação</label><input type="file" class="form-control" id="pdf_file_${novoId}" name="pdf_file[]" accept=".pdf"></div>
+                    <div class="form-group"><label class="form-label">Observações</label><textarea class="form-control" id="observacao_${novoId}" name="observacao[]" rows="2" placeholder="Informações adicionais..."></textarea></div>
+                </div>
+                <div class="total-fornecedor">
+                    <div class="total-line"><span>Total Produtos:</span><span class="total-produtos" id="total-produtos-${novoId}">R$ 0,00</span></div>
+                    <div class="total-line frete-line"><span>Frete:</span><span class="total-frete-display" id="total-frete-display-${novoId}">R$ 0,00</span></div>
+                    <div class="total-line desconto-line"><span>Desconto:</span><span class="total-desconto-display" id="total-desconto-display-${novoId}">R$ 0,00</span></div>
+                    <div class="total-geral-fornecedor" id="total-geral-fornecedor-${novoId}">Total Geral: R$ 0,00</div>
+                </div>
+                <input type="hidden" class="materiais-salvos" data-cotacao="${novoId}" value="[]">
             `;
-
-            $('#cotacoes-dinamicas').append(novaCotacaoHTML);
+            
+            cotacoesDinamicas.appendChild(novaCotacao);
             contadorCotacoes = novoId;
-            if (novoId > 1) $('#btn-remove-1').show();
-
+            
+            const btnRemove1 = document.getElementById('btn-remove-1');
+            if (btnRemove1 && novoId > 1) btnRemove1.style.display = 'block';
+            
             setTimeout(() => {
                 initSelect2ForCotacao(novoId);
                 configurarEventosCotacao(novoId);
             }, 100);
         }
 
+        // ============================================
+        // SELECT2 E EVENTOS
+        // ============================================
+
         function initSelect2ForCotacao(id) {
-            if ($('#fornecedor_' + id).hasClass('select2-hidden-accessible')) {
-                $('#fornecedor_' + id).select2('destroy');
+            const select = $('#fornecedor_' + id);
+            if (select.hasClass('select2-hidden-accessible')) {
+                select.select2('destroy');
             }
 
-            $('#fornecedor_' + id).select2({
+            select.select2({
                 placeholder: 'Digite nome ou CNPJ do fornecedor',
                 allowClear: true,
                 minimumInputLength: 2,
@@ -881,7 +1057,7 @@
                 ajax: {
                     url: '{{ url_for("routes_bp.search_fornecedores") }}',
                     dataType: 'json',
-                    delay: 250,
+                    delay: 300,
                     data: function(params) { return { q: params.term }; },
                     processResults: function(data) {
                         return {
@@ -904,208 +1080,130 @@
                 }
             }).on('select2:select', function(e) {
                 const data = e.params.data;
-                $('#fornecedor_id_' + id).val(data.id);
-                $('#fornecedor-nome-display-' + id).text(data.nome_fantasia || '');
-                $('#fornecedor-cnpj-display-' + id).text(formatCNPJ(data.cnpj) || '');
-                $('#fornecedor-telefone-display-' + id).text(data.telefone || '');
+                document.querySelector(`.fornecedor-id-input[data-cotacao="${id}"]`).value = data.id;
+                document.querySelector(`.fornecedor-nome-display[data-cotacao="${id}"]`).innerText = data.nome_fantasia || '';
+                document.querySelector(`.fornecedor-cnpj-display[data-cotacao="${id}"]`).innerText = formatCNPJ(data.cnpj) || '';
+                document.querySelector(`.fornecedor-telefone-display[data-cotacao="${id}"]`).innerText = data.telefone || '';
                 const enderecoCompleto = [data.endereco || '', data.bairro || '', data.cidade || '', data.estado || ''].filter(part => part).join(', ');
-                $('#fornecedor-endereco-display-' + id).text(enderecoCompleto);
-                $('#materiais-container-' + id).show();
-                $('#botoes-materiais-' + id).show();
+                document.querySelector(`.fornecedor-endereco-display[data-cotacao="${id}"]`).innerText = enderecoCompleto;
+                document.getElementById(`materiais-container-${id}`).style.display = 'block';
+                document.querySelector(`.botoes-materiais[data-cotacao="${id}"]`).style.display = 'block';
                 adicionarTodosMateriais(id);
             }).on('select2:clear', function() {
-                $('#fornecedor_id_' + id).val('');
-                $('#materiais-container-' + id).hide();
-                $('#botoes-materiais-' + id).hide();
-                $('#materiais-body-' + id).empty();
-                calcularTotalCotacaoComDesconto(id);
-                $('#fornecedor-nome-display-' + id).text('');
-                $('#fornecedor-cnpj-display-' + id).text('');
-                $('#fornecedor-telefone-display-' + id).text('');
-                $('#fornecedor-endereco-display-' + id).text('');
+                document.querySelector(`.fornecedor-id-input[data-cotacao="${id}"]`).value = '';
+                document.getElementById(`materiais-container-${id}`).style.display = 'none';
+                document.querySelector(`.botoes-materiais[data-cotacao="${id}"]`).style.display = 'none';
+                const tbody = document.querySelector(`#materiais-container-${id} .materiais-body`);
+                if (tbody) {
+                    while (tbody.firstChild) tbody.removeChild(tbody.firstChild);
+                }
+                recalcularTotaisCotacao(id);
+                document.querySelector(`.fornecedor-nome-display[data-cotacao="${id}"]`).innerText = '';
+                document.querySelector(`.fornecedor-cnpj-display[data-cotacao="${id}"]`).innerText = '';
+                document.querySelector(`.fornecedor-telefone-display[data-cotacao="${id}"]`).innerText = '';
+                document.querySelector(`.fornecedor-endereco-display[data-cotacao="${id}"]`).innerText = '';
                 verificarCamposVazios();
             });
         }
 
-        function adicionarTodosMateriais(cotacaoId) {
-            if (!materiaisSolicitacao || materiaisSolicitacao.length === 0) {
-                alert('Erro: Nenhum material encontrado para esta solicitação.');
-                return;
-            }
-
-            $('#materiais-body-' + cotacaoId).empty();
-
-            materiaisSolicitacao.forEach(function(material, index) {
-                const materialId = index + 1;
-                const rowHTML = `
-                    <tr id="material-${cotacaoId}-${materialId}">
-                        <td class="descricao">
-                            <textarea class="material-descricao" readonly style="white-space: normal; word-break: break-word; overflow-wrap: break-word; height: auto; min-height: 38px; padding: 6px 8px; resize: none; border: 1px solid #e0e0e0; border-radius: 4px; font-size: 10px; line-height: 1.4; width: 100%; box-sizing: border-box;">${material.descricao || ''}</textarea>
-                            <input type="hidden" name="solicitacao_id[]" value="${material.id}">
-                        </td>
-                        <td class="quantidade"><input type="text" class="material-quantidade" name="quantidade[]" value="${material.quantidade}" readonly style="background: #f5f5f5; cursor: not-allowed;"></td>
-                        <td class="unidade"><input type="text" class="material-unidade" name="material_unidade_${cotacaoId}[]" value="${material.unidade}" readonly style="background: #f5f5f5; cursor: not-allowed;"></td>
-                        <td class="unitario">
-                            <div class="valor-input" style="position: relative;">
-                                <input type="text" class="material-unitario" name="valor_unitario[]" placeholder="0,000000" data-cotacao-id="${cotacaoId}" data-material-id="${materialId}">
-                                <span class="valor-simbolo">R$</span>
-                            </div>
-                        </td>
-                        <td class="marca">
-                            <input type="text" class="material-marca" name="marca[]" placeholder="Digite a marca" value="${material.marca || ''}" style="width: 100%; padding: 6px 8px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 10px;">
-                        </td>
-                        <td class="total"><input type="text" class="material-total-display" id="material-total-${cotacaoId}-${materialId}" value="R$ 0,00" readonly style="background: #f0f8ff; cursor: not-allowed;"></td>
-                        <td class="acoes">#${material.id}</td>
-                    </tr>
-                `;
-                $('#materiais-body-' + cotacaoId).append(rowHTML);
-
-                const unitarioInput = $(`#material-${cotacaoId}-${materialId} .material-unitario`);
-                unitarioInput.off('input').on('input', function() {
-                    aplicarMascaraMonetaria($(this));
-                    calcularTotalLinha(this, cotacaoId);
-                    verificarCamposVazios();
-                });
-            });
-
-            const materiaisSalvos = $('#materiais_salvos_' + cotacaoId).val();
-            if (materiaisSalvos && materiaisSalvos !== '[]') {
-                try {
-                    const dados = JSON.parse(materiaisSalvos);
-                    if (dados && dados.length > 0) {
-                        setTimeout(() => carregarValoresMateriais(cotacaoId, dados), 200);
-                    }
-                } catch(e) { console.error('Erro ao carregar materiais salvos:', e); }
-            }
-            verificarCamposVazios();
-        }
-
-        function carregarValoresMateriais(cotacaoId, materiaisSalvos) {
-            const materiaisPorSolicitacao = {};
-            materiaisSalvos.forEach(material => { materiaisPorSolicitacao[material.solicitacao_id] = material; });
-
-            $('#materiais-body-' + cotacaoId + ' tr').each(function() {
-                const solicitacaoId = $(this).find('input[name="solicitacao_id[]"]').val();
-                const materialSalvo = materiaisPorSolicitacao[parseInt(solicitacaoId)];
-                if (materialSalvo && materialSalvo.valor_unitario > 0) {
-                    const unitarioInput = $(this).find('.material-unitario');
-                    const valorFormatado = formatarNumero(materialSalvo.valor_unitario, 6);
-                    unitarioInput.val(valorFormatado);
-                    if (materialSalvo.marca) $(this).find('.material-marca').val(materialSalvo.marca);
-                    calcularTotalLinha(unitarioInput[0], cotacaoId);
-                }
-            });
-            verificarCamposVazios();
-        }
-
-        function calcularTotalLinha(input, cotacaoId) {
-            const row = $(input).closest('tr');
-            const quantidade = parseFloat(row.find('.material-quantidade').val()) || 0;
-            const unitarioStr = $(input).val();
-            const unitario = formatarNumeroParaEnvio(unitarioStr, 6);
-            const total = quantidade * unitario;
-            
-            row.find('.material-total-display').val('R$ ' + formatarNumero(total, 2));
-            calcularTotalCotacaoComDesconto(cotacaoId);
-        }
-
         function configurarEventosCotacao(id) {
-            $('#valor_frete_' + id).off('input').on('input', function() {
-                aplicarMascaraMonetaria($(this));
-                calcularTotalCotacaoComDesconto(id);
-            });
+            const freteInput = document.getElementById(`valor_frete_${id}`);
+            if (freteInput) {
+                freteInput.addEventListener('input', function() {
+                    handleMonetaryInput(this);
+                    recalcularTotaisCotacao(id);
+                });
+            }
             
-            $('#desconto_' + id).off('input').on('input', function() {
-                aplicarMascaraMonetaria($(this));
-                calcularTotalCotacaoComDesconto(id);
-            });
+            const descontoInput = document.getElementById(`desconto_${id}`);
+            if (descontoInput) {
+                descontoInput.addEventListener('input', function() {
+                    handleMonetaryInput(this);
+                    recalcularTotaisCotacao(id);
+                });
+            }
         }
 
-        function verificarCamposVazios() {
-            let temCampoVazio = false;
-            $('.cotacao-card').each(function() {
-                const cotacaoId = $(this).attr('id').replace('cotacao-', '');
-                const fornecedorId = $('#fornecedor_id_' + cotacaoId).val();
-                if (!fornecedorId || fornecedoresRemovidos.includes(fornecedorId)) return;
-                $('#materiais-body-' + cotacaoId + ' tr').each(function() {
-                    const unitario = $(this).find('.material-unitario').val();
-                    if (!unitario || unitario === '' || unitario === '0,00' || unitario === '0,000000') {
-                        temCampoVazio = true;
-                        $(this).find('.material-unitario').css('border-color', '#ffc107');
-                    } else {
-                        $(this).find('.material-unitario').css('border-color', '#d1d5db');
-                    }
-                });
-            });
-            $('#avisoCamposVazios').toggle(temCampoVazio);
-            return temCampoVazio;
-        }
+        // ============================================
+        // SUBMISSÃO
+        // ============================================
 
         function gerarJsonMateriais() {
             const materiaisPorCotacao = {};
-            $('.cotacao-card').each(function() {
-                const cotacaoId = $(this).attr('id').replace('cotacao-', '');
-                const fornecedorId = $('#fornecedor_id_' + cotacaoId).val();
-                if (fornecedoresRemovidos.includes(fornecedorId) || !fornecedorId) return;
+            const cotacoes = document.querySelectorAll('.cotacao-card');
+            
+            for (let cotacao of cotacoes) {
+                const cotacaoId = cotacao.id.replace('cotacao-', '');
+                const fornecedorId = document.querySelector(`.fornecedor-id-input[data-cotacao="${cotacaoId}"]`)?.value;
+                if (fornecedoresRemovidos.includes(fornecedorId) || !fornecedorId) continue;
+                
                 materiaisPorCotacao[cotacaoId] = [];
-                $('#materiais-body-' + cotacaoId + ' tr').each(function() {
-                    const solicitacaoId = $(this).find('input[name="solicitacao_id[]"]').val();
-                    const unitario = $(this).find('.material-unitario').val();
-                    const marca = $(this).find('.material-marca').val();
+                const linhas = document.querySelectorAll(`#materiais-container-${cotacaoId} .materiais-body tr`);
+                
+                for (let linha of linhas) {
+                    const solicitacaoId = linha.querySelector('input[name="solicitacao_id[]"]')?.value;
+                    const unitarioInput = linha.querySelector('.material-unitario');
+                    const marcaInput = linha.querySelector('.material-marca');
+                    
                     let valorUnitario = 0;
-                    if (unitario && unitario !== '' && unitario !== '0,00' && unitario !== '0,000000') {
-                        valorUnitario = formatarNumeroParaEnvio(unitario, 6);
+                    if (unitarioInput && unitarioInput.value && unitarioInput.value !== '' && 
+                        unitarioInput.value !== '0,00' && unitarioInput.value !== '0,000000') {
+                        valorUnitario = formatarNumeroParaEnvio(unitarioInput.value, 6);
                     }
+                    
                     materiaisPorCotacao[cotacaoId].push({
                         solicitacao_id: parseInt(solicitacaoId),
                         unitario: valorUnitario,
-                        marca: marca || '',
-                        preenchimento_id: $('#preenchimento_id_' + cotacaoId).val() || null
+                        marca: marcaInput ? marcaInput.value : '',
+                        preenchimento_id: document.querySelector(`.preenchimento-id-input[data-cotacao="${cotacaoId}"]`)?.value || null
                     });
-                });
-            });
+                }
+            }
             return JSON.stringify(materiaisPorCotacao);
         }
 
         function debugCotacoes() {
             console.log('=== DEBUG COTAÇÕES ===');
-            $('.cotacao-card').each(function(index) {
-                const cotacaoId = $(this).attr('id').replace('cotacao-', '');
-                const fornecedorId = $('#fornecedor_id_' + cotacaoId).val();
-                const materiaisCount = $('#materiais-body-' + cotacaoId + ' tr').length;
+            const cotacoes = document.querySelectorAll('.cotacao-card');
+            for (let cotacao of cotacoes) {
+                const cotacaoId = cotacao.id.replace('cotacao-', '');
+                const fornecedorId = document.querySelector(`.fornecedor-id-input[data-cotacao="${cotacaoId}"]`)?.value;
+                const materiaisCount = document.querySelectorAll(`#materiais-container-${cotacaoId} .materiais-body tr`).length;
                 console.log(`Cotação ${cotacaoId}: Fornecedor ID: ${fornecedorId || 'NÃO SELECIONADO'}, Materiais: ${materiaisCount}`);
-                $('#materiais-body-' + cotacaoId + ' tr').each(function(mIdx) {
-                    const valor = $(this).find('.material-unitario').val();
-                    console.log(`  Material ${mIdx+1}: Valor: ${valor || 'VAZIO'}`);
+                
+                const linhas = document.querySelectorAll(`#materiais-container-${cotacaoId} .materiais-body tr`);
+                linhas.forEach((linha, idx) => {
+                    const valor = linha.querySelector('.material-unitario')?.value;
+                    console.log(`  Material ${idx+1}: Valor: ${valor || 'VAZIO'}`);
                 });
-            });
+            }
             console.log('=====================');
         }
 
-        // ============================================
-        // SUBMISSÃO DO FORMULÁRIO
-        // ============================================
-
-        $('#cotacoes-form').on('submit', function(e) {
+        document.getElementById('cotacoes-form')?.addEventListener('submit', function(e) {
             e.preventDefault();
-            const clickedButton = $(e.originalEvent.submitter || document.activeElement);
-            let finalAction = clickedButton.val() || clickedButton.attr('name');
+            const clickedButton = e.submitter || document.activeElement;
+            let finalAction = clickedButton.value || clickedButton.getAttribute('name');
             
-            $('#fornecedores_removidos').val(JSON.stringify(fornecedoresRemovidos));
+            document.getElementById('fornecedores_removidos').value = JSON.stringify(fornecedoresRemovidos);
             
             let camposVazios = [];
-            $('.cotacao-card').each(function() {
-                const cotacaoId = $(this).attr('id').replace('cotacao-', '');
-                const fornecedorId = $('#fornecedor_id_' + cotacaoId).val();
-                if (!fornecedorId || fornecedoresRemovidos.includes(fornecedorId)) return;
-                $('#materiais-body-' + cotacaoId + ' tr').each(function() {
-                    const unitario = $(this).find('.material-unitario').val();
-                    const descricao = $(this).find('.material-descricao').text().trim() || 'Material sem descrição';
+            const cotacoes = document.querySelectorAll('.cotacao-card');
+            
+            for (let cotacao of cotacoes) {
+                const cotacaoId = cotacao.id.replace('cotacao-', '');
+                const fornecedorId = document.querySelector(`.fornecedor-id-input[data-cotacao="${cotacaoId}"]`)?.value;
+                if (!fornecedorId || fornecedoresRemovidos.includes(fornecedorId)) continue;
+                
+                const linhas = document.querySelectorAll(`#materiais-container-${cotacaoId} .materiais-body tr`);
+                for (let linha of linhas) {
+                    const unitario = linha.querySelector('.material-unitario')?.value;
+                    const descricao = linha.querySelector('.material-descricao')?.value?.trim() || 'Material sem descrição';
                     if (!unitario || unitario === '' || unitario === '0,00' || unitario === '0,000000') {
                         camposVazios.push({ cotacao: cotacaoId, descricao: descricao.substring(0, 50) });
                     }
-                });
-            });
+                }
+            }
 
             if (camposVazios.length > 0) {
                 let mensagem = "⚠️ ATENÇÃO: Os seguintes materiais estão sem valor unitário:\n\n";
@@ -1123,55 +1221,156 @@
                 if (!confirm(mensagem)) return false;
             }
 
-            $('.cotacao-card').each(function() {
-                const cotacaoId = $(this).attr('id').replace('cotacao-', '');
-                const fornecedorId = $('#fornecedor_id_' + cotacaoId).val();
-                if (!fornecedorId || fornecedoresRemovidos.includes(fornecedorId)) return;
+            // Preparar valores para envio
+            for (let cotacao of cotacoes) {
+                const cotacaoId = cotacao.id.replace('cotacao-', '');
+                const fornecedorId = document.querySelector(`.fornecedor-id-input[data-cotacao="${cotacaoId}"]`)?.value;
+                if (!fornecedorId || fornecedoresRemovidos.includes(fornecedorId)) continue;
                 
-                $('#materiais-body-' + cotacaoId + ' tr').each(function() {
-                    const unitarioInput = $(this).find('.material-unitario');
-                    const valor = unitarioInput.val();
-                    if (!valor || valor === '' || valor === '0,00' || valor === '0,000000') {
-                        unitarioInput.val('0.000000');
-                    } else {
-                        let valorNumerico = formatarNumeroParaEnvio(valor, 6);
-                        unitarioInput.val(valorNumerico.toFixed(6));
+                const linhas = document.querySelectorAll(`#materiais-container-${cotacaoId} .materiais-body tr`);
+                for (let linha of linhas) {
+                    const unitarioInput = linha.querySelector('.material-unitario');
+                    if (unitarioInput) {
+                        const valor = unitarioInput.value;
+                        if (!valor || valor === '' || valor === '0,00' || valor === '0,000000') {
+                            unitarioInput.value = '0.000000';
+                        } else {
+                            let valorNumerico = formatarNumeroParaEnvio(valor, 6);
+                            unitarioInput.value = valorNumerico.toFixed(6);
+                        }
                     }
-                });
-                
-                const freteInput = $('#valor_frete_' + cotacaoId);
-                const freteValor = freteInput.val();
-                if (!freteValor || freteValor === '' || freteValor === '0,00') {
-                    freteInput.val('0.00');
-                } else {
-                    let freteNumerico = formatarNumeroParaEnvio(freteValor);
-                    freteInput.val(freteNumerico.toFixed(2));
                 }
                 
-                const descontoInput = $('#desconto_' + cotacaoId);
-                const descontoValor = descontoInput.val();
-                if (!descontoValor || descontoValor === '' || descontoValor === '0,00') {
-                    descontoInput.val('0.00');
-                } else {
-                    let descontoNumerico = formatarNumeroParaEnvio(descontoValor);
-                    descontoInput.val(descontoNumerico.toFixed(2));
+                const freteInput = document.getElementById(`valor_frete_${cotacaoId}`);
+                if (freteInput) {
+                    const freteValor = freteInput.value;
+                    if (!freteValor || freteValor === '' || freteValor === '0,00') {
+                        freteInput.value = '0.00';
+                    } else {
+                        let freteNumerico = formatarNumeroParaEnvio(freteValor);
+                        freteInput.value = freteNumerico.toFixed(2);
+                    }
                 }
-            });
+                
+                const descontoInput = document.getElementById(`desconto_${cotacaoId}`);
+                if (descontoInput) {
+                    const descontoValor = descontoInput.value;
+                    if (!descontoValor || descontoValor === '' || descontoValor === '0,00') {
+                        descontoInput.value = '0.00';
+                    } else {
+                        let descontoNumerico = formatarNumeroParaEnvio(descontoValor);
+                        descontoInput.value = descontoNumerico.toFixed(2);
+                    }
+                }
+            }
 
             const materiaisJson = gerarJsonMateriais();
-            $('#materiais_json').val(materiaisJson);
+            document.getElementById('materiais_json').value = materiaisJson;
             
-            $('<input>').attr({ type: 'hidden', name: 'action', value: finalAction }).appendTo('#cotacoes-form');
+            const actionInput = document.createElement('input');
+            actionInput.type = 'hidden';
+            actionInput.name = 'action';
+            actionInput.value = finalAction;
+            this.appendChild(actionInput);
             
-            console.log('🚀 ENVIANDO FORMULÁRIO - Total de cotações:', $('.cotacao-card').length);
+            console.log('🚀 ENVIANDO FORMULÁRIO - Total de cotações:', document.querySelectorAll('.cotacao-card').length);
             debugCotacoes();
             this.submit();
         });
 
+        function preencherCotacaoSalva(cotacaoId, dados) {
+            if (!dados.fornecedor_id) return;
+            
+            const nomeFornecedor = dados.fornecedor_nome_fantasia || 'Fornecedor não encontrado';
+            const cnpjFormatado = dados.fornecedor_cnpj ? formatCNPJ(dados.fornecedor_cnpj) : '';
+            const optionText = nomeFornecedor + (cnpjFormatado ? ' - CNPJ: ' + cnpjFormatado : '');
+            const option = new Option(optionText, dados.fornecedor_id, true, true);
+            const select = $('#fornecedor_' + cotacaoId);
+            select.append(option).trigger('change');
+            
+            document.querySelector(`.fornecedor-id-input[data-cotacao="${cotacaoId}"]`).value = dados.fornecedor_id;
+            document.querySelector(`.fornecedor-nome-display[data-cotacao="${cotacaoId}"]`).innerText = nomeFornecedor;
+            document.querySelector(`.fornecedor-cnpj-display[data-cotacao="${cotacaoId}"]`).innerText = cnpjFormatado;
+            document.querySelector(`.fornecedor-telefone-display[data-cotacao="${cotacaoId}"]`).innerText = dados.fornecedor_telefone || 'Não informado';
+            document.querySelector(`.fornecedor-endereco-display[data-cotacao="${cotacaoId}"]`).innerText = dados.fornecedor_endereco || 'Não informado';
+            document.getElementById(`materiais-container-${cotacaoId}`).style.display = 'block';
+            document.querySelector(`.botoes-materiais[data-cotacao="${cotacaoId}"]`).style.display = 'block';
+            
+            setTimeout(() => {
+                if (dados.materiais && dados.materiais.length > 0) {
+                    adicionarMateriaisComValores(cotacaoId, dados.materiais);
+                } else {
+                    adicionarTodosMateriais(cotacaoId);
+                }
+                if (dados.valor_frete && dados.valor_frete > 0) {
+                    const freteInput = document.getElementById(`valor_frete_${cotacaoId}`);
+                    if (freteInput) freteInput.value = formatarNumero(dados.valor_frete, 2);
+                }
+                
+                let valorDesconto = 0;
+                if (dados.desconto && dados.desconto > 0) {
+                    valorDesconto = dados.desconto;
+                } else if (dados.condicao_pagamento) {
+                    const match = dados.condicao_pagamento.match(/DESCONTO:\s*R?\$?\s*(\d+(?:[.,]\d+)?)/i);
+                    if (match) valorDesconto = parseFloat(match[1].replace(',', '.'));
+                }
+                
+                if (valorDesconto > 0) {
+                    const descontoInput = document.getElementById(`desconto_${cotacaoId}`);
+                    if (descontoInput) descontoInput.value = formatarNumero(valorDesconto, 2);
+                }
+                
+                if (dados.prazo_entrega) {
+                    const prazoInput = document.getElementById(`prazo_entrega_${cotacaoId}`);
+                    if (prazoInput) prazoInput.value = dados.prazo_entrega;
+                }
+                if (dados.observacoes) {
+                    const obsInput = document.getElementById(`observacao_${cotacaoId}`);
+                    if (obsInput) obsInput.value = dados.observacoes;
+                }
+                recalcularTotaisCotacao(cotacaoId);
+                verificarCamposVazios();
+            }, 200);
+        }
+
+        function adicionarMateriaisComValores(cotacaoId, materiaisSalvos) {
+            const materiaisPorSolicitacao = {};
+            materiaisSalvos.forEach(material => {
+                materiaisPorSolicitacao[material.solicitacao_id] = material;
+            });
+            
+            const tbody = document.querySelector(`#materiais-container-${cotacaoId} .materiais-body`);
+            if (!tbody) return;
+            
+            while (tbody.firstChild) tbody.removeChild(tbody.firstChild);
+            
+            const fragment = document.createDocumentFragment();
+            
+            materiaisSolicitacao.forEach((material, index) => {
+                const materialSalvo = materiaisPorSolicitacao[material.id];
+                const valorUnitario = materialSalvo ? materialSalvo.valor_unitario : 0;
+                const marcaSalva = materialSalvo ? (materialSalvo.marca || '') : '';
+                const linha = criarLinhaMaterial(cotacaoId, material, index, valorUnitario, marcaSalva);
+                fragment.appendChild(linha);
+            });
+            
+            tbody.appendChild(fragment);
+            
+            const unitarios = tbody.querySelectorAll('.material-unitario');
+            for (let input of unitarios) {
+                input.addEventListener('input', function() {
+                    handleMonetaryInput(this);
+                    calcularTotalLinha(this);
+                });
+                if (input.value && input.value !== '') calcularTotalLinha(input);
+            }
+            
+            verificarCamposVazios();
+        }
+
         // ============================================
         // INICIALIZAÇÃO
         // ============================================
-
         $(document).ready(function() {
             const cotacoesSalvasData = [
                 {% for cotacao in cotacoes_salvas %}
@@ -1213,82 +1412,6 @@
             contadorCotacoes = totalCotacoes;
             setTimeout(verificarCamposVazios, 500);
         });
-
-        function preencherCotacaoSalva(cotacaoId, dados) {
-            if (!dados.fornecedor_id) return;
-            const nomeFornecedor = dados.fornecedor_nome_fantasia || 'Fornecedor não encontrado';
-            const cnpjFormatado = dados.fornecedor_cnpj ? formatCNPJ(dados.fornecedor_cnpj) : '';
-            const optionText = nomeFornecedor + (cnpjFormatado ? ' - CNPJ: ' + cnpjFormatado : '');
-            const option = new Option(optionText, dados.fornecedor_id, true, true);
-            $('#fornecedor_' + cotacaoId).append(option).trigger('change');
-            $('#fornecedor_id_' + cotacaoId).val(dados.fornecedor_id);
-            $('#fornecedor-nome-display-' + cotacaoId).text(nomeFornecedor);
-            $('#fornecedor-cnpj-display-' + cotacaoId).text(cnpjFormatado);
-            $('#fornecedor-telefone-display-' + cotacaoId).text(dados.fornecedor_telefone || 'Não informado');
-            $('#fornecedor-endereco-display-' + cotacaoId).text(dados.fornecedor_endereco || 'Não informado');
-            $('#materiais-container-' + cotacaoId).show();
-            $('#botoes-materiais-' + cotacaoId).show();
-            
-            setTimeout(() => {
-                if (dados.materiais && dados.materiais.length > 0) {
-                    adicionarMateriaisComValores(cotacaoId, dados.materiais);
-                } else {
-                    adicionarTodosMateriais(cotacaoId);
-                }
-                if (dados.valor_frete && dados.valor_frete > 0) $('#valor_frete_' + cotacaoId).val(formatarNumero(dados.valor_frete, 2));
-                
-                // 🔴 TENTAR OBTER DESCONTO DE VÁRIAS FONTES
-                let valorDesconto = 0;
-                if (dados.desconto && dados.desconto > 0) {
-                    valorDesconto = dados.desconto;
-                } else if (dados.condicao_pagamento) {
-                    valorDesconto = extrairDescontoDaCondicao(dados.condicao_pagamento);
-                }
-                
-                if (valorDesconto > 0) {
-                    $('#desconto_' + cotacaoId).val(formatarNumero(valorDesconto, 2));
-                }
-                
-                if (dados.prazo_entrega) $('#prazo_entrega_' + cotacaoId).val(dados.prazo_entrega);
-                if (dados.observacoes) $('#observacao_' + cotacaoId).val(dados.observacoes);
-                calcularTotalCotacaoComDesconto(cotacaoId);
-                verificarCamposVazios();
-            }, 200);
-        }
-
-        function adicionarMateriaisComValores(cotacaoId, materiaisSalvos) {
-            const materiaisPorSolicitacao = {};
-            materiaisSalvos.forEach(material => { materiaisPorSolicitacao[material.solicitacao_id] = material; });
-            $('#materiais-body-' + cotacaoId).empty();
-            materiaisSolicitacao.forEach(function(material, index) {
-                const materialId = index + 1;
-                const materialSalvo = materiaisPorSolicitacao[material.id];
-                const valorUnitarioSalvo = materialSalvo ? materialSalvo.valor_unitario : 0;
-                const marcaSalva = materialSalvo ? (materialSalvo.marca || '') : '';
-                const valorUnitarioParaInput = valorUnitarioSalvo > 0 ? formatarNumero(valorUnitarioSalvo, 6) : '';
-                const valorTotal = valorUnitarioSalvo > 0 ? valorUnitarioSalvo * material.quantidade : 0;
-                const rowHTML = `
-                    <tr id="material-${cotacaoId}-${materialId}">
-                        <td class="descricao"><textarea class="material-descricao" readonly style="white-space: normal; word-break: break-word; overflow-wrap: break-word; height: auto; min-height: 38px; padding: 6px 8px; resize: none; border: 1px solid #e0e0e0; border-radius: 4px; font-size: 10px; line-height: 1.4; width: 100%; box-sizing: border-box;">${material.descricao || ''}</textarea><input type="hidden" name="solicitacao_id[]" value="${material.id}"></td>
-                        <td class="quantidade"><input type="text" class="material-quantidade" name="quantidade[]" value="${material.quantidade}" readonly style="background: #f5f5f5; cursor: not-allowed;"></td>
-                        <td class="unidade"><input type="text" class="material-unidade" name="material_unidade_${cotacaoId}[]" value="${material.unidade}" readonly style="background: #f5f5f5; cursor: not-allowed;"></td>
-                        <td class="unitario"><div class="valor-input" style="position: relative;"><input type="text" class="material-unitario" name="valor_unitario[]" placeholder="0,000000" value="${valorUnitarioParaInput}" data-cotacao-id="${cotacaoId}" data-material-id="${materialId}"><span class="valor-simbolo">R$</span></div></td>
-                        <td class="marca"><input type="text" class="material-marca" name="marca[]" placeholder="Marca" value="${marcaSalva}" style="width: 100%; padding: 6px 8px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 10px;"></td>
-                        <td class="total"><input type="text" class="material-total-display" id="material-total-${cotacaoId}-${materialId}" value="${valorUnitarioSalvo > 0 ? 'R$ ' + formatarNumero(valorTotal, 2) : 'R$ 0,00'}" readonly style="background: #f0f8ff; cursor: not-allowed;"></td>
-                        <td class="acoes">#${material.id}</td>
-                    </tr>
-                `;
-                $('#materiais-body-' + cotacaoId).append(rowHTML);
-                const unitarioInput = $(`#material-${cotacaoId}-${materialId} .material-unitario`);
-                unitarioInput.off('input').on('input', function() {
-                    aplicarMascaraMonetaria($(this));
-                    calcularTotalLinha(this, cotacaoId);
-                    verificarCamposVazios();
-                });
-                if (valorUnitarioSalvo > 0) setTimeout(() => calcularTotalLinha(unitarioInput[0], cotacaoId), 50);
-            });
-            verificarCamposVazios();
-        }
     </script>
 </body>
 

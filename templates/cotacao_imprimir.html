@@ -6,6 +6,7 @@
     <title>Comparativo de Cotações | Sistema de Compras</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
+        /* ===== ESTILOS (mantidos os originais) ===== */
         * {
             margin: 0;
             padding: 0;
@@ -691,10 +692,17 @@
             font-size: 12px;
         }
 
-        .btn-impressao {
+        /* ===== BOTÕES ===== */
+        .botoes-container {
             position: fixed;
             top: 5px;
             right: 5px;
+            display: flex;
+            gap: 10px;
+            z-index: 1000;
+        }
+
+        .btn-impressao {
             background: #0B2E59;
             color: white;
             border: none;
@@ -703,8 +711,115 @@
             font-weight: 600;
             font-size: 13px;
             cursor: pointer;
-            z-index: 1000;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+            transition: all 0.3s ease;
+        }
+
+        .btn-impressao:hover {
+            opacity: 0.9;
+        }
+
+        .btn-limpar {
+            background: #dc2626;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+            transition: all 0.3s ease;
+        }
+
+        .btn-limpar:hover {
+            background: #b91c1c;
+            opacity: 0.95;
+        }
+
+        /* Botão Salvar */
+        .btn-salvar-auto {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #0B2E59;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transition: all 0.3s ease;
+        }
+
+        .btn-salvar-auto:hover {
+            opacity: 0.9;
+        }
+
+        /* Modal de confirmação */
+        .confirm-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            visibility: hidden;
+            opacity: 0;
+        }
+
+        .confirm-modal.show {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .confirm-modal .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 350px;
+            text-align: center;
+        }
+
+        .confirm-modal .modal-content h3 {
+            color: #dc2626;
+            margin-bottom: 15px;
+            background: none;
+            border: none;
+            padding: 0;
+        }
+
+        .confirm-modal .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 15px;
+        }
+
+        .confirm-modal .modal-buttons button {
+            padding: 8px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .btn-confirmar {
+            background: #dc2626;
+            color: white;
+        }
+
+        .btn-cancelar {
+            background: #64748b;
+            color: white;
         }
 
         .required {
@@ -749,7 +864,7 @@
             opacity: 1;
         }
 
-        .modal-content {
+        .validation-modal .modal-content {
             background: white;
             padding: 15px;
             border-radius: 4px;
@@ -757,7 +872,7 @@
             text-align: center;
         }
 
-        .modal-content h3 {
+        .validation-modal .modal-content h3 {
             color: #dc2626;
             margin: 0 0 8px 0;
             padding: 0;
@@ -765,12 +880,7 @@
             border: none;
         }
 
-        .modal-content p {
-            margin-bottom: 12px;
-            font-size: 13px;
-        }
-
-        .modal-content button {
+        .validation-modal .modal-content button {
             background: #0B2E59;
             color: white;
             border: none;
@@ -780,6 +890,7 @@
             cursor: pointer;
         }
 
+        /* ===== IMPRESSÃO ===== */
         @media print {
             @page {
                 size: A4 landscape;
@@ -793,9 +904,11 @@
                 font-size: 11pt;
             }
 
-            .btn-impressao,
-            .validation-modal {
-                display: none;
+            .botoes-container,
+            .btn-salvar-auto,
+            .validation-modal,
+            .confirm-modal {
+                display: none !important;
             }
 
             .container {
@@ -1124,13 +1237,28 @@
 
 <body>
     <div class="container">
-        <button class="btn-impressao" onclick="validarEImprimir()">🖨️ Imprimir</button>
+        <div class="botoes-container">
+            <button class="btn-impressao" onclick="validarEImprimir()">🖨️ Imprimir</button>
+            <button class="btn-limpar" onclick="mostrarConfirmModal()">🗑️ Limpar</button>
+        </div>
 
         <div class="validation-modal" id="validationModal">
             <div class="modal-content">
                 <h3>⚠️ Campo Obrigatório</h3>
                 <p>O campo <strong>FORMA DE PAGAMENTO</strong> deve ser preenchido antes de imprimir.</p>
                 <button onclick="fecharModal()">OK</button>
+            </div>
+        </div>
+
+        <div class="confirm-modal" id="confirmModal">
+            <div class="modal-content">
+                <h3>⚠️ Confirmar Limpeza</h3>
+                <p>Tem certeza que deseja limpar todos os dados?<br>
+                <strong>Esta ação salvará os dados limpos e não poderá ser desfeita!</strong></p>
+                <div class="modal-buttons">
+                    <button class="btn-confirmar" onclick="confirmarLimpeza()">Sim, Limpar e Salvar</button>
+                    <button class="btn-cancelar" onclick="fecharConfirmModal()">Cancelar</button>
+                </div>
             </div>
         </div>
 
@@ -1211,7 +1339,7 @@
                                     {% endif %}
                                 {% endif %}
                             {% endfor %}
-                        </tr>
+                        <tr>
                         {% endfor %}
                     {% else %}
                         <tr class="material-row">
@@ -1294,34 +1422,28 @@
                                     {% endfor %}
                                     {% set valor_frete = cotacao.valor_frete|float if cotacao.valor_frete else 0.0 %}
                                     
-                                    <!-- VALORES BASE (serão atualizados pelo JavaScript) -->
                                     {% set observacao = cotacao.observacoes if cotacao.observacoes else '' %}
                                     
-                                    <!-- SUBTOTAL -->
                                     <div class="total-line-inferior">
                                         <span class="total-label-inferior">Subtotal:</span>
                                         <span class="total-value-inferior" data-subtotal="{{ ns.total_produtos }}">R$ {{ "%.2f"|format(ns.total_produtos)|replace('.', ',') }}</span>
                                     </div>
 
-                                    <!-- FRETE -->
                                     <div class="total-line-inferior">
                                         <span class="total-label-inferior">Frete:</span>
                                         <span class="total-value-inferior" data-frete="{{ valor_frete }}">R$ {{ "%.2f"|format(valor_frete)|replace('.', ',') }}</span>
                                     </div>
 
-                                    <!-- DESCONTO (será preenchido pelo JavaScript) -->
                                     <div class="total-line-inferior">
                                         <span class="total-label-inferior">Desconto:</span>
                                         <span class="total-value-inferior" data-desconto="0">R$ 0,00</span>
                                     </div>
 
-                                    <!-- TOTAL (será atualizado pelo JavaScript) -->
                                     <div class="total-geral-inferior">
                                         <span>TOTAL:</span>
                                         <span class="total-valor-final" data-total="{{ ns.total_produtos + valor_frete }}">R$ {{ "%.2f"|format(ns.total_produtos + valor_frete)|replace('.', ',') }}</span>
                                     </div>
 
-                                    <!-- OBSERVAÇÃO DA COTAÇÃO -->
                                     {% if observacao %}
                                     <div class="observacao-cotacao">
                                         <strong>📝 OBSERVAÇÃO:</strong>
@@ -1329,7 +1451,6 @@
                                     </div>
                                     {% endif %}
 
-                                    <!-- CONDIÇÃO DE PAGAMENTO (será processada pelo JavaScript para extrair o desconto) -->
                                     {% if cotacao.condicao_pagamento and cotacao.condicao_pagamento != '' %}
                                         <div class="observacao-cotacao condicao-pagamento-box" style="margin-top: 4px; background: #f0f9ff;">
                                             <strong>💰 CONDIÇÃO DE PAGAMENTO:</strong>
@@ -1391,38 +1512,29 @@
 
 <script>
 // ====================================================
-// FUNÇÃO PRINCIPAL PARA PROCESSAR DESCONTOS
+// FUNÇÃO PARA PROCESSAR DESCONTOS
 // ====================================================
 function processarDescontos() {
-    // Para cada card de total
     document.querySelectorAll('.total-card-inferior').forEach(card => {
-        // Procura a condição de pagamento
         const condicaoBox = card.querySelector('.condicao-pagamento-box');
         if (condicaoBox) {
             const textoCondicao = condicaoBox.querySelector('.condicao-pagamento-texto')?.innerText || '';
-            
-            // Extrai o valor do desconto usando regex (suporta vários formatos)
-            // Formatos suportados: "DESCONTO: R$ 10,00", "DESCONTO: 10,00", "DESCONTO 10", "DESCONTO R$10,00"
             const descontoMatch = textoCondicao.match(/DESCONTO\s*:?\s*R?\$?\s*(\d+[.,]\d+)/i);
             
             if (descontoMatch) {
-                // Converte o valor do desconto (vírgula para ponto)
                 let descontoValor = descontoMatch[1].replace(',', '.');
                 descontoValor = parseFloat(descontoValor);
                 
                 if (!isNaN(descontoValor) && descontoValor > 0) {
-                    // Encontra os elementos no card
                     const subtotalSpan = card.querySelector('[data-subtotal]');
                     const freteSpan = card.querySelector('[data-frete]');
                     const descontoSpan = card.querySelector('[data-desconto]');
                     const totalSpan = card.querySelector('.total-valor-final');
                     
                     if (subtotalSpan && freteSpan && descontoSpan && totalSpan) {
-                        // Extrai os valores dos atributos data
                         let subtotal = parseFloat(subtotalSpan.getAttribute('data-subtotal') || 0);
                         let frete = parseFloat(freteSpan.getAttribute('data-frete') || 0);
                         
-                        // Se não conseguiu pelos atributos, tenta pelo texto
                         if (isNaN(subtotal) || subtotal === 0) {
                             subtotal = parseFloat(subtotalSpan.innerText.replace('R$', '').replace(',', '.').trim());
                         }
@@ -1431,24 +1543,17 @@ function processarDescontos() {
                         }
                         
                         if (!isNaN(subtotal) && !isNaN(frete)) {
-                            // Calcula novo total
                             let novoTotal = subtotal + frete - descontoValor;
-                            
-                            // Atualiza o desconto no display
                             descontoSpan.innerHTML = `- R$ ${descontoValor.toFixed(2).replace('.', ',')}`;
                             descontoSpan.classList.add('desconto-inferior');
                             descontoSpan.setAttribute('data-desconto', descontoValor);
-                            
-                            // Atualiza o total
                             totalSpan.innerHTML = `R$ ${novoTotal.toFixed(2).replace('.', ',')}`;
                             totalSpan.setAttribute('data-total', novoTotal);
                             
-                            // Remove o texto do desconto da condição de pagamento
                             const novoTexto = textoCondicao.replace(/DESCONTO\s*:?\s*R?\$?\s*\d+[.,]\d+/i, '').replace(/\s+/g, ' ').trim();
                             if (novoTexto) {
                                 condicaoBox.querySelector('.condicao-pagamento-texto').innerText = novoTexto;
                             } else {
-                                // Se ficou vazio, remove o box inteiro
                                 condicaoBox.remove();
                             }
                         }
@@ -1505,35 +1610,11 @@ function capturarDadosCompletos() {
         
         observacao: document.querySelector('.observacao-comprador .campo-observacao')?.value || '',
         
+        // ⚠️ IMPORTANTE: NÃO SALVA NOMES E TELEFONES DOS FORNECEDORES
+        // Apenas mantém a estrutura vazia para compatibilidade
         fornecedores: [],
         ultima_atualizacao: new Date().toLocaleString('pt-BR')
     };
-    
-    const fornecedoresNomes = document.querySelectorAll('.fornecedor-nome, .fornecedor-nome-card');
-    fornecedoresNomes.forEach((nome) => {
-        let telefone = '';
-        let idx = '';
-        
-        if (nome.classList.contains('fornecedor-nome')) {
-            idx = nome.getAttribute('data-fornecedor-idx');
-            const telefoneElem = document.querySelector(`.telefone-info[data-fornecedor-telefone-idx="${idx}"]`);
-            if (telefoneElem) {
-                telefone = telefoneElem.getAttribute('data-original-telefone') || telefoneElem.textContent.replace('📞', '').trim();
-            }
-        } else {
-            idx = nome.getAttribute('data-card-nome-idx');
-            const telefoneElem = document.querySelector(`.telefone-card[data-card-telefone-idx="${idx}"]`);
-            if (telefoneElem) {
-                telefone = telefoneElem.getAttribute('data-original-telefone') || telefoneElem.textContent.replace('📞', '').trim();
-            }
-        }
-        
-        dados.fornecedores.push({
-            idx: idx,
-            nome: nome.getAttribute('data-original-nome') || nome.textContent,
-            telefone: telefone
-        });
-    });
     
     return dados;
 }
@@ -1541,7 +1622,7 @@ function capturarDadosCompletos() {
 function restaurarDadosCompletos(dados) {
     if (!dados) return;
     
-    console.log('Restaurando dados:', dados);
+    console.log('Restaurando dados (exceto fornecedores):', dados);
     
     if (document.getElementById('empresa_top')) 
         document.getElementById('empresa_top').value = dados.empresa_top || '';
@@ -1578,38 +1659,91 @@ function restaurarDadosCompletos(dados) {
     const obsCampo = document.querySelector('.observacao-comprador .campo-observacao');
     if (obsCampo) obsCampo.value = dados.observacao || '';
     
-    if (dados.fornecedores && dados.fornecedores.length > 0) {
-        dados.fornecedores.forEach(forn => {
-            if (forn.idx) {
-                const nomeTabela = document.querySelector(`.fornecedor-nome[data-fornecedor-idx="${forn.idx}"]`);
-                if (nomeTabela) {
-                    nomeTabela.textContent = forn.nome;
-                    nomeTabela.setAttribute('data-original-nome', forn.nome);
-                }
-                
-                const telefoneTabela = document.querySelector(`.telefone-info[data-fornecedor-telefone-idx="${forn.idx}"]`);
-                if (telefoneTabela && forn.telefone) {
-                    telefoneTabela.textContent = `📞 ${forn.telefone}`;
-                    telefoneTabela.setAttribute('data-original-telefone', forn.telefone);
-                }
-                
-                const nomeCard = document.querySelector(`.fornecedor-nome-card[data-card-nome-idx="${forn.idx}"]`);
-                if (nomeCard) {
-                    nomeCard.textContent = forn.nome;
-                    nomeCard.setAttribute('data-original-nome', forn.nome);
-                }
-                
-                const telefoneCard = document.querySelector(`.telefone-card[data-card-telefone-idx="${forn.idx}"]`);
-                if (telefoneCard && forn.telefone) {
-                    telefoneCard.textContent = `📞 ${forn.telefone}`;
-                    telefoneCard.setAttribute('data-original-telefone', forn.telefone);
-                }
-            }
-        });
+    // ⚠️ NÃO RESTAURA NOMES E TELEFONES DOS FORNECEDORES
+    // Eles são mantidos com os valores ORIGINAIS do backend
+    
+    setTimeout(processarDescontos, 100);
+}
+
+// ====================================================
+// FUNÇÃO DE LIMPEZA COMPLETA (SALVA OS DADOS LIMPOS)
+// ====================================================
+function limparDados() {
+    // Limpa todos os campos do formulário
+    if (document.getElementById('empresa_top')) 
+        document.getElementById('empresa_top').value = 'MATRIZ';
+    if (document.getElementById('comprador_top')) 
+        document.getElementById('comprador_top').value = '';
+    if (document.getElementById('formaPagamento')) 
+        document.getElementById('formaPagamento').value = '';
+    if (document.getElementById('statusEntrega')) 
+        document.getElementById('statusEntrega').value = '';
+    if (document.getElementById('previsaoEntrega')) 
+        document.getElementById('previsaoEntrega').value = '';
+    
+    // Limpa último preço
+    const ultimoPrecoInputs = document.querySelectorAll('.ultimo-preco .campo-data');
+    ultimoPrecoInputs.forEach(input => {
+        if (input) input.value = '';
+    });
+    
+    // Limpa informações gerais
+    const infoInputs = document.querySelectorAll('.info-grid .info-item input');
+    infoInputs.forEach(input => {
+        if (input) input.value = '';
+    });
+    
+    // Limpa observação do comprador
+    const obsCampo = document.querySelector('.observacao-comprador .campo-observacao');
+    if (obsCampo) obsCampo.value = '';
+    
+    // ⚠️ RESTAURA NOMES E TELEFONES DOS FORNECEDORES AOS VALORES ORIGINAIS (DO BACKEND)
+    const fornecedoresNomes = document.querySelectorAll('.fornecedor-nome');
+    fornecedoresNomes.forEach((nome) => {
+        const originalNome = nome.getAttribute('data-original-nome');
+        if (originalNome) {
+            nome.textContent = originalNome;
+        }
+    });
+    
+    const telefonesInfo = document.querySelectorAll('.telefone-info');
+    telefonesInfo.forEach((telefone) => {
+        const originalTelefone = telefone.getAttribute('data-original-telefone');
+        if (originalTelefone) {
+            telefone.textContent = `📞 ${originalTelefone}`;
+        }
+    });
+    
+    const cardNomes = document.querySelectorAll('.fornecedor-nome-card');
+    cardNomes.forEach((nome) => {
+        const originalNome = nome.getAttribute('data-original-nome');
+        if (originalNome) {
+            nome.textContent = originalNome;
+        }
+    });
+    
+    const telefonesCard = document.querySelectorAll('.telefone-card');
+    telefonesCard.forEach((telefone) => {
+        const originalTelefone = telefone.getAttribute('data-original-telefone');
+        if (originalTelefone) {
+            telefone.textContent = `📞 ${originalTelefone}`;
+        }
+    });
+    
+    // Remove classes de erro
+    const errorMessage = document.getElementById('errorMessage');
+    if (errorMessage) errorMessage.classList.remove('show');
+    
+    const pagamentoField = document.getElementById('formaPagamento');
+    if (pagamentoField) {
+        pagamentoField.classList.remove('required');
+        pagamentoField.style.borderColor = '#cbd5e1';
     }
     
-    // Após restaurar, processa os descontos novamente
-    setTimeout(processarDescontos, 100);
+    // SALVA OS DADOS LIMPOS NO SERVIDOR
+    setTimeout(() => {
+        salvarNoServidor();
+    }, 100);
 }
 
 async function salvarNoServidor() {
@@ -1638,7 +1772,7 @@ async function salvarNoServidor() {
         
         if (btnSalvar) {
             if (result.success) {
-                btnSalvar.textContent = '...';
+                btnSalvar.textContent = '✓';
                 setTimeout(() => {
                     btnSalvar.textContent = '💾';
                     btnSalvar.disabled = false;
@@ -1656,7 +1790,7 @@ async function salvarNoServidor() {
         console.error('Erro ao salvar:', error);
         localStorage.setItem(`template_${templateId}`, JSON.stringify(dados));
         if (btnSalvar) {
-            btnSalvar.textContent = '...';
+            btnSalvar.textContent = '⚠️';
             setTimeout(() => {
                 btnSalvar.textContent = '💾';
                 btnSalvar.disabled = false;
@@ -1697,33 +1831,15 @@ async function carregarAutomatico() {
 }
 
 function criarBotaoSalvar() {
-    if (document.querySelector('.btn-salvar-auto')) return;
-    
-    const btnSalvar = document.createElement('button');
-    btnSalvar.textContent = '💾';
-    btnSalvar.className = 'btn-salvar-auto';
-    btnSalvar.style.cssText = `
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        background: #0B2E59;
-        color: white;
-        border: none;
-        padding: 12px 24px;
-        border-radius: 8px;
-        cursor: pointer;
-        font-size: 14px;
-        font-weight: 600;
-        z-index: 1000;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        transition: all 0.3s ease;
-    `;
-    
-    btnSalvar.onmouseover = () => btnSalvar.style.opacity = '0.9';
-    btnSalvar.onmouseout = () => btnSalvar.style.opacity = '1';
-    btnSalvar.onclick = salvarNoServidor;
-    
-    document.body.appendChild(btnSalvar);
+    if (!document.querySelector('.btn-salvar-auto')) {
+        const btnSalvar = document.createElement('button');
+        btnSalvar.textContent = '💾';
+        btnSalvar.className = 'btn-salvar-auto';
+        btnSalvar.onmouseover = () => btnSalvar.style.opacity = '0.9';
+        btnSalvar.onmouseout = () => btnSalvar.style.opacity = '1';
+        btnSalvar.onclick = salvarNoServidor;
+        document.body.appendChild(btnSalvar);
+    }
 }
 
 function configurarAutoSaveCampos() {
@@ -1757,6 +1873,9 @@ function configurarAutoSaveCampos() {
     });
 }
 
+// ====================================================
+// FUNÇÕES DE EDIÇÃO (duplo clique) - APENAS VISUAL
+// ====================================================
 function tornarFornecedorEditavel(elemento, idx, isCard = false) {
     const nomeOriginal = elemento.getAttribute('data-original-nome') || elemento.innerText;
     const input = document.createElement('input');
@@ -1794,7 +1913,8 @@ function tornarFornecedorEditavel(elemento, idx, isCard = false) {
             parent.replaceChild(novoSpan, input);
         }
         
-        setTimeout(() => salvarNoServidor(), 100);
+        // ⚠️ NÃO SALVA NO SERVIDOR - APENAS VISUAL
+        // setTimeout(() => salvarNoServidor(), 100); // REMOVIDO
     }
     
     input.addEventListener('blur', salvarEdicao);
@@ -1843,7 +1963,8 @@ function tornarTelefoneEditavel(elemento, idx, isCard = false) {
             parent.replaceChild(novoSpan, input);
         }
         
-        setTimeout(() => salvarNoServidor(), 100);
+        // ⚠️ NÃO SALVA NO SERVIDOR - APENAS VISUAL
+        // setTimeout(() => salvarNoServidor(), 100); // REMOVIDO
     }
     
     input.addEventListener('blur', salvarEdicao);
@@ -1879,11 +2000,27 @@ function fecharModal() {
     if (modal) modal.classList.remove('show');
 }
 
+function mostrarConfirmModal() {
+    const modal = document.getElementById('confirmModal');
+    if (modal) modal.classList.add('show');
+}
+
+function fecharConfirmModal() {
+    const modal = document.getElementById('confirmModal');
+    if (modal) modal.classList.remove('show');
+}
+
+function confirmarLimpeza() {
+    limparDados();
+    fecharConfirmModal();
+    alert('✅ Todos os dados foram limpos e salvos!');
+}
+
 // ====================================================
 // INICIALIZAÇÃO
 // ====================================================
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 Inicializando...');
+    console.log('🚀 Inicializando template de impressão com salvamento...');
     
     criarBotaoSalvar();
     
@@ -1908,10 +2045,8 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('🔄 Backup automático...');
         salvarNoServidor();
     }, 60000);
-});
-
-// Event listeners para edição de fornecedores
-document.addEventListener('DOMContentLoaded', function() {
+    
+    // Event listeners para edição de fornecedores (APENAS VISUAL)
     const fornecedoresNomes = document.querySelectorAll('.fornecedor-nome');
     fornecedoresNomes.forEach(function(elemento) {
         const idx = elemento.getAttribute('data-fornecedor-idx');

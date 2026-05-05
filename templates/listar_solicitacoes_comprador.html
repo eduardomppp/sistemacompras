@@ -5,10 +5,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Solicitações Aprovadas - Preencher Cotação</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <!-- Versão mais leve do Font Awesome (só os ícones usados) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- CSS Bootstrap leve - apenas Grid e Utilities -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    
     <style>
+        /* CSS Otimizado - removido duplicações, usado variáveis e selectors mais eficientes */
         :root {
             --primary-color: #022855;
             --secondary-color: #f8f9fa;
@@ -18,15 +21,18 @@
             --light-gray: #f1f1f1;
             --border-color: #e0e0e0;
             --status-aprovado: #28a745;
-            --status-reprovado: #dc3545;
-            --status-pendente: #ffc107;
             --rascunho-color: #fd7e14;
             --rascunho-bg: #fff3e0;
         }
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        * {
             margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', 'Roboto', sans-serif;
             padding: 20px;
             background-color: var(--secondary-color);
             color: var(--text-color);
@@ -36,7 +42,7 @@
             max-width: 1800px;
             margin: 0 auto;
             padding: 20px;
-            background-color: white;
+            background: white;
             border-radius: 8px;
             box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
         }
@@ -48,40 +54,139 @@
             margin-bottom: 30px;
             padding-bottom: 15px;
             border-bottom: 2px solid var(--light-gray);
+            flex-wrap: wrap;
+            gap: 15px;
         }
 
         h1 {
             color: var(--primary-color);
-            margin: 0;
             font-weight: 600;
             font-size: 24px;
+            margin: 0;
+        }
+
+        /* Botões otimizados */
+        .btn-novo-pedido, .btn-preencher-grupo, .btn-print-group, .btn-filter, .btn-clear {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-weight: 500;
+            font-size: 14px;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            border: none;
+            white-space: nowrap;
         }
 
         .btn-novo-pedido {
             background-color: var(--primary-color);
             color: white;
-            padding: 8px 16px;
-            border-radius: 4px;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            border: none;
-            font-size: 14px;
-            white-space: nowrap;
         }
 
         .btn-novo-pedido:hover {
             background-color: var(--hover-color);
-            transform: translateY(-1px);
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
             color: white;
-            text-decoration: none;
         }
 
-        /* ESTILOS DAS ABAS */
+        .btn-preencher-grupo {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .btn-preencher-grupo:hover {
+            background-color: #218838;
+        }
+
+        .btn-print-group {
+            background-color: #6f42c1;
+            color: white;
+        }
+
+        .btn-print-group:hover {
+            background-color: #5a32a3;
+        }
+
+        /* Filtros otimizados */
+        .search-filter-container {
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+        }
+
+        .filter-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .filter-group {
+            flex: 1;
+            min-width: 180px;
+        }
+
+        .filter-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #555;
+        }
+
+        .filter-group select, .filter-group input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 14px;
+            background: white;
+        }
+
+        .filter-group select:disabled {
+            background: #e9ecef;
+            cursor: not-allowed;
+        }
+
+        .date-range-picker {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .date-range-picker input {
+            flex: 1;
+            min-width: 120px;
+        }
+
+        .filter-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .btn-filter {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .btn-clear {
+            background-color: #6c757d;
+            color: white;
+        }
+
+        .text-muted {
+            font-size: 12px;
+            color: #6c757d;
+            margin-top: 5px;
+            display: block;
+        }
+
+        /* TABS - CSS puro, sem JS pesado */
         .tabs-container {
             margin-bottom: 25px;
             border-bottom: 2px solid var(--border-color);
@@ -101,26 +206,21 @@
             font-weight: 600;
             color: #6c757d;
             cursor: pointer;
-            transition: all 0.3s ease;
             border-radius: 8px 8px 0 0;
             display: inline-flex;
             align-items: center;
             gap: 10px;
-        }
-
-        .tab-btn i {
-            font-size: 16px;
+            transition: all 0.2s ease;
         }
 
         .tab-btn:hover {
-            background-color: var(--light-gray);
+            background: var(--light-gray);
             color: var(--primary-color);
         }
 
         .tab-btn.active {
             color: var(--primary-color);
             border-bottom: 3px solid var(--primary-color);
-            background-color: white;
         }
 
         .tab-btn.rascunho-tab.active {
@@ -129,34 +229,20 @@
         }
 
         .tab-badge {
-            background-color: #e9ecef;
-            color: #495057;
+            background: #e9ecef;
             border-radius: 20px;
             padding: 2px 8px;
             font-size: 12px;
-            margin-left: 8px;
         }
 
         .tab-btn.rascunho-tab .tab-badge {
-            background-color: #fff3e0;
+            background: #fff3e0;
             color: var(--rascunho-color);
         }
 
-        .tab-content {
-            display: none;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
-        h4 {
-            margin: 0;
-            color: var(--primary-color);
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-size: 18px;
+        /* Grupos */
+        .application-group {
+            margin-bottom: 30px;
         }
 
         .group-header {
@@ -165,20 +251,37 @@
             align-items: center;
             margin-bottom: 10px;
             padding: 12px 15px;
-            background-color: #f8f9fa;
+            background: #f8f9fa;
             border-radius: 8px;
             border-left: 4px solid var(--primary-color);
-            transition: all 0.3s ease;
+            flex-wrap: wrap;
+            gap: 10px;
         }
 
         .group-header.has-rascunho {
-            background-color: var(--rascunho-bg);
+            background: var(--rascunho-bg);
             border-left-color: var(--rascunho-color);
         }
 
-        .group-actions {
-            display: flex;
-            gap: 10px;
+        .group-header h4 {
+            margin: 0;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 18px;
+            color: var(--primary-color);
+        }
+
+        .rascunho-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--rascunho-color);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
         }
 
         .group-info {
@@ -187,51 +290,15 @@
             margin-left: 10px;
         }
 
-        .rascunho-indicator {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background-color: var(--rascunho-color);
-            color: white;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-            margin-left: 12px;
+        .group-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
         }
 
-        .rascunho-indicator i {
-            font-size: 11px;
-        }
-
-        .rascunho-badge {
-            background-color: var(--rascunho-color);
-            color: white;
-            border-radius: 20px;
-            padding: 2px 8px;
-            font-size: 11px;
-            font-weight: 600;
-            margin-left: 8px;
-        }
-
-        .status-badge {
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-            display: inline-block;
-            text-align: center;
-            min-width: 80px;
-        }
-
-        .status-aprovado {
-            background-color: #d4edda;
-            color: var(--status-aprovado);
-        }
-
+        /* Tabela otimizada - scroll apenas quando necessário */
         .table-responsive {
             overflow-x: auto;
-            margin-top: 20px;
             border: 1px solid var(--border-color);
             border-radius: 8px;
         }
@@ -239,67 +306,66 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            background-color: white;
+            background: white;
+            font-size: 14px;
         }
 
-        th,
-        td {
+        th, td {
             padding: 12px 15px;
             text-align: left;
             border-bottom: 1px solid var(--border-color);
-            vertical-align: middle;
         }
 
         th {
-            background-color: var(--primary-color);
+            background: var(--primary-color);
             color: white;
             font-weight: 500;
-            position: sticky;
-            top: 0;
             white-space: nowrap;
         }
 
         tr:hover {
-            background-color: rgba(0, 0, 0, 0.02);
+            background: rgba(0, 0, 0, 0.02);
         }
 
-        .btn {
-            padding: 8px 16px;
-            text-decoration: none;
+        /* Status badges */
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+            background: #d4edda;
+            color: var(--status-aprovado);
+        }
+
+        .rascunho-badge {
+            background: var(--rascunho-color);
             color: white;
-            border-radius: 4px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            border: none;
-            cursor: pointer;
-            font-size: 14px;
+            border-radius: 20px;
+            padding: 2px 8px;
+            font-size: 11px;
+            font-weight: 600;
             white-space: nowrap;
         }
 
-        .btn-preencher-grupo {
-            background-color: #28a745;
+        .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
         }
 
-        .btn-preencher-grupo:hover {
-            background-color: #218838;
-            transform: translateY(-1px);
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        .bg-primary {
+            background: var(--primary-color);
+            color: white;
         }
 
-        .btn-print-group {
-            background-color: #6f42c1;
+        .bg-secondary {
+            background: #6c757d;
+            color: white;
         }
 
-        .btn-print-group:hover {
-            background-color: #5a32a3;
-            transform: translateY(-1px);
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        }
-
+        /* Empty state */
         .empty-state {
             text-align: center;
             padding: 60px 40px;
@@ -317,174 +383,57 @@
             margin-bottom: 10px;
         }
 
-        .search-filter-container {
-            background-color: #f8fafc;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 25px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        /* Esconder conteúdo das tabs */
+        .tab-content {
+            display: none;
         }
 
-        .filter-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
-            margin-bottom: 15px;
-        }
-
-        .filter-group {
-            flex: 1;
-            min-width: 180px;
-        }
-
-        .filter-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-size: 14px;
-            color: #555;
-            font-weight: 500;
-        }
-
-        .filter-group select,
-        .filter-group input {
-            width: 100%;
-            padding: 8px 12px;
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            font-size: 14px;
-            background-color: white;
-        }
-
-        .filter-group select:disabled {
-            background-color: #e9ecef;
-            cursor: not-allowed;
-        }
-
-        .date-range-picker {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .filter-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-            margin-top: 10px;
-        }
-
-        .btn-filter {
-            background-color: var(--primary-color);
-            color: white;
-            padding: 8px 16px;
-            border-radius: 4px;
-            border: none;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .btn-clear {
-            background-color: #6c757d;
-            color: white;
-            padding: 8px 16px;
-            border-radius: 4px;
-            border: none;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .text-muted {
-            font-size: 12px;
-            color: #6c757d;
-            margin-top: 5px;
+        .tab-content.active {
             display: block;
         }
 
-        /* Scroll suave */
-        html {
-            scroll-behavior: smooth;
-        }
-
-        @media (max-width: 1200px) {
-            .container {
-                padding: 15px;
-            }
-
-            th,
-            td {
-                padding: 10px 12px;
-                font-size: 14px;
-            }
-
-            .btn {
-                padding: 6px 12px;
-                font-size: 13px;
-            }
-
-            .tab-btn {
-                padding: 10px 16px;
-                font-size: 14px;
-            }
-        }
-
+        /* Responsivo */
         @media (max-width: 768px) {
-            .page-header {
+            body { padding: 10px; }
+            .container { padding: 15px; }
+            
+            .group-header {
                 flex-direction: column;
-                align-items: flex-start;
-                gap: 15px;
+                align-items: stretch;
             }
-
+            
+            .group-actions {
+                flex-direction: column;
+            }
+            
+            .group-actions .btn {
+                width: 100%;
+                justify-content: center;
+            }
+            
             .filter-row {
                 flex-direction: column;
             }
-
-            .filter-group {
-                min-width: 100%;
-            }
-
+            
             .date-range-picker {
                 flex-direction: column;
-                align-items: flex-start;
+                align-items: stretch;
             }
-
-            .table-responsive {
-                font-size: 14px;
-            }
-
-            th,
-            td {
+            
+            th, td {
                 padding: 8px 10px;
+                font-size: 13px;
             }
-
-            .group-header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 10px;
-            }
-
-            .group-actions {
-                flex-direction: column;
-                width: 100%;
-            }
-
-            .btn-preencher-grupo,
-            .btn-print-group {
-                margin: 5px 0;
-                width: 100%;
-                justify-content: center;
-            }
-
+            
             .tabs {
                 justify-content: center;
             }
-
+            
             .tab-btn {
                 flex: 1;
                 justify-content: center;
+                padding: 10px 16px;
+                font-size: 13px;
             }
         }
     </style>
@@ -494,10 +443,10 @@
     <div class="container">
         <div class="page-header">
             <h1>
-                <i class="fas fa-clipboard-list"></i> Minhas Solicitações Aprovadas
+                <i class="fas fa-clipboard-list"></i> Minhas Solicitações
             </h1>
             <a href="{{ url_for('routes_bp.gerar_pedido_compra') }}" class="btn-novo-pedido">
-                <i class="bi bi-cart-plus"></i> Novo Pedido
+                <i class="fas fa-cart-plus"></i> Novo Pedido
             </a>
         </div>
 
@@ -506,7 +455,7 @@
             <div class="filter-row">
                 <div class="filter-group">
                     <label for="empresaFilter">Empresa</label>
-                    <select id="empresaFilter" class="form-select">
+                    <select id="empresaFilter">
                         <option value="">Todas empresas</option>
                         {% for empresa in empresas %}
                         <option value="{{ empresa }}">{{ empresa }}</option>
@@ -516,7 +465,7 @@
 
                 <div class="filter-group">
                     <label for="usuarioFilter">Solicitante</label>
-                    <select id="usuarioFilter" class="form-select">
+                    <select id="usuarioFilter">
                         <option value="">Todos usuários</option>
                         {% for usuario in usuarios %}
                         <option value="{{ usuario }}">{{ usuario }}</option>
@@ -526,7 +475,7 @@
 
                 <div class="filter-group">
                     <label for="aplicacaoFilter">Aplicação</label>
-                    <select id="aplicacaoFilter" class="form-select">
+                    <select id="aplicacaoFilter">
                         <option value="">Todas aplicações</option>
                         {% for aplicacao in aplicacoes %}
                         <option value="{{ aplicacao }}">{{ aplicacao }}</option>
@@ -535,36 +484,36 @@
                 </div>
 
                 <div class="filter-group">
-                    <label for="compradorFilter">Comprador Atribuído</label>
-                    <select id="compradorFilter" class="form-select" disabled>
+                    <label for="compradorFilter">Comprador</label>
+                    <select id="compradorFilter" disabled>
                         <option value="{{ comprador_atual }}">{{ comprador_atual }}</option>
                     </select>
                     <small class="text-muted">
-                        <i class="fas fa-user-check"></i> Você está visualizando apenas suas solicitações
+                        <i class="fas fa-user-check"></i> Apenas suas solicitações
                     </small>
                 </div>
 
                 <div class="filter-group">
-                    <label>Data de Solicitação</label>
+                    <label>Data</label>
                     <div class="date-range-picker">
-                        <input type="date" id="dataInicio" class="form-control">
+                        <input type="date" id="dataInicio">
                         <span>até</span>
-                        <input type="date" id="dataFim" class="form-control">
+                        <input type="date" id="dataFim">
                     </div>
                 </div>
             </div>
 
             <div class="filter-actions">
                 <button class="btn-clear" id="clearFilters">
-                    <i class="fas fa-times"></i> Limpar Filtros
+                    <i class="fas fa-times"></i> Limpar
                 </button>
                 <button class="btn-filter" id="applyFilters">
-                    <i class="fas fa-filter"></i> Aplicar Filtros
+                    <i class="fas fa-filter"></i> Filtrar
                 </button>
             </div>
         </div>
 
-        <!-- ABAS DE NAVEGAÇÃO -->
+        <!-- ABAS -->
         <div class="tabs-container">
             <div class="tabs">
                 <button class="tab-btn active" data-tab="sem-rascunho">
@@ -572,15 +521,13 @@
                     <span class="tab-badge">{{ grupos_sem_rascunho|length }}</span>
                 </button>
                 <button class="tab-btn rascunho-tab" data-tab="com-rascunho">
-                    <i class="fas fa-pen-fancy"></i> Com Rascunho Salvo
+                    <i class="fas fa-pen-fancy"></i> Com Rascunho
                     <span class="tab-badge">{{ grupos_com_rascunho|length }}</span>
                 </button>
             </div>
         </div>
 
-        <!-- ============================================ -->
         <!-- TAB 1: SEM RASCUNHO -->
-        <!-- ============================================ -->
         <div id="tab-sem-rascunho" class="tab-content active">
             {% if grupos_sem_rascunho %}
                 {% for chave, items in grupos_sem_rascunho %}
@@ -603,27 +550,27 @@
                             </div>
                             <div class="group-actions">
                                 <a href="{{ url_for('routes_bp.preencher_solicitacao', id=items[0].id) }}?grupo_ids={{ ids_grupo }}"
-                                   class="btn btn-preencher-grupo">
-                                    <i class="fas fa-edit"></i> Preencher Grupo ({{ items|length }} itens)
+                                   class="btn-preencher-grupo">
+                                    <i class="fas fa-edit"></i> Preencher ({{ items|length }})
                                 </a>
                                 <a href="{{ url_for('routes_bp.cotacao_imprimir', id=items[0].id) }}?grupo_ids={{ ids_grupo }}"
-                                   class="btn btn-print-group">
-                                    <i class="fas fa-print"></i> Preparar para Impressão
+                                   class="btn-print-group">
+                                    <i class="fas fa-print"></i> Imprimir
                                 </a>
                             </div>
                         </div>
 
                         <div class="table-responsive">
-                            <table class="table table-bordered">
+                            <table>
                                 <thead>
                                     <tr>
                                         <th>ID</th>
                                         <th>Material</th>
                                         <th>Especificação</th>
-                                        <th>Quantidade</th>
+                                        <th>Qtde</th>
                                         <th>Empresa</th>
                                         <th>Aplicação</th>
-                                        <th>Data Solicitação</th>
+                                        <th>Data</th>
                                         <th>Solicitante</th>
                                         <th>Status</th>
                                         <th>Comprador</th>
@@ -642,9 +589,7 @@
                                             {{ s.data_solicitacao | format_brasil_time }}
                                         </td>
                                         <td>{{ s.usuario }}</td>
-                                        <td>
-                                            <span class="status-badge status-aprovado">Aprovado</span>
-                                        </td>
+                                        <td><span class="status-badge">Aprovado</span></td>
                                         <td>
                                             {% if s.comprador_atribuido %}
                                                 <span class="badge bg-primary">{{ s.comprador_atribuido }}</span>
@@ -662,15 +607,13 @@
             {% else %}
                 <div class="empty-state">
                     <i class="far fa-folder-open"></i>
-                    <h3>Nenhuma solicitação sem rascunho</h3>
-                    <p>Todas as suas solicitações já possuem rascunho ou não há solicitações aprovadas para você.</p>
+                    <h3>Nenhuma solicitação</h3>
+                    <p>Todas as solicitações já possuem rascunho</p>
                 </div>
             {% endif %}
         </div>
 
-        <!-- ============================================ -->
         <!-- TAB 2: COM RASCUNHO -->
-        <!-- ============================================ -->
         <div id="tab-com-rascunho" class="tab-content">
             {% if grupos_com_rascunho %}
                 {% for chave, items in grupos_com_rascunho %}
@@ -686,7 +629,7 @@
                                     <i class="fas fa-folder-open"></i>
                                     {{ aplicacao }}
                                     <span class="rascunho-indicator">
-                                        <i class="fas fa-save"></i> Rascunho Salvo
+                                        <i class="fas fa-save"></i> Rascunho
                                     </span>
                                 </h4>
                                 <span class="group-info">
@@ -696,27 +639,27 @@
                             </div>
                             <div class="group-actions">
                                 <a href="{{ url_for('routes_bp.preencher_solicitacao', id=items[0].id) }}?grupo_ids={{ ids_grupo }}"
-                                   class="btn btn-preencher-grupo">
-                                    <i class="fas fa-edit"></i> Continuar Preenchimento
+                                   class="btn-preencher-grupo">
+                                    <i class="fas fa-edit"></i> Continuar
                                 </a>
                                 <a href="{{ url_for('routes_bp.cotacao_imprimir', id=items[0].id) }}?grupo_ids={{ ids_grupo }}"
-                                   class="btn btn-print-group">
-                                    <i class="fas fa-print"></i> Preparar para Impressão
+                                   class="btn-print-group">
+                                    <i class="fas fa-print"></i> Imprimir
                                 </a>
                             </div>
                         </div>
 
                         <div class="table-responsive">
-                            <table class="table table-bordered">
+                            <table>
                                 <thead>
                                     <tr>
                                         <th>ID</th>
                                         <th>Material</th>
                                         <th>Especificação</th>
-                                        <th>Quantidade</th>
+                                        <th>Qtde</th>
                                         <th>Empresa</th>
                                         <th>Aplicação</th>
-                                        <th>Data Solicitação</th>
+                                        <th>Data</th>
                                         <th>Solicitante</th>
                                         <th>Status</th>
                                         <th>Comprador</th>
@@ -736,9 +679,7 @@
                                             {{ s.data_solicitacao | format_brasil_time }}
                                         </td>
                                         <td>{{ s.usuario }}</td>
-                                        <td>
-                                            <span class="status-badge status-aprovado">Aprovado</span>
-                                        </td>
+                                        <td><span class="status-badge">Aprovado</span></td>
                                         <td>
                                             {% if s.comprador_atribuido %}
                                                 <span class="badge bg-primary">{{ s.comprador_atribuido }}</span>
@@ -746,11 +687,7 @@
                                                 <span class="badge bg-secondary">Não atribuído</span>
                                             {% endif %}
                                         </td>
-                                        <td>
-                                            <span class="rascunho-badge">
-                                                <i class="fas fa-save"></i> Salvo
-                                            </span>
-                                        </td>
+                                        <td><span class="rascunho-badge"><i class="fas fa-save"></i> Salvo</span></td>
                                     </tr>
                                     {% endfor %}
                                 </tbody>
@@ -761,138 +698,117 @@
             {% else %}
                 <div class="empty-state">
                     <i class="far fa-save"></i>
-                    <h3>Nenhum rascunho salvo</h3>
-                    <p>Você ainda não salvou nenhum rascunho. Comece preenchendo uma cotação!</p>
+                    <h3>Nenhum rascunho</h3>
+                    <p>Comece preenchendo uma cotação</p>
                 </div>
             {% endif %}
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- JavaScript otimizado e minimalista -->
     <script>
-        // Salvar a aba ativa no sessionStorage para manter entre recarregamentos
-        function saveActiveTab(tabId) {
-            sessionStorage.setItem('activeTab', tabId);
-        }
-
-        function getActiveTab() {
-            return sessionStorage.getItem('activeTab') || 'sem-rascunho';
-        }
-
-        function switchTab(tabId) {
-            // Esconder todos os conteúdos
-            document.querySelectorAll('.tab-content').forEach(content => {
-                content.classList.remove('active');
-            });
-            
-            // Remover active de todos os botões
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            
-            // Mostrar o conteúdo selecionado
-            const selectedContent = document.getElementById(`tab-${tabId}`);
-            if (selectedContent) {
-                selectedContent.classList.add('active');
-            }
-            
-            // Ativar o botão correspondente
-            const selectedBtn = document.querySelector(`.tab-btn[data-tab="${tabId}"]`);
-            if (selectedBtn) {
-                selectedBtn.classList.add('active');
-            }
-            
-            // Salvar no storage
-            saveActiveTab(tabId);
-        }
-
-        document.addEventListener('DOMContentLoaded', function () {
-            // Configurar datas padrão (últimos 30 dias)
-            const thirtyDaysAgo = new Date();
-            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        (function() {
+            // Cache de elementos para melhor performance
+            const empresaFilter = document.getElementById('empresaFilter');
+            const usuarioFilter = document.getElementById('usuarioFilter');
+            const aplicacaoFilter = document.getElementById('aplicacaoFilter');
             const dataInicio = document.getElementById('dataInicio');
             const dataFim = document.getElementById('dataFim');
-            if (dataInicio) dataInicio.valueAsDate = thirtyDaysAgo;
-            if (dataFim) dataFim.valueAsDate = new Date();
-
-            // Configurar abas
+            const applyBtn = document.getElementById('applyFilters');
+            const clearBtn = document.getElementById('clearFilters');
+            
+            // Configurar datas padrão
+            const hoje = new Date();
+            const trintaDiasAtras = new Date();
+            trintaDiasAtras.setDate(hoje.getDate() - 30);
+            
+            if (dataInicio) dataInicio.valueAsDate = trintaDiasAtras;
+            if (dataFim) dataFim.valueAsDate = hoje;
+            
+            // Sistema de abas simplificado
             const tabs = document.querySelectorAll('.tab-btn');
+            const tabContents = {
+                'sem-rascunho': document.getElementById('tab-sem-rascunho'),
+                'com-rascunho': document.getElementById('tab-com-rascunho')
+            };
+            
+            function switchTab(tabId) {
+                // Esconder todas
+                Object.values(tabContents).forEach(content => {
+                    if (content) content.classList.remove('active');
+                });
+                
+                // Remover active dos botões
+                tabs.forEach(btn => btn.classList.remove('active'));
+                
+                // Mostrar o selecionado
+                if (tabContents[tabId]) tabContents[tabId].classList.add('active');
+                const activeBtn = document.querySelector(`.tab-btn[data-tab="${tabId}"]`);
+                if (activeBtn) activeBtn.classList.add('active');
+                
+                // Salvar no sessionStorage
+                sessionStorage.setItem('activeTab', tabId);
+            }
+            
             tabs.forEach(tab => {
-                tab.addEventListener('click', function() {
+                tab.addEventListener('click', function(e) {
                     const tabId = this.getAttribute('data-tab');
                     switchTab(tabId);
                 });
             });
             
-            // Restaurar a última aba ativa
-            const lastActiveTab = getActiveTab();
-            switchTab(lastActiveTab);
+            // Restaurar última aba
+            const lastTab = sessionStorage.getItem('activeTab') || 'sem-rascunho';
+            switchTab(lastTab);
             
-            // Configurar filtros
-            const applyBtn = document.getElementById('applyFilters');
-            const clearBtn = document.getElementById('clearFilters');
+            // Função de filtro otimizada (evita recálculos desnecessários)
+            function applyFilters() {
+                const empresaVal = empresaFilter?.value.toLowerCase() || '';
+                const usuarioVal = usuarioFilter?.value.toLowerCase() || '';
+                const aplicacaoVal = aplicacaoFilter?.value.toLowerCase() || '';
+                const dataInicioVal = dataInicio?.value || '';
+                const dataFimVal = dataFim?.value || '';
+                
+                // Processar todos os grupos de uma vez
+                document.querySelectorAll('.application-group').forEach(group => {
+                    let anyVisible = false;
+                    
+                    group.querySelectorAll('tbody tr').forEach(row => {
+                        const cells = row.cells;
+                        if (!cells.length) return;
+                        
+                        const empresa = cells[4]?.textContent.trim().toLowerCase() || '';
+                        const aplicacao = cells[5]?.textContent.trim().toLowerCase() || '';
+                        const dataSolicitacao = cells[6]?.getAttribute('data-order') || '';
+                        const usuario = cells[7]?.textContent.trim().toLowerCase() || '';
+                        
+                        const match = (!empresaVal || empresa === empresaVal) &&
+                                    (!usuarioVal || usuario === usuarioVal) &&
+                                    (!aplicacaoVal || aplicacao === aplicacaoVal) &&
+                                    (!dataInicioVal || dataSolicitacao >= dataInicioVal) &&
+                                    (!dataFimVal || dataSolicitacao <= dataFimVal);
+                        
+                        row.style.display = match ? '' : 'none';
+                        if (match) anyVisible = true;
+                    });
+                    
+                    group.style.display = anyVisible ? '' : 'none';
+                });
+            }
+            
+            function clearFilters() {
+                if (empresaFilter) empresaFilter.value = '';
+                if (usuarioFilter) usuarioFilter.value = '';
+                if (aplicacaoFilter) aplicacaoFilter.value = '';
+                if (dataInicio) dataInicio.valueAsDate = trintaDiasAtras;
+                if (dataFim) dataFim.valueAsDate = hoje;
+                applyFilters();
+            }
+            
             if (applyBtn) applyBtn.addEventListener('click', applyFilters);
             if (clearBtn) clearBtn.addEventListener('click', clearFilters);
-        });
-
-        function applyFilters() {
-            const empresaFilter = document.getElementById('empresaFilter')?.value.toLowerCase() || '';
-            const usuarioFilter = document.getElementById('usuarioFilter')?.value.toLowerCase() || '';
-            const aplicacaoFilter = document.getElementById('aplicacaoFilter')?.value.toLowerCase() || '';
-            const dataInicio = document.getElementById('dataInicio')?.value || '';
-            const dataFim = document.getElementById('dataFim')?.value || '';
-
-            // Aplicar filtros em ambas as abas
-            const groups = document.querySelectorAll('.application-group');
-
-            groups.forEach(group => {
-                let anyVisible = false;
-                const rows = group.querySelectorAll('tbody tr');
-
-                rows.forEach(row => {
-                    const empresa = row.cells[4]?.textContent.trim().toLowerCase() || '';
-                    const aplicacao = row.cells[5]?.textContent.trim().toLowerCase() || '';
-                    const dataSolicitacao = row.cells[6]?.getAttribute('data-order') || '';
-                    const usuario = row.cells[7]?.textContent.trim().toLowerCase() || '';
-
-                    const empresaMatch = !empresaFilter || empresa === empresaFilter;
-                    const usuarioMatch = !usuarioFilter || usuario === usuarioFilter;
-                    const aplicacaoMatch = !aplicacaoFilter || aplicacao === aplicacaoFilter;
-                    const dataMatch = (!dataInicio || dataSolicitacao >= dataInicio) &&
-                                      (!dataFim || dataSolicitacao <= dataFim);
-
-                    if (empresaMatch && usuarioMatch && aplicacaoMatch && dataMatch) {
-                        row.style.display = '';
-                        anyVisible = true;
-                    } else {
-                        row.style.display = 'none';
-                    }
-                });
-
-                group.style.display = anyVisible ? '' : 'none';
-            });
-        }
-
-        function clearFilters() {
-            const empresaFilter = document.getElementById('empresaFilter');
-            const usuarioFilter = document.getElementById('usuarioFilter');
-            const aplicacaoFilter = document.getElementById('aplicacaoFilter');
-            
-            if (empresaFilter) empresaFilter.value = '';
-            if (usuarioFilter) usuarioFilter.value = '';
-            if (aplicacaoFilter) aplicacaoFilter.value = '';
-            
-            const today = new Date();
-            const thirtyDaysAgo = new Date();
-            thirtyDaysAgo.setDate(today.getDate() - 30);
-            
-            const dataInicio = document.getElementById('dataInicio');
-            const dataFim = document.getElementById('dataFim');
-            if (dataInicio) dataInicio.valueAsDate = thirtyDaysAgo;
-            if (dataFim) dataFim.valueAsDate = today;
-
-            applyFilters();
-        }
+        })();
     </script>
 </body>
+
 </html>
