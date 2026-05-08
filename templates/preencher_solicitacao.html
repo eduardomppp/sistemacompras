@@ -447,7 +447,7 @@
 
     <div class="aviso-campos-vazios" id="avisoCamposVazios" style="display: none;">
         <i class="bi bi-exclamation-triangle-fill"></i>
-        <span>Existem campos de valor unitário em branco. Serão salvos como R$ 0,000000.</span>
+        <span>Existem campos de valor unitário em branco. Serão salvos como R$ 0,00.</span>
     </div>
 
     <form method="POST" action="{{ url_for('routes_bp.preencher_solicitacao', id=solicitacao.id) }}{% if grupo_ids %}?grupo_ids={{ grupo_ids }}{% endif %}" enctype="multipart/form-data" id="cotacoes-form">
@@ -633,13 +633,10 @@
             {% endif %}
         ];
 
-        // Cache de elementos frequentemente usados
-        let cotacoesContainer = null;
-
         // ============================================
-        // FUNÇÕES DE FORMATAÇÃO (otimizadas)
+        // FUNÇÕES DE FORMATAÇÃO
         // ============================================
-        function formatarNumero(numero, casasDecimais = 6) {
+        function formatarNumero(numero, casasDecimais = 2) {
             if (isNaN(numero)) numero = 0;
             return numero.toLocaleString('pt-BR', {
                 minimumFractionDigits: casasDecimais,
@@ -647,7 +644,7 @@
             });
         }
 
-        function formatarNumeroParaEnvio(numero, casasDecimais = 6) {
+        function formatarNumeroParaEnvio(numero) {
             if (typeof numero === 'string') {
                 let limpo = numero.toString().replace(/[^\d,.-]/g, '');
                 if (!limpo) return 0;
@@ -656,9 +653,9 @@
                     limpo = limpo.replace(',', '.');
                 }
                 const resultado = parseFloat(limpo);
-                return isNaN(resultado) ? 0 : parseFloat(resultado.toFixed(casasDecimais));
+                return isNaN(resultado) ? 0 : resultado;
             }
-            return parseFloat((numero || 0).toFixed(casasDecimais));
+            return numero || 0;
         }
 
         function formatCNPJ(cnpj) {
@@ -669,7 +666,7 @@
         }
 
         // ============================================
-        // FUNÇÕES DE MANIPULAÇÃO DOM (otimizadas)
+        // FUNÇÕES DE MANIPULAÇÃO DOM
         // ============================================
         
         function recalcularTotaisCotacao(cotacaoId) {
@@ -678,7 +675,9 @@
             for (let row of rows) {
                 const totalSpan = row.querySelector('.material-total-display');
                 if (totalSpan && totalSpan.value) {
-                    totalProdutos += formatarNumeroParaEnvio(totalSpan.value);
+                    const valorStr = totalSpan.value.replace('R$ ', '').replace(/\./g, '').replace(',', '.');
+                    const valor = parseFloat(valorStr);
+                    if (!isNaN(valor)) totalProdutos += valor;
                 }
             }
             
@@ -701,7 +700,7 @@
             if (!row) return;
             
             const quantidade = parseFloat(row.querySelector('.material-quantidade')?.value) || 0;
-            const unitario = formatarNumeroParaEnvio(element.value, 6);
+            const unitario = formatarNumeroParaEnvio(element.value);
             const total = quantidade * unitario;
             
             const totalDisplay = row.querySelector('.material-total-display');
@@ -762,15 +761,15 @@
         }
 
         // ============================================
-        // CRIAÇÃO DE MATERIAIS (DOM Fragment para performance)
+        // CRIAÇÃO DE MATERIAIS
         // ============================================
         
         function criarLinhaMaterial(cotacaoId, material, index, valorUnitario = null, marcaSalva = null) {
             const materialId = index + 1;
-            const valorUnitarioFinal = valorUnitario !== null ? valorUnitario : 0;
+            const valorUnitarioFinal = (valorUnitario !== null && valorUnitario > 0) ? valorUnitario : 0;
             const marcaFinal = marcaSalva !== null ? marcaSalva : (material.marca || '');
             const valorUnitarioParaInput = valorUnitarioFinal > 0 ? formatarNumero(valorUnitarioFinal, 6) : '';
-            const valorTotal = valorUnitarioFinal > 0 ? valorUnitarioFinal * material.quantidade : 0;
+            const valorTotal = valorUnitarioFinal * material.quantidade;
             
             const tr = document.createElement('tr');
             tr.id = `material-${cotacaoId}-${materialId}`;
@@ -884,10 +883,8 @@
             const tbody = document.querySelector(`#materiais-container-${cotacaoId} .materiais-body`);
             if (!tbody) return;
             
-            // Limpar tbody de forma eficiente
             while (tbody.firstChild) tbody.removeChild(tbody.firstChild);
             
-            // Usar DocumentFragment para melhor performance
             const fragment = document.createDocumentFragment();
             
             materiaisSolicitacao.forEach((material, index) => {
@@ -897,7 +894,6 @@
             
             tbody.appendChild(fragment);
             
-            // Adicionar event listeners
             const unitarios = tbody.querySelectorAll('.material-unitario');
             for (let input of unitarios) {
                 input.addEventListener('input', function() {
@@ -906,7 +902,6 @@
                 });
             }
             
-            // Carregar valores salvos se existirem
             const materiaisSalvos = document.querySelector(`.materiais-salvos[data-cotacao="${cotacaoId}"]`)?.value;
             if (materiaisSalvos && materiaisSalvos !== '[]') {
                 try {
@@ -1125,7 +1120,7 @@
         }
 
         // ============================================
-        // SUBMISSÃO
+        // SUBMISSÃO - FUNÇÃO CORRIGIDA
         // ============================================
 
         function gerarJsonMateriais() {
@@ -1145,10 +1140,14 @@
                     const unitarioInput = linha.querySelector('.material-unitario');
                     const marcaInput = linha.querySelector('.material-marca');
                     
+                    // 🔴 CORREÇÃO: Garantir que valores vazios virem 0
                     let valorUnitario = 0;
-                    if (unitarioInput && unitarioInput.value && unitarioInput.value !== '' && 
-                        unitarioInput.value !== '0,00' && unitarioInput.value !== '0,000000') {
-                        valorUnitario = formatarNumeroParaEnvio(unitarioInput.value, 6);
+                    if (unitarioInput && unitarioInput.value && unitarioInput.value !== '') {
+                        const valorLimpo = unitarioInput.value.toString().replace(',', '.').replace(/[^\d.-]/g, '');
+                        if (valorLimpo && valorLimpo !== '') {
+                            const parsed = parseFloat(valorLimpo);
+                            valorUnitario = isNaN(parsed) ? 0 : parsed;
+                        }
                     }
                     
                     materiaisPorCotacao[cotacaoId].push({
@@ -1180,6 +1179,7 @@
             console.log('=====================');
         }
 
+        // Evento de submit corrigido
         document.getElementById('cotacoes-form')?.addEventListener('submit', function(e) {
             e.preventDefault();
             const clickedButton = e.submitter || document.activeElement;
@@ -1217,7 +1217,7 @@
                     porCotacao[cotacao].forEach(desc => mensagem += `  • ${desc}\n`);
                     mensagem += '\n';
                 }
-                mensagem += "Estes materiais serão salvos com valor ZERO (R$ 0,000000).\nDeseja continuar?";
+                mensagem += "Estes materiais serão salvos com valor ZERO (R$ 0,00).\nDeseja continuar?";
                 if (!confirm(mensagem)) return false;
             }
 
@@ -1233,10 +1233,10 @@
                     if (unitarioInput) {
                         const valor = unitarioInput.value;
                         if (!valor || valor === '' || valor === '0,00' || valor === '0,000000') {
-                            unitarioInput.value = '0.000000';
+                            unitarioInput.value = '0';
                         } else {
-                            let valorNumerico = formatarNumeroParaEnvio(valor, 6);
-                            unitarioInput.value = valorNumerico.toFixed(6);
+                            let valorNumerico = formatarNumeroParaEnvio(valor);
+                            unitarioInput.value = valorNumerico;
                         }
                     }
                 }
@@ -1245,10 +1245,10 @@
                 if (freteInput) {
                     const freteValor = freteInput.value;
                     if (!freteValor || freteValor === '' || freteValor === '0,00') {
-                        freteInput.value = '0.00';
+                        freteInput.value = '0';
                     } else {
                         let freteNumerico = formatarNumeroParaEnvio(freteValor);
-                        freteInput.value = freteNumerico.toFixed(2);
+                        freteInput.value = freteNumerico;
                     }
                 }
                 
@@ -1256,10 +1256,10 @@
                 if (descontoInput) {
                     const descontoValor = descontoInput.value;
                     if (!descontoValor || descontoValor === '' || descontoValor === '0,00') {
-                        descontoInput.value = '0.00';
+                        descontoInput.value = '0';
                     } else {
                         let descontoNumerico = formatarNumeroParaEnvio(descontoValor);
-                        descontoInput.value = descontoNumerico.toFixed(2);
+                        descontoInput.value = descontoNumerico;
                     }
                 }
             }
