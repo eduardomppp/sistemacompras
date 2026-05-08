@@ -2748,7 +2748,7 @@ def preencher_solicitacao(id):
     
     # === FUNÇÃO AUXILIAR PARA CONVERSÃO DE VALORES ===
     def parse_br_currency_final(value_str):
-        if not value_str:
+        if not value_str or value_str == '':
             return 0.0
         
         valor = str(value_str)
@@ -2766,9 +2766,8 @@ def preencher_solicitacao(id):
             negativo = True
             valor = valor[1:]
         
-        valor = valor.lstrip('0')
-        if valor == '' or valor.startswith(('.', ',')):
-            valor = '0' + valor
+        if valor == '' or valor == '0' or valor == '0,00' or valor == '0.00':
+            return 0.0
         
         try:
             if ',' not in valor and '.' not in valor:
@@ -2895,7 +2894,7 @@ def preencher_solicitacao(id):
             preenchimento_ids = request.form.getlist('preenchimento_id[]')
             pdf_files = request.files.getlist('pdf_file[]')
             
-            # 🔴 CAPTURAR DESCONTOS
+            # CAPTURAR DESCONTOS
             descontos = request.form.getlist('desconto[]')
             
             # === Captura de dados dos materiais ===
@@ -2904,6 +2903,7 @@ def preencher_solicitacao(id):
             todas_marcas = request.form.getlist('marca[]')
             
             print(f"📋 Descontos recebidos: {descontos}")
+            print(f"📋 Total valores unitários: {len(todos_valores_unitarios)}")
             
             # === Processar cada cotação ===
             cotacoes_salvas = 0
@@ -2923,18 +2923,18 @@ def preencher_solicitacao(id):
                 total_cotacoes += 1
                 
                 # === Campos da cotação atual ===
-                vf_str = valores_frete[idx].strip() if idx < len(valores_frete) else '0'
-                prazo = prazos[idx].strip() if idx < len(prazos) else ''
-                condicao_original = condicoes[idx].strip() if idx < len(condicoes) else ''
-                obs = observacoes[idx].strip() if idx < len(observacoes) else ''
+                vf_str = valores_frete[idx] if idx < len(valores_frete) else '0'
+                prazo = prazos[idx] if idx < len(prazos) else ''
+                condicao_original = condicoes[idx] if idx < len(condicoes) else ''
+                obs = observacoes[idx] if idx < len(observacoes) else ''
                 preenchimento_id = preenchimento_ids[idx] if idx < len(preenchimento_ids) and preenchimento_ids[idx] else None
                 
-                # 🔴 OBTER O DESCONTO
-                desconto_str = descontos[idx].strip() if idx < len(descontos) else '0'
+                # OBTER O DESCONTO
+                desconto_str = descontos[idx] if idx < len(descontos) else '0'
                 valor_desconto = parse_br_currency_final(desconto_str)
                 
-                # 🔴 CONCATENAR O DESCONTO NA CONDIÇÃO DE PAGAMENTO
-                condicao_final = condicao_original
+                # CONCATENAR O DESCONTO NA CONDIÇÃO DE PAGAMENTO
+                condicao_final = condicao_original if condicao_original else ""
                 if valor_desconto > 0:
                     if 'DESCONTO:' not in condicao_original.upper():
                         if condicao_original:
@@ -2952,14 +2952,15 @@ def preencher_solicitacao(id):
                 
                 print(f"💰 Desconto: R$ {valor_desconto:.2f} -> Condição final: '{condicao_final}'")
                 
-                # === VALIDAÇÃO PARA FINALIZAR ===
+                # 🔴 VALIDAÇÃO PARA FINALIZAR - REMOVIDA VALIDAÇÃO DA CONDIÇÃO DE PAGAMENTO
                 if is_finalizar:
                     if not prazo:
                         erros_validacao.append(f'Cotação {idx+1}: Prazo de entrega é obrigatório.')
+                    # Condição de pagamento NÃO é mais obrigatória - pode ser vazia
                     if not condicao_final:
-                        erros_validacao.append(f'Cotação {idx+1}: Condição de pagamento é obrigatória.')
+                        condicao_final = ""  # Garante string vazia
                 
-                # === CONVERSÃO DO FRETE ===
+                # CONVERSÃO DO FRETE
                 valor_frete = parse_br_currency_final(vf_str)
                 
                 # === Processar cada material desta cotação ===
@@ -2971,6 +2972,7 @@ def preencher_solicitacao(id):
                     continue
                 
                 primeiro_material_desta_cotacao = True
+                materiais_processados = 0
                 
                 for i, sol in enumerate(todas_solicitacoes):
                     material_idx = inicio_idx + i
@@ -2979,10 +2981,13 @@ def preencher_solicitacao(id):
                         erros_validacao.append(f'Cotação {idx+1}, Material {i+1}: Valor unitário faltando.')
                         continue
                     
-                    valor_unitario_str = todos_valores_unitarios[material_idx].strip()
+                    valor_unitario_str = todos_valores_unitarios[material_idx].strip() if material_idx < len(todos_valores_unitarios) else ''
                     
-                    # Converter valor unitário
-                    valor_unitario = parse_br_currency_final(valor_unitario_str)
+                    # Tratar valor vazio como 0
+                    if not valor_unitario_str or valor_unitario_str == '':
+                        valor_unitario = 0.0
+                    else:
+                        valor_unitario = parse_br_currency_final(valor_unitario_str)
                     
                     # Converter quantidade para float
                     quantidade_float = converter_quantidade_para_float(sol.quantidade)
@@ -3017,6 +3022,7 @@ def preencher_solicitacao(id):
                         print(f"   🔍 Busca por fornecedor {fornecedor_id} + solicitação {sol.id}: {'Encontrado' if preenchimento else 'Não encontrado'}")
                     
                     if not preenchimento:
+                        # CRIAR NOVO PREENCHIMENTO
                         preenchimento = SolicitacoesPreenchidas(
                             solicitacao_id=sol.id,
                             fornecedor_id=int(fornecedor_id),
@@ -3024,7 +3030,7 @@ def preencher_solicitacao(id):
                             valor_total=valor_total,
                             valor_frete=valor_frete if valor_frete > 0 else None,
                             prazo_entrega=prazo,
-                            condicao_pagamento=condicao_final,
+                            condicao_pagamento=condicao_final if condicao_final else "",  # Permite vazio
                             observacoes=obs,
                             data_preenchimento=get_local_time(),
                             usuario=usuario,
@@ -3070,7 +3076,7 @@ def preencher_solicitacao(id):
                         preenchimento.valor_total = valor_total
                         preenchimento.valor_frete = valor_frete if valor_frete > 0 else None
                         preenchimento.prazo_entrega = prazo
-                        preenchimento.condicao_pagamento = condicao_final
+                        preenchimento.condicao_pagamento = condicao_final if condicao_final else ""  # Permite vazio
                         preenchimento.observacoes = obs
                         preenchimento.status = 'Rascunho' if is_rascunho else 'Aguardando Aprovacao'
                         preenchimento.data_preenchimento = get_local_time()
@@ -3092,10 +3098,12 @@ def preencher_solicitacao(id):
                             print(f"   📎 PDF salvo: {unique_name}")
                     
                     primeiro_material_desta_cotacao = False
+                    materiais_processados += 1
                 
                 cotacoes_salvas += 1
-                print(f"✅ Cotação {idx+1} processada com sucesso")
+                print(f"✅ Cotação {idx+1} processada com sucesso - {materiais_processados} materiais")
             
+            # Verificar se houve erros de validação
             if erros_validacao:
                 for erro in erros_validacao:
                     flash(erro, 'error')
@@ -3185,7 +3193,16 @@ def preencher_solicitacao(id):
         except Exception as e:
             print(f"Erro ao buscar fornecedor {fornecedor_id}: {str(e)}")
         
-        # 🔴 EXTRAIR DESCONTO DA CONDIÇÃO DE PAGAMENTO
+        # EXTRAIR DESCONTO DA CONDIÇÃO DE PAGAMENTO
+        def extrair_desconto_da_condicao(condicao_pagamento):
+            if not condicao_pagamento:
+                return 0.0
+            import re
+            match = re.search(r'DESCONTO:\s*R?\$?\s*(\d+(?:[.,]\d+)?)', condicao_pagamento, re.IGNORECASE)
+            if match:
+                return float(match.group(1).replace(',', '.'))
+            return 0.0
+        
         valor_desconto = extrair_desconto_da_condicao(cotacao_ref.condicao_pagamento or '')
         
         cotacao_estruturada = {
@@ -3199,7 +3216,7 @@ def preencher_solicitacao(id):
             'condicao_pagamento': cotacao_ref.condicao_pagamento or '',
             'observacoes': cotacao_ref.observacoes or '',
             'pdf_path': cotacao_ref.pdf_path,
-            'desconto': extrair_desconto_da_condicao(cotacao_ref.condicao_pagamento or ''),  # 🔴 ADICIONE ESTA LINHA
+            'desconto': valor_desconto,
             'materiais': []
         }
             
@@ -3264,7 +3281,6 @@ def preencher_solicitacao(id):
         modo_grupo=modo_grupo,
         grupo_ids=grupo_ids_param
     )
-
 
 @app.template_filter('regex_replace')
 def regex_replace(s, pattern, replacement):
@@ -7408,25 +7424,25 @@ def atualizar_valores_cotacao():
     try:
         data = request.get_json()
         preenchimento_id = data.get('preenchimento_id')
-        valor_unitario_str = data.get('valor_unitario')
+        valor_unitario_str = data.get('valor_unitario', '0')
         valor_frete_str = data.get('valor_frete', '0')
-        valor_unitario_original_str = data.get('valor_unitario_original')
+        valor_unitario_original_str = data.get('valor_unitario_original', '0')
         observacoes = data.get('observacoes')
         
         # Validações
         if not preenchimento_id:
             return jsonify({'success': False, 'message': 'ID do preenchimento é obrigatório'}), 400
         
-        # 🔴 CORREÇÃO: PERMITIR VALOR UNITÁRIO VAZIO (SERÁ 0)
-        # Removida a validação que exigia valor_unitario_str
-        
-        # Função robusta para conversão
+        # 🔴 CORREÇÃO: Função robusta para conversão
         def safe_currency_convert(value_str):
-            if not value_str:
+            if not value_str or value_str == '':
                 return 0.0
             try:
                 # Remove caracteres não numéricos exceto vírgula e ponto
+                import re
                 cleaned = re.sub(r'[^\d,.]', '', str(value_str))
+                if not cleaned:
+                    return 0.0
                 # Remove pontos de milhar (preserva apenas o último ponto como decimal)
                 if ',' in cleaned and '.' in cleaned:
                     # Formato: 1.234,56 -> remove pontos de milhar
@@ -7444,20 +7460,21 @@ def atualizar_valores_cotacao():
         valor_frete = safe_currency_convert(valor_frete_str)
         valor_unitario_original = safe_currency_convert(valor_unitario_original_str)
         
-        # 🔴 CORREÇÃO: PERMITIR VALOR ZERO - REMOVIDA VALIDAÇÃO <= 0
-        # Apenas log informativo
-        if valor_unitario <= 0:
-            print(f"⚠️ Atualizando com valor unitário ZERO para preenchimento {preenchimento_id}")
+        print(f"💰 Atualizando: ID={preenchimento_id}, Unitário={valor_unitario}, Frete={valor_frete}")
         
         # Buscar o preenchimento
         preenchimento = SolicitacoesPreenchidas.query.get_or_404(preenchimento_id)
         
         # Salvar valores anteriores
-        valor_unitario_anterior = preenchimento.valor_unitario
-        valor_frete_anterior = preenchimento.valor_frete
+        valor_unitario_anterior = preenchimento.valor_unitario or 0
+        valor_frete_anterior = preenchimento.valor_frete or 0
         
-        # Calcular novo valor total (permite zero)
-        quantidade = preenchimento.solicitacao.quantidade
+        # Calcular novo valor total
+        try:
+            quantidade = float(preenchimento.solicitacao.quantidade) if preenchimento.solicitacao.quantidade else 0
+        except (ValueError, TypeError):
+            quantidade = 0
+        
         novo_valor_total = (valor_unitario * quantidade) + valor_frete
         
         # Atualizar os valores
@@ -7468,14 +7485,13 @@ def atualizar_valores_cotacao():
         
         # Registrar histórico se houver mudança significativa
         if abs(valor_unitario_anterior - valor_unitario) > 0.001 or \
-           (valor_frete_anterior is not None and abs(valor_frete_anterior - valor_frete) > 0.001) or \
-           (valor_frete_anterior is None and valor_frete > 0):
+           abs(valor_frete_anterior - valor_frete) > 0.001:
             
             historico = HistoricoDescontos(
                 preenchimento_id=preenchimento.id,
                 valor_unitario_anterior=valor_unitario_anterior,
                 valor_unitario_novo=valor_unitario,
-                valor_frete_anterior=valor_frete_anterior if valor_frete_anterior else None,
+                valor_frete_anterior=valor_frete_anterior if valor_frete_anterior != 0 else None,
                 valor_frete_novo=valor_frete if valor_frete > 0 else None,
                 data_alteracao=get_local_time(),
                 usuario=session['usuario']
@@ -7495,6 +7511,7 @@ def atualizar_valores_cotacao():
         
     except Exception as e:
         db.session.rollback()
+        print(f"❌ Erro ao atualizar valores: {str(e)}")
         return jsonify({
             'success': False, 
             'message': f'Erro ao atualizar valores: {str(e)}'
@@ -7810,21 +7827,15 @@ def atribuir_comprador(solicitacao_id):
         logging.error(f"Erro ao atribuir comprador: {str(e)}")
         return jsonify({'success': False, 'error': f'Erro ao atribuir comprador: {str(e)}'}), 500
     
+
 @app.template_filter('basename')
 def basename_filter(path):
-    """
-    Filtro Jinja2 para extrair apenas o nome do arquivo de um caminho completo.
-    Ex: '/Uploads/cotacoes/123.pdf' → '123.pdf'
-    """
     if not path:
         return ''
-    
+    from os.path import basename
     return basename(path)
-# Registre o filtro (ADICIONE ESTA LINHA)
-app.jinja_env.filters['format_brasil_time'] = format_brasil_time
-app.jinja_env.filters['basename'] = basename_filter
 
-# No app.py, substitua ou adicione a rota para listar_solicitacoes_finalizadas
+app.jinja_env.filters['basename'] = basename_filter
 
 
 @routes_bp.route('/listar_solicitacoes_finalizadas', methods=['GET'])
