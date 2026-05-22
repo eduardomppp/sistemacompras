@@ -116,68 +116,159 @@ DATABASE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'ComparasDB.
 # ===== Correcao Coluna Marca teste_teste=====
 
 def garantir_colunas_necessarias():
-    """Garante que TODAS as colunas necessárias existem"""
+    """Garante que TODAS as colunas necessárias existem em todas as tabelas"""
     print("🔧 VERIFICANDO INTEGRIDADE DO BANCO DE DADOS...")
+    print("=" * 50)
     
-    # Lista de todas as colunas que precisamos verificar
+    # ============================================
+    # Lista completa de verificações por tabela
+    # ============================================
     verificacoes = [
+        # Tabela SolicitacoesPreenchidas
         {
             'tabela': 'SolicitacoesPreenchidas',
             'coluna': 'marca',
             'sql': "ALTER TABLE SolicitacoesPreenchidas ADD COLUMN marca TEXT"
+        },
+        {
+            'tabela': 'SolicitacoesPreenchidas',
+            'coluna': 'observacoes',
+            'sql': "ALTER TABLE SolicitacoesPreenchidas ADD COLUMN observacoes TEXT"
+        },
+        {
+            'tabela': 'SolicitacoesPreenchidas',
+            'coluna': 'pdf_path',
+            'sql': "ALTER TABLE SolicitacoesPreenchidas ADD COLUMN pdf_path TEXT"
+        },
+        {
+            'tabela': 'SolicitacoesPreenchidas',
+            'coluna': 'status',
+            'sql': "ALTER TABLE SolicitacoesPreenchidas ADD COLUMN status TEXT DEFAULT 'Rascunho'"
+        },
+        
+        # Tabela SolicitacoesCompra
+        {
+            'tabela': 'SolicitacoesCompra',
+            'coluna': 'status_aprovacao',
+            'sql': "ALTER TABLE SolicitacoesCompra ADD COLUMN status_aprovacao TEXT"
+        },
+        {
+            'tabela': 'SolicitacoesCompra',
+            'coluna': 'observacoes_col',
+            'sql': "ALTER TABLE SolicitacoesCompra ADD COLUMN observacoes_col TEXT"
+        },
+        {
+            'tabela': 'SolicitacoesCompra',
+            'coluna': 'aplicacao_geral',
+            'sql': "ALTER TABLE SolicitacoesCompra ADD COLUMN aplicacao_geral TEXT"
+        },
+        {
+            'tabela': 'SolicitacoesCompra',
+            'coluna': 'comprador_atribuido',
+            'sql': "ALTER TABLE SolicitacoesCompra ADD COLUMN comprador_atribuido TEXT"
+        },
+        {
+            'tabela': 'SolicitacoesCompra',
+            'coluna': 'prioridade',
+            'sql': "ALTER TABLE SolicitacoesCompra ADD COLUMN prioridade TEXT DEFAULT 'Programado'"
+        },
+        
+        # Tabela Materiais
+        {
+            'tabela': 'Materiais',
+            'coluna': 'Ativo',
+            'sql': "ALTER TABLE Materiais ADD COLUMN Ativo BOOLEAN DEFAULT 0"
+        },
+        {
+            'tabela': 'Materiais',
+            'coluna': 'FatorConsumo',
+            'sql': "ALTER TABLE Materiais ADD COLUMN FatorConsumo REAL DEFAULT 0.0"
+        },
+        
+        # Tabela PedidosCompra
+        {
+            'tabela': 'PedidosCompra',
+            'coluna': 'observacoes',
+            'sql': "ALTER TABLE PedidosCompra ADD COLUMN observacoes TEXT"
+        },
+        {
+            'tabela': 'PedidosCompra',
+            'coluna': 'comprovante_pagamento',
+            'sql': "ALTER TABLE PedidosCompra ADD COLUMN comprovante_pagamento TEXT"
+        },
+        {
+            'tabela': 'PedidosCompra',
+            'coluna': 'valor_frete',
+            'sql': "ALTER TABLE PedidosCompra ADD COLUMN valor_frete REAL DEFAULT 0.0"
+        },
+        {
+            'tabela': 'PedidosCompra',
+            'coluna': 'valor_liquido',
+            'sql': "ALTER TABLE PedidosCompra ADD COLUMN valor_liquido REAL DEFAULT 0.0"
+        },
+        {
+            'tabela': 'PedidosCompra',
+            'coluna': 'forma_pagamento',
+            'sql': "ALTER TABLE PedidosCompra ADD COLUMN forma_pagamento TEXT"
         }
     ]
     
+    # ============================================
+    # Executar verificações
+    # ============================================
     for item in verificacoes:
         try:
-            # Conecta ao banco
+            # Conectar ao banco
             conn = sqlite3.connect(DATABASE)
             cursor = conn.cursor()
             
-            # Verifica estrutura da tabela
+            # Verificar se a tabela existe
+            cursor.execute(f"SELECT name FROM sqlite_master WHERE type='table' AND name='{item['tabela']}'")
+            tabela_existe = cursor.fetchone()
+            
+            if not tabela_existe:
+                print(f"⚠️ Tabela '{item['tabela']}' não existe - será criada pelo SQLAlchemy")
+                conn.close()
+                continue
+            
+            # Verificar estrutura da tabela
             cursor.execute(f"PRAGMA table_info({item['tabela']})")
             colunas = [col[1] for col in cursor.fetchall()]
             
             if item['coluna'] not in colunas:
-                print(f"➕ Adicionando {item['coluna']} à tabela {item['tabela']}...")
+                print(f"➕ Adicionando coluna '{item['coluna']}' à tabela '{item['tabela']}'...")
                 
-                # Tenta adicionar a coluna
-                cursor.execute(item['sql'])
-                conn.commit()
-                
-                # Verifica se funcionou
-                cursor.execute(f"PRAGMA table_info({item['tabela']})")
-                colunas_apos = [col[1] for col in cursor.fetchall()]
-                
-                if item['coluna'] in colunas_apos:
-                    print(f"   ✅ Coluna '{item['coluna']}' adicionada com sucesso!")
-                else:
-                    print(f"   ❌ Falha ao adicionar '{item['coluna']}'")
+                try:
+                    # Executar o ALTER TABLE
+                    cursor.execute(item['sql'])
+                    conn.commit()
                     
-                    # TENTATIVA 2: Via SQLAlchemy (força recarregamento)
-                    try:
-                        from sqlalchemy import text
-                        with app.app_context():
-                            db.session.execute(text(item['sql']))
-                            db.session.commit()
-                            print(f"   ✅ Segunda tentativa bem-sucedida!")
-                    except:
-                        print(f"   ⚠️  Segunda tentativa também falhou")
+                    # Verificar se funcionou
+                    cursor.execute(f"PRAGMA table_info({item['tabela']})")
+                    colunas_apos = [col[1] for col in cursor.fetchall()]
+                    
+                    if item['coluna'] in colunas_apos:
+                        print(f"   ✅ Coluna '{item['coluna']}' adicionada com sucesso!")
+                    else:
+                        print(f"   ❌ Falha ao adicionar '{item['coluna']}'")
+                        
+                except sqlite3.OperationalError as e:
+                    if "duplicate column name" in str(e).lower():
+                        print(f"   ✅ Coluna '{item['coluna']}' já existe (ignorando erro)")
+                    else:
+                        print(f"   ⚠️ Erro ao adicionar coluna: {e}")
             else:
-                print(f"✅ Coluna '{item['coluna']}' já existe em {item['tabela']}")
+                print(f"✅ Coluna '{item['coluna']}' já existe em '{item['tabela']}'")
             
             conn.close()
             
-        except sqlite3.OperationalError as e:
-            if "duplicate column name" in str(e):
-                print(f"✅ Coluna '{item['coluna']}' já existe (ignorando erro)")
-            else:
-                print(f"⚠️  Erro ao verificar {item['tabela']}.{item['coluna']}: {e}")
+        except sqlite3.Error as e:
+            print(f"⚠️ Erro ao verificar {item['tabela']}.{item['coluna']}: {e}")
         except Exception as e:
-            print(f"⚠️  Erro inesperado: {e}")
+            print(f"⚠️ Erro inesperado: {e}")
     
+    print("=" * 50)
     print("🔧 VERIFICAÇÃO CONCLUÍDA")
-    print("="*50)
 
 # ============================================
 # (garantir_colunas_necessarias é chamada dentro do bloco __main__ após db.create_all)
@@ -365,30 +456,95 @@ class SolicitacoesPreenchidas(db.Model):
             'historico_descontos': [h.to_dict() for h in self.historico_descontos]
         }
 def add_marca_to_preenchidas():
-    """Adiciona a coluna marca na tabela SolicitacoesPreenchidas"""
+    """Adiciona a coluna marca na tabela SolicitacoesPreenchidas com validação completa"""
+    print("🔧 Verificando coluna 'marca' em SolicitacoesPreenchidas...")
+    
     try:
+        # Conectar ao banco de dados
         conn = sqlite3.connect(DATABASE)
         cursor = conn.cursor()
+        
+        # Verificar se a tabela existe
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='SolicitacoesPreenchidas'")
+        tabela_existe = cursor.fetchone()
+        
+        if not tabela_existe:
+            print("⚠️ Tabela 'SolicitacoesPreenchidas' não existe ainda - será criada pelo SQLAlchemy")
+            conn.close()
+            return True
         
         # Verificar se a coluna já existe
         cursor.execute("PRAGMA table_info(SolicitacoesPreenchidas)")
         columns = [col[1] for col in cursor.fetchall()]
         
         if 'marca' not in columns:
-            cursor.execute("ALTER TABLE SolicitacoesPreenchidas ADD COLUMN marca TEXT")
-            conn.commit()
-            logging.info("Coluna marca adicionada à tabela SolicitacoesPreenchidas")
-            print("✓ Coluna marca adicionada com sucesso à tabela SolicitacoesPreenchidas!")
+            print("➕ Adicionando coluna 'marca' à tabela SolicitacoesPreenchidas...")
+            
+            try:
+                cursor.execute("ALTER TABLE SolicitacoesPreenchidas ADD COLUMN marca TEXT")
+                conn.commit()
+                logging.info("Coluna marca adicionada à tabela SolicitacoesPreenchidas")
+                print("   ✅ Coluna 'marca' adicionada com sucesso!")
+                
+                # Verificar se a adição foi bem-sucedida
+                cursor.execute("PRAGMA table_info(SolicitacoesPreenchidas)")
+                columns_after = [col[1] for col in cursor.fetchall()]
+                if 'marca' in columns_after:
+                    print("   ✅ Confirmação: Coluna 'marca' existe agora")
+                else:
+                    print("   ⚠️ Não foi possível confirmar a existência da coluna")
+                    
+            except sqlite3.OperationalError as e:
+                if "duplicate column name" in str(e).lower():
+                    print("   ℹ️ Coluna 'marca' já existe (ignorando erro)")
+                else:
+                    print(f"   ❌ Erro ao adicionar coluna: {e}")
+                    conn.close()
+                    return False
         else:
-            print("✓ Coluna marca já existe na tabela SolicitacoesPreenchidas")
+            print("✅ Coluna 'marca' já existe na tabela SolicitacoesPreenchidas")
         
         conn.close()
         return True
+        
     except sqlite3.Error as e:
         logging.error(f"Erro ao adicionar coluna marca: {str(e)}")
-        print(f"✗ Erro ao adicionar coluna: {str(e)}")
+        print(f"   ❌ Erro: {str(e)}")
         return False
+    except Exception as e:
+        print(f"   ❌ Erro inesperado: {str(e)}")
+        return False
+
+def executar_todas_migracoes():
+    """Executa todas as migrações necessárias em ordem correta"""
+    print("\n" + "=" * 60)
+    print("🚀 INICIANDO MIGRAÇÕES DO BANCO DE DADOS")
+    print("=" * 60)
     
+    # 1. Verificar e adicionar colunas básicas
+    garantir_colunas_necessarias()
+    
+    # 2. Migrações específicas
+    print("\n📋 Executando migrações específicas...")
+    
+    add_marca_to_preenchidas()
+    migrate_observacoes_col()
+    add_observacoes_column_to_solicitacoes_preenchidas()
+    migrate_solicitacoes_preenchidas_status()
+    verificar_coluna_observacoes()
+    add_comprovante_pagamento_column()
+    add_aplicacao_geral_column()
+    add_comprador_atribuido_column()
+    migrate_solicitacoes_compra_status_aprovacao()
+    
+    # 3. Migração de quantidade (especial - converte INTEGER para TEXT)
+    print("\n📋 Verificando tipo da coluna quantidade...")
+    migrate_quantidade_to_text()
+    
+    print("\n" + "=" * 60)
+    print("✅ TODAS AS MIGRAÇÕES FORAM CONCLUÍDAS!")
+    print("=" * 60)
+
 def migrate_observacoes_col():
     try:
         conn = sqlite3.connect(DATABASE)
@@ -8918,6 +9074,14 @@ app.register_blueprint(routes_bp)
 
 # Inicialização do banco de dados e execução do app
 if __name__ == '__main__':
+    # ============================================
+    # EXECUTAR MIGRAÇÕES PRIMEIRO
+    # ============================================
+    executar_todas_migracoes()
+    
+    # ============================================
+    # CRIAR TABELAS E INICIALIZAR
+    # ============================================
     create_database()
     create_auditoria_table()
     create_fornecedores_db()
@@ -8926,25 +9090,24 @@ if __name__ == '__main__':
     
     with app.app_context():
         db.create_all()
-        garantir_colunas_necessarias()
-
-        if not atualizar_estrutura_requisicoes():
-            print("Falha na migração de requisicoes. Verifique os logs.")
         
-        migrate_solicitacoes_compra()
-        migrate_quantidade_to_text()
-        migrate_solicitacoes_compra_status_aprovacao()
-        migrate_observacoes_col()
-        add_observacoes_column_to_solicitacoes_preenchidas()
-        migrate_solicitacoes_preenchidas_status()
-        verificar_coluna_observacoes()
-        add_comprovante_pagamento_column()
-        add_aplicacao_geral_column()  # NOVA MIGRAÇÃO AQUI
-        add_comprador_atribuido_column()
-        add_marca_to_preenchidas()
-        
-        print("✓ Todas as migrações concluídas!")
+        # Verificação final
+        print("\n🔍 Verificação final das tabelas...")
+        try:
+            conn = sqlite3.connect(DATABASE)
+            cursor = conn.cursor()
+            cursor.execute("PRAGMA table_info(SolicitacoesPreenchidas)")
+            colunas = [col[1] for col in cursor.fetchall()]
+            print(f"   📊 Colunas em SolicitacoesPreenchidas: {colunas}")
+            
+            if 'marca' in colunas:
+                print("   ✅ CONFIRMADO: Coluna 'marca' existe!")
+            else:
+                print("   ❌ ALERTA: Coluna 'marca' ainda não existe!")
+            conn.close()
+        except Exception as e:
+            print(f"   ⚠️ Erro na verificação final: {e}")
     
-    #app.run(debug=True, host='0.0.0.0', port=80, threaded=False, use_reloader=False)
+    print("\n🌐 Iniciando servidor Flask...")
     app.run(debug=True, host='0.0.0.0', port=5000, threaded=False, use_reloader=False)
     
