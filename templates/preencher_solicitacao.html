@@ -1029,9 +1029,17 @@
             if (btnRemove1 && novoId > 1) btnRemove1.style.display = 'block';
             
             setTimeout(() => {
-                initSelect2ForCotacao(novoId);
-                configurarEventosCotacao(novoId);
-            }, 100);
+                if ($('#fornecedor_' + novoId).length) {
+                    initSelect2ForCotacao(novoId);
+                    configurarEventosCotacao(novoId);
+                } else {
+                    // Fallback: tenta novamente se o DOM ainda não estava pronto
+                    setTimeout(() => {
+                        initSelect2ForCotacao(novoId);
+                        configurarEventosCotacao(novoId);
+                    }, 300);
+                }
+            }, 200);
         }
 
         // ============================================
@@ -1055,6 +1063,7 @@
                     delay: 300,
                     data: function(params) { return { q: params.term }; },
                     processResults: function(data) {
+                        if (!Array.isArray(data)) return { results: [] };
                         return {
                             results: data.map(function(fornecedor) {
                                 return {
@@ -1070,6 +1079,12 @@
                                 };
                             })
                         };
+                    },
+                    transport: function(params, success, failure) {
+                        var $request = $.ajax(params);
+                        $request.then(success);
+                        $request.fail(function() { success({ results: [] }); });
+                        return $request;
                     },
                     cache: true
                 }
@@ -1377,7 +1392,7 @@
                 {
                     fornecedor_id: {{ cotacao.fornecedor_id if cotacao.fornecedor_id else 'null' }},
                     fornecedor_nome_fantasia: '{{ cotacao.fornecedor_nome_fantasia | replace("'", "\\'") if cotacao.fornecedor_nome_fantasia else '' }}',
-                    fornecedor_cnpj: '{{ cotacao.fornecedor_cnpj if cotacao.fornecedor_cnpj else '' }}',
+                    fornecedor_cnpj: '{{ cotacao.fornecedor_cnpj if cotacao.fornecedor_cnpj else "" }}',
                     fornecedor_telefone: '{{ cotacao.fornecedor_telefone or "" }}',
                     fornecedor_endereco: '{{ cotacao.fornecedor_endereco or "" }}',
                     valor_frete: {{ cotacao.valor_frete if cotacao.valor_frete else 0 }},
