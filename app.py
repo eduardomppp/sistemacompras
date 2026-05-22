@@ -26,25 +26,28 @@ from flask import make_response
 # Adicione no início do arquivo, após as importações
 from functools import lru_cache
 from time import time
+import threading
 
 # Cache simples com tempo de expiração
 _cache = {}
 _cache_timestamp = {}
 
+_cache_lock = threading.Lock()
+
 def get_cached_or_execute(key, func, ttl_seconds=300):
     """
-    Cache simples com tempo de expiração
+    Cache thread-safe com tempo de expiração.
     Uso: dados = get_cached_or_execute('chave_unica', lambda: minha_funcao(), ttl_seconds=60)
     """
     current_time = time()
-    if key in _cache and (current_time - _cache_timestamp.get(key, 0)) < ttl_seconds:
-        print(f"✅ Cache hit para {key}")
-        return _cache[key]
-    
-    print(f"🔄 Cache miss para {key}, executando função...")
+    with _cache_lock:
+        if key in _cache and (current_time - _cache_timestamp.get(key, 0)) < ttl_seconds:
+            return _cache[key]
+
     result = func()
-    _cache[key] = result
-    _cache_timestamp[key] = current_time
+    with _cache_lock:
+        _cache[key] = result
+        _cache_timestamp[key] = current_time
     return result
 
 # Funções auxiliares para cache
@@ -83,14 +86,10 @@ load_dotenv()
 
 # Substitua a função get_local_time() existente (no início do arquivo)
 def get_local_time():
-    """Retorna o datetime atual no fuso horário de Brasília (UTC-3) SEM timezone"""
-    from datetime import datetime, timedelta
-    
-    # Obter o tempo UTC e converter para Brasília (UTC-3)
-    utc_now = datetime.utcnow()
-    brasil_time = utc_now - timedelta(hours=3)
-    
-    return brasil_time
+    """Retorna o datetime atual no fuso horário de Brasília (UTC-3) SEM timezone info."""
+    from datetime import datetime, timezone, timedelta
+    BRASILIA = timezone(timedelta(hours=-3))
+    return datetime.now(BRASILIA).replace(tzinfo=None)
 
 # Inicializar aplicação Flask
 app = Flask(__name__)
@@ -99,7 +98,7 @@ app.secret_key = os.getenv('FLASK_SECRET_KEY')
 
 # Configurações de segurança da sessão
 app.config.update(
-    SESSION_COOKIE_SECURE=False,     # Só envia cookies via HTTPS - Desativado para teste (originalmente True)
+    SESSION_COOKIE_SECURE=os.getenv('FLASK_ENV', 'production') != 'development',  # True em produção, False em desenvolvimento
     SESSION_COOKIE_HTTPONLY=True,   # Impede acesso via JavaScript
     SESSION_COOKIE_SAMESITE='Lax',  # Proteção contra CSRF
     PERMANENT_SESSION_LIFETIME=timedelta(minutes=30),  # Tempo de expiração
@@ -180,9 +179,8 @@ def garantir_colunas_necessarias():
     print("🔧 VERIFICAÇÃO CONCLUÍDA")
     print("="*50)
 
-# Executa a correção
-garantir_colunas_necessarias()
 # ============================================
+# (garantir_colunas_necessarias é chamada dentro do bloco __main__ após db.create_all)
 
 app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{DATABASE}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -192,13 +190,11 @@ DB_PATH_FORNECEDORES = os.path.join(os.path.dirname(os.path.abspath(__file__)), 
 UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'Uploads')
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # Limite de 5MB para uploads
-ALLOWED_EXTENSIONS = {'pdf'}
+ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'png', 'pdf'}
 
 # Criar pasta de uploads se não existir
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
-# Ensure ALLOWED_EXTENSIONS is defined correctly
-ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'png', 'pdf'}
 
 def allowed_file(filename, allowed_extensions=None):
     """Verifica se o arquivo tem uma extensão permitida"""
@@ -339,7 +335,7 @@ class SolicitacoesPreenchidas(db.Model):
     pdf_path = db.Column(db.Text, nullable=True)
     observacoes = db.Column(db.Text, nullable=True)  # Novo campo para observações
     marca = db.Column(db.Text, nullable=True)  # 🔴 NOVO CAMPO ADICIONADO AQUI
-    # REMOVER ESTA LINHA: aprovacao_pdf_path = db.Column(db.Text, nullable=True)
+
     
     solicitacao = db.relationship('SolicitacoesCompra', backref='preenchimentos_fornecidos')
     
@@ -502,25 +498,19 @@ class HistoricoDescontos(db.Model):
             'usuario': self.usuario
         }
 
-def check_historico_descontos_schema():
-    try:
-        conn = sqlite3.connect(DATABASE)
-        cursor = conn.cursor()
-        cursor.execute("PRAGMA table_info(HistoricoDescontos)")
-        columns = [col[1] for col in cursor.fetchall()]
-        print("Colunas em HistoricoDescontos:", columns)
-        conn.close()
-    except sqlite3.Error as e:
-        print(f"Erro ao verificar esquema: {str(e)}")
+
 
 def add_comprovante_pagamento_column():
     try:
         conn = sqlite3.connect(DATABASE)
         cursor = conn.cursor()
-        cursor.execute("ALTER TABLE PedidosCompra ADD COLUMN comprovante_pagamento TEXT")
-        conn.commit()
+        cursor.execute("PRAGMA table_info(PedidosCompra)")
+        columns = [col[1] for col in cursor.fetchall()]
+        if 'comprovante_pagamento' not in columns:
+            cursor.execute("ALTER TABLE PedidosCompra ADD COLUMN comprovante_pagamento TEXT")
+            conn.commit()
+            logging.info("Added comprovante_pagamento column to PedidosCompra")
         conn.close()
-        logging.info("Added comprovante_pagamento column to PedidosCompra")
     except sqlite3.Error as e:
         logging.error(f"Error adding comprovante_pagamento column: {str(e)}")
 
@@ -928,10 +918,8 @@ def ler_senhas():
     senhas = {}
     try:
         caminho_absoluto = os.path.abspath(SENHAS_FILE)
-        print(f"Tentando ler arquivo de senhas em: {caminho_absoluto}")
         
         if not os.path.exists(caminho_absoluto):
-            print("Arquivo de senhas não encontrado, criando arquivo vazio")
             with open(caminho_absoluto, "w", encoding='utf-8') as f:
                 f.write("")
             return senhas
@@ -963,8 +951,6 @@ def ler_senhas():
                         "usuario_base": usuario.split('%')[0]  # Adiciona o nome base do usuário
                     }
         
-        print(f"Total de usuários carregados: {len(senhas)}")
-        print(f"Usuários disponíveis: {list(senhas.keys())}")  # DEBUG
         
     except Exception as e:
         print(f"Erro crítico ao ler senhas.txt: {str(e)}")
@@ -1070,30 +1056,53 @@ app.jinja_env.globals.update(
 routes_bp = Blueprint('routes_bp', __name__)
 
 @routes_bp.before_request
-def verificar_tempo_inatividade():
-    if request.endpoint in ['routes_bp.login', 'static', 'routes_bp.debug_senhas']:
+def verificar_sessao():
+    """Verifica inatividade e controle de acesso por menu em um único hook."""
+    endpoints_publicos = {'routes_bp.login', 'static', 'routes_bp.debug_senhas'}
+    if request.endpoint in endpoints_publicos:
         return
-    
-    print(f"Verificando sessão para endpoint: {request.endpoint}")
-    print(f"Sessão atual: {dict(session)}")
-    
+
     if 'usuario' not in session:
-        print(f"Usuário não autenticado tentando acessar {request.endpoint}")
         return redirect(url_for('routes_bp.login'))
-    
+
+    # Verificar inatividade
     agora = datetime.now()
     ultima_atividade = session.get('ultima_atividade')
-    
     if ultima_atividade:
-        ultima_atividade = datetime.strptime(ultima_atividade, '%Y-%m-%d %H:%M:%S.%f')
-        if agora - ultima_atividade > timedelta(minutes=30):
-            usuario = session.get('usuario')
-            registrar_log(usuario, 'logout (inatividade)', request.remote_addr)
-            session.clear()
-            flash('Você foi desconectado por inatividade.', 'warning')
-            return redirect(url_for('routes_bp.login'))
-    
+        try:
+            ultima_atividade = datetime.strptime(ultima_atividade, '%Y-%m-%d %H:%M:%S.%f')
+            if agora - ultima_atividade > timedelta(minutes=30):
+                usuario = session.get('usuario')
+                registrar_log(usuario, 'logout (inatividade)', request.remote_addr)
+                session.clear()
+                flash('Você foi desconectado por inatividade.', 'warning')
+                return redirect(url_for('routes_bp.login'))
+        except (ValueError, TypeError):
+            pass  # Formato inválido — ignora e reseta
     session['ultima_atividade'] = str(agora)
+
+    # Verificar acesso ao menu correto
+    endpoints_menus = {
+        'routes_bp.menu_master': 'menu_master.html',
+        'routes_bp.menu_supervisor': 'menu_supervisor.html',
+        'routes_bp.menu_aprovacao': 'menu_aprovacao.html',
+        'routes_bp.menu_comprador': 'menu_comprador.html',
+        'routes_bp.menu_cadastro': 'menu_cadastro.html',
+        'routes_bp.menu_solicitante': 'menu_solicitante.html',
+        'routes_bp.menu_financeiro': 'menu_financeiro.html',
+        'routes_bp.menu_estoquista': 'menu_estoquista.html',
+        'routes_bp.menu_auditoria': 'menu_auditoria.html',
+    }
+    if request.endpoint in endpoints_menus:
+        usuario_completo = session.get('usuario_completo')
+        if usuario_completo:
+            senhas = ler_senhas()
+            if usuario_completo in senhas:
+                menu_permitido = senhas[usuario_completo]['pagina']
+                if menu_permitido != endpoints_menus[request.endpoint]:
+                    session.clear()
+                    flash('Acesso não permitido. Faça login novamente.', 'error')
+                    return redirect(url_for('routes_bp.login'))
 
 @routes_bp.route('/', methods=['GET'])
 def home():
@@ -1126,45 +1135,7 @@ def login():
     
     return render_template('login.html')
 
-@routes_bp.before_request
-def verificar_acesso_menu():
-    """Verifica se o usuário está acessando o menu correto"""
-    
-    # Lista de endpoints de menus
-    endpoints_menus = {
-        'routes_bp.menu_master': 'menu_master.html',
-        'routes_bp.menu_supervisor': 'menu_supervisor.html',
-        'routes_bp.menu_aprovacao': 'menu_aprovacao.html',
-        'routes_bp.menu_comprador': 'menu_comprador.html',
-        'routes_bp.menu_cadastro': 'menu_cadastro.html',
-        'routes_bp.menu_solicitante': 'menu_solicitante.html',
-        'routes_bp.menu_financeiro': 'menu_financeiro.html',
-        'routes_bp.menu_estoquista': 'menu_estoquista.html',
-        'routes_bp.menu_auditoria': 'menu_auditoria.html'
-    }
-    
-    # Se não for um endpoint de menu, não faz nada
-    if request.endpoint not in endpoints_menus:
-        return
-    
-    # Se não estiver logado, redireciona para login
-    if 'usuario' not in session:
-        flash('Faça login para acessar.', 'error')
-        return redirect(url_for('routes_bp.login'))
-    
-    # Verifica qual menu o usuário deveria acessar
-    usuario_completo = session.get('usuario_completo')
-    if usuario_completo:
-        senhas = ler_senhas()
-        if usuario_completo in senhas:
-            menu_permitido = senhas[usuario_completo]["pagina"]
-            
-            # Se o menu que está tentando acessar não for o permitido
-            if menu_permitido != endpoints_menus[request.endpoint]:
-                # Limpa a sessão e pede login novamente
-                session.clear()
-                flash('Acesso não permitido. Faça login novamente.', 'error')
-                return redirect(url_for('routes_bp.login'))
+# verificar_acesso_menu foi incorporada em verificar_sessao acima
 
 @routes_bp.route('/logout', methods=['GET'])
 def logout():
@@ -1178,7 +1149,7 @@ def logout():
 def listar_senhas():
     if 'usuario' not in session:
         return redirect(url_for('routes_bp.login'))
-    senhas = app.jinja_env.globals['ler_senhas']()
+    senhas = ler_senhas()
     return render_template('senhas.html', senhas=senhas)
 
 @routes_bp.route('/adicionar_senha', methods=['POST'])
@@ -1258,10 +1229,10 @@ def excluir_senha(usuario):
         return redirect(url_for('routes_bp.login'))
     
     try:
-        senhas = app.jinja_env.globals['ler_senhas']()
+        senhas = ler_senhas()
         if usuario in senhas:
             del senhas[usuario]
-            app.jinja_env.globals['salvar_senhas'](senhas)
+            salvar_senhas(senhas)
             flash(f'Senha para {usuario} excluída com sucesso.', 'success')
         else:
             flash(f'Usuário {usuario} não encontrado.', 'error')
@@ -1278,7 +1249,7 @@ def kanban():
 
 @routes_bp.route('/tasks', methods=['GET'])
 def get_tasks():
-    tasks = app.jinja_env.globals['Kanban'].query.all()
+    tasks = Kanban.query.all()
     return jsonify({
         'tasks': [{'id': t.id, 'task_name': t.task_name, 'status': t.status} for t in tasks]
     })
@@ -1293,9 +1264,9 @@ def add_task():
     if data['status'] not in valid_statuses:
         return jsonify({'message': 'Invalid status'}), 400
     
-    task = app.jinja_env.globals['Kanban'](task_name=data['task_name'], status=data['status'])
-    app.jinja_env.globals['db'].session.add(task)
-    app.jinja_env.globals['db'].session.commit()
+    task = Kanban(task_name=data['task_name'], status=data['status'])
+    db.session.add(task)
+    db.session.commit()
     return jsonify({'message': 'Task added successfully'}), 201
 
 @routes_bp.route('/tasks/<int:id>', methods=['PUT'])
@@ -1308,16 +1279,16 @@ def update_task(id):
     if data['status'] not in valid_statuses:
         return jsonify({'message': 'Invalid status'}), 400
     
-    task = app.jinja_env.globals['Kanban'].query.get_or_404(id)
+    task = Kanban.query.get_or_404(id)
     task.status = data['status']
-    app.jinja_env.globals['db'].session.commit()
+    db.session.commit()
     return jsonify({'message': 'Task updated successfully'})
 
 @routes_bp.route('/tasks/<int:id>', methods=['DELETE'])
 def delete_task(id):
-    task = app.jinja_env.globals['Kanban'].query.get_or_404(id)
-    app.jinja_env.globals['db'].session.delete(task)
-    app.jinja_env.globals['db'].session.commit()
+    task = Kanban.query.get_or_404(id)
+    db.session.delete(task)
+    db.session.commit()
     return jsonify({'message': 'Task deleted successfully'})
 
 #Menu Master
@@ -1437,7 +1408,7 @@ def menu_logistica_analista3():
 def logs():
     if 'usuario' not in session:
         return redirect(url_for('routes_bp.login'))
-    logs = app.jinja_env.globals['ler_logs']()
+    logs = ler_logs()
     return render_template('logs.html', logs=logs)
 
 @routes_bp.route('/cadastrar_material', methods=['GET'])
@@ -1451,7 +1422,7 @@ def listar_materiais():
     if 'usuario' not in session:
         return redirect(url_for('routes_bp.login'))
     try:
-        materiais = app.jinja_env.globals['Materiais'].query.all()
+        materiais = Materiais.query.all()
         return render_template('materiais.html', materiais=materiais)
     except Exception as e:
         flash(f'Erro ao carregar materiais: {str(e)}', 'error')
@@ -1482,7 +1453,7 @@ def adicionar_material():
             flash('A aplicação deve ter pelo menos 3 caracteres.', 'error')
             return redirect(url_for('routes_bp.cadastrar_material'))
 
-        material = app.jinja_env.globals['Materiais'](
+        material = Materiais(
             DescricaoMaterial=descricao,
             Empresa=empresa,
             Aplicacao=aplicacao,
@@ -1491,13 +1462,13 @@ def adicionar_material():
             NumeroNF=None,
             FatorConsumo=0.0
         )
-        app.jinja_env.globals['db'].session.add(material)
-        app.jinja_env.globals['db'].session.commit()
+        db.session.add(material)
+        db.session.commit()
 
         flash('Material adicionado com sucesso.', 'success')
         return redirect(url_for('routes_bp.listar_materiais'))
     except Exception as e:
-        app.jinja_env.globals['db'].session.rollback()
+        db.session.rollback()
         flash(f'Erro ao adicionar material: {str(e)}', 'error')
         return redirect(url_for('routes_bp.cadastrar_material'))
 
@@ -1506,9 +1477,9 @@ def excluir_material(cod):
     if 'usuario' not in session:
         return redirect(url_for('routes_bp.login'))
     try:
-        material = app.jinja_env.globals['Materiais'].query.get_or_404(cod)
-        app.jinja_env.globals['db'].session.delete(material)
-        app.jinja_env.globals['db'].session.commit()
+        material = Materiais.query.get_or_404(cod)
+        db.session.delete(material)
+        db.session.commit()
         flash(f'Material {material.DescricaoMaterial} excluído com sucesso.', 'success')
         return redirect(url_for('routes_bp.listar_materiais'))
     except Exception as e:
@@ -1623,21 +1594,7 @@ def solicitar_compra(cod):
         flash(f'Erro inesperado: {str(e)}', 'error')
         return redirect(url_for('routes_bp.buscar_material'))
     
-@routes_bp.route('/debug_materiais')
-def debug_materiais():
-    """Rota temporária para debug dos materiais"""
-    try:
-        materiais = Materiais.query.all()
-        resultado = {
-            'total': len(materiais),
-            'materiais': [{
-                'CodMaterial': m.CodMaterial,
-                'DescricaoMaterial': m.DescricaoMaterial
-            } for m in materiais]
-        }
-        return jsonify(resultado)
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+
     
 @routes_bp.route('/api/materiais_search', methods=['GET'])
 def api_materiais_search():
@@ -1701,14 +1658,7 @@ def api_materiais():
         
         # Buscar todos os materiais
         materiais = Materiais.query.all()
-        print(f"📦 Materiais encontrados: {len(materiais)}")
-        
-        # Log dos primeiros 3 materiais para debug
-        for i, material in enumerate(materiais[:3]):
-            print(f"  {i+1}. Cód: {material.CodMaterial}, Desc: {material.DescricaoMaterial}")
-        
         if not materiais:
-            print("⚠️ Nenhum material encontrado no banco de dados!")
             return jsonify({
                 'success': False, 
                 'error': 'Nenhum material cadastrado',
@@ -1723,11 +1673,9 @@ def api_materiais():
             } for m in materiais]
         }
         
-        print("✅ API de materiais retornando dados com sucesso")
         return jsonify(resultado)
         
     except Exception as e:
-        print(f"❌ Erro na API de materiais: {str(e)}")
         logging.error(f"Erro na API de materiais: {str(e)}", exc_info=True)
         return jsonify({
             'success': False, 
@@ -1756,18 +1704,11 @@ def abrir_solicitacao():
         fotos = request.files.getlist('foto[]')
 
         aplicacao_geral = request.form.get('aplicacao', '').strip()
-        print(f"🔍 DEBUG - Dados recebidos:")
-        print(f"  Total de itens: {len(cod_materiais)}")
-        print(f"  Aplicação geral: '{aplicacao_geral}'")
-        print(f"  Aplicações específicas: {aplicacoes}")
-        print(f"  Empresas: {empresas}")
-        print(f"  Quantidades: {quantidades}")
 
         solicitacoes_criadas = 0
         
         for i, cod_material in enumerate(cod_materiais):
             if not cod_material:
-                print(f"⚠️  Pular índice {i}: cod_material vazio")
                 continue
                 
             try:
@@ -1776,13 +1717,11 @@ def abrir_solicitacao():
                     raise ValueError
             except ValueError:
                 flash(f'Código do material inválido na solicitação {i+1}.', 'error')
-                print(f"❌ Código material inválido: {cod_material}")
                 continue
 
             material = db.session.get(Materiais, cod_material)
             if not material:
                 flash(f'Material com código {cod_material} não encontrado na solicitação {i+1}.', 'error')
-                print(f"❌ Material não encontrado: {cod_material}")
                 continue
 
             if (i >= len(especificacoes) or not especificacoes[i] or 
@@ -1792,7 +1731,6 @@ def abrir_solicitacao():
                 i >= len(ativos) or not ativos[i] or
                 i >= len(prioridades) or not prioridades[i]):
                 flash(f'Campos obrigatórios não preenchidos na solicitação {i+1}.', 'error')
-                print(f"❌ Campos obrigatórios faltando no índice {i}")
                 continue
 
             # 🔴 CORREÇÃO: Converter quantidade para float e depois para string para armazenar
@@ -1813,14 +1751,11 @@ def abrir_solicitacao():
             aplicacao = None
             if i < len(aplicacoes) and aplicacoes[i] and aplicacoes[i].strip():
                 aplicacao = aplicacoes[i].strip()
-                print(f"✅ Aplicação específica encontrada para índice {i}: '{aplicacao}'")
             else:
                 if aplicacao_geral:
                     aplicacao = aplicacao_geral
-                    print(f"✅ Usando aplicação geral do formulário: '{aplicacao}'")
                 else:
                     aplicacao = material.Aplicacao if material and material.Aplicacao else 'Aplicação não especificada'
-                    print(f"ℹ️  Usando aplicação do material: '{aplicacao}'")
 
             # Processar upload da foto
             foto_path = None
@@ -1830,7 +1765,6 @@ def abrir_solicitacao():
                     filename = f"{uuid.uuid4()}_{secure_filename(foto.filename)}"
                     foto_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
                     foto.save(foto_path)
-                    print(f"📸 Foto salva: {foto_path}")
 
             # 🔴 CRIAR SOLICITAÇÃO - quantidade como string
             solicitacao = SolicitacoesCompra(
@@ -1852,22 +1786,18 @@ def abrir_solicitacao():
             )
             db.session.add(solicitacao)
             solicitacoes_criadas += 1
-            print(f"✅ Solicitação {i+1} criada: Material {cod_material}, Qtd {quantidade_armazenar}, Aplicação: '{aplicacao}'")
 
         if solicitacoes_criadas > 0:
             db.session.commit()
             flash(f'{solicitacoes_criadas} solicitações de compra abertas com sucesso.', 'success')
-            print(f"🎉 {solicitacoes_criadas} solicitações salvas no banco")
         else:
             flash('Nenhuma solicitação válida para criar.', 'error')
-            print("❌ Nenhuma solicitação criada")
 
         return redirect(url_for('routes_bp.solicitar_compra'))
         
     except Exception as e:
         db.session.rollback()
         logging.error(f"Error in abrir_solicitacao: {str(e)}")
-        print(f"💥 ERRO CRÍTICO: {str(e)}")
         flash(f'Erro ao abrir solicitações: {str(e)}', 'error')
         return redirect(url_for('routes_bp.buscar_material'))
     
@@ -2097,10 +2027,11 @@ def editar_quantidade_solicitacao(id):
         nova_quantidade = data.get('quantidade')
         senha = data.get('senha')
         
-        # Validar senha
-        if senha != '122004':
+        # Validar senha administrativa (definida em ADMIN_EDIT_PASSWORD no .env)
+        senha_admin = os.getenv('ADMIN_EDIT_PASSWORD', '')
+        if not senha_admin or senha != senha_admin:
             return jsonify({
-                'success': False, 
+                'success': False,
                 'message': 'Senha administrativa inválida!'
             }), 403
         
@@ -2192,7 +2123,6 @@ def listar_solicitacoes_comprador():
         
         # 🔴 OBTER O COMPRADOR LOGADO
         comprador_logado = session.get('usuario')
-        print(f"🔍 Comprador logado: {comprador_logado}")
         
         # 🔴 SUBQUERY 1: IDs das solicitações que JÁ GERARAM PEDIDO
         subquery_pedidos = db.session.query(
@@ -2225,8 +2155,6 @@ def listar_solicitacoes_comprador():
             joinedload(SolicitacoesCompra.preenchimentos_fornecidos)
         ).all()
 
-        print(f"🔍 Total de solicitações encontradas para {comprador_logado}: {len(solicitacoes)}")
-        print(f"🔍 Solicitações disponíveis para preenchimento: {len(solicitacoes)}")
 
         # Agrupar por aplicação + data
         grupos = {}
@@ -2267,8 +2195,6 @@ def listar_solicitacoes_comprador():
         usuarios = list(set(s.usuario for s in solicitacoes if s.usuario))
         aplicacoes = list(set(s.aplicacao for s in solicitacoes if s.aplicacao))
 
-        print(f"🔍 Grupos com rascunho: {len(grupos_com_rascunho)}")
-        print(f"🔍 Grupos sem rascunho: {len(grupos_sem_rascunho)}")
 
         return render_template(
             'listar_solicitacoes_comprador.html',
@@ -2284,7 +2210,6 @@ def listar_solicitacoes_comprador():
 
     except Exception as e:
         flash(f'Erro ao carregar solicitações: {str(e)}', 'error')
-        print(f"ERRO: {str(e)}")
         import traceback
         traceback.print_exc()
         
@@ -2313,7 +2238,6 @@ def aprovar_solicitacao():
         filtro_status = request.args.get('filtro_status', 'pendentes')
         aplicacao_filtro = request.args.get('aplicacao', '')
         
-        print(f"🚀 DEBUG - aprovar_solicitacao com filtro: {filtro_status}")
         
         # Importar joinedload para eager loading
         from sqlalchemy.orm import joinedload
@@ -4280,18 +4204,8 @@ def listar_pedidos_compra():
         if pagina < 1:
             pagina = 1
 
-        # 🔴 CORREÇÃO: Buscar pedidos que NÃO têm solicitações associadas
-        # Subquery para encontrar IDs de pedidos que têm pelo menos um preenchimento associado
-        from sqlalchemy import exists
-        
-        subquery_pedidos_com_solicitacoes = db.session.query(
-            pedido_preenchimento_associacao.c.pedido_id
-        ).distinct().subquery()
-        
-        # Query base: pedidos que NÃO estão na subquery de pedidos com solicitações
-        query = db.session.query(PedidosCompra).filter(
-            ~PedidosCompra.id.in_(subquery_pedidos_com_solicitacoes)
-        )
+        # Query base: todos os pedidos, sem filtro de associação
+        query = db.session.query(PedidosCompra)
 
         # Aplicar filtros
         if status:
@@ -4313,22 +4227,28 @@ def listar_pedidos_compra():
         # Buscar pedidos com os filtros básicos
         pedidos = query.order_by(PedidosCompra.data_criacao.desc()).all()
         
-        # 🔴 CORREÇÃO: Filtrar em memória para empresa e comprador (já que não há JOIN direto)
+        # Filtrar em memória por empresa e comprador (requerem JOIN com solicitações)
         pedidos_filtrados = []
         for pedido in pedidos:
-            # Para pedidos sem solicitações associadas, empresa e comprador vêm do próprio pedido
-            # ou de outras fontes. Neste caso, como não há solicitações, esses filtros podem ser ignorados
-            # ou você pode buscar informações do pedido.usuario
-            
-            # Se você quiser filtrar por empresa baseada no usuário do pedido, pode fazer:
             if empresa:
-                # Aqui você pode mapear o usuário do pedido para sua empresa usando o arquivo senhas.txt
-                # Por simplicidade, vamos pular o filtro de empresa para pedidos sem solicitações
-                pass
-            
-            if comprador_atribuido and comprador_atribuido != pedido.usuario:
-                continue
-            
+                empresas_pedido = {
+                    s.empresa
+                    for p in pedido.preenchimentos
+                    for s in ([p.solicitacao] if p.solicitacao else [])
+                }
+                if empresa not in empresas_pedido:
+                    continue
+
+            if comprador_atribuido:
+                compradores_pedido = {
+                    s.comprador_atribuido
+                    for p in pedido.preenchimentos
+                    for s in ([p.solicitacao] if p.solicitacao else [])
+                    if s.comprador_atribuido
+                }
+                if comprador_atribuido not in compradores_pedido:
+                    continue
+
             pedidos_filtrados.append(pedido)
         
         # Paginação em memória
@@ -4699,7 +4619,7 @@ def atualizar_status_pedido(id):
                 preenchimento.fornecedor_id = fornecedor_id
                 preenchimento.numero_nf = numero_nf
 
-                material = app.jinja_env.globals['Materiais'].query.filter_by(
+                material = Materiais.query.filter_by(
                     CodMaterial=preenchimento.solicitacao.cod_material
                 ).first()
 
@@ -4721,7 +4641,7 @@ def atualizar_status_pedido(id):
                             numero_nf=numero_nf,
                             usuario=session.get('usuario')
                         )
-                        app.jinja_env.globals['db'].session.add(estoque)
+                        db.session.add(estoque)
                     else:
                         estoque_existente.fornecedor = fornecedor_id
                         estoque_existente.numero_nf = numero_nf
@@ -4735,7 +4655,7 @@ def atualizar_status_pedido(id):
             pedido.status = status
             flash('Status atualizado com sucesso.', 'success')
 
-        app.jinja_env.globals['db'].session.commit()
+        db.session.commit()
 
         # Retornar mensagens flash como JSON
         messages = []
@@ -4745,7 +4665,7 @@ def atualizar_status_pedido(id):
         return jsonify({'flash': messages}), 204
 
     except Exception as e:
-        app.jinja_env.globals['db'].session.rollback()
+        db.session.rollback()
         flash(f'Erro interno ao atualizar status: {str(e)}', 'error')
         return jsonify({'flash': [['Erro interno ao atualizar status.', 'error']]}), 500
     
@@ -4768,13 +4688,13 @@ def adicionar_estoque(preenchimento_id):
                 flash('Fornecedor e número da NF são obrigatórios.', 'error')
                 return render_template('adicionar_estoque.html', preenchimento=preenchimento)
             
-            material = app.jinja_env.globals['Materiais'].query.filter_by(CodMaterial=preenchimento.solicitacao.cod_material).first()
+            material = Materiais.query.filter_by(CodMaterial=preenchimento.solicitacao.cod_material).first()
             if material:
                 material.QuantidadeEstoque += preenchimento.solicitacao.quantidade
                 material.Fornecedor = fornecedor
                 material.NumeroNF = numero_nf
             else:
-                material = app.jinja_env.globals['Materiais'](
+                material = Materiais(
                     CodMaterial=preenchimento.solicitacao.cod_material,
                     DescricaoMaterial=preenchimento.solicitacao.material.DescricaoMaterial,
                     Empresa=preenchimento.solicitacao.empresa,
@@ -4784,7 +4704,7 @@ def adicionar_estoque(preenchimento_id):
                     NumeroNF=numero_nf,
                     FatorConsumo=0.0
                 )
-                app.jinja_env.globals['db'].session.add(material)
+                db.session.add(material)
             
             estoque = app.jinja_env.globals['Estoque'](
                 preenchimento_id=preenchimento_id,
@@ -4794,8 +4714,8 @@ def adicionar_estoque(preenchimento_id):
                 numero_nf=numero_nf,
                 usuario=session['usuario']
             )
-            app.jinja_env.globals['db'].session.add(estoque)
-            app.jinja_env.globals['db'].session.commit()
+            db.session.add(estoque)
+            db.session.commit()
 
             flash('Material adicionado ao estoque com sucesso.', 'success')
             return redirect(url_for('routes_bp.listar_estoque'))
@@ -4838,7 +4758,7 @@ def requisitar_material(preenchimento_id):
                 flash('Quantidade deve ser um número válido.', 'error')
                 return render_template('requisitar_material.html', preenchimento=preenchimento, estoque=estoque)
             
-            material = app.jinja_env.globals['Materiais'].query.filter_by(CodMaterial=preenchimento.solicitacao.cod_material).first()
+            material = Materiais.query.filter_by(CodMaterial=preenchimento.solicitacao.cod_material).first()
             if not material:
                 flash(f'Material com código {preenchimento.solicitacao.cod_material} não encontrado.', 'error')
                 return render_template('requisitar_material.html', preenchimento=preenchimento, estoque=estoque)
@@ -4859,15 +4779,15 @@ def requisitar_material(preenchimento_id):
             estoque.quantidade -= quantidade
             material.QuantidadeEstoque -= quantidade
             
-            app.jinja_env.globals['db'].session.add(requisicao)
-            app.jinja_env.globals['db'].session.commit()
+            db.session.add(requisicao)
+            db.session.commit()
 
             flash(f'Requisição realizada com sucesso. Ticket: {ticket}', 'success')
             return redirect(url_for('routes_bp.listar_requisicoes'))
         
         return render_template('requisitar_material.html', preenchimento=preenchimento, estoque=estoque)
     except Exception as e:
-        app.jinja_env.globals['db'].session.rollback()
+        db.session.rollback()
         flash(f'Erro ao requisitar material: {str(e)}', 'error')
         return redirect(url_for('routes_bp.listar_estoque'))
 
@@ -5330,7 +5250,7 @@ def search_fornecedores():
     try:
         query = request.args.get('q', '').strip()
         if not query:
-            return jsonify([]), 400
+            return jsonify([])   # 200 com lista vazia — evita quebrar o Select2
         
         conn = get_db_connection(DB_PATH_FORNECEDORES)
         if not conn:
@@ -9006,7 +8926,8 @@ if __name__ == '__main__':
     
     with app.app_context():
         db.create_all()
-        
+        garantir_colunas_necessarias()
+
         if not atualizar_estrutura_requisicoes():
             print("Falha na migração de requisicoes. Verifique os logs.")
         
@@ -9024,14 +8945,6 @@ if __name__ == '__main__':
         
         print("✓ Todas as migrações concluídas!")
     
-    logging.basicConfig(
-        filename='app_errors.log',
-        level=logging.INFO,
-        format='%(asctime)s - %(levelname)s - %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S',
-        encoding='utf-8'
-    )
-
     #app.run(debug=True, host='0.0.0.0', port=80, threaded=False, use_reloader=False)
     app.run(debug=True, host='0.0.0.0', port=5000, threaded=False, use_reloader=False)
-
+    
