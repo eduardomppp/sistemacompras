@@ -1417,45 +1417,25 @@ def format_cnpj(cnpj):
 def ler_senhas():
     senhas = {}
     try:
-        caminho_absoluto = os.path.abspath(SENHAS_FILE)
-        
-        if not os.path.exists(caminho_absoluto):
-            with open(caminho_absoluto, "w", encoding='utf-8') as f:
-                f.write("")
-            return senhas
-        
-        # Tentar ler com encoding UTF-8 e fallback para latin-1
-        try:
-            with open(caminho_absoluto, "r", encoding='utf-8') as f:
-                content = f.read()
-        except UnicodeDecodeError:
-            with open(caminho_absoluto, "r", encoding='latin-1') as f:
-                content = f.read()
-        
-        # Processar conteúdo
-        for line in content.splitlines():
-            line = line.strip()
-            if line and not line.startswith("#"):
-                partes = line.split("%")
-                if len(partes) >= 3:
-                    usuario = partes[0]
-                    senha = partes[1]
-                    pagina = partes[2]
-                    empresa = partes[3] if len(partes) >= 4 else ""
-                    
-                    # CORREÇÃO: Armazenar tanto o usuário completo quanto o nome base
-                    senhas[usuario] = {
-                        "senha": senha,
-                        "pagina": pagina,
-                        "empresa": empresa,
-                        "usuario_base": usuario.split('%')[0]  # Adiciona o nome base do usuário
-                    }
-        
-        
+        with open(SENHAS_FILE, "r", encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith("#"):
+                    partes = line.split("%")
+                    if len(partes) >= 3:
+                        usuario = partes[0].replace('@', '')  # Remove @ automaticamente
+                        senha = partes[1]
+                        pagina = partes[2]
+                        empresa = partes[3] if len(partes) >= 4 else ""
+                        
+                        senhas[usuario] = {
+                            "senha": senha,
+                            "pagina": pagina,
+                            "empresa": empresa,
+                            "usuario_base": usuario
+                        }
     except Exception as e:
-        print(f"Erro crítico ao ler senhas.txt: {str(e)}")
-        logging.error(f"Erro ao ler senhas.txt: {str(e)}", exc_info=True)
-    
+        print(f"Erro: {str(e)}")
     return senhas
 
 def salvar_senhas(senhas):
