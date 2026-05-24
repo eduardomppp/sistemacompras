@@ -214,58 +214,48 @@ def garantir_colunas_necessarias():
     ]
     
     # ============================================
-    # Executar verificações
+    # Executar verificações — UMA conexão para todas as iterações
     # ============================================
-    for item in verificacoes:
-        try:
-            # Conectar ao banco
-            conn = sqlite3.connect(DATABASE)
-            cursor = conn.cursor()
-            
-            # Verificar se a tabela existe
-            cursor.execute(f"SELECT name FROM sqlite_master WHERE type='table' AND name='{item['tabela']}'")
-            tabela_existe = cursor.fetchone()
-            
-            if not tabela_existe:
-                print(f"⚠️ Tabela '{item['tabela']}' não existe - será criada pelo SQLAlchemy")
-                conn.close()
-                continue
-            
-            # Verificar estrutura da tabela
-            cursor.execute(f"PRAGMA table_info({item['tabela']})")
-            colunas = [col[1] for col in cursor.fetchall()]
-            
-            if item['coluna'] not in colunas:
-                print(f"➕ Adicionando coluna '{item['coluna']}' à tabela '{item['tabela']}'...")
-                
-                try:
-                    # Executar o ALTER TABLE
-                    cursor.execute(item['sql'])
-                    conn.commit()
-                    
-                    # Verificar se funcionou
-                    cursor.execute(f"PRAGMA table_info({item['tabela']})")
-                    colunas_apos = [col[1] for col in cursor.fetchall()]
-                    
-                    if item['coluna'] in colunas_apos:
+    try:
+        conn = sqlite3.connect(DATABASE)
+        cursor = conn.cursor()
+
+        for item in verificacoes:
+            try:
+                cursor.execute(
+                    "SELECT name FROM sqlite_master WHERE type='table' AND name=?",
+                    (item['tabela'],)
+                )
+                if not cursor.fetchone():
+                    print(f"⚠️ Tabela '{item['tabela']}' não existe - será criada pelo SQLAlchemy")
+                    continue
+
+                cursor.execute(f"PRAGMA table_info({item['tabela']})")
+                colunas = [col[1] for col in cursor.fetchall()]
+
+                if item['coluna'] not in colunas:
+                    print(f"➕ Adicionando coluna '{item['coluna']}' à tabela '{item['tabela']}'...")
+                    try:
+                        cursor.execute(item['sql'])
                         print(f"   ✅ Coluna '{item['coluna']}' adicionada com sucesso!")
-                    else:
-                        print(f"   ❌ Falha ao adicionar '{item['coluna']}'")
-                        
-                except sqlite3.OperationalError as e:
-                    if "duplicate column name" in str(e).lower():
-                        print(f"   ✅ Coluna '{item['coluna']}' já existe (ignorando erro)")
-                    else:
-                        print(f"   ⚠️ Erro ao adicionar coluna: {e}")
-            else:
-                print(f"✅ Coluna '{item['coluna']}' já existe em '{item['tabela']}'")
-            
-            conn.close()
-            
-        except sqlite3.Error as e:
-            print(f"⚠️ Erro ao verificar {item['tabela']}.{item['coluna']}: {e}")
-        except Exception as e:
-            print(f"⚠️ Erro inesperado: {e}")
+                    except sqlite3.OperationalError as e:
+                        if "duplicate column name" in str(e).lower():
+                            print(f"   ✅ Coluna '{item['coluna']}' já existe (ignorando erro)")
+                        else:
+                            print(f"   ⚠️ Erro ao adicionar coluna: {e}")
+                else:
+                    print(f"✅ Coluna '{item['coluna']}' já existe em '{item['tabela']}'")
+
+            except sqlite3.Error as e:
+                print(f"⚠️ Erro ao verificar {item['tabela']}.{item['coluna']}: {e}")
+            except Exception as e:
+                print(f"⚠️ Erro inesperado: {e}")
+
+        conn.commit()
+        conn.close()
+
+    except sqlite3.Error as e:
+        print(f"⚠️ Erro ao abrir conexão para verificações: {e}")
     
     print("=" * 50)
     print("🔧 VERIFICAÇÃO CONCLUÍDA")
@@ -275,6 +265,12 @@ def garantir_colunas_necessarias():
 
 app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{DATABASE}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    'connect_args': {'check_same_thread': False},
+    'pool_pre_ping': True,
+    'pool_size': 5,
+    'pool_recycle': 300,
+}
 DB_PATH_FORNECEDORES = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'fornecedores.db')
 
 # Configuração para upload de arquivos
@@ -290,23 +286,14 @@ if not os.path.exists(UPLOAD_FOLDER):
 def allowed_file(filename, allowed_extensions=None):
     """Verifica se o arquivo tem uma extensão permitida"""
     if not filename:
-        logging.warning("Filename is empty or None")
         return False
-    
     if '.' not in filename:
-        logging.warning(f"Filename has no extension: {filename}")
         return False
-    
     try:
         extension = filename.rsplit('.', 1)[1].lower()
         allowed = allowed_extensions or ALLOWED_EXTENSIONS
-        
-        # Log para debug
-        logging.info(f"Verificando arquivo: {filename}, extensão: {extension}, permitido: {extension in allowed}")
-        
         return extension in allowed
     except IndexError:
-        logging.warning(f"Filename has no valid extension: {filename}")
         return False
 
 # Configuração do logger
@@ -315,9 +302,10 @@ log_dir = os.path.dirname(log_file)
 if log_dir and not os.path.exists(log_dir):
     os.makedirs(log_dir)
 
+_log_level = logging.DEBUG if os.getenv('FLASK_ENV') == 'development' else logging.WARNING
 logging.basicConfig(
     filename=log_file,
-    level=logging.INFO,
+    level=_log_level,
     format='%(asctime)s - %(levelname)s - %(message)s',
     datefmt='%Y-%m-%d %H:%M:%S',
     encoding='utf-8'
@@ -331,6 +319,19 @@ def log_error(message):
 
 # Inicializar SQLAlchemy
 db = SQLAlchemy(app)
+
+# Configurar PRAGMAs de performance no SQLite a cada nova conexão
+from sqlalchemy import event as _sa_event
+from sqlalchemy.engine import Engine as _Engine
+
+@_sa_event.listens_for(_Engine, "connect")
+def _set_sqlite_pragmas(dbapi_conn, _connection_record):
+    cursor = dbapi_conn.cursor()
+    cursor.execute("PRAGMA journal_mode=WAL")    # leitura simultânea sem travar escrita
+    cursor.execute("PRAGMA cache_size=-32000")   # 32 MB de cache em RAM
+    cursor.execute("PRAGMA synchronous=NORMAL")  # mais rápido, ainda seguro contra crash
+    cursor.execute("PRAGMA temp_store=MEMORY")   # tabelas temporárias na RAM
+    cursor.close()
 
 # Modelo para Kanban
 class Kanban(db.Model):
@@ -1902,7 +1903,11 @@ def listar_materiais():
     if 'usuario' not in session:
         return redirect(url_for('routes_bp.login'))
     try:
-        materiais = Materiais.query.all()
+        materiais = get_cached_or_execute(
+            'todos_materiais',
+            lambda: Materiais.query.all(),
+            ttl_seconds=300
+        )
         return render_template('materiais.html', materiais=materiais)
     except Exception as e:
         flash(f'Erro ao carregar materiais: {str(e)}', 'error')
@@ -2046,8 +2051,12 @@ def solicitar_compra(cod):
 
         empresa_usuario = senhas[usuario].get('empresa', '')
         
-        # BUSCAR TODOS OS MATERIAIS - ADICIONE ESTA LINHA
-        todos_materiais = Materiais.query.all()
+        # BUSCAR TODOS OS MATERIAIS — usando cache de 5 minutos
+        todos_materiais = get_cached_or_execute(
+            'todos_materiais',
+            lambda: Materiais.query.all(),
+            ttl_seconds=300
+        )
 
         # Se o código foi passado (botão de material)
         if cod:
@@ -2123,10 +2132,10 @@ def api_materiais_search():
         })
         
     except Exception as e:
-        logging.error(f"Erro na API de busca de materiais: {str(e)}")
+        logging.error(f"Erro na API de busca de materiais: {type(e).__name__}")
         return jsonify({
-            'success': False, 
-            'error': str(e),
+            'success': False,
+            'error': 'Erro interno. Tente novamente.',
             'materiais': []
         }), 500
 
@@ -2136,8 +2145,12 @@ def api_materiais():
     try:
         print("🔍 Acessando API de materiais...")
         
-        # Buscar todos os materiais
-        materiais = Materiais.query.all()
+        # Buscar todos os materiais — cache de 5 minutos
+        materiais = get_cached_or_execute(
+            'todos_materiais',
+            lambda: Materiais.query.all(),
+            ttl_seconds=300
+        )
         if not materiais:
             return jsonify({
                 'success': False, 
@@ -2156,10 +2169,10 @@ def api_materiais():
         return jsonify(resultado)
         
     except Exception as e:
-        logging.error(f"Erro na API de materiais: {str(e)}", exc_info=True)
+        logging.error(f"Erro na API de materiais: {type(e).__name__}", exc_info=False)
         return jsonify({
-            'success': False, 
-            'error': str(e),
+            'success': False,
+            'error': 'Erro interno. Tente novamente.',
             'materiais': []
         }), 500
 
@@ -2585,7 +2598,7 @@ def editar_quantidade_solicitacao(id):
         logging.error(f"Erro ao editar quantidade da solicitação {id}: {str(e)}")
         return jsonify({
             'success': False, 
-            'message': f'Erro ao editar quantidade: {str(e)}'
+            'message': 'Erro interno. Tente novamente.'
         }), 500
     
 #Tela Comprado
@@ -2884,7 +2897,8 @@ def debug_ultimas_solicitacoes():
             'solicitacoes': resultado
         })
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        app.logger.error(f'API error: {type(e).__name__}', exc_info=False)
+        return jsonify({'error': 'Erro interno. Tente novamente.'}), 500
     
 @routes_bp.route('/debug_solicitacoes_status')
 def debug_solicitacoes_status():
@@ -2926,7 +2940,8 @@ def debug_solicitacoes_status():
             'solicitacoes': resultado
         })
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        app.logger.error(f'API error: {type(e).__name__}', exc_info=False)
+        return jsonify({'error': 'Erro interno. Tente novamente.'}), 500
 
 @routes_bp.route('/debug_ultima_solicitacao')
 def debug_ultima_solicitacao():
@@ -2953,7 +2968,8 @@ def debug_ultima_solicitacao():
         
         return jsonify(resultado)
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        app.logger.error(f'API error: {type(e).__name__}', exc_info=False)
+        return jsonify({'error': 'Erro interno. Tente novamente.'}), 500
     
 @routes_bp.route('/debug_solicitacoes_recentes')
 def debug_solicitacoes_recentes():
@@ -2980,7 +2996,8 @@ def debug_solicitacoes_recentes():
             'solicitacoes': resultado
         })
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        app.logger.error(f'API error: {type(e).__name__}', exc_info=False)
+        return jsonify({'error': 'Erro interno. Tente novamente.'}), 500
     
 @routes_bp.route('/debug_solicitacoes_detalhado')
 def debug_solicitacoes_detalhado():
@@ -3014,7 +3031,8 @@ def debug_solicitacoes_detalhado():
             'solicitacoes': resultado
         })
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        app.logger.error(f'API error: {type(e).__name__}', exc_info=False)
+        return jsonify({'error': 'Erro interno. Tente novamente.'}), 500
 
 @routes_bp.route('/debug_verificar_coluna_status')
 def debug_verificar_coluna_status():
@@ -3049,7 +3067,8 @@ def debug_verificar_coluna_status():
             'dados_sql': sql_data
         })
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        app.logger.error(f'API error: {type(e).__name__}', exc_info=False)
+        return jsonify({'error': 'Erro interno. Tente novamente.'}), 500
     
 def migrate_solicitacoes_compra():
     try:
@@ -3854,80 +3873,79 @@ def cotacao_imprimir(id):
 
 @routes_bp.route('/listar_solicitacoes_preenchidas', methods=['GET'])
 def listar_solicitacoes_preenchidas():
-    """Lista solicitações preenchidas com status Aguardando Aprovacao"""
-    
+    """Lista solicitações preenchidas com status Aguardando Aprovacao — paginado (20 por página)"""
+
     if 'usuario' not in session:
         flash('🔒 Acesso não autorizado.', 'warning')
         return redirect(url_for('routes_bp.login'))
-    
+
     try:
-        # Parâmetros de filtro
+        # Parâmetros de paginação e filtro
+        page = request.args.get('page', 1, type=int)
+        per_page = 20
+
         empresa = request.args.get('empresa', '').strip()
         usuario = request.args.get('usuario', '').strip()
         data_inicio_str = request.args.get('data_inicio', '').strip()
         data_fim_str = request.args.get('data_fim', '').strip()
-        
+
         filtros = {
             'empresa': empresa,
             'usuario': usuario,
             'data_inicio': data_inicio_str,
             'data_fim': data_fim_str
         }
-        
+
         # Converter datas
         data_inicio = None
         data_fim = None
-        
+
         if data_inicio_str:
             try:
                 data_inicio = datetime.strptime(data_inicio_str, '%Y-%m-%d')
             except ValueError:
                 flash('⚠️ Data inicial inválida.', 'warning')
-        
+
         if data_fim_str:
             try:
                 data_fim = datetime.strptime(data_fim_str, '%Y-%m-%d') + timedelta(days=1)
             except ValueError:
                 flash('⚠️ Data final inválida.', 'warning')
-        
-        # Query base - buscar APENAS status 'Aguardando Aprovacao'
+
+        # Query base — somente 'Aguardando Aprovacao', com join para filtros por empresa
         query = SolicitacoesPreenchidas.query.filter(
             SolicitacoesPreenchidas.status == 'Aguardando Aprovacao'
-        )
-        
-        # Join com SolicitacoesCompra
-        query = query.join(SolicitacoesCompra)
-        
-        # Aplicar filtros
+        ).join(SolicitacoesCompra)
+
         if empresa:
             query = query.filter(SolicitacoesCompra.empresa == empresa)
-        
         if usuario:
             query = query.filter(SolicitacoesPreenchidas.usuario == usuario)
-        
         if data_inicio:
             query = query.filter(SolicitacoesPreenchidas.data_preenchimento >= data_inicio)
-        
         if data_fim:
             query = query.filter(SolicitacoesPreenchidas.data_preenchimento <= data_fim)
-        
-        # Executar query
-        preenchimentos = query.order_by(
+
+        # Total real sem carregar tudo na memória
+        total_cotacoes = query.count()
+
+        # Paginar: busca só os 20 da página atual
+        paginacao = query.order_by(
             SolicitacoesPreenchidas.data_preenchimento.desc()
-        ).all()
-        
+        ).paginate(page=page, per_page=per_page, error_out=False)
+
+        preenchimentos = paginacao.items
+
         # Estruturar dados para o template
         preenchimentos_por_material = {}
-        
         for p in preenchimentos:
             if not p.solicitacao:
                 continue
-                
-            material_nome = p.solicitacao.material.DescricaoMaterial if p.solicitacao.material else 'Material não encontrado'
-            
-            # Obter nome do fornecedor
+            material_nome = (
+                p.solicitacao.material.DescricaoMaterial
+                if p.solicitacao.material else 'Material não encontrado'
+            )
             fornecedor_nome = get_fornecedor_nome(p.fornecedor_id)
-            
             preenchimento_info = {
                 'id': p.id,
                 'fornecedor_nome': fornecedor_nome,
@@ -3942,52 +3960,50 @@ def listar_solicitacoes_preenchidas():
                 'pdf_path': p.pdf_path,
                 'observacoes': p.observacoes or ''
             }
-            
             if material_nome not in preenchimentos_por_material:
                 preenchimentos_por_material[material_nome] = []
-            
             preenchimentos_por_material[material_nome].append(preenchimento_info)
-        
-        # Obter listas para filtros
+
+        # Listas para filtros (queries leves — só valores distintos)
         empresas = []
         try:
-            empresas_query = db.session.query(SolicitacoesCompra.empresa).distinct().all()
-            empresas = sorted([e[0] for e in empresas_query if e[0]])
-        except:
+            empresas = sorted([
+                e[0] for e in db.session.query(SolicitacoesCompra.empresa).distinct().all() if e[0]
+            ])
+        except Exception:
             pass
-        
+
         usuarios = []
         try:
-            usuarios_query = db.session.query(SolicitacoesPreenchidas.usuario).distinct().all()
-            usuarios = sorted([u[0] for u in usuarios_query if u[0]])
-        except:
+            usuarios = sorted([
+                u[0] for u in db.session.query(SolicitacoesPreenchidas.usuario).distinct().all() if u[0]
+            ])
+        except Exception:
             pass
-        
-        # Mensagem informativa
-        total_cotacoes = sum(len(cotacoes) for cotacoes in preenchimentos_por_material.values())
-        if total_cotacoes == 0:
-            flash('📭 Nenhuma solicitação aguardando aprovação.', 'info')
-        else:
-            flash(f'📊 {total_cotacoes} cotações aguardando aprovação.', 'success')
-        
+
         return render_template(
             'listar_solicitacoes_preenchidas.html',
             preenchimentos_por_material=preenchimentos_por_material,
             empresas=empresas,
             usuarios=usuarios,
-            filtros=filtros
+            filtros=filtros,
+            total_cotacoes=total_cotacoes,
+            paginacao=paginacao,
+            page=page,
         )
-        
+
     except Exception as e:
         app.logger.error(f'❌ Erro em listar_solicitacoes_preenchidas: {str(e)}', exc_info=True)
         flash(f'Erro ao carregar solicitações: {str(e)}', 'danger')
-        
         return render_template(
             'listar_solicitacoes_preenchidas.html',
             preenchimentos_por_material={},
             empresas=[],
             usuarios=[],
-            filtros={}
+            filtros={},
+            total_cotacoes=0,
+            paginacao=None,
+            page=1,
         )
 # Rota de debug - adicione temporariamente no app.py
 @routes_bp.route('/debug_preenchimentos')
@@ -4023,7 +4039,8 @@ def debug_preenchimentos():
             ]
         })
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        app.logger.error(f'API error: {type(e).__name__}', exc_info=False)
+        return jsonify({'error': 'Erro interno. Tente novamente.'}), 500
     
 def get_fornecedor_nome(fornecedor_id):
     """Retorna o nome do fornecedor pelo ID (com fallback)"""
@@ -4219,7 +4236,7 @@ def atualizar_status_preenchimento(id):
         print(f"ERRO >> {str(e)}")
         return jsonify({
             'success': False, 
-            'message': f'Erro ao atualizar status: {str(e)}'
+            'message': 'Erro interno. Tente novamente.'
         }), 500
     
 @routes_bp.route('/gerar_pedido_compra', methods=['GET', 'POST'])
@@ -5275,24 +5292,24 @@ def requisitar_material(preenchimento_id):
 def listar_estoque():
     if 'usuario' not in session:
         return redirect(url_for('routes_bp.login'))
-    
+
     try:
-        # Busca todos os materiais com estoque positivo
-        materiais = Materiais.query.filter(Materiais.QuantidadeEstoque > 0).all()
-        
-        estoques = []
-        for material in materiais:
-            # Tenta encontrar um registro de estoque
-            estoque = Estoque.query.filter_by(cod_material=material.CodMaterial).first()
-            
-            estoques.append({
-                'material': material,
-                'preenchimento_id': estoque.preenchimento_id if estoque else None
-            })
-            
+        # Uma única query com LEFT JOIN — sem loop de queries secundárias
+        from sqlalchemy.orm import outerjoin
+        rows = (
+            db.session.query(Materiais, Estoque)
+            .outerjoin(Estoque, Estoque.cod_material == Materiais.CodMaterial)
+            .filter(Materiais.QuantidadeEstoque > 0)
+            .all()
+        )
+        estoques = [
+            {'material': m, 'preenchimento_id': e.preenchimento_id if e else None}
+            for m, e in rows
+        ]
         return render_template('listar_estoque.html', estoques=estoques)
     except Exception as e:
-        flash(f'Erro ao carregar estoque: {str(e)}', 'error')
+        app.logger.error(f'Erro em listar_estoque: {type(e).__name__}')
+        flash('Erro ao carregar estoque.', 'error')
         return render_template('listar_estoque.html', estoques=[])
     
 #Auditoria tela de listar estoque
@@ -5300,24 +5317,22 @@ def listar_estoque():
 def listar_estoque_auditor():
     if 'usuario' not in session:
         return redirect(url_for('routes_bp.login'))
-    
+
     try:
-        # Busca todos os materiais com estoque positivo
-        materiais = Materiais.query.filter(Materiais.QuantidadeEstoque > 0).all()
-        
-        estoques = []
-        for material in materiais:
-            # Tenta encontrar um registro de estoque
-            estoque = Estoque.query.filter_by(cod_material=material.CodMaterial).first()
-            
-            estoques.append({
-                'material': material,
-                'preenchimento_id': estoque.preenchimento_id if estoque else None
-            })
-            
+        rows = (
+            db.session.query(Materiais, Estoque)
+            .outerjoin(Estoque, Estoque.cod_material == Materiais.CodMaterial)
+            .filter(Materiais.QuantidadeEstoque > 0)
+            .all()
+        )
+        estoques = [
+            {'material': m, 'preenchimento_id': e.preenchimento_id if e else None}
+            for m, e in rows
+        ]
         return render_template('listar_estoque_auditor.html', estoques=estoques)
     except Exception as e:
-        flash(f'Erro ao carregar estoque: {str(e)}', 'error')
+        app.logger.error(f'Erro em listar_estoque_auditor: {type(e).__name__}')
+        flash('Erro ao carregar estoque.', 'error')
         return render_template('listar_estoque_auditor.html', estoques=[])
 
 @routes_bp.route('/requisitar_manual/<int:cod_material>', methods=['GET', 'POST'])
@@ -5808,7 +5823,8 @@ def verificar_campo_ativo():
             'materiais_ativos': Materiais.query.filter_by(Ativo=True).count()
         })
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        app.logger.error(f'API error: {type(e).__name__}', exc_info=False)
+        return jsonify({'error': 'Erro interno. Tente novamente.'}), 500
 
 #------------------------------------------Ativos 
 # Adicione no início do arquivo, com as outras constantes
@@ -6327,22 +6343,15 @@ def exportar_auditoria_xlsx():
             except Exception as e:
                 app.logger.error(f"Erro ao processar data_fim: {e}")
 
-        # Busca os registros
-        solicitacoes = query.order_by(SolicitacoesCompra.data_solicitacao.desc()).distinct().all()
-        
-        app.logger.info(f"Total de solicitações encontradas: {len(solicitacoes)}")
-        
-        # Se não encontrou nada, log mais detalhado
-        if len(solicitacoes) == 0:
-            app.logger.warning("NENHUMA SOLICITAÇÃO ENCONTRADA COM OS FILTROS:")
-            app.logger.warning(f"  - empresa: {empresa}")
-            app.logger.warning(f"  - usuario: {usuario} (exportar_todos: {exportar_todos})")
-            app.logger.warning(f"  - ativo: {ativo}")
-            app.logger.warning(f"  - nome_ativo: {nome_ativo}")
-            app.logger.warning(f"  - status: {status}")
-            app.logger.warning(f"  - prioridade_filtro: {prioridade_filtro}")
-            app.logger.warning(f"  - data_inicio: {data_inicio}")
-            app.logger.warning(f"  - data_fim: {data_fim}")
+        # Busca os registros — limitado para evitar consumo excessivo de memória
+        EXPORT_ROW_LIMIT = 5000
+        solicitacoes = query.order_by(
+            SolicitacoesCompra.data_solicitacao.desc()
+        ).distinct().limit(EXPORT_ROW_LIMIT).all()
+
+        app.logger.info(f"Export auditoria: {len(solicitacoes)} solicitações encontradas.")
+        if len(solicitacoes) == EXPORT_ROW_LIMIT:
+            app.logger.warning(f'Export de auditoria atingiu limite de {EXPORT_ROW_LIMIT} linhas.')
 
         # ────────────────────────────────────────────────
         # Preparar dados para o Excel
@@ -6696,19 +6705,21 @@ def tela_auditoria():
             flash('Auditoria registrada com sucesso!', 'success')
             return redirect(url_for('routes_bp.tela_auditoria'))
 
-        # Obter parâmetros de filtro (código existente)
-        empresa = request.args.get('empresa')
-        usuario = request.args.get('usuario')
-        ativo = request.args.get('ativo')
-        nome_ativo = request.args.get('nome_ativo')
-        data_inicio = request.args.get('data_inicio')
-        data_fim = request.args.get('data_fim')
-        status = request.args.get('status')
+        # Parâmetros de paginação e filtro
+        page     = request.args.get('page', 1, type=int)
+        per_page = 20
 
-        # Query base (código existente)
+        empresa    = request.args.get('empresa', '')
+        usuario    = request.args.get('usuario', '')
+        ativo      = request.args.get('ativo', '')
+        nome_ativo = request.args.get('nome_ativo', '')
+        data_inicio = request.args.get('data_inicio', '')
+        data_fim    = request.args.get('data_fim', '')
+        status      = request.args.get('status', '')
+
+        # ── Query base com filtros ──────────────────────────────────────────
         query = db.session.query(SolicitacoesCompra)
-        
-        # Aplicar filtros (código existente)
+
         if empresa:
             query = query.filter(SolicitacoesCompra.empresa == empresa)
         if usuario:
@@ -6723,134 +6734,174 @@ def tela_auditoria():
             data_fim_ajustada = datetime.strptime(data_fim, '%Y-%m-%d') + timedelta(days=1)
             query = query.filter(SolicitacoesCompra.data_solicitacao <= data_fim_ajustada)
 
-        # Executar query (código existente)
-        solicitacoes = query.order_by(SolicitacoesCompra.data_solicitacao.desc()).all()
+        # Filtro de status: precisa join com preenchimentos para filtrar no banco
+        # (evita carregar tudo e descartar em Python)
+        if status == 'Aberta':
+            # solicitações SEM nenhum preenchimento
+            query = query.filter(
+                ~SolicitacoesCompra.id.in_(
+                    db.session.query(SolicitacoesPreenchidas.solicitacao_id).distinct()
+                )
+            )
+        elif status:
+            # solicitações com preenchimento no status pedido
+            query = query.filter(
+                SolicitacoesCompra.id.in_(
+                    db.session.query(SolicitacoesPreenchidas.solicitacao_id)
+                    .filter(SolicitacoesPreenchidas.status == status)
+                    .distinct()
+                )
+            )
 
-        # Obter fornecedores (código existente)
-        fornecedor_ids = set()
-        for solicitacao in solicitacoes:
-            preenchimento = db.session.query(SolicitacoesPreenchidas).filter_by(
-                solicitacao_id=solicitacao.id
-            ).first()
-            if preenchimento and preenchimento.fornecedor_id:
-                fornecedor_ids.add(preenchimento.fornecedor_id)
+        # ── Paginação: só busca os 20 desta página ─────────────────────────
+        paginacao   = query.order_by(
+            SolicitacoesCompra.data_solicitacao.desc()
+        ).paginate(page=page, per_page=per_page, error_out=False)
 
-        fornecedores = {}
-        if fornecedor_ids:
-            conn = get_db_connection(DB_PATH_FORNECEDORES)
-            if conn:
-                try:
-                    cursor = conn.cursor()
-                    cursor.execute(
-                        f'SELECT id, nome_fantasia, cnpj FROM fornecedores WHERE id IN ({",".join("?"*len(fornecedor_ids))})',
-                        list(fornecedor_ids)
-                    )
-                    for row in cursor.fetchall():
-                        fornecedores[row[0]] = {
-                            'nome_fantasia': row[1],
-                            'cnpj': format_cnpj(row[2]) if row[2] else 'N/A'
-                        }
-                finally:
-                    conn.close()
+        solicitacoes = paginacao.items
+        sol_ids      = [s.id for s in solicitacoes]
 
-        # Preparar dados para o template (atualizado com auditoria)
-        auditoria_data = []
-        for solicitacao in solicitacoes:
-            material = db.session.get(Materiais, solicitacao.cod_material)
-            preenchimento = db.session.query(SolicitacoesPreenchidas).filter_by(
-                solicitacao_id=solicitacao.id
-            ).first()
-            pedido = None
-            if preenchimento:
-                pedido = db.session.query(PedidosCompra).join(
+        if not sol_ids:
+            auditoria_data      = []
+            empresas_lista      = []
+            usuarios_lista      = []
+            nomes_ativos_lista  = []
+            usuarios_disponiveis = sorted(ler_senhas().keys())
+        else:
+            # ── Batch: uma query por tabela, indexada por solicitacao_id ───
+            # Preenchimentos
+            preenchimentos_map = {}
+            for p in db.session.query(SolicitacoesPreenchidas).filter(
+                SolicitacoesPreenchidas.solicitacao_id.in_(sol_ids)
+            ).all():
+                preenchimentos_map.setdefault(p.solicitacao_id, p)
+
+            preenч_ids = [p.id for p in preenchimentos_map.values()]
+
+            # Materiais
+            mat_ids = list({s.cod_material for s in solicitacoes})
+            materiais_map = {
+                m.CodMaterial: m
+                for m in db.session.query(Materiais).filter(
+                    Materiais.CodMaterial.in_(mat_ids)
+                ).all()
+            }
+
+            # Pedidos (via tabela de associação)
+            pedidos_map = {}
+            if preenч_ids:
+                for pedido, assoc_pid in db.session.query(
+                    PedidosCompra,
+                    pedido_preenchimento_associacao.c.preenchimento_id
+                ).join(
                     pedido_preenchimento_associacao,
                     PedidosCompra.id == pedido_preenchimento_associacao.c.pedido_id
                 ).filter(
-                    pedido_preenchimento_associacao.c.preenchimento_id == preenchimento.id
-                ).first()
-            estoque = None
-            if preenchimento:
-                estoque = db.session.query(Estoque).filter_by(
-                    preenchimento_id=preenchimento.id
-                ).first()
-            requisicoes = []
-            if preenchimento:
-                requisicoes = db.session.query(Requisicoes).filter_by(
-                    preenchimento_id=preenchimento.id
-                ).all()
-            
-            # Aplicar filtro de status
-            if status:
-                if status == 'Aberta' and preenchimento:
-                    continue
-                elif status != 'Aberta' and (not preenchimento or preenchimento.status != status):
-                    continue
-            
-            # Adicionar informações do fornecedor
-            fornecedor_info = {}
-            if preenchimento and preenchimento.fornecedor_id:
-                fornecedor_info = fornecedores.get(preenchimento.fornecedor_id, {
-                    'nome_fantasia': 'Fornecedor não encontrado',
-                    'cnpj': 'N/A'
+                    pedido_preenchimento_associacao.c.preenchimento_id.in_(preenч_ids)
+                ).all():
+                    pedidos_map[assoc_pid] = pedido
+
+            # Estoques
+            estoques_map = {}
+            if preenч_ids:
+                for e in db.session.query(Estoque).filter(
+                    Estoque.preenchimento_id.in_(preenч_ids)
+                ).all():
+                    estoques_map[e.preenchimento_id] = e
+
+            # Requisições
+            requisicoes_map = {}
+            if preenч_ids:
+                for r in db.session.query(Requisicoes).filter(
+                    Requisicoes.preenchimento_id.in_(preenч_ids)
+                ).all():
+                    requisicoes_map.setdefault(r.preenchimento_id, []).append(r)
+
+            # Auditorias
+            auditorias_map = {}
+            for a in db.session.query(Auditoria).filter(
+                Auditoria.solicitacao_id.in_(sol_ids)
+            ).order_by(Auditoria.data_validacao.desc()).all():
+                auditorias_map.setdefault(a.solicitacao_id, []).append(a)
+
+            # Fornecedores (banco externo) — uma única query em batch
+            fornecedor_ids = {
+                p.fornecedor_id for p in preenchimentos_map.values()
+                if p.fornecedor_id
+            }
+            fornecedores = {}
+            if fornecedor_ids:
+                conn_forn = get_db_connection(DB_PATH_FORNECEDORES)
+                if conn_forn:
+                    try:
+                        cur = conn_forn.cursor()
+                        cur.execute(
+                            f'SELECT id, nome_fantasia, cnpj FROM fornecedores '
+                            f'WHERE id IN ({",".join("?" * len(fornecedor_ids))})',
+                            list(fornecedor_ids)
+                        )
+                        for row in cur.fetchall():
+                            fornecedores[row[0]] = {
+                                'nome_fantasia': row[1],
+                                'cnpj': format_cnpj(row[2]) if row[2] else 'N/A'
+                            }
+                    finally:
+                        conn_forn.close()
+
+            # ── Montar lista final sem nenhuma query extra ─────────────────
+            auditoria_data = []
+            for solicitacao in solicitacoes:
+                preenchimento = preenchimentos_map.get(solicitacao.id)
+                pid           = preenchimento.id if preenchimento else None
+
+                auditoria_data.append({
+                    'solicitacao': solicitacao,
+                    'material':    materiais_map.get(solicitacao.cod_material),
+                    'preenchimento': preenchimento,
+                    'pedido':      pedidos_map.get(pid) if pid else None,
+                    'estoque':     estoques_map.get(pid) if pid else None,
+                    'requisicoes': requisicoes_map.get(pid, []) if pid else [],
+                    'fornecedor':  fornecedores.get(preenchimento.fornecedor_id, {
+                        'nome_fantasia': 'Fornecedor não encontrado',
+                        'cnpj': 'N/A'
+                    }) if preenchimento and preenchimento.fornecedor_id else {},
+                    'auditorias':  auditorias_map.get(solicitacao.id, []),
                 })
 
-            # Obter dados de auditoria para esta solicitação
-            auditorias = db.session.query(Auditoria).filter_by(
-                solicitacao_id=solicitacao.id
-            ).order_by(Auditoria.data_validacao.desc()).all()
-
-            auditoria_data.append({
-                'solicitacao': solicitacao,
-                'material': material,
-                'preenchimento': preenchimento,
-                'pedido': pedido,
-                'estoque': estoque,
-                'requisicoes': requisicoes,
-                'fornecedor': fornecedor_info,
-                'auditorias': auditorias  # Adiciona os dados de auditoria
-            })
-
-        # Obter valores para filtros (código existente)
-        empresas = db.session.query(
-            SolicitacoesCompra.empresa
-        ).distinct().order_by(
-            SolicitacoesCompra.empresa
-        ).all()
-
-        usuarios = db.session.query(
-            SolicitacoesCompra.usuario
-        ).distinct().order_by(
-            SolicitacoesCompra.usuario
-        ).all()
-
-        nomes_ativos = db.session.query(
-            SolicitacoesCompra.nome_ativo
-        ).filter(
-            SolicitacoesCompra.ativo == 'Sim',
-            SolicitacoesCompra.nome_ativo.isnot(None)
-        ).distinct().order_by(
-            SolicitacoesCompra.nome_ativo
-        ).all()
-
-        # Obter lista de usuários para seleção de auditores
-        senhas = ler_senhas()
-        usuarios_disponiveis = sorted(senhas.keys())
+            # Listas para filtros — queries leves, só valores distintos
+            empresas_lista = [
+                e[0] for e in db.session.query(SolicitacoesCompra.empresa)
+                .distinct().order_by(SolicitacoesCompra.empresa).all() if e[0]
+            ]
+            usuarios_lista = [
+                u[0] for u in db.session.query(SolicitacoesCompra.usuario)
+                .distinct().order_by(SolicitacoesCompra.usuario).all() if u[0]
+            ]
+            nomes_ativos_lista = [
+                n[0] for n in db.session.query(SolicitacoesCompra.nome_ativo)
+                .filter(SolicitacoesCompra.ativo == 'Sim',
+                        SolicitacoesCompra.nome_ativo.isnot(None))
+                .distinct().order_by(SolicitacoesCompra.nome_ativo).all() if n[0]
+            ]
+            usuarios_disponiveis = sorted(ler_senhas().keys())
 
         return render_template(
             'tela_auditoria.html',
             auditoria=auditoria_data,
-            empresas=[e[0] for e in empresas if e[0]],
-            usuarios=[u[0] for u in usuarios if u[0]],
-            nomes_ativos=[n[0] for n in nomes_ativos if n[0]],
+            empresas=empresas_lista,
+            usuarios=usuarios_lista,
+            nomes_ativos=nomes_ativos_lista,
             usuarios_disponiveis=usuarios_disponiveis,
+            paginacao=paginacao,
+            page=page,
             filtros={
-                'empresa': empresa,
-                'usuario': usuario,
-                'ativo': ativo,
-                'nome_ativo': nome_ativo,
-                'data_inicio': data_inicio,
-                'data_fim': data_fim,
-                'status': status
+                'empresa':      empresa,
+                'usuario':      usuario,
+                'ativo':        ativo,
+                'nome_ativo':   nome_ativo,
+                'data_inicio':  data_inicio,
+                'data_fim':     data_fim,
+                'status':       status,
             }
         )
 
@@ -6865,6 +6916,8 @@ def tela_auditoria():
             usuarios=[],
             nomes_ativos=[],
             usuarios_disponiveis=[],
+            paginacao=None,
+            page=1,
             filtros={}
         )
     
@@ -7475,7 +7528,8 @@ def dashboard_data():
     
     except Exception as e:
         app.logger.error(f'Erro no dashboard: {str(e)}')
-        return jsonify({'error': str(e)}), 500
+        app.logger.error(f'API error: {type(e).__name__}', exc_info=False)
+        return jsonify({'error': 'Erro interno. Tente novamente.'}), 500
 
 
 #-------------------------------------------------
@@ -7627,7 +7681,7 @@ def confirmar_pagamento(pedido_id):
         except Exception as e:
             db.session.rollback()
             logging.error(f"Erro ao confirmar pagamento: {e}")
-            return jsonify({'success': False, 'error': f'Erro ao confirmar pagamento: {str(e)}'}), 500
+            return jsonify({'success': False, 'error': 'Erro interno. Tente novamente.'}), 500
     else:
         return jsonify({'success': False, 'error': 'Arquivo inválido. Apenas PDFs são permitidos'}), 400
     
@@ -7666,16 +7720,16 @@ def delete_supplier():
                 return jsonify({'status': 'success', 'message': 'Fornecedor excluído com sucesso'})
             except sqlite3.Error as e:
                 conn.rollback()
-                return jsonify({'status': 'error', 'message': f'Erro no banco de dados: {str(e)}'}), 500
+                return jsonify({'status': 'error', 'message': 'Erro interno. Tente novamente.'}), 500
             finally:
                 if conn:
                     conn.close()
                     
         except SQLAlchemyError as e:
-            return jsonify({'status': 'error', 'message': f'Erro ao verificar solicitações: {str(e)}'}), 500
+            return jsonify({'status': 'error', 'message': 'Erro interno. Tente novamente.'}), 500
                 
     except Exception as e:
-        return jsonify({'status': 'error', 'message': f'Erro inesperado: {str(e)}'}), 500
+        return jsonify({'status': 'error', 'message': 'Erro interno. Tente novamente.'}), 500
     
 #Inserir estoque manual caso necessario   
 @routes_bp.route('/definir-quantidade/<int:cod>', methods=['POST'])
@@ -7796,7 +7850,7 @@ def atualizar_status_solicitacao(solicitacao_id):
     except Exception as e:
         db.session.rollback()
         app.logger.error(f"Error updating status for solicitacao {solicitacao_id}: {str(e)}", exc_info=True)
-        return jsonify({'success': False, 'error': f'Erro ao atualizar status: {str(e)}'}), 500
+        return jsonify({'success': False, 'error': 'Erro interno. Tente novamente.'}), 500
     
 def migrate_solicitacoes_compra_status():
     try:
@@ -7914,7 +7968,7 @@ def atualizar_valores_cotacao():
         print(f"❌ Erro ao atualizar valores: {str(e)}")
         return jsonify({
             'success': False, 
-            'message': f'Erro ao atualizar valores: {str(e)}'
+            'message': 'Erro interno. Tente novamente.'
         }), 500
     
 def create_historico_descontos_table():
@@ -8225,7 +8279,7 @@ def atribuir_comprador(solicitacao_id):
     except Exception as e:
         db.session.rollback()
         logging.error(f"Erro ao atribuir comprador: {str(e)}")
-        return jsonify({'success': False, 'error': f'Erro ao atribuir comprador: {str(e)}'}), 500
+        return jsonify({'success': False, 'error': 'Erro interno. Tente novamente.'}), 500
     
 
 @app.template_filter('basename')
@@ -8394,7 +8448,8 @@ def api_fornecedores():
             
     except Exception as e:
         logging.error(f"Erro na API de fornecedores: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+        app.logger.error(f'API error: {type(e).__name__}', exc_info=False)
+        return jsonify({'error': 'Erro interno. Tente novamente.'}), 500
     
 @routes_bp.route('/api/excluir_grupo_aplicacao', methods=['POST'])
 def excluir_grupo_aplicacao():
@@ -8542,7 +8597,7 @@ def excluir_grupo_aplicacao():
         logging.error(f"❌ ERRO AO EXCLUIR GRUPO {aplicacao}: {str(e)}", exc_info=True)
         return jsonify({
             'success': False,
-            'error': f'Erro ao excluir grupo: {str(e)}'
+            'error': 'Erro interno. Tente novamente.'
         }), 500
 
 @routes_bp.route('/editar_fornecedor/<int:fornecedor_id>', methods=['GET', 'POST'])
@@ -8741,7 +8796,8 @@ def api_get_fornecedor(fornecedor_id):
         
     except Exception as e:
         logging.error(f"Erro na API de fornecedor específico: {str(e)}")
-        return jsonify({'success': False, 'error': str(e)}), 500
+        app.logger.error(f'API error: {type(e).__name__}', exc_info=False)
+        return jsonify({'success': False, 'error': 'Erro interno. Tente novamente.'}), 500
 
 @routes_bp.route('/duplicar_grupo_aplicacao', methods=['POST'])
 def duplicar_grupo_aplicacao():
@@ -8802,7 +8858,7 @@ def duplicar_grupo_aplicacao():
                 logging.error(f"Erro ao duplicar solicitação {solicitacao_original.id}: {str(e)}")
                 return jsonify({
                     'success': False, 
-                    'error': f'Erro ao duplicar solicitação {solicitacao_original.id}: {str(e)}'
+                    'error': 'Erro interno. Tente novamente.'
                 }), 500
         
         # Commit de todas as novas solicitações
@@ -8820,7 +8876,7 @@ def duplicar_grupo_aplicacao():
         logging.error(f"Erro geral ao duplicar grupo: {str(e)}")
         return jsonify({
             'success': False, 
-            'error': f'Erro ao duplicar grupo: {str(e)}'
+            'error': 'Erro interno. Tente novamente.'
         }), 500   
     
 @routes_bp.route('/reprovar_solicitacao_individual/<int:id>', methods=['POST'])
@@ -8874,7 +8930,7 @@ def reprovar_solicitacao_individual(id):
         logging.error(f"Erro ao reprovar solicitação {id}: {str(e)}")
         return jsonify({
             'success': False, 
-            'message': f'Erro ao reprovar solicitação: {str(e)}'
+            'message': 'Erro interno. Tente novamente.'
         }), 500
 
 # Segmentar Grupo
@@ -8940,7 +8996,7 @@ def segmentar_grupo():
                 logging.error(f"Erro ao segmentar solicitação {sol_original.id}: {str(e)}")
                 return jsonify({
                     'success': False, 
-                    'error': f'Erro ao segmentar solicitação: {str(e)}'
+                    'error': 'Erro interno. Tente novamente.'
                 }), 500
         
         # Commit de todas as novas solicitações
@@ -8967,7 +9023,7 @@ def segmentar_grupo():
         logging.error(f"Erro geral ao segmentar grupo: {str(e)}", exc_info=True)
         return jsonify({
             'success': False, 
-            'error': f'Erro ao segmentar grupo: {str(e)}'
+            'error': 'Erro interno. Tente novamente.'
         }), 500
 
 # ===================================================
@@ -9140,7 +9196,10 @@ def exportar_relatorio_pedidos_excel():
             dt_fim = datetime.strptime(data_fim, '%Y-%m-%d') + timedelta(days=1)
             query = query.filter(PedidosCompra.data_criacao < dt_fim)
         
-        pedidos = query.order_by(PedidosCompra.data_criacao.desc()).all()
+        EXPORT_ROW_LIMIT = 5000
+        pedidos = query.order_by(PedidosCompra.data_criacao.desc()).limit(EXPORT_ROW_LIMIT).all()
+        if len(pedidos) == EXPORT_ROW_LIMIT:
+            app.logger.warning(f'Export de pedidos atingiu limite de {EXPORT_ROW_LIMIT} linhas.')
         
         # Criar workbook
         wb = Workbook()
@@ -9391,7 +9450,8 @@ def verificar_rascunhos():
         
     except Exception as e:
         logging.error(f"Erro ao verificar rascunhos: {str(e)}")
-        return jsonify({'success': False, 'error': str(e)}), 500
+        app.logger.error(f'API error: {type(e).__name__}', exc_info=False)
+        return jsonify({'success': False, 'error': 'Erro interno. Tente novamente.'}), 500
     
   # Registro do Blueprint (apenas uma vez)
 app.register_blueprint(routes_bp)  
@@ -9415,5 +9475,5 @@ if __name__ == '__main__':
         db.create_all()
     
     print("\n🌐 Iniciando servidor Flask...")
-    app.run(debug=True, host='0.0.0.0', port=5000, threaded=False, use_reloader=False)
+    app.run(debug=False, host='0.0.0.0', port=5000, threaded=True, use_reloader=False)
     
