@@ -109,6 +109,95 @@
             background-color: #5a32a3;
         }
 
+        /* Botão discreto: Enviado para Aprovação */
+        .btn-envio-aprovacao {
+            background-color: transparent;
+            color: #6c757d;
+            border: 1px dashed #adb5bd;
+            font-size: 12px;
+            padding: 6px 12px;
+        }
+
+        .btn-envio-aprovacao:hover {
+            background-color: #fff3cd;
+            color: #856404;
+            border-color: #ffc107;
+        }
+
+        .btn-envio-aprovacao.enviado {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+            cursor: default;
+            opacity: 0.8;
+        }
+
+        /* Modal de confirmação */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.45);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-box {
+            background: white;
+            border-radius: 10px;
+            padding: 28px 32px;
+            max-width: 440px;
+            width: 90%;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+        }
+
+        .modal-box h3 {
+            color: var(--primary-color);
+            margin-bottom: 10px;
+            font-size: 17px;
+        }
+
+        .modal-box p {
+            color: #555;
+            font-size: 14px;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .btn-modal-cancel {
+            padding: 8px 18px;
+            border: 1px solid #dee2e6;
+            background: white;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            color: #6c757d;
+        }
+
+        .btn-modal-confirm {
+            padding: 8px 18px;
+            background: #17a2b8;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .btn-modal-confirm:hover { background: #138496; }
+
         /* Filtros otimizados */
         .search-filter-container {
             background: #f8fafc;
@@ -557,6 +646,16 @@
                                    class="btn-print-group">
                                     <i class="fas fa-print"></i> Imprimir
                                 </a>
+                                {% set ja_enviado = items | selectattr('data_envio_aprovacao') | list | length > 0 %}
+                                <button
+                                    class="btn-novo-pedido btn-envio-aprovacao {{ 'enviado' if ja_enviado else '' }}"
+                                    {% if not ja_enviado %}
+                                    onclick="abrirModalEnvio('{{ ids_grupo }}', this)"
+                                    {% endif %}
+                                    title="{{ 'Enviado em ' + items[0].data_envio_aprovacao.strftime('%d/%m/%Y %H:%M') if ja_enviado else 'Registrar que levou para aprovação presencial' }}">
+                                    <i class="fas fa-paper-plane"></i>
+                                    {% if ja_enviado %}Enviado para Aprovação{% else %}Enviado para Aprovação{% endif %}
+                                </button>
                             </div>
                         </div>
 
@@ -646,6 +745,16 @@
                                    class="btn-print-group">
                                     <i class="fas fa-print"></i> Imprimir
                                 </a>
+                                {% set ja_enviado = items | selectattr('data_envio_aprovacao') | list | length > 0 %}
+                                <button
+                                    class="btn-novo-pedido btn-envio-aprovacao {{ 'enviado' if ja_enviado else '' }}"
+                                    {% if not ja_enviado %}
+                                    onclick="abrirModalEnvio('{{ ids_grupo }}', this)"
+                                    {% endif %}
+                                    title="{{ 'Enviado em ' + items[0].data_envio_aprovacao.strftime('%d/%m/%Y %H:%M') if ja_enviado else 'Registrar que levou para aprovação presencial' }}">
+                                    <i class="fas fa-paper-plane"></i>
+                                    {% if ja_enviado %}Enviado para Aprovação{% else %}Enviado para Aprovação{% endif %}
+                                </button>
                             </div>
                         </div>
 
@@ -702,6 +811,24 @@
                     <p>Comece preenchendo uma cotação</p>
                 </div>
             {% endif %}
+        </div>
+    </div>
+
+    <!-- Modal: Confirmar Envio para Aprovação -->
+    <div class="modal-overlay" id="modalEnvioAprovacao">
+        <div class="modal-box">
+            <h3><i class="fas fa-paper-plane"></i> Enviado para Aprovação</h3>
+            <p>
+                Confirma que você levou este pedido impresso para aprovação presencial?<br><br>
+                <strong>Isso registrará a data e hora atual</strong> como marco de envio,
+                permitindo medir o tempo até a aprovação final no relatório.
+            </p>
+            <div class="modal-actions">
+                <button class="btn-modal-cancel" onclick="fecharModal()">Cancelar</button>
+                <button class="btn-modal-confirm" onclick="confirmarEnvio()">
+                    <i class="fas fa-check"></i> Confirmar
+                </button>
+            </div>
         </div>
     </div>
 
@@ -808,6 +935,52 @@
             if (applyBtn) applyBtn.addEventListener('click', applyFilters);
             if (clearBtn) clearBtn.addEventListener('click', clearFilters);
         })();
+
+        // ── Envio para Aprovação ──────────────────────────────
+        let _envioIds = null;
+        let _envioBtn = null;
+
+        function abrirModalEnvio(ids, btn) {
+            _envioIds = ids;
+            _envioBtn = btn;
+            document.getElementById('modalEnvioAprovacao').classList.add('active');
+        }
+
+        function fecharModal() {
+            document.getElementById('modalEnvioAprovacao').classList.remove('active');
+            _envioIds = null;
+            _envioBtn = null;
+        }
+
+        function confirmarEnvio() {
+            if (!_envioIds) return;
+            const ids = _envioIds;   // salva ANTES de fechar (fecharModal zera _envioIds)
+            const btn = _envioBtn;
+            fecharModal();
+
+            fetch('/api/registrar_envio_aprovacao', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ids: ids })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success && btn) {
+                    btn.classList.add('enviado');
+                    btn.removeAttribute('onclick');
+                    btn.title = 'Enviado em ' + data.data;
+                    btn.innerHTML = '<i class="fas fa-check-circle"></i> Enviado para Aprovação';
+                } else {
+                    alert('Erro ao registrar: ' + (data.message || 'Tente novamente.'));
+                }
+            })
+            .catch(() => alert('Falha na comunicação. Tente novamente.'));
+        }
+
+        // Fechar modal clicando fora
+        document.getElementById('modalEnvioAprovacao').addEventListener('click', function(e) {
+            if (e.target === this) fecharModal();
+        });
     </script>
 </body>
 
