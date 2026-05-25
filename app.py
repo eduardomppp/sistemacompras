@@ -169,6 +169,16 @@ def garantir_colunas_necessarias():
         },
         {
             'tabela': 'SolicitacoesCompra',
+            'coluna': 'data_envio_aprovacao',
+            'sql': "ALTER TABLE SolicitacoesCompra ADD COLUMN data_envio_aprovacao DATETIME"
+        },
+        {
+            'tabela': 'SolicitacoesCompra',
+            'coluna': 'data_retorno_aprovacao',
+            'sql': "ALTER TABLE SolicitacoesCompra ADD COLUMN data_retorno_aprovacao DATETIME"
+        },
+        {
+            'tabela': 'SolicitacoesCompra',
             'coluna': 'prioridade',
             'sql': "ALTER TABLE SolicitacoesCompra ADD COLUMN prioridade TEXT DEFAULT 'Programado'"
         },
@@ -320,6 +330,16 @@ def log_error(message):
 # Inicializar SQLAlchemy
 db = SQLAlchemy(app)
 
+# ── Garantir colunas antes do primeiro request ──────────────────
+_colunas_garantidas = False
+
+@app.before_request
+def _garantir_colunas_antes_de_tudo():
+    global _colunas_garantidas
+    if not _colunas_garantidas:
+        garantir_colunas_necessarias()
+        _colunas_garantidas = True
+
 # Configurar PRAGMAs de performance no SQLite a cada nova conexão
 from sqlalchemy import event as _sa_event
 from sqlalchemy.engine import Engine as _Engine
@@ -388,6 +408,8 @@ class SolicitacoesCompra(db.Model):
     observacoes_col = db.Column(db.Text, nullable=True)
     material = db.relationship('Materiais', backref='solicitacoes')
     comprador_atribuido = db.Column(db.Text, nullable=True)  # Novo campo
+    data_envio_aprovacao = db.Column(db.DateTime, nullable=True)   # Data que o comprador levou p/ aprovação
+    data_retorno_aprovacao = db.Column(db.DateTime, nullable=True)  # Data que retornou aprovado/reprovado
 
     def to_dict(self):
         return {
@@ -3871,6 +3893,42 @@ def cotacao_imprimir(id):
     )
 #------------------------------------------------------------------
 
+@routes_bp.route('/api/registrar_envio_aprovacao', methods=['POST'])
+def registrar_envio_aprovacao():
+    """Registra que o comprador levou as solicitações para aprovação presencial."""
+    if 'usuario' not in session:
+        return jsonify({'success': False, 'message': 'Não autenticado'}), 401
+
+    try:
+        data = request.get_json()
+        ids_str = data.get('ids', '')  # ex: "12,13,14"
+        if not ids_str:
+            return jsonify({'success': False, 'message': 'Nenhum ID informado'}), 400
+
+        ids = [int(i.strip()) for i in ids_str.split(',') if i.strip().isdigit()]
+        if not ids:
+            return jsonify({'success': False, 'message': 'IDs inválidos'}), 400
+
+        agora = get_local_time()
+        atualizados = 0
+        for sol_id in ids:
+            sol = db.session.get(SolicitacoesCompra, sol_id)
+            if sol:
+                # Só registra se ainda não foi enviado (evita sobrescrever)
+                if not sol.data_envio_aprovacao:
+                    sol.data_envio_aprovacao = agora
+                atualizados += 1
+
+        db.session.commit()
+        app.logger.info(f"Envio para aprovação registrado: IDs={ids}, usuário={session.get('usuario')}")
+        return jsonify({'success': True, 'atualizados': atualizados, 'data': agora.strftime('%d/%m/%Y %H:%M')})
+
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f'Erro em registrar_envio_aprovacao: {str(e)}', exc_info=True)
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
 @routes_bp.route('/listar_solicitacoes_preenchidas', methods=['GET'])
 def listar_solicitacoes_preenchidas():
     """Lista solicitações preenchidas com status Aguardando Aprovacao — paginado (20 por página)"""
@@ -6429,11 +6487,10 @@ def exportar_auditoria_xlsx():
                     'Observacoes': observacoes,
                     'Aprovacao': solicitacao.status_aprovacao or 'Pendente',
                     'Aplicacao': solicitacao.aplicacao or '',
-                    'Aplicacao_Geral': solicitacao.aplicacao_geral or ''
+                    'Aplicacao_Geral': solicitacao.aplicacao_geral or '',
+                    'Data_Envio_Aprovacao': solicitacao.data_envio_aprovacao.strftime('%d/%m/%Y %H:%M') if solicitacao.data_envio_aprovacao else '',
+                    'Dias_Aguardando_Aprovacao': (solicitacao.data_retorno_aprovacao - solicitacao.data_envio_aprovacao).days if (solicitacao.data_envio_aprovacao and solicitacao.data_retorno_aprovacao) else ''
                 })
-                continue
-            
-            # Tem preenchimentos → processa cada um
             for preenchimento in preenchimentos:
                 contador_preenchimentos += 1
                 
@@ -6540,7 +6597,9 @@ def exportar_auditoria_xlsx():
                     'Observacoes': preenchimento.observacoes or '',
                     'Aprovacao': solicitacao.status_aprovacao or 'Pendente',
                     'Aplicacao': solicitacao.aplicacao or '',
-                    'Aplicacao_Geral': solicitacao.aplicacao_geral or ''
+                    'Aplicacao_Geral': solicitacao.aplicacao_geral or '',
+                    'Data_Envio_Aprovacao': solicitacao.data_envio_aprovacao.strftime('%d/%m/%Y %H:%M') if solicitacao.data_envio_aprovacao else '',
+                    'Dias_Aguardando_Aprovacao': (solicitacao.data_retorno_aprovacao - solicitacao.data_envio_aprovacao).days if (solicitacao.data_envio_aprovacao and solicitacao.data_retorno_aprovacao) else ''
                 })
 
         app.logger.info(f"Total de solicitações processadas: {contador_solicitacoes}")
@@ -6571,7 +6630,7 @@ def exportar_auditoria_xlsx():
             'Data Solicitação', 'Status', 'Fornecedor', 'CNPJ Fornecedor', 'Valor Unitário',
             'Valor Total', 'Valor Frete', 'Prazo Entrega', 'Condição Pagamento',
             'Número Pedido', 'Status Pedido', 'Observações', 'Aprovação',
-            'Aplicação', 'Aplicação Geral'
+            'Aplicação', 'Aplicação Geral', 'Data Envio p/ Aprovação', 'Dias Aguardando Aprovação'
         ]
 
         for col_num, header in enumerate(headers, 1):
@@ -6613,7 +6672,9 @@ def exportar_auditoria_xlsx():
                 item['Observacoes'],
                 item['Aprovacao'],
                 item['Aplicacao'],
-                item['Aplicacao_Geral']
+                item['Aplicacao_Geral'],
+                item.get('Data_Envio_Aprovacao', ''),
+                item.get('Dias_Aguardando_Aprovacao', '')
             ]
             for col_num, value in enumerate(row, 1):
                 ws.cell(row=row_num, column=col_num, value=value)
@@ -9219,7 +9280,8 @@ def exportar_relatorio_pedidos_excel():
         headers_resumo = [
             'Nº Pedido', 'Data Criação', 'Status', 'Usuário', 'Empresas', 
             'Compradores', 'Fornecedores', 'Qtd Itens', 'Valor Total (R$)', 
-            'Valor Frete (R$)', 'Valor Líquido (R$)', 'Forma Pagamento', 'Observações'
+            'Valor Frete (R$)', 'Valor Líquido (R$)', 'Forma Pagamento', 'Observações',
+            'Data Envio p/ Aprovação', 'Dias Aguardando Aprovação'
         ]
         
         for col_num, header in enumerate(headers_resumo, 1):
@@ -9265,6 +9327,18 @@ def exportar_relatorio_pedidos_excel():
             ws_resumo.cell(row=row_num, column=11, value=round(pedido.valor_liquido or 0, 2))
             ws_resumo.cell(row=row_num, column=12, value=pedido.forma_pagamento or 'N/A')
             ws_resumo.cell(row=row_num, column=13, value=pedido.observacoes or '')
+            
+            # Buscar data_envio_aprovacao das solicitações deste pedido
+            datas_envio = [
+                p.solicitacao.data_envio_aprovacao
+                for p in pedido.preenchimentos
+                if p.solicitacao and p.solicitacao.data_envio_aprovacao
+            ]
+            data_envio = min(datas_envio) if datas_envio else None
+            data_pedido = pedido.data_criacao
+
+            ws_resumo.cell(row=row_num, column=14, value=data_envio.strftime('%d/%m/%Y %H:%M') if data_envio else '')
+            ws_resumo.cell(row=row_num, column=15, value=(data_pedido - data_envio).days if (data_envio and data_pedido and data_pedido >= data_envio) else '')
             row_num += 1
         
         # ============================================
@@ -9276,7 +9350,8 @@ def exportar_relatorio_pedidos_excel():
             'Nº Pedido', 'Data Pedido', 'Status Pedido', 'ID Solicitação', 
             'Material', 'Cód Material', 'Especificação', 'Quantidade', 'Unidade',
             'Marca', 'Valor Unitário (R$)', 'Valor Total Item (R$)', 
-            'Fornecedor', 'Prazo Entrega', 'Condição Pagamento', 'Empresa', 'Comprador'
+            'Fornecedor', 'Prazo Entrega', 'Condição Pagamento', 'Empresa', 'Comprador',
+            'Data Envio p/ Aprovação', 'Dias Aguardando Aprovação'
         ]
         
         for col_num, header in enumerate(headers_detalhes, 1):
@@ -9319,6 +9394,11 @@ def exportar_relatorio_pedidos_excel():
                     ws_detalhes.cell(row=row_num, column=15, value=preenchimento.condicao_pagamento or '')
                     ws_detalhes.cell(row=row_num, column=16, value=solicitacao.empresa)
                     ws_detalhes.cell(row=row_num, column=17, value=solicitacao.comprador_atribuido or '')
+                    
+                    data_envio = solicitacao.data_envio_aprovacao
+                    data_pedido = pedido.data_criacao
+                    ws_detalhes.cell(row=row_num, column=18, value=data_envio.strftime('%d/%m/%Y %H:%M') if data_envio else '')
+                    ws_detalhes.cell(row=row_num, column=19, value=(data_pedido - data_envio).days if (data_envio and data_pedido and data_pedido >= data_envio) else '')
                     row_num += 1
         
         # ============================================
@@ -9473,6 +9553,12 @@ if __name__ == '__main__':
     
     with app.app_context():
         db.create_all()
+    
+    # ============================================
+    # GARANTIR COLUNAS (roda APÓS create_all para
+    # adicionar colunas em tabelas já existentes)
+    # ============================================
+    garantir_colunas_necessarias()
     
     print("\n🌐 Iniciando servidor Flask...")
     app.run(debug=False, host='0.0.0.0', port=5000, threaded=True, use_reloader=False)
