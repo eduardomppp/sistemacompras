@@ -1194,11 +1194,22 @@
             console.log('=====================');
         }
 
+        // Captura o botão clicado antes do submit (fallback para browsers antigos)
+        let _lastClickedBtn = null;
+        document.querySelectorAll('#cotacoes-form button[type="submit"]').forEach(btn => {
+            btn.addEventListener('click', function() { _lastClickedBtn = this; });
+        });
+
         // Evento de submit corrigido
         document.getElementById('cotacoes-form')?.addEventListener('submit', function(e) {
             e.preventDefault();
-            const clickedButton = e.submitter || document.activeElement;
-            let finalAction = clickedButton.value || clickedButton.getAttribute('name');
+            const clickedButton = e.submitter || _lastClickedBtn || document.activeElement;
+            // Usar sempre o VALUE do botão (que é "salvar_rascunho" ou "salvar_finalizar")
+            let finalAction = (clickedButton && clickedButton.value) ? clickedButton.value : null;
+            if (!finalAction || (finalAction !== 'salvar_rascunho' && finalAction !== 'salvar_finalizar')) {
+                alert('Erro: não foi possível identificar a ação. Tente clicar novamente no botão.');
+                return false;
+            }
             
             document.getElementById('fornecedores_removidos').value = JSON.stringify(fornecedoresRemovidos);
             
