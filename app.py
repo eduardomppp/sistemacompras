@@ -2647,24 +2647,26 @@ def listar_solicitacoes_comprador():
             SolicitacoesPreenchidas.id == pedido_preenchimento_associacao.c.preenchimento_id
         ).distinct().subquery()
         
-        # 🔴 SUBQUERY 2: IDs das solicitações que têm preenchimentos FINALIZADOS (enviados para aprovação)
-        # Status que indicam que o comprador já finalizou: 'Aguardando Aprovacao', 'Aprovado', 'Reprovado', etc.
+        # SUBQUERY 2: IDs das solicitações que o comprador logado já finalizou.
+        # Filtramos pelo usuario do preenchimento para não esconder solicitações
+        # que outro comprador tenha preenchido (cada comprador vê só as suas).
         subquery_finalizados = db.session.query(
             SolicitacoesPreenchidas.solicitacao_id
         ).filter(
-            SolicitacoesPreenchidas.status != 'Rascunho'  # Qualquer status que não seja rascunho
+            SolicitacoesPreenchidas.status != 'Rascunho',
+            SolicitacoesPreenchidas.usuario == comprador_logado
         ).distinct().subquery()
         
-        # 🔴 BUSCAR APENAS SOLICITAÇÕES:
-        # 1. Aprovadas
+        # BUSCAR APENAS SOLICITAÇÕES:
+        # 1. Aprovadas pelo gestor (status_aprovacao == 'Aprovado')
         # 2. Atribuídas ao comprador logado
-        # 3. Que NÃO geraram pedido
-        # 4. Que NÃO têm preenchimentos finalizados (ainda estão em rascunho ou sem preenchimento)
+        # 3. Que NÃO geraram pedido ainda
+        # 4. Que NÃO têm preenchimentos finalizados (se tem 'Aguardando Aprovacao' ou 'Aprovado', some da lista)
         solicitacoes = SolicitacoesCompra.query.filter(
             SolicitacoesCompra.status_aprovacao == 'Aprovado',
             SolicitacoesCompra.comprador_atribuido == comprador_logado,
-            ~SolicitacoesCompra.id.in_(subquery_pedidos),  # Não gerou pedido
-            ~SolicitacoesCompra.id.in_(subquery_finalizados)  # 🔴 NÃO tem preenchimento finalizado
+            ~SolicitacoesCompra.id.in_(subquery_pedidos),
+            ~SolicitacoesCompra.id.in_(subquery_finalizados)
         ).options(
             joinedload(SolicitacoesCompra.material),
             joinedload(SolicitacoesCompra.preenchimentos_fornecidos)
@@ -3323,8 +3325,8 @@ def preencher_solicitacao(id):
                                     db.session.delete(preenchimento)
                                     print(f"✅ Preenchimento ID {preenchimento.id} do fornecedor {fornecedor_id} excluído")
                         
-                        db.session.commit()
-                        print(f"✅ Todos os preenchimentos dos fornecedores {fornecedores_ids_remover} foram removidos")
+                        # NÃO commit aqui — será feito junto com os novos preenchimentos no final
+                        print(f"✅ Remoções marcadas na sessão (commit no final do POST)")
                         
                 except Exception as e:
                     db.session.rollback()
