@@ -9744,30 +9744,25 @@ def verificar_rascunhos():
   # Registro do Blueprint (apenas uma vez)
 app.register_blueprint(routes_bp)  
 
-# Inicialização do banco de dados e execução do app
+# ============================================
+# INICIALIZAÇÃO DO BANCO — roda sempre,
+# tanto via `gunicorn app:app` quanto `python app.py`
+# ============================================
+executar_todas_migracoes()
+
+create_database()
+create_auditoria_table()
+create_fornecedores_db()
+create_historico_descontos_table()
+
+with app.app_context():
+    db.create_all()
+
+# Garantir colunas APÓS create_all (adiciona colunas em tabelas já existentes)
+garantir_colunas_necessarias()
+
+# Execução local (desenvolvimento)
 if __name__ == '__main__':
-    # ============================================
-    # EXECUTAR MIGRAÇÕES PRIMEIRO
-    # ============================================
-    executar_todas_migracoes()
-    
-    # ============================================
-    # CRIAR TABELAS E INICIALIZAR
-    # ============================================
-    create_database()
-    create_auditoria_table()
-    create_fornecedores_db()
-    create_historico_descontos_table()
-    
-    with app.app_context():
-        db.create_all()
-    
-    # ============================================
-    # GARANTIR COLUNAS (roda APÓS create_all para
-    # adicionar colunas em tabelas já existentes)
-    # ============================================
-    garantir_colunas_necessarias()
-    
     print("\n🌐 Iniciando servidor Flask...")
     app.run(debug=False, host='0.0.0.0', port=5000, threaded=True, use_reloader=False)
     
