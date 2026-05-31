@@ -1,5 +1,92 @@
+fabio_silva%Fazendascobuccio817!%menu_supervisor.html%Fazendas
+guilherme_gomes%Grupocobuccio011!%menu_solicitante.html%Grupo Adriano Cobuccio
+andreia_silva%Grupocobuccio289!%menu_financeiro.html%Grupo Adriano Cobuccio
+auditor%@Bcard123%menu_auditoria.html%Grupo Adriano Cobuccio
+Alceni.Fazenda%@Alceni2025%menu_solicitante.html%Fazendas
+Joyce.solicitante%@Joyce2629%menu_comprador.html%Fazendas
+Gustavo.M%@Gustavo3186%menu_solicitante.html%ESPAZO
+Bianca.Pereira%@Bianca.Pereira9971%menu_financeiro.html%Brasil Card
+Fabiana.Pedidos%@Faviana9971%desativado.html%Brasil Card
+Gabriel-Gestor%@Gabriel3991%menu_aprovacao.html%Fazendas
+Gabriel-Compras%@Gabriel3991%menu_comprador.html%Fazendas
+Luiz.Poma%@Poma2025%desativado.html%MONTE CRISTO
+Pedro.Compras%@Pedro98745*%menu_comprador.html%Fazendas
+Gabriel.Engenharia%@Gabriel0231%menu_comprador.html%Brasil Card
+Marco.Darc%@Marco1479%menu_comprador.html%Grupo Adriano Cobuccio
+Solange.Rodrigues%@Solange2082%desativado.html%Brasil Card
+Ruan.Compras%@Ruan6398%menu_comprador.html%Brasil Card
+Fernando.Compras%@Fernando0647%menu_comprador.html%Grupo Adriano Cobuccio
+Paula.Engenharia%@PaulaVieira3439%menu_solicitante.html%Brasil Card
+Eduarda.Engenheira%@Eduarda9847%menu_solicitante.html%Engenharia
+Cristiane.Engenheira%@Cristiane3917%menu_solicitante.html%Engenharia
+adrina_martins%@Grupocobucci563%menu_solicitante.html%Brasil Card
+Paulo.TI%@Pauloti2937%menu_solicitante.html%Brasil Card
+Luiz.Cobuccio%@Luiz3801%menu_solicitante.html%Brasil Card
+Diego.Correio%@Diego5578%menu_solicitante.html%Brasil Card
+Antonia.Paz%@Bcard200%menu_solicitante.html%Brasil Card
+cesar.augusto%@Bcard1225%menu_master.html%Brasil Card
+Nathalia.Ester%@Bcard098%menu_master.html%Grupo Adriano Cobuccio
 suporte%@Suporte2025%menu_master.html%BrasilCard
+Neyir.Baquiao%@Neyir 7234%menu_solicitante.html%Brasil Card
+Leonardo.Aguiar%@Leonardo9933%menu_comprador.html%Grupo Adriano Cobuccio
+juan.oliveira%@Jjuan344%desativado.html%Engenharia
+suporte_comprado%@Pr@do1993%menu_comprador.html%Brasil Card
+Luan.Posto%@Luan0385%menu_solicitante.html%Posto Petro
+joao.neto%@Brasilcard123%menu_master.html%Grupo Adriano Cobuccio
+wagner.julio%@Brasilcard123%menu_master.html%Grupo Adriano Cobuccio
+vinicius.julio%@Brasilcard123%menu_solicitante.html%Brasil Card
+Mayara.Pereira%@Pereira123%menu_solicitante.html%Ágil
+Allisson.Silva%@Bcard2026%menu_solicitante.html%Grupo Adriano Cobuccio
+Antonio.Fernando%@Bcard2026%menu_solicitante.html%Grupo Adriano Cobuccio
+Sisu.Elyson%@Elyson123%desativado.html%Grupo Adriano Cobuccio
+sisuelyson.lucas%@Brasilcard2026%menu_solicitante.html%Grupo Adriano Cobuccio
+Luan.Supervisor%@LSup123%menu_solicitante.html%Posto Petro
+Bruno.Supervisor%@BSup123%menu_solicitante.html%Posto Petro
+Natan.Supervisor%@NSup123%menu_solicitante.html%Posto Petro
+Anderson.Supervisor%@ASup123%menu_solicitante.html%Posto Petro
+Thales.Supervisor%@TSup123%desativado.html%Posto Petro
+Daniel.Supervisor%@DSup123%menu_solicitante.html%Posto Petro
+Alisson.Supervisor%@ASup123%menu_solicitante.html%Posto Petro
+Thales.Supervisor1%@TSup123%menu_solicitante.html%Posto Petro
+Cintia.Silva%@Bcard1234%menu_solicitante.html%Grupo Adriano Cobuccio
+teste_suporte%@Bcard2026%menu_estoquista.html%Brasil Card
+teste_desativa%@Teste_desativa2026%desativado.html%Brasil Card
+Ana.Clara%@Ti_1234%menu_solicitante.html%Brasil Card
+fabio.prado%@Nena987%menu_master.html%FORQUILHA
+lucas.azevedo%@Senha123%menu_master.html%BOLT
+lucas.azevedo123%@Bcard123%menu_master.html%BOQUEIRÃO
 master%@Bcard1993%menu_master.html%BrasilCard
+Raul.Marques%@Raul3179%menu_solicitante.html%Brasil Card
+cintia.rocha%@Guardian357%menu_solicitante.html%Grupo Adriano Cobuccio
+Djiovanna.Rodrigues%@Dp.123%menu_solicitante.html%Brasil Card
+Felipe.Morais%@Bpetro123%menu_solicitante.html%Posto Petro
+Mariane.Caldas%Caldas123@%menu_solicitante.html%Engenharia
+Lara.Cassia%@Lara4592%menu_solicitante.html%Brasil Card
+Bruna.Souza%@Bruna123%menu_comprador.html%Brasil Card
+Rafael.Donizete%@Rafael3261%menu_solicitante.html%Ágil
+Matheus.Felipe%@Matheus7905%menu_solicitante.html%Ágil
+caio_dias%Grupocobuccio001!%menu_solicitante.html%BOLT
+claudia_rodrigues%@Claudia5487!!%menu_master.html%Grupo Adriano Cobuccio
+Lucas.Prado%@Lucas1417%menu_solicitante.html%Grupo Adriano Cobuccio
+Fabio.Henrique%@Fabio0408%menu_master.html%Fazendas
+Carlos.Daniel%@Carlos5730%menu_comprador.html%Fazendas
+Adriele.Santos%@Adriele1448%menu_aprovacao.html%Fazendas
+Pietro.Martins%@Pietro8108%menu_comprador.html%Fazendas
+Stefani.Paulino%@Stefani3160%menu_aprovacao.html%Brasil Card
+Isamara.Santos%@Isamara6478%menu_solicitante.html%Brasil Card
+Joyce.Leal%@Joyce2629%menu_solicitante.html%Fazendas
+Bruno.Carvalho%@Brunoac753%menu_solicitante.html%Posto Petro
+Gabriel.Vieira%@Gabriel3066%menu_solicitante.html%Brasil Card
+Daniela.Figueiredo%@Bcard753%menu_solicitante.html%Grupo Adriano Cobuccio
+joao.conde%@Brasilcard123%menu_master.html%Grupo Adriano Cobuccio
+Karina.Reis%@Fraude951Kr%menu_solicitante.html%Grupo Adriano Cobuccio
+Mylla.Sousa%@Mylla1334%menu_solicitante.html%Brasil Card
+Manuela.Maciel%@Sesmt2026%menu_solicitante.html%Brasil Card
+Nayra.Reis%@Nay369!!%menu_solicitante.html%Grupo Adriano Cobuccio
+Murilo.Calore%@Mcgac6518!!%menu_solicitante.html%Cobuccio Seguros
+Samuel.Esteves%@Samuel6775%menu_comprador.html%Fazendas
+Maria.Fernanda%@Maria2194%menu_solicitante.html%Fazendas
+Danilo.Moreira%@Danilo5842%menu_solicitante.html%Brasil Card
 solicitar%@Bcard1993%menu_solicitante.html%BrasilCard
 cadastro%@Bcard1993%menu_cadastro.html%BrasilCard
 supervisor%@Bcard1993%menu_supervisor.html%BrasilCard
@@ -10,9 +97,6 @@ gabriel_silva%Grupocobuccio140!%menu_comprador.html%Grupo Adriano Cobuccio
 marco_pereira%Grupocobuccio106!%menu_comprador.html%Grupo Adriano Cobuccio
 rafael_domingues%Grupocobuccio181!%menu_comprador.html%Fazendas
 paulo_justino%Grupocobuccio156!%menu_comprador.html%Fazendas
-fabio_silva%Fazendascobuccio817!%menu_supervisor.html%Fazendas
-guilherme_gomes%Grupocobuccio011!%menu_solicitante.html%Grupo Adriano Cobuccio
 joao_nardin%Grupocobuccio024!%menu_solicitante.html%FIDC
-andreia_silva%Grupocobuccio289!%menu_financeiro.html%Grupo Adriano Cobuccio
-auditor%@Bcard123%menu_auditoria.html%Grupo Adriano Cobuccio
 comprado%@Suporte2025%menu_comprador.html%Brasil Card
+Rovilson.Oliveira%@Rovilson8029%menu_solicitante.html%Ágil
