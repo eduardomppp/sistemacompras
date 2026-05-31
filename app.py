@@ -1,5 +1,10 @@
-from flask import Flask, Blueprint, session, request, flash, redirect, url_for, render_template, jsonify, send_file, send_from_directory
+from flask import Flask, Blueprint, session, request, flash, redirect, url_for, render_template, jsonify, send_file, send_from_directory, abort
 from flask_sqlalchemy import SQLAlchemy
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+#from flask_wtf.csrf import CSRFProtect
+from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import safe_join
 import os
 from dotenv import load_dotenv
 import logging
@@ -12,6 +17,7 @@ from werkzeug.utils import secure_filename
 from os.path import basename
 import pdfkit
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import joinedload
 from collections import Counter
 import random
 import shutil
@@ -23,6 +29,7 @@ from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 from io import BytesIO
 from flask import make_response
+from sqlalchemy import func as _sa_func
 # Adicione no início do arquivo, após as importações
 from functools import lru_cache
 from time import time
@@ -80,6 +87,82 @@ def get_aplicacoes_unicas_cached():
             aplicacoes.add(a[0].strip())
     
     return sorted(aplicacoes)
+
+# ── Filtros de listagem ──────────────────────────────────────────────────────
+# Uma única função, chamada de qualquer rota, com cache de 5 min.
+# Emite UMA query por coluna ao banco — sem N+1, sem recalculo a cada request.
+_FILTRO_STATUS_APROVADO = 'Aprovado'
+
+def get_filtros_listagem(
+    apenas_aprovadas: bool = True,
+    comprador: str | None = None,
+    ttl: int = 300,
+) -> dict:
+    """
+    Retorna {'empresas': [...], 'usuarios': [...], 'aplicacoes': [...]}
+    com cache thread-safe.  Parâmetros formam a chave de cache.
+
+    Proteção: o valor de `comprador` é normalizado antes de virar chave —
+    caracteres de controle e pipe são removidos para evitar colisões de cache
+    forçadas via parâmetro malicioso.
+    """
+    comprador_safe = re.sub(r'[|\x00-\x1f]', '', comprador or '').strip() or None
+    cache_key = f"filtros_listagem\x00aprovadas={apenas_aprovadas}\x00comprador={comprador_safe}"
+    return get_cached_or_execute(cache_key, lambda: _calcular_filtros(apenas_aprovadas, comprador_safe), ttl)
+
+def _calcular_filtros(apenas_aprovadas: bool, comprador: str | None) -> dict:
+    """Executa as três queries DISTINCT de uma vez e devolve o dict.
+    Captura tanto erros de banco quanto falhas de memória/ambiente,
+    garantindo que o sistema caia para um estado conhecido e auditável.
+    """
+    from sqlalchemy import distinct as _dist
+    try:
+        base_filter_emp  = [SolicitacoesCompra.empresa.isnot(None)]
+        base_filter_usr  = [SolicitacoesCompra.usuario.isnot(None)]
+        base_filter_aplic = [
+            SolicitacoesCompra.aplicacao.isnot(None),
+            SolicitacoesCompra.aplicacao != '',
+        ]
+        if apenas_aprovadas:
+            base_filter_emp.append(SolicitacoesCompra.status_aprovacao == _FILTRO_STATUS_APROVADO)
+            base_filter_usr.append(SolicitacoesCompra.status_aprovacao == _FILTRO_STATUS_APROVADO)
+            base_filter_aplic.append(SolicitacoesCompra.status_aprovacao == _FILTRO_STATUS_APROVADO)
+        if comprador:
+            base_filter_emp.append(SolicitacoesCompra.comprador_atribuido == comprador)
+            base_filter_usr.append(SolicitacoesCompra.comprador_atribuido == comprador)
+            base_filter_aplic.append(SolicitacoesCompra.comprador_atribuido == comprador)
+
+        empresas = sorted([
+            r[0] for r in db.session.query(_dist(SolicitacoesCompra.empresa)).filter(*base_filter_emp).all()
+            if r[0]
+        ])
+        usuarios = sorted([
+            r[0] for r in db.session.query(_dist(SolicitacoesCompra.usuario)).filter(*base_filter_usr).all()
+            if r[0]
+        ])
+        aplicacoes = sorted([
+            r[0] for r in db.session.query(_dist(SolicitacoesCompra.aplicacao)).filter(*base_filter_aplic).all()
+            if r[0]
+        ])
+        return {'empresas': empresas, 'usuarios': usuarios, 'aplicacoes': aplicacoes}
+
+    except SQLAlchemyError as e:
+        logging.error('_calcular_filtros – erro de banco: %s', type(e).__name__, exc_info=True)
+        return {'empresas': [], 'usuarios': [], 'aplicacoes': []}
+    except MemoryError:
+        logging.critical('_calcular_filtros – MemoryError: resultado de filtros muito grande', exc_info=True)
+        return {'empresas': [], 'usuarios': [], 'aplicacoes': []}
+    except Exception as e:
+        logging.error('_calcular_filtros – erro inesperado: %s', type(e).__name__, exc_info=True)
+        return {'empresas': [], 'usuarios': [], 'aplicacoes': []}
+
+def invalidar_cache_filtros():
+    """Chame após qualquer escrita que altere empresas/usuarios/aplicações."""
+    with _cache_lock:
+        for k in list(_cache.keys()):
+            if k.startswith('filtros_listagem'):
+                _cache.pop(k, None)
+                _cache_timestamp.pop(k, None)
 
 # Carregar variáveis de ambiente
 load_dotenv()
@@ -327,8 +410,28 @@ SENHAS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "senhas.t
 def log_error(message):
     logging.error(message)
 
+def _flash_erro_seguro(mensagem_usuario: str, excecao: Exception, logger=None) -> None:
+    """
+    Exibe mensagem genérica via flash (sem expor detalhes da exceção ao usuário)
+    e registra o erro completo com stack trace no log interno.
+    """
+    flash(mensagem_usuario, 'error')
+    if logger:
+        logger.error(mensagem_usuario, exc_info=True)
+    else:
+        logging.error(mensagem_usuario, exc_info=True)
+
 # Inicializar SQLAlchemy
 db = SQLAlchemy(app)
+
+# Inicializar extensões de segurança
+# csrf = CSRFProtect(app)  — desativado
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    default_limits=[],
+    storage_uri="memory://"
+)
 
 # ── Garantir colunas antes do primeiro request ──────────────────
 _colunas_garantidas = False
@@ -478,65 +581,7 @@ class SolicitacoesPreenchidas(db.Model):
             'marca': self.marca,  # 🔴 ADICIONADO AQUI
             'historico_descontos': [h.to_dict() for h in self.historico_descontos]
         }
-def add_marca_to_preenchidas():
-    """Adiciona a coluna marca na tabela SolicitacoesPreenchidas com validação completa"""
-    print("🔧 Verificando coluna 'marca' em SolicitacoesPreenchidas...")
-    
-    try:
-        # Conectar ao banco de dados
-        conn = sqlite3.connect(DATABASE)
-        cursor = conn.cursor()
-        
-        # Verificar se a tabela existe
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='SolicitacoesPreenchidas'")
-        tabela_existe = cursor.fetchone()
-        
-        if not tabela_existe:
-            print("⚠️ Tabela 'SolicitacoesPreenchidas' não existe ainda - será criada pelo SQLAlchemy")
-            conn.close()
-            return True
-        
-        # Verificar se a coluna já existe
-        cursor.execute("PRAGMA table_info(SolicitacoesPreenchidas)")
-        columns = [col[1] for col in cursor.fetchall()]
-        
-        if 'marca' not in columns:
-            print("➕ Adicionando coluna 'marca' à tabela SolicitacoesPreenchidas...")
-            
-            try:
-                cursor.execute("ALTER TABLE SolicitacoesPreenchidas ADD COLUMN marca TEXT")
-                conn.commit()
-                logging.info("Coluna marca adicionada à tabela SolicitacoesPreenchidas")
-                print("   ✅ Coluna 'marca' adicionada com sucesso!")
-                
-                # Verificar se a adição foi bem-sucedida
-                cursor.execute("PRAGMA table_info(SolicitacoesPreenchidas)")
-                columns_after = [col[1] for col in cursor.fetchall()]
-                if 'marca' in columns_after:
-                    print("   ✅ Confirmação: Coluna 'marca' existe agora")
-                else:
-                    print("   ⚠️ Não foi possível confirmar a existência da coluna")
-                    
-            except sqlite3.OperationalError as e:
-                if "duplicate column name" in str(e).lower():
-                    print("   ℹ️ Coluna 'marca' já existe (ignorando erro)")
-                else:
-                    print(f"   ❌ Erro ao adicionar coluna: {e}")
-                    conn.close()
-                    return False
-        else:
-            print("✅ Coluna 'marca' já existe na tabela SolicitacoesPreenchidas")
-        
-        conn.close()
-        return True
-        
-    except sqlite3.Error as e:
-        logging.error(f"Erro ao adicionar coluna marca: {str(e)}")
-        print(f"   ❌ Erro: {str(e)}")
-        return False
-    except Exception as e:
-        print(f"   ❌ Erro inesperado: {str(e)}")
-        return False
+# add_marca_to_preenchidas() removida — era redundante com garantir_colunas_necessarias()
 
 def executar_todas_migracoes():
     """Executa todas as migrações necessárias em ordem correta"""
@@ -596,33 +641,38 @@ def executar_todas_migracoes():
                         # Método 2: Recriar a tabela se necessário (caso mais complexo)
                         print("   🔄 Tentando método alternativo: recriar tabela...")
                         try:
-                            # Backup dos dados existentes
-                            cursor.execute("SELECT * FROM SolicitacoesPreenchidas")
-                            dados_existentes = cursor.fetchall()
-                            
-                            # Obter estrutura atual
-                            cursor.execute("PRAGMA table_info(SolicitacoesPreenchidas)")
-                            colunas_atuais = cursor.fetchall()
-                            nomes_colunas = [col[1] for col in colunas_atuais]
-                            
-                            # Criar tabela temporária
-                            colunas_sql = ', '.join([f'"{col[1]}" {col[2]}' for col in colunas_atuais])
-                            cursor.execute(f"CREATE TABLE SolicitacoesPreenchidas_temp ({colunas_sql}, marca TEXT)")
-                            
-                            # Copiar dados
-                            colunas_copy = ', '.join([f'"{col}"' for col in nomes_colunas])
-                            cursor.execute(f"""
-                                INSERT INTO SolicitacoesPreenchidas_temp ({colunas_copy})
-                                SELECT {colunas_copy} FROM SolicitacoesPreenchidas
-                            """)
-                            
-                            # Remover tabela antiga e renomear nova
-                            cursor.execute("DROP TABLE SolicitacoesPreenchidas")
-                            cursor.execute("ALTER TABLE SolicitacoesPreenchidas_temp RENAME TO SolicitacoesPreenchidas")
-                            
-                            conn.commit()
-                            print("   ✅ Coluna 'marca' adicionada com sucesso (método alternativo)!")
-                            
+                            conn.execute("BEGIN")
+                            try:
+                                cursor2 = conn.cursor()
+                                # Obter estrutura atual
+                                cursor2.execute("PRAGMA table_info(SolicitacoesPreenchidas)")
+                                colunas_atuais = cursor2.fetchall()
+                                nomes_colunas = [col[1] for col in colunas_atuais]
+
+                                if 'marca' not in nomes_colunas:
+                                    # Criar tabela temporária com nova coluna
+                                    colunas_sql = ', '.join([f'"{col[1]}" {col[2]}' for col in colunas_atuais])
+                                    cursor2.execute(
+                                        f"CREATE TABLE SolicitacoesPreenchidas_temp ({colunas_sql}, marca TEXT)"
+                                    )
+
+                                    # Copiar dados — DROP só após INSERT bem-sucedido
+                                    colunas_copy = ', '.join([f'"{col}"' for col in nomes_colunas])
+                                    cursor2.execute(
+                                        f"INSERT INTO SolicitacoesPreenchidas_temp ({colunas_copy}) "
+                                        f"SELECT {colunas_copy} FROM SolicitacoesPreenchidas"
+                                    )
+                                    cursor2.execute("DROP TABLE SolicitacoesPreenchidas")
+                                    cursor2.execute(
+                                        "ALTER TABLE SolicitacoesPreenchidas_temp "
+                                        "RENAME TO SolicitacoesPreenchidas"
+                                    )
+
+                                conn.execute("COMMIT")
+                                print("   ✅ Coluna 'marca' adicionada com sucesso (método alternativo)!")
+                            except Exception as e2:
+                                conn.execute("ROLLBACK")
+                                print(f"   ❌ Rollback executado. Nenhum dado foi perdido. Erro: {e2}")
                         except Exception as e2:
                             print(f"   ❌ Método alternativo também falhou: {e2}")
             else:
@@ -799,80 +849,98 @@ def executar_todas_migracoes():
             print(f"   ⚠️ Erro ao verificar coluna {coluna}: {e}")
     
     # ============================================
-    # 9. MIGRAÇÃO: QUANTIDADE PARA TEXT
+    # 9. MIGRAÇÃO: QUANTIDADE PARA TEXT (transação atômica)
     # ============================================
     print("\n🔧 Verificando tipo da coluna 'quantidade' em SolicitacoesCompra...")
-    
-    try:
-        conn = sqlite3.connect(DATABASE)
+
+    def _migracao_quantidade_para_text(conn):
+        """Executa a migração dentro de uma transação já aberta pelo chamador."""
         cursor = conn.cursor()
-        
         cursor.execute("PRAGMA table_info(SolicitacoesCompra)")
         colunas_info = cursor.fetchall()
         quantidade_col = next((col for col in colunas_info if col[1] == 'quantidade'), None)
-        
-        if quantidade_col and quantidade_col[2] in ['INTEGER', 'REAL', 'FLOAT', 'NUMERIC']:
+
+        if quantidade_col and quantidade_col[2].upper() in ('INTEGER', 'REAL', 'FLOAT', 'NUMERIC'):
             print("   🔄 Migrando coluna quantidade para TEXT...")
-            
-            # Verificar se a tabela temporária já existe
-            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='SolicitacoesCompra_temp'")
+
+            # Remover tabela temporária residual, se existir
+            cursor.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='SolicitacoesCompra_temp'"
+            )
             if cursor.fetchone():
                 cursor.execute("DROP TABLE SolicitacoesCompra_temp")
-            
-            # Criar tabela temporária
+
+            # Criar tabela temporária com coluna TEXT e incluindo colunas de data de aprovação
             cursor.execute("""
                 CREATE TABLE SolicitacoesCompra_temp (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    cod_material INTEGER NOT NULL,
-                    especificacao TEXT NOT NULL,
-                    quantidade TEXT NOT NULL,
-                    unidade_medida TEXT NOT NULL DEFAULT 'Unidade',
-                    aplicacao TEXT,
-                    aplicacao_geral TEXT,
-                    empresa TEXT NOT NULL,
-                    data_solicitacao DATETIME NOT NULL,
-                    usuario TEXT NOT NULL,
-                    foto_path TEXT,
-                    marca TEXT,
-                    ativo TEXT NOT NULL,
-                    nome_ativo TEXT,
-                    prioridade TEXT NOT NULL DEFAULT 'Programado',
-                    status_aprovacao TEXT,
-                    observacoes_col TEXT,
-                    comprador_atribuido TEXT
+                    id                     INTEGER PRIMARY KEY AUTOINCREMENT,
+                    cod_material           INTEGER  NOT NULL,
+                    especificacao          TEXT     NOT NULL,
+                    quantidade             TEXT     NOT NULL,
+                    unidade_medida         TEXT     NOT NULL DEFAULT 'Unidade',
+                    aplicacao              TEXT,
+                    aplicacao_geral        TEXT,
+                    empresa                TEXT     NOT NULL,
+                    data_solicitacao       DATETIME NOT NULL,
+                    usuario                TEXT     NOT NULL,
+                    foto_path              TEXT,
+                    marca                  TEXT,
+                    ativo                  TEXT     NOT NULL,
+                    nome_ativo             TEXT,
+                    prioridade             TEXT     NOT NULL DEFAULT 'Programado',
+                    status_aprovacao       TEXT,
+                    observacoes_col        TEXT,
+                    comprador_atribuido    TEXT,
+                    data_envio_aprovacao   DATETIME,
+                    data_retorno_aprovacao DATETIME
                 )
             """)
-            
-            # Copiar dados convertendo quantidade para TEXT
+
+            # Copiar dados — CAST garante que NULLs ou não-numéricos virem "0"
             cursor.execute("""
                 INSERT INTO SolicitacoesCompra_temp (
                     id, cod_material, especificacao, quantidade, unidade_medida,
                     aplicacao, aplicacao_geral, empresa, data_solicitacao, usuario,
                     foto_path, marca, ativo, nome_ativo, prioridade,
-                    status_aprovacao, observacoes_col, comprador_atribuido
+                    status_aprovacao, observacoes_col, comprador_atribuido,
+                    data_envio_aprovacao, data_retorno_aprovacao
                 )
-                SELECT 
-                    id, cod_material, especificacao, 
-                    CAST(quantidade AS TEXT), unidade_medida,
+                SELECT
+                    id, cod_material, especificacao,
+                    CAST(COALESCE(quantidade, 0) AS TEXT),
+                    unidade_medida,
                     aplicacao, aplicacao_geral, empresa, data_solicitacao, usuario,
-                    foto_path, marca, ativo, nome_ativo, 
+                    foto_path, marca, ativo, nome_ativo,
                     COALESCE(prioridade, 'Programado'),
-                    status_aprovacao, observacoes_col, comprador_atribuido
+                    status_aprovacao, observacoes_col, comprador_atribuido,
+                    data_envio_aprovacao, data_retorno_aprovacao
                 FROM SolicitacoesCompra
             """)
-            
-            # Remover tabela antiga e renomear nova
+
+            # DROP só após INSERT bem-sucedido
             cursor.execute("DROP TABLE SolicitacoesCompra")
             cursor.execute("ALTER TABLE SolicitacoesCompra_temp RENAME TO SolicitacoesCompra")
-            
-            conn.commit()
             print("   ✅ Coluna 'quantidade' migrada para TEXT com sucesso!")
         else:
-            print("   ✅ Coluna 'quantidade' já está no tipo TEXT ou não precisa ser migrada")
-        
-        conn.close()
+            print("   ✅ Coluna 'quantidade' já está no tipo TEXT — nada a fazer.")
+
+    try:
+        conn = sqlite3.connect(DATABASE)
+        conn.isolation_level = None   # controle manual de transação
+        conn.execute("BEGIN")
+        try:
+            _migracao_quantidade_para_text(conn)
+            conn.execute("COMMIT")
+        except Exception as e:
+            conn.execute("ROLLBACK")
+            print(f"   ❌ Rollback executado. Nenhum dado foi perdido. Erro: {e}")
+            raise
+        finally:
+            conn.close()
+    except sqlite3.Error as e:
+        print(f"   ⚠️ Erro de banco ao migrar quantidade: {e}")
     except Exception as e:
-        print(f"   ⚠️ Erro na migração da coluna quantidade: {e}")
+        print(f"   ⚠️ Erro inesperado ao migrar quantidade: {e}")
     
     # ============================================
     # 10. VERIFICAÇÃO FINAL
@@ -1437,7 +1505,8 @@ def format_cnpj(cnpj):
     return f"{cnpj[:2]}.{cnpj[2:5]}.{cnpj[5:8]}/{cnpj[8:12]}-{cnpj[12:]}"
 
 # Funções de Autenticação
-def ler_senhas():
+def _ler_senhas_do_disco():
+    """Lê o arquivo senhas.txt — chamada apenas pelo cache de ler_senhas()."""
     senhas = {}
     try:
         with open(SENHAS_FILE, "r", encoding='utf-8') as f:
@@ -1450,7 +1519,6 @@ def ler_senhas():
                         senha = partes[1]
                         pagina = partes[2]
                         empresa = partes[3] if len(partes) >= 4 else ""
-                        
                         senhas[usuario] = {
                             "senha": senha,
                             "pagina": pagina,
@@ -1458,8 +1526,18 @@ def ler_senhas():
                             "usuario_base": usuario
                         }
     except Exception as e:
-        print(f"Erro: {str(e)}")
+        logging.error(f"Erro ao ler senhas.txt. Tipo: {type(e).__name__}")
     return senhas
+
+def ler_senhas():
+    """Retorna senhas com cache de 60 s para reduzir I/O desnecessário."""
+    return get_cached_or_execute('senhas_usuarios', _ler_senhas_do_disco, ttl_seconds=60)
+
+def _invalidar_cache_senhas():
+    """Invalida o cache de senhas após qualquer escrita no arquivo."""
+    with _cache_lock:
+        _cache.pop('senhas_usuarios', None)
+        _cache_timestamp.pop('senhas_usuarios', None)
 
 def salvar_senhas(senhas):
     try:
@@ -1467,8 +1545,9 @@ def salvar_senhas(senhas):
             for usuario, dados in senhas.items():
                 empresa = dados.get('empresa', '')
                 f.write(f"{usuario}%{dados['senha']}%{dados['pagina']}%{empresa}\n")
+        _invalidar_cache_senhas()  # garante que próximo request lê dados atualizados
     except Exception as e:
-        logging.error(f"Erro ao salvar senhas.txt: {str(e)}")
+        logging.error(f"Erro ao salvar senhas.txt. Tipo: {type(e).__name__}")
 
 
 def registrar_log(usuario, tipo_acao, descricao=None, ip=None):
@@ -1558,14 +1637,51 @@ app.jinja_env.globals.update(
 # Blueprint para rotas
 routes_bp = Blueprint('routes_bp', __name__)
 
+def requer_role(*roles_permitidas):
+    """Decorator para verificar se o usuário tem a role necessária.
+    Exemplo: @requer_role('menu_master.html', 'menu_aprovacao.html')
+    """
+    from functools import wraps
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            if 'usuario' not in session:
+                return jsonify({'success': False, 'error': 'Não autenticado'}), 401
+            usuario_completo = session.get('usuario_completo', session['usuario'])
+            senhas = ler_senhas()
+            role = senhas.get(usuario_completo, {}).get('pagina', '')
+            if not any(r in role for r in roles_permitidas):
+                logging.warning(f"Acesso negado para role '{role}' em {request.endpoint}")
+                return jsonify({'success': False, 'error': 'Sem permissão'}), 403
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator
+
 @routes_bp.before_request
 def verificar_sessao():
     """Verifica inatividade e controle de acesso por menu em um único hook."""
-    endpoints_publicos = {'routes_bp.login', 'static', 'routes_bp.debug_senhas'}
+    endpoints_publicos = {'routes_bp.login', 'static'}
     if request.endpoint in endpoints_publicos:
         return
 
     if 'usuario' not in session:
+        return redirect(url_for('routes_bp.login'))
+
+    # Verificar se o usuário ainda existe no arquivo de senhas — protege contra
+    # sessões órfãs de contas excluídas ou desativadas.
+    _uc = session.get('usuario_completo', session.get('usuario'))
+    if _uc and _uc not in ler_senhas():
+        # 🔒 Log de segurança obrigatório: sessão órfã / conta removida
+        logging.warning(
+            'AUTH_FAILURE | usuario=%s | ip=%s | session_id=%s | endpoint=%s | motivo=usuario_nao_encontrado',
+            _uc, request.remote_addr, request.cookies.get('session', 'n/a')[:16], request.endpoint
+        )
+        try:
+            registrar_log(_uc, 'auth_failure_sessao_orfan', f'Sessão inválida bloqueada em {request.endpoint}', request.remote_addr)
+        except Exception:
+            pass  # não deixar falha de log derrubar o redirect de segurança
+        session.clear()
+        flash('Sua conta foi alterada. Faça login novamente.', 'warning')
         return redirect(url_for('routes_bp.login'))
 
     # Verificar inatividade
@@ -1611,27 +1727,44 @@ def verificar_sessao():
 def home():
     return redirect(url_for('routes_bp.login'))
 
-@routes_bp.route('/uploads/<filename>')
+@routes_bp.route('/uploads/<path:filename>')
 def uploads(filename):
+    if 'usuario' not in session:
+        abort(401)
+    safe_path = safe_join(app.config['UPLOAD_FOLDER'], filename)
+    if safe_path is None or not os.path.isfile(safe_path):
+        abort(404)
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 @routes_bp.route('/login', methods=['GET', 'POST'])
+@limiter.limit("10 per minute")
 def login():
     if request.method == 'POST':
         usuario_completo = request.form.get('usuario', '').strip()
         senha = request.form.get('senha', '').strip()
         
         senhas = ler_senhas()
-        
-        if usuario_completo in senhas and senha == senhas[usuario_completo]["senha"]:
-            # CORREÇÃO: Usar o usuário base para a sessão
-            usuario_base = senhas[usuario_completo]["usuario_base"]
+        usuario_dados = senhas.get(usuario_completo)
+        autenticado = False
+
+        if usuario_dados:
+            hash_armazenado = usuario_dados["senha"]
+            # Migração inline: se ainda for plaintext (sem prefixo werkzeug), migrar para hash
+            if not hash_armazenado.startswith(('pbkdf2:', 'scrypt:', 'bcrypt')):
+                if hash_armazenado == senha:
+                    usuario_dados["senha"] = generate_password_hash(senha)
+                    salvar_senhas(senhas)
+                    autenticado = True
+            else:
+                autenticado = check_password_hash(hash_armazenado, senha)
+
+        if autenticado:
+            usuario_base = usuario_dados["usuario_base"]
             session['usuario'] = usuario_base
-            session['usuario_completo'] = usuario_completo  # Guardar o completo
+            session['usuario_completo'] = usuario_completo
             session['_fresh'] = True
-            
-            # Redireciona para o menu correto
-            pagina_destino = senhas[usuario_completo]["pagina"].replace('.html', '')
+            registrar_log(usuario_base, 'login', ip=request.remote_addr)
+            pagina_destino = usuario_dados["pagina"].replace('.html', '')
             return redirect(url_for(f'routes_bp.{pagina_destino}'))
         
         flash('Credenciais inválidas', 'error')
@@ -1712,7 +1845,7 @@ def adicionar_senha():
             mensagem = 'Senha adicionada com sucesso.'
 
         senhas[usuario] = {
-            "senha": senha,
+            "senha": generate_password_hash(senha),
             "pagina": pagina,
             "empresa": empresa
         }
@@ -1927,12 +2060,12 @@ def listar_materiais():
     try:
         materiais = get_cached_or_execute(
             'todos_materiais',
-            lambda: Materiais.query.all(),
+            lambda: [m.to_dict() for m in Materiais.query.all()],
             ttl_seconds=300
         )
         return render_template('materiais.html', materiais=materiais)
     except Exception as e:
-        flash(f'Erro ao carregar materiais: {str(e)}', 'error')
+        _flash_erro_seguro('Erro ao carregar materiais.', e, app.logger)
         return render_template('materiais.html', materiais=[])
 
 @routes_bp.route('/adicionar_material', methods=['POST'])
@@ -1976,7 +2109,7 @@ def adicionar_material():
         return redirect(url_for('routes_bp.listar_materiais'))
     except Exception as e:
         db.session.rollback()
-        flash(f'Erro ao adicionar material: {str(e)}', 'error')
+        _flash_erro_seguro('Erro ao adicionar material.', e, app.logger)
         return redirect(url_for('routes_bp.cadastrar_material'))
 
 @routes_bp.route('/excluir_material/<int:cod>', methods=['POST'])
@@ -1990,7 +2123,7 @@ def excluir_material(cod):
         flash(f'Material {material.DescricaoMaterial} excluído com sucesso.', 'success')
         return redirect(url_for('routes_bp.listar_materiais'))
     except Exception as e:
-        flash(f'Erro ao excluir material: {str(e)}', 'error')
+        _flash_erro_seguro('Erro ao excluir material.', e, app.logger)
         return redirect(url_for('routes_bp.listar_materiais'))
 
 @routes_bp.route('/buscar_material', methods=['GET', 'POST'])
@@ -2050,7 +2183,7 @@ def buscar_material():
                 flash('Nenhum material encontrado com os filtros aplicados.', 'info')
         
     except Exception as e:
-        flash(f'Erro ao buscar materiais: {str(e)}', 'error')
+        _flash_erro_seguro('Erro ao buscar materiais.', e, app.logger)
     
     return render_template('buscar_material.html', 
                          materiais=materiais,
@@ -2073,10 +2206,10 @@ def solicitar_compra(cod):
 
         empresa_usuario = senhas[usuario].get('empresa', '')
         
-        # BUSCAR TODOS OS MATERIAIS — usando cache de 5 minutos
+        # BUSCAR TODOS OS MATERIAIS — usando cache de 5 minutos (lista de dicts)
         todos_materiais = get_cached_or_execute(
             'todos_materiais',
-            lambda: Materiais.query.all(),
+            lambda: [m.to_dict() for m in Materiais.query.all()],
             ttl_seconds=300
         )
 
@@ -2099,10 +2232,10 @@ def solicitar_compra(cod):
             )
 
     except SQLAlchemyError as e:
-        flash(f'Erro ao carregar material: {str(e)}', 'error')
+        _flash_erro_seguro('Erro ao carregar material.', e, app.logger)
         return redirect(url_for('routes_bp.buscar_material'))
     except Exception as e:
-        flash(f'Erro inesperado: {str(e)}', 'error')
+        _flash_erro_seguro('Erro inesperado.', e, app.logger)
         return redirect(url_for('routes_bp.buscar_material'))
     
 
@@ -2167,10 +2300,10 @@ def api_materiais():
     try:
         print("🔍 Acessando API de materiais...")
         
-        # Buscar todos os materiais — cache de 5 minutos
+        # Buscar todos os materiais — cache de 5 minutos (lista de dicts)
         materiais = get_cached_or_execute(
             'todos_materiais',
-            lambda: Materiais.query.all(),
+            lambda: [m.to_dict() for m in Materiais.query.all()],
             ttl_seconds=300
         )
         if not materiais:
@@ -2183,8 +2316,8 @@ def api_materiais():
         resultado = {
             'success': True,
             'materiais': [{
-                'CodMaterial': m.CodMaterial,
-                'DescricaoMaterial': m.DescricaoMaterial
+                'CodMaterial': m['CodMaterial'],
+                'DescricaoMaterial': m['DescricaoMaterial']
             } for m in materiais]
         }
         
@@ -2199,6 +2332,7 @@ def api_materiais():
         }), 500
 
 @routes_bp.route('/abrir_solicitacao', methods=['POST'])
+@limiter.limit("30 per minute")
 def abrir_solicitacao():
     if 'usuario' not in session:
         flash('Você precisa estar logado para fazer uma solicitação.', 'error')
@@ -2278,8 +2412,9 @@ def abrir_solicitacao():
                 foto = fotos[i]
                 if allowed_file(foto.filename, {'jpg', 'jpeg', 'png', 'pdf'}):
                     filename = f"{uuid.uuid4()}_{secure_filename(foto.filename)}"
-                    foto_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-                    foto.save(foto_path)
+                    abs_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                    foto.save(abs_path)
+                    foto_path = filename  # armazena apenas o nome relativo, não o path absoluto
 
             # 🔴 CRIAR SOLICITAÇÃO - quantidade como string
             solicitacao = SolicitacoesCompra(
@@ -2297,13 +2432,22 @@ def abrir_solicitacao():
                 nome_ativo=nomes_ativos[i] if i < len(nomes_ativos) and ativos[i] == 'Sim' and nomes_ativos[i] else None,
                 prioridade=prioridades[i],
                 status_aprovacao=None,
-                comprador_atribuido=get_next_comprador(aplicacao)
+                comprador_atribuido=None  # será atribuído logo abaixo com tratamento individual
             )
+            # Atribuir comprador com proteção individual para não cancelar as demais solicitações
+            try:
+                solicitacao.comprador_atribuido = get_next_comprador(aplicacao)
+            except Exception as e_comprador:
+                app.logger.warning(
+                    f"Não foi possível atribuir comprador para solicitação {i+1}: {type(e_comprador).__name__}"
+                )
+                solicitacao.comprador_atribuido = None
             db.session.add(solicitacao)
             solicitacoes_criadas += 1
 
         if solicitacoes_criadas > 0:
             db.session.commit()
+            invalidar_cache_filtros()  # empresas/aplicações podem ter mudado
             flash(f'{solicitacoes_criadas} solicitações de compra abertas com sucesso.', 'success')
         else:
             flash('Nenhuma solicitação válida para criar.', 'error')
@@ -2313,7 +2457,7 @@ def abrir_solicitacao():
     except Exception as e:
         db.session.rollback()
         logging.error(f"Error in abrir_solicitacao: {str(e)}")
-        flash(f'Erro ao abrir solicitações: {str(e)}', 'error')
+        _flash_erro_seguro('Erro ao abrir solicitações.', e, app.logger)
         return redirect(url_for('routes_bp.buscar_material'))
     
 def migrate_quantidade_to_text():
@@ -2495,10 +2639,11 @@ def listar_solicitacoes():
         
         grupos_paginados = grupos_ordenados[inicio:fim]
 
-        # Listas para filtros (usando todas as solicitações aprovadas que não geraram pedido)
-        empresas = sorted({s.empresa for s in solicitacoes if s.empresa})
-        usuarios = sorted({s.usuario for s in solicitacoes if s.usuario})
-        aplicacoes = sorted({s.aplicacao for s in solicitacoes if s.aplicacao})
+        # Listas de filtros — centralizadas e com cache de 5 min
+        _filtros = get_filtros_listagem(apenas_aprovadas=True)
+        empresas   = _filtros['empresas']
+        usuarios   = _filtros['usuarios']
+        aplicacoes = _filtros['aplicacoes']
         compradores = get_compradores()
 
         return render_template(
@@ -2516,7 +2661,7 @@ def listar_solicitacoes():
         )
 
     except Exception as e:
-        flash(f'Erro ao carregar solicitações: {str(e)}', 'error')
+        _flash_erro_seguro('Erro ao carregar solicitações.', e, app.logger)
         return render_template(
             'listar_solicitacoes.html',
             grupos_paginados=[],
@@ -2707,10 +2852,11 @@ def listar_solicitacoes_comprador():
         # 🔴 LISTA DE COMPRADORES: APENAS O LOGADO
         compradores = [comprador_logado]
 
-        # Coletar dados para outros filtros
-        empresas = list(set(s.empresa for s in solicitacoes if s.empresa))
-        usuarios = list(set(s.usuario for s in solicitacoes if s.usuario))
-        aplicacoes = list(set(s.aplicacao for s in solicitacoes if s.aplicacao))
+        # Listas de filtros — centralizadas e com cache de 5 min (filtradas pelo comprador logado)
+        _filtros = get_filtros_listagem(apenas_aprovadas=False, comprador=comprador_logado)
+        empresas   = _filtros['empresas']
+        usuarios   = _filtros['usuarios']
+        aplicacoes = _filtros['aplicacoes']
 
 
         return render_template(
@@ -2725,11 +2871,9 @@ def listar_solicitacoes_comprador():
             titulo_pagina="Solicitações Aprovadas - Preencher Cotação"
         )
 
-    except Exception as e:
-        flash(f'Erro ao carregar solicitações: {str(e)}', 'error')
-        import traceback
-        traceback.print_exc()
-        
+    except SQLAlchemyError as e:
+        _flash_erro_seguro('Erro ao carregar solicitações.', e, app.logger)
+        import traceback; traceback.print_exc()
         return render_template(
             'listar_solicitacoes_comprador.html',
             grupos_com_rascunho=[],
@@ -2761,48 +2905,41 @@ def aprovar_solicitacao():
         
         # Query base com eager loading do material
         query = SolicitacoesCompra.query.options(joinedload(SolicitacoesCompra.material))
-        
-        if filtro_status == 'pendentes':
-            # Buscar solicitações pendentes em UMA consulta
-            solicitacoes = query.filter(
+
+        # ── Mapa de status → filtro SQL ──────────────────────────────────────
+        # Adicionar novos status aqui, sem tocar no restante da lógica.
+        _subq_com_preenchimento_finalizado = lambda: (
+            db.session.query(SolicitacoesPreenchidas.solicitacao_id).filter(
+                SolicitacoesPreenchidas.status.in_(
+                    ['Aprovado', 'Reprovado', 'Entregue', 'Em Processamento']
+                )
+            ).distinct()
+        )
+
+        _STATUS_QUERY_MAP = {
+            'pendentes': lambda q: q.filter(
                 or_(
                     SolicitacoesCompra.status_aprovacao.is_(None),
                     SolicitacoesCompra.status_aprovacao == '',
-                    SolicitacoesCompra.status_aprovacao == 'Pendente'
+                    SolicitacoesCompra.status_aprovacao == 'Pendente',
                 )
-            ).all()
-            
-        elif filtro_status == 'abertas':
-            # Solicitações sem preenchimento FINALIZADO
-            subquery = db.session.query(SolicitacoesPreenchidas.solicitacao_id).filter(
-                SolicitacoesPreenchidas.status.in_(['Aprovado', 'Reprovado', 'Entregue', 'Em Processamento'])
-            ).distinct()
-            
-            solicitacoes = query.filter(
-                ~SolicitacoesCompra.id.in_(subquery)
-            ).all()
-            
-        elif filtro_status == 'aprovadas':
-            solicitacoes = query.filter(
+            ),
+            'abertas': lambda q: q.filter(
+                ~SolicitacoesCompra.id.in_(_subq_com_preenchimento_finalizado())
+            ),
+            'aprovadas': lambda q: q.filter(
                 SolicitacoesCompra.status_aprovacao == 'Aprovado'
-            ).all()
-            
-        elif filtro_status == 'reprovadas':
-            solicitacoes = query.filter(
+            ),
+            'reprovadas': lambda q: q.filter(
                 SolicitacoesCompra.status_aprovacao == 'Reprovado'
-            ).all()
-            
-        elif filtro_status == 'preenchidas':
-            subquery = db.session.query(SolicitacoesPreenchidas.solicitacao_id).filter(
-                SolicitacoesPreenchidas.status.in_(['Aprovado', 'Reprovado', 'Entregue', 'Em Processamento'])
-            ).distinct()
-            
-            solicitacoes = query.filter(
-                SolicitacoesCompra.id.in_(subquery)
-            ).all()
-            
-        else:
-            solicitacoes = query.all()
+            ),
+            'preenchidas': lambda q: q.filter(
+                SolicitacoesCompra.id.in_(_subq_com_preenchimento_finalizado())
+            ),
+        }
+
+        aplicar_filtro = _STATUS_QUERY_MAP.get(filtro_status)
+        solicitacoes = (aplicar_filtro(query) if aplicar_filtro else query).all()
 
         # Buscar aplicações em UMA ÚNICA consulta
         # Buscar aplicações de materiais
@@ -2852,24 +2989,10 @@ def aprovar_solicitacao():
                            (s.aplicacao_geral and aplicacao_filtro.lower() in s.aplicacao_geral.lower()) or
                            (s.material and s.material.Aplicacao and aplicacao_filtro.lower() in s.material.Aplicacao.lower())]
 
-        # Função para obter usuários e empresas
-        def get_usuarios_empresas():
-            usuarios = set()
-            empresas = set()
-            try:
-                with open('senhas.txt', 'r', encoding='utf-8') as f:
-                    for line in f:
-                        partes = line.strip().split('%')
-                        if len(partes) >= 4:
-                            usuario = partes[0]
-                            empresa = partes[3]
-                            usuarios.add(usuario)
-                            empresas.add(empresa)
-            except Exception as e:
-                logging.error(f"Erro ao ler senhas.txt: {str(e)}")
-            return sorted(usuarios), sorted(empresas)
-        
-        usuarios, empresas = get_usuarios_empresas()
+        # Usuários e empresas — via ler_senhas() que já tem cache de 60 s
+        _senhas_data = ler_senhas()
+        usuarios  = sorted({d['usuario_base'] for d in _senhas_data.values()})
+        empresas  = sorted({d['empresa'] for d in _senhas_data.values() if d.get('empresa')})
         
         if not solicitacoes:
             flash('Nenhuma solicitação encontrada com os filtros aplicados.', 'info')
@@ -2882,16 +3005,22 @@ def aprovar_solicitacao():
                             filtro_status=filtro_status,
                             aplicacao_filtro=aplicacao_filtro)
         
+    except SQLAlchemyError as e:
+        app.logger.error('aprovar_solicitacao – erro de banco', exc_info=True)
+        _flash_erro_seguro('Erro ao carregar solicitações.', e, app.logger)
+        return redirect(url_for('routes_bp.buscar_material'))
     except Exception as e:
-        logging.error(f"Error in aprovar_solicitacao: {str(e)}")
-        print(f"❌ DEBUG - Erro: {str(e)}")
-        flash(f'Erro ao carregar solicitações: {str(e)}', 'error')
+        app.logger.error('aprovar_solicitacao – erro inesperado', exc_info=True)
+        _flash_erro_seguro('Erro inesperado ao carregar solicitações.', e, app.logger)
         return redirect(url_for('routes_bp.buscar_material'))
     
     
 @routes_bp.route('/debug_ultimas_solicitacoes')
 def debug_ultimas_solicitacoes():
     """Debug das últimas solicitações criadas"""
+    import os as _os
+    if _os.getenv("FLASK_ENV", "production").lower() not in ("development", "dev"):
+        abort(404)
     if 'usuario' not in session:
         return jsonify({'error': 'Não autorizado'}), 401
     
@@ -2927,6 +3056,9 @@ def debug_ultimas_solicitacoes():
 @routes_bp.route('/debug_solicitacoes_status')
 def debug_solicitacoes_status():
     """Debug completo do status das solicitações"""
+    import os as _os
+    if _os.getenv("FLASK_ENV", "production").lower() not in ("development", "dev"):
+        abort(404)
     if 'usuario' not in session:
         return jsonify({'error': 'Não autorizado'}), 401
     
@@ -2970,6 +3102,9 @@ def debug_solicitacoes_status():
 @routes_bp.route('/debug_ultima_solicitacao')
 def debug_ultima_solicitacao():
     """Debug da última solicitação criada"""
+    import os as _os
+    if _os.getenv("FLASK_ENV", "production").lower() not in ("development", "dev"):
+        abort(404)
     if 'usuario' not in session:
         return jsonify({'error': 'Não autorizado'}), 401
     
@@ -2998,6 +3133,9 @@ def debug_ultima_solicitacao():
 @routes_bp.route('/debug_solicitacoes_recentes')
 def debug_solicitacoes_recentes():
     """Rota para debug - mostra as últimas 10 solicitações criadas"""
+    import os as _os
+    if _os.getenv("FLASK_ENV", "production").lower() not in ("development", "dev"):
+        abort(404)
     if 'usuario' not in session:
         return redirect(url_for('routes_bp.login'))
     
@@ -3026,6 +3164,9 @@ def debug_solicitacoes_recentes():
 @routes_bp.route('/debug_solicitacoes_detalhado')
 def debug_solicitacoes_detalhado():
     """Debug detalhado de TODAS as solicitações"""
+    import os as _os
+    if _os.getenv("FLASK_ENV", "production").lower() not in ("development", "dev"):
+        abort(404)
     if 'usuario' not in session:
         return jsonify({'error': 'Não autorizado'}), 401
     
@@ -3061,6 +3202,11 @@ def debug_solicitacoes_detalhado():
 @routes_bp.route('/debug_verificar_coluna_status')
 def debug_verificar_coluna_status():
     """Verificar se a coluna existe e seus valores"""
+    import os as _os
+    if _os.getenv("FLASK_ENV", "production").lower() not in ("development", "dev"):
+        abort(404)
+    if 'usuario' not in session:
+        return jsonify({'error': 'Não autorizado'}), 401
     try:
         # Verificar estrutura da tabela
         result = db.engine.execute("PRAGMA table_info(SolicitacoesCompra)").fetchall()
@@ -3349,7 +3495,7 @@ def preencher_solicitacao(id):
             todos_ids_solicitacao = request.form.getlist('solicitacao_id[]')
             todas_marcas = request.form.getlist('marca[]')
             
-            print(f"📋 Descontos recebidos: {descontos}")
+            logging.debug(f"Descontos recebidos: {len(descontos)} itens")
             print(f"📋 Total valores unitários: {len(todos_valores_unitarios)}")
             
             # === Processar cada cotação ===
@@ -3572,7 +3718,7 @@ def preencher_solicitacao(id):
         
         except Exception as e:
             db.session.rollback()
-            flash(f'Erro ao salvar: {str(e)}', 'error')
+            _flash_erro_seguro('Erro ao salvar.', e, app.logger)
             import traceback
             print(f"❌ Erro completo: {traceback.format_exc()}")
             return redirect(request.url)
@@ -3996,7 +4142,10 @@ def listar_solicitacoes_preenchidas():
 
         preenchimentos = paginacao.items
 
-        # Estruturar dados para o template
+        # Estruturar dados — bulk fetch de fornecedores para evitar N+1
+        forn_ids_preench = {p.fornecedor_id for p in preenchimentos if p.fornecedor_id}
+        fornecedores_preench = get_fornecedores_bulk(forn_ids_preench)
+
         preenchimentos_por_material = {}
         for p in preenchimentos:
             if not p.solicitacao:
@@ -4005,7 +4154,10 @@ def listar_solicitacoes_preenchidas():
                 p.solicitacao.material.DescricaoMaterial
                 if p.solicitacao.material else 'Material não encontrado'
             )
-            fornecedor_nome = get_fornecedor_nome(p.fornecedor_id)
+            fornecedor_nome = (
+                fornecedores_preench.get(p.fornecedor_id, {}).get('nome_fantasia', 'N/A')
+                if p.fornecedor_id else 'N/A'
+            )
             preenchimento_info = {
                 'id': p.id,
                 'fornecedor_nome': fornecedor_nome,
@@ -4054,7 +4206,7 @@ def listar_solicitacoes_preenchidas():
 
     except Exception as e:
         app.logger.error(f'❌ Erro em listar_solicitacoes_preenchidas: {str(e)}', exc_info=True)
-        flash(f'Erro ao carregar solicitações: {str(e)}', 'danger')
+        _flash_erro_seguro('Erro ao carregar solicitações.', e, app.logger)
         return render_template(
             'listar_solicitacoes_preenchidas.html',
             preenchimentos_por_material={},
@@ -4068,6 +4220,9 @@ def listar_solicitacoes_preenchidas():
 # Rota de debug - adicione temporariamente no app.py
 @routes_bp.route('/debug_preenchimentos')
 def debug_preenchimentos():
+    import os as _os
+    if _os.getenv("FLASK_ENV", "production").lower() not in ("development", "dev"):
+        abort(404)
     if 'usuario' not in session:
         return jsonify({'error': 'Não autorizado'}), 401
     
@@ -4361,7 +4516,7 @@ def gerar_pedido_compra():
             try:
                 preenchimento_ids_int = [int(pid) for pid in preenchimento_ids]
             except ValueError as e:
-                flash(f'Erro ao processar IDs selecionados: {str(e)}', 'error')
+                _flash_erro_seguro('Erro ao processar IDs selecionados.', e, app.logger)
                 return redirect(url_for('routes_bp.gerar_pedido_compra'))
             
             # 🔴 VERIFICAR SE OS ITENS JÁ ESTÃO EM ALGUM PEDIDO
@@ -4511,7 +4666,7 @@ def gerar_pedido_compra():
     except Exception as e:
         db.session.rollback()
         logging.error(f"Erro em gerar_pedido_compra: {str(e)}", exc_info=True)
-        flash(f'Erro ao gerar pedido: {str(e)}', 'error')
+        _flash_erro_seguro('Erro ao gerar pedido.', e, app.logger)
         return redirect(url_for('routes_bp.listar_solicitacoes_preenchidas'))
     
 #testeaqui
@@ -4590,7 +4745,7 @@ def view_pedido_pdf(pedido_id):
         )
         
     except Exception as e:
-        flash(f'Erro ao carregar pedido: {str(e)}', 'error')
+        _flash_erro_seguro('Erro ao carregar pedido.', e, app.logger)
         logging.error(f"Erro em view_pedido_pdf: {str(e)}")
         return redirect(url_for('routes_bp.listar_pedidos_compra'))
 def get_fornecedor_details_full(fornecedor_id):
@@ -4668,7 +4823,7 @@ def visualizar_pedido(pedido_id):
         )
     
     except Exception as e:
-        flash(f'Erro ao visualizar pedido: {str(e)}', 'error')
+        _flash_erro_seguro('Erro ao visualizar pedido.', e, app.logger)
         logging.error(f"Erro em visualizar_pedido para ID {pedido_id}: {str(e)}", exc_info=True)
         return redirect(url_for('routes_bp.listar_pedidos_compras'))  # Ajuste para a rota de listagem correta
     
@@ -4756,116 +4911,76 @@ def listar_pedidos_compra():
         data_fim     = request.args.get('data_fim')
         numero_pedido = request.args.get('numero_pedido')
 
-        if por_pagina not in [50, 100]:
+        if not isinstance(por_pagina, int) or por_pagina not in [50, 100]:
             por_pagina = 50
-        if pagina < 1:
+        if not isinstance(pagina, int) or pagina < 1:
             pagina = 1
 
-        # Query base: todos os pedidos, sem filtro de associação
+        # Query base com JOINs para evitar filtragem em memória
         query = db.session.query(PedidosCompra)
 
-        # Aplicar filtros
         if status:
             query = query.filter(PedidosCompra.status == status)
-            
+
         if numero_pedido:
             query = query.filter(PedidosCompra.numero_pedido.ilike(f'%{numero_pedido}%'))
-            
+
         if data_inicio:
             query = query.filter(PedidosCompra.data_criacao >= data_inicio)
-            
+
         if data_fim:
             try:
                 dt_fim = datetime.strptime(data_fim, '%Y-%m-%d') + timedelta(days=1)
                 query = query.filter(PedidosCompra.data_criacao < dt_fim)
-            except:
+            except (ValueError, TypeError):
                 pass
 
-        # Buscar pedidos com os filtros básicos
-        pedidos = query.order_by(PedidosCompra.data_criacao.desc()).all()
-        
-        # Filtrar em memória por empresa e comprador (requerem JOIN com solicitações)
-        pedidos_filtrados = []
-        for pedido in pedidos:
+        # Filtros empresa/comprador movidos para SQL via subquery
+        if empresa or comprador_atribuido:
+            subq = (
+                db.session.query(pedido_preenchimento_associacao.c.pedido_id)
+                .join(SolicitacoesPreenchidas,
+                      SolicitacoesPreenchidas.id == pedido_preenchimento_associacao.c.preenchimento_id)
+                .join(SolicitacoesCompra,
+                      SolicitacoesCompra.id == SolicitacoesPreenchidas.solicitacao_id)
+            )
             if empresa:
-                empresas_pedido = {
-                    s.empresa
-                    for p in pedido.preenchimentos
-                    for s in ([p.solicitacao] if p.solicitacao else [])
-                }
-                if empresa not in empresas_pedido:
-                    continue
-
+                subq = subq.filter(SolicitacoesCompra.empresa == empresa)
             if comprador_atribuido:
-                compradores_pedido = {
-                    s.comprador_atribuido
-                    for p in pedido.preenchimentos
-                    for s in ([p.solicitacao] if p.solicitacao else [])
-                    if s.comprador_atribuido
-                }
-                if comprador_atribuido not in compradores_pedido:
-                    continue
+                subq = subq.filter(SolicitacoesCompra.comprador_atribuido == comprador_atribuido)
+            query = query.filter(PedidosCompra.id.in_(subq.subquery()))
 
-            pedidos_filtrados.append(pedido)
-        
-        # Paginação em memória
-        total_itens = len(pedidos_filtrados)
+        # Contagem e paginação no banco (não em memória)
+        total_itens  = query.count()
         total_paginas = max(1, (total_itens + por_pagina - 1) // por_pagina)
-        
         if pagina > total_paginas:
             pagina = total_paginas
-        
-        inicio = (pagina - 1) * por_pagina
-        fim = inicio + por_pagina
-        pedidos_paginados = pedidos_filtrados[inicio:fim]
+        pedidos_paginados = (
+            query.order_by(PedidosCompra.data_criacao.desc())
+            .offset((pagina - 1) * por_pagina)
+            .limit(por_pagina)
+            .all()
+        )
 
-        # Carregar empresas e compradores do arquivo senhas.txt
-        compradores_empresas = {}
-        empresas_unicas = set()
-        compradores_unicos = set()
+        # Empresas e compradores via ler_senhas() cacheado — sem abrir senhas.txt diretamente
+        _senhas = ler_senhas()
+        empresas_unicas   = sorted({d['empresa'] for d in _senhas.values() if d.get('empresa')})
+        compradores_unicos = sorted({
+            u for u, d in _senhas.items() if 'comprador' in d.get('pagina', '').lower()
+        })
+        compradores_empresas = {
+            u: d['empresa'] for u, d in _senhas.items()
+            if 'comprador' in d.get('pagina', '').lower()
+        }
 
-        try:
-            with open('senhas.txt', 'r', encoding='utf-8') as f:
-                for line in f:
-                    partes = line.strip().split('%')
-                    if len(partes) >= 4:
-                        usuario = partes[0].strip()
-                        empresa_usuario = partes[3].strip()
-                        pagina_usuario = partes[2].strip().lower() if len(partes) > 2 else ''
-                        
-                        empresas_unicas.add(empresa_usuario)
-                        
-                        if 'comprador' in pagina_usuario:
-                            compradores_unicos.add(usuario)
-                            compradores_empresas[usuario] = empresa_usuario
-        except Exception as e:
-            logging.error(f"Erro lendo senhas.txt: {str(e)}")
-
-        # Buscar informações de fornecedores (se houver preenchimentos, mas não deve haver)
-        fornecedor_ids = set()
-        for pedido in pedidos_paginados:
-            for preenchimento in pedido.preenchimentos:
-                if preenchimento.fornecedor_id:
-                    fornecedor_ids.add(preenchimento.fornecedor_id)
-
-        fornecedores = {}
-        if fornecedor_ids:
-            conn = get_db_connection(DB_PATH_FORNECEDORES)
-            if conn:
-                try:
-                    cursor = conn.cursor()
-                    placeholders = ','.join('?' * len(fornecedor_ids))
-                    cursor.execute(f'SELECT id, nome_fantasia, cnpj FROM fornecedores WHERE id IN ({placeholders})', 
-                                 list(fornecedor_ids))
-                    for row in cursor.fetchall():
-                        fornecedores[row[0]] = {
-                            'nome_fantasia': row[1],
-                            'cnpj': format_cnpj(row[2]) if row[2] else 'N/A'
-                        }
-                except Exception as e:
-                    logging.error(f"Erro ao buscar fornecedores: {str(e)}")
-                finally:
-                    conn.close()
+        # Fornecedores em lote — UMA única conexão para toda a página
+        fornecedor_ids = {
+            p.fornecedor_id
+            for pedido in pedidos_paginados
+            for p in pedido.preenchimentos
+            if p.fornecedor_id
+        }
+        fornecedores = get_fornecedores_bulk(fornecedor_ids)
 
         # Estruturar dados para o template
         pedidos_completos = []
@@ -4924,7 +5039,7 @@ def listar_pedidos_compra():
         
     except Exception as e:
         logging.error(f"Erro ao listar pedidos de compra: {str(e)}", exc_info=True)
-        flash(f'Erro ao listar pedidos de compra: {str(e)}', 'error')
+        _flash_erro_seguro('Erro ao listar pedidos de compra.', e, app.logger)
         return render_template(
             'listar_pedidos_compra.html', 
             pedidos_completos=[],
@@ -5069,7 +5184,7 @@ def listar_pedidos_compra_pg():
             }
         )
     except Exception as e:
-        flash(f'Erro ao listar pedidos de compra: {str(e)}', 'error')
+        _flash_erro_seguro('Erro ao listar pedidos de compra.', e, app.logger)
         return render_template(
             'listar_pedidos_compras_pg.html', 
             pedidos_completos=[],
@@ -5091,7 +5206,7 @@ def download_pedido_pdf(pedido_id):
         
         return send_file(pedido.pdf_path, as_attachment=True)
     except Exception as e:
-        flash(f'Erro ao baixar PDF: {str(e)}', 'error')
+        _flash_erro_seguro('Erro ao baixar PDF.', e, app.logger)
         return redirect(url_for('routes_bp.listar_pedidos_compra'))
 
 @routes_bp.route('/atualizar_status_pedido/<int:id>', methods=['POST'])
@@ -5137,7 +5252,7 @@ def atualizar_status_pedido(id):
                 try:
                     pdf_file.save(pdf_path)
                 except Exception as e:
-                    flash(f'Erro ao salvar o PDF: {str(e)}', 'error')
+                    _flash_erro_seguro('Erro ao salvar o PDF.', e, app.logger)
                     return jsonify({'flash': [['Erro ao salvar o PDF.', 'error']]}), 500
 
                 pedido.pdf_path = pdf_path
@@ -5223,7 +5338,7 @@ def atualizar_status_pedido(id):
 
     except Exception as e:
         db.session.rollback()
-        flash(f'Erro interno ao atualizar status: {str(e)}', 'error')
+        _flash_erro_seguro('Erro interno ao atualizar status.', e, app.logger)
         return jsonify({'flash': [['Erro interno ao atualizar status.', 'error']]}), 500
     
 @routes_bp.route('/adicionar_estoque/<int:preenchimento_id>', methods=['GET', 'POST'])
@@ -5279,7 +5394,7 @@ def adicionar_estoque(preenchimento_id):
         
         return render_template('adicionar_estoque.html', preenchimento=preenchimento)
     except Exception as e:
-        flash(f'Erro ao adicionar ao estoque: {str(e)}', 'error')
+        _flash_erro_seguro('Erro ao adicionar ao estoque.', e, app.logger)
         return redirect(url_for('routes_bp.listar_solicitacoes_preenchidas'))
 
 @routes_bp.route('/requisitar_material/<int:preenchimento_id>', methods=['GET', 'POST'])
@@ -5345,7 +5460,7 @@ def requisitar_material(preenchimento_id):
         return render_template('requisitar_material.html', preenchimento=preenchimento, estoque=estoque)
     except Exception as e:
         db.session.rollback()
-        flash(f'Erro ao requisitar material: {str(e)}', 'error')
+        _flash_erro_seguro('Erro ao requisitar material.', e, app.logger)
         return redirect(url_for('routes_bp.listar_estoque'))
 
 @routes_bp.route('/listar_estoque', methods=['GET'])
@@ -5449,7 +5564,7 @@ def requisitar_manual(cod_material):
         
     except Exception as e:
         db.session.rollback()
-        flash(f'Erro ao requisitar material: {str(e)}', 'error')
+        _flash_erro_seguro('Erro ao requisitar material.', e, app.logger)
         return redirect(url_for('routes_bp.listar_estoque'))
 
 @routes_bp.route('/listar_requisicoes', methods=['GET'])
@@ -5469,7 +5584,7 @@ def listar_requisicoes():
                 requisicao.numero_nf = 'Não disponível'
         return render_template('listar_requisicoes.html', requisicoes=requisicoes)
     except Exception as e:
-        flash(f'Erro ao carregar requisições: {str(e)}', 'error')
+        _flash_erro_seguro('Erro ao carregar requisições.', e, app.logger)
         return render_template('listar_requisicoes.html', requisicoes=[])
     
 def atualizar_estrutura_requisicoes():
@@ -5569,7 +5684,7 @@ def pcp_material(cod):
             flash('Valor do fator de consumo inválido', 'error')
         except Exception as e:
             db.session.rollback()
-            flash(f'Erro ao salvar: {str(e)}', 'error')
+            _flash_erro_seguro('Erro ao salvar.', e, app.logger)
 
     # Calcula dias de estoque
     dias_estoque = material.QuantidadeEstoque / material.FatorConsumo if material.FatorConsumo > 0 else 0
@@ -5604,7 +5719,7 @@ def listar_pcp():
                             materiais=materiais,
                             total_materiais=len(materiais))
     except Exception as e:
-        flash(f'Erro ao carregar PCP: {str(e)}', 'error')
+        _flash_erro_seguro('Erro ao carregar PCP.', e, app.logger)
         return render_template('listar_pcp.html', 
                             materiais=[], 
                             total_materiais=0)
@@ -5628,7 +5743,7 @@ def listar_ativos():
                             materiais=materiais,
                             total_materiais=len(materiais))
     except Exception as e:
-        flash(f'Erro ao carregar PCM: {str(e)}', 'error')
+        _flash_erro_seguro('Erro ao carregar PCM.', e, app.logger)
         return render_template('ativos.html', 
                             materiais=[], 
                             total_materiais=0)
@@ -5791,12 +5906,12 @@ def submit_form():
     except sqlite3.Error as e:
         if 'conn' in locals() and conn:
             conn.close()
-        flash(f'Erro ao cadastrar fornecedor: {str(e)}', 'error')
+        _flash_erro_seguro('Erro ao cadastrar fornecedor.', e, app.logger)
         return redirect(url_for('routes_bp.cadastro_fornecedores'))
     except Exception as e:
         if 'conn' in locals() and conn:
             conn.close()
-        flash(f'Erro ao cadastrar fornecedor: {str(e)}', 'error')
+        _flash_erro_seguro('Erro ao cadastrar fornecedor.', e, app.logger)
         return redirect(url_for('routes_bp.cadastro_fornecedores'))
 
 # Definição da rota /search_fornecedores
@@ -6104,163 +6219,141 @@ def auditoria_solicitacoes():
             data_fim_ajustada = datetime.strptime(data_fim, '%Y-%m-%d') + timedelta(days=1)
             query = query.filter(SolicitacoesCompra.data_solicitacao <= data_fim_ajustada)
 
-        # Executar query - buscar todas as solicitações
-        solicitacoes = query.order_by(SolicitacoesCompra.data_solicitacao.desc()).all()
+        # Executar query — buscar todas as solicitações que passam nos filtros
+        solicitacoes = query.options(
+            joinedload(SolicitacoesCompra.material)
+        ).order_by(SolicitacoesCompra.data_solicitacao.desc()).all()
 
-        # Preparar dados para o template
-        auditoria_data = []
-        for solicitacao in solicitacoes:
-            material = db.session.get(Materiais, solicitacao.cod_material)
-            
-            # Buscar TODOS os preenchimentos (excluindo rascunhos)
-            preenchimentos = db.session.query(SolicitacoesPreenchidas).filter_by(
-                solicitacao_id=solicitacao.id
-            ).filter(
+        # ── Coletar IDs para bulk queries ────────────────────────────────────
+        sol_ids = [s.id for s in solicitacoes]
+
+        # Preenchimentos em bloco (excluindo rascunhos)
+        preenchimentos_por_sol: dict[int, list] = {sid: [] for sid in sol_ids}
+        todos_preenchimentos = (
+            SolicitacoesPreenchidas.query
+            .filter(
+                SolicitacoesPreenchidas.solicitacao_id.in_(sol_ids),
                 SolicitacoesPreenchidas.status != 'Rascunho'
             ).all()
-            
-            # CASO 1: Solicitação SEM preenchimentos
+        )
+        preench_ids = [p.id for p in todos_preenchimentos]
+        for p in todos_preenchimentos:
+            preenchimentos_por_sol[p.solicitacao_id].append(p)
+
+        # Pedidos associados em bloco
+        pedido_por_preenchimento: dict[int, object] = {}
+        if preench_ids:
+            rows_pedidos = db.session.query(
+                pedido_preenchimento_associacao.c.preenchimento_id,
+                PedidosCompra
+            ).join(
+                PedidosCompra,
+                PedidosCompra.id == pedido_preenchimento_associacao.c.pedido_id
+            ).filter(
+                pedido_preenchimento_associacao.c.preenchimento_id.in_(preench_ids)
+            ).all()
+            for pid, pedido_obj in rows_pedidos:
+                pedido_por_preenchimento.setdefault(pid, pedido_obj)
+
+        # Estoque em bloco
+        estoque_por_preenchimento: dict[int, object] = {}
+        if preench_ids:
+            for est in Estoque.query.filter(Estoque.preenchimento_id.in_(preench_ids)).all():
+                estoque_por_preenchimento[est.preenchimento_id] = est
+
+        # Requisições em bloco
+        requisicoes_por_preenchimento: dict[int, list] = {pid: [] for pid in preench_ids}
+        if preench_ids:
+            for req in Requisicoes.query.filter(Requisicoes.preenchimento_id.in_(preench_ids)).all():
+                requisicoes_por_preenchimento[req.preenchimento_id].append(req)
+
+        # Fornecedores em bloco — UMA única conexão, sem loop
+        fornecedor_ids_bulk = {p.fornecedor_id for p in todos_preenchimentos if p.fornecedor_id}
+        fornecedores_bulk = get_fornecedores_bulk(fornecedor_ids_bulk)
+
+        # ── Mapa de prioridade por (status_aprovacao, preenchimento.status) ─
+        _PRIO_SEM_PREENCH = {
+            'Reprovado': 0, 'Aprovado': 1,
+        }
+        _PRIO_COM_PREENCH = {
+            'Entregue': 3, ('Aprovado', True): 2, 'Aprovado': 1,
+        }
+
+        # ── Montar auditoria_data sem nenhuma query adicional ────────────────
+        auditoria_data = []
+        for solicitacao in solicitacoes:
+            preenchimentos = preenchimentos_por_sol.get(solicitacao.id, [])
+            material = solicitacao.material  # já eager-loaded
+
             if not preenchimentos:
-                # VERIFICAR PRIMEIRO O STATUS DE APROVAÇÃO
-                if solicitacao.status_aprovacao:
-                    # Se tem status_aprovacao, usar esse status
-                    if solicitacao.status_aprovacao == 'Reprovado':
-                        status_solicitacao = 'Reprovado'
-                        prioridade = 0  # Prioridade baixa para reprovados
-                    elif solicitacao.status_aprovacao == 'Aprovado':
-                        status_solicitacao = 'Aprovado'
-                        prioridade = 1  # Prioridade média para aprovados sem preenchimento
-                    else:
-                        status_solicitacao = solicitacao.status_aprovacao
-                        prioridade = 0
-                else:
-                    # Se não tem status_aprovacao, verificar outros campos
-                    solicitacao_status = getattr(solicitacao, 'status', None)
-                    
-                    # Determinar status baseado no campo da solicitação
-                    if solicitacao_status == 'Pendente':
-                        status_solicitacao = 'Pendente'
-                    else:
-                        status_solicitacao = 'Aberta'  # Status padrão
-                    
-                    prioridade = 0  # Prioridade baixa para solicitações sem preenchimento
-                
-                # Aplicar filtro de status se especificado
-                if status and status != 'Todos':
-                    if status != status_solicitacao:
-                        continue  # Pular se status não corresponde
-                
-                # Aplicar filtro de prioridade se especificado
+                # Caso 1: sem preenchimentos
+                status_sol = (solicitacao.status_aprovacao or
+                              getattr(solicitacao, 'status', None) or 'Aberta')
+                if status_sol not in ('Reprovado', 'Aprovado', 'Pendente'):
+                    status_sol = 'Aberta'
+                prioridade = _PRIO_SEM_PREENCH.get(status_sol, 0)
+
+                if status and status != 'Todos' and status != status_sol:
+                    continue
                 if prioridade_filtro and prioridade_filtro != '':
-                    if int(prioridade_filtro) != prioridade:
-                        continue
-                
-                auditoria_data.append({
-                    'solicitacao': solicitacao,
-                    'material': material,
-                    'preenchimento': None,  # Sem preenchimento
-                    'pedido': None,
-                    'estoque': None,
-                    'requisicoes': [],
-                    'fornecedor': {},
-                    'prioridade': prioridade,
-                    'status_determinado': status_solicitacao  # Adicionar status determinado
-                })
-            
-            # CASO 2: Solicitação COM preenchimentos
-            else:
-                # Para cada preenchimento, criar um registro na auditoria
-                for preenchimento in preenchimentos:
-                    # Buscar pedido associado (se existir)
-                    pedido = None
-                    pedido = db.session.query(PedidosCompra).join(
-                        pedido_preenchimento_associacao,
-                        PedidosCompra.id == pedido_preenchimento_associacao.c.pedido_id
-                    ).filter(
-                        pedido_preenchimento_associacao.c.preenchimento_id == preenchimento.id
-                    ).first()
-                    
-                    # Buscar estoque (se existir)
-                    estoque = None
-                    estoque = db.session.query(Estoque).filter_by(
-                        preenchimento_id=preenchimento.id
-                    ).first()
-                    
-                    # Buscar requisições (se existirem)
-                    requisicoes = []
-                    requisicoes = db.session.query(Requisicoes).filter_by(
-                        preenchimento_id=preenchimento.id
-                    ).all()
-                    
-                    # Aplicar filtro de status se especificado
-                    if status and status != 'Todos':
-                        # Para solicitações com preenchimentos, verificar status do preenchimento
-                        # Mas também considerar o status_aprovacao da solicitação
-                        status_match = False
-                        
-                        # Primeiro verificar status do preenchimento
-                        if preenchimento.status == status:
-                            status_match = True
-                        # Verificar se a solicitação foi reprovada
-                        elif solicitacao.status_aprovacao == 'Reprovado' and status == 'Reprovado':
-                            status_match = True
-                        # Verificar se a solicitação foi aprovada
-                        elif solicitacao.status_aprovacao == 'Aprovado' and status == 'Aprovado':
-                            status_match = True
-                        
-                        if not status_match:
-                            continue  # Pular se status não corresponde
-                    
-                    # Calcular prioridade para ordenação - CORREÇÃO IMPORTANTE
-                    prioridade = 0
-                    
-                    # Primeiro verificar se a solicitação foi reprovada
-                    if solicitacao.status_aprovacao == 'Reprovado':
-                        prioridade = 0  # Prioridade mais baixa para reprovados
-                    # Depois verificar status do preenchimento
-                    elif preenchimento.status == 'Entregue':
-                        prioridade = 3  # Máxima prioridade
-                    elif preenchimento.status == 'Aprovado' and pedido:
-                        prioridade = 2  # Alta prioridade
-                    elif preenchimento.status == 'Aprovado':
-                        prioridade = 1  # Média prioridade
-                    # Status "Pendente" no preenchimento (se existir)
-                    elif preenchimento.status == 'Pendente':
-                        prioridade = 0
-                    
-                    # Aplicar filtro de prioridade se especificado
-                    if prioridade_filtro and prioridade_filtro != '':
+                    try:
                         if int(prioridade_filtro) != prioridade:
                             continue
-                    
-                    # Buscar informações do fornecedor
-                    fornecedor_info = {}
-                    if preenchimento.fornecedor_id:
-                        conn = get_db_connection(DB_PATH_FORNECEDORES)
-                        if conn:
-                            try:
-                                cursor = conn.cursor()
-                                cursor.execute('SELECT nome_fantasia, cnpj FROM fornecedores WHERE id = ?', 
-                                             (preenchimento.fornecedor_id,))
-                                result = cursor.fetchone()
-                                if result:
-                                    fornecedor_info = {
-                                        'nome_fantasia': result[0],
-                                        'cnpj': format_cnpj(result[1]) if result[1] else 'N/A'
-                                    }
-                            finally:
-                                conn.close()
-                    
+                    except (ValueError, TypeError):
+                        pass
+
+                auditoria_data.append({
+                    'solicitacao': solicitacao, 'material': material,
+                    'preenchimento': None, 'pedido': None, 'estoque': None,
+                    'requisicoes': [], 'fornecedor': {}, 'prioridade': prioridade,
+                    'status_determinado': status_sol,
+                })
+
+            else:
+                # Caso 2: com preenchimentos
+                for preenchimento in preenchimentos:
+                    pedido   = pedido_por_preenchimento.get(preenchimento.id)
+                    estoque  = estoque_por_preenchimento.get(preenchimento.id)
+                    reqs     = requisicoes_por_preenchimento.get(preenchimento.id, [])
+                    forn     = fornecedores_bulk.get(preenchimento.fornecedor_id, {})
+
+                    # Filtro de status
+                    if status and status != 'Todos':
+                        status_match = (
+                            preenchimento.status == status or
+                            (solicitacao.status_aprovacao == status)
+                        )
+                        if not status_match:
+                            continue
+
+                    # Prioridade
+                    if solicitacao.status_aprovacao == 'Reprovado':
+                        prioridade = 0
+                    elif preenchimento.status == 'Entregue':
+                        prioridade = 3
+                    elif preenchimento.status == 'Aprovado' and pedido:
+                        prioridade = 2
+                    elif preenchimento.status == 'Aprovado':
+                        prioridade = 1
+                    else:
+                        prioridade = 0
+
+                    if prioridade_filtro and prioridade_filtro != '':
+                        try:
+                            if int(prioridade_filtro) != prioridade:
+                                continue
+                        except (ValueError, TypeError):
+                            pass
+
+                    status_det = (solicitacao.status_aprovacao
+                                  if solicitacao.status_aprovacao
+                                  else preenchimento.status)
                     auditoria_data.append({
-                        'solicitacao': solicitacao,
-                        'material': material,
-                        'preenchimento': preenchimento,
-                        'pedido': pedido,
-                        'estoque': estoque,
-                        'requisicoes': requisicoes,
-                        'fornecedor': fornecedor_info,
-                        'prioridade': prioridade,
-                        'status_determinado': solicitacao.status_aprovacao if solicitacao.status_aprovacao else preenchimento.status
+                        'solicitacao': solicitacao, 'material': material,
+                        'preenchimento': preenchimento, 'pedido': pedido,
+                        'estoque': estoque, 'requisicoes': reqs,
+                        'fornecedor': forn, 'prioridade': prioridade,
+                        'status_determinado': status_det,
                     })
 
         # Ordenar por prioridade (mais alta primeiro) e depois por data
@@ -6313,7 +6406,7 @@ def auditoria_solicitacoes():
             }
         )
     except Exception as e:
-        flash(f'Erro ao carregar página de auditoria: {str(e)}', 'error')
+        _flash_erro_seguro('Erro ao carregar página de auditoria.', e, app.logger)
         app.logger.error(f'Erro em auditoria_solicitacoes: {str(e)}')
         return render_template(
             'auditoria_solicitacoes.html',
@@ -6709,13 +6802,14 @@ def exportar_auditoria_xlsx():
 
         response = make_response(output.getvalue())
         response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        response.headers['Content-Disposition'] = f'attachment; filename={filename}'
+        from urllib.parse import quote as _url_quote
+        response.headers['Content-Disposition'] = f"attachment; filename*=UTF-8''{_url_quote(filename)}"
 
         app.logger.info(f"Arquivo gerado com sucesso: {filename}")
         return response
 
     except Exception as e:
-        flash(f'Erro ao exportar relatório: {str(e)}', 'error')
+        _flash_erro_seguro('Erro ao exportar relatório.', e, app.logger)
         app.logger.error(f'Erro em exportar_auditoria_xlsx: {str(e)}', exc_info=True)
         return redirect(url_for('routes_bp.auditoria_solicitacoes'))
     
@@ -6970,7 +7064,7 @@ def tela_auditoria():
 
     except Exception as e:
         db.session.rollback()
-        flash(f'Erro ao carregar auditoria: {str(e)}', 'error')
+        _flash_erro_seguro('Erro ao carregar auditoria.', e, app.logger)
         app.logger.error(f'Erro em tela_auditoria: {str(e)}', exc_info=True)
         return render_template(
             'tela_auditoria.html',
@@ -7015,6 +7109,14 @@ def excluir_auditoria(id):
     if 'usuario' not in session:
         flash('Você precisa estar logado para realizar esta ação.', 'error')
         return redirect(url_for('routes_bp.login'))
+
+    # Apenas master pode excluir auditorias
+    usuario_completo = session.get('usuario_completo', session['usuario'])
+    senhas = ler_senhas()
+    role = senhas.get(usuario_completo, {}).get('pagina', '')
+    if 'menu_master' not in role:
+        flash('Sem permissão para excluir registros de auditoria.', 'error')
+        return redirect(url_for('routes_bp.tela_auditoria'))
     
     try:
         auditoria = Auditoria.query.get_or_404(id)
@@ -7028,12 +7130,13 @@ def excluir_auditoria(id):
     
     except Exception as e:
         db.session.rollback()
-        flash(f'Erro ao excluir auditoria: {str(e)}', 'error')
+        _flash_erro_seguro('Erro ao excluir auditoria.', e, app.logger)
         return redirect(url_for('routes_bp.tela_auditoria'))
 
 
 #Dasboard ----------------------------------------------
 @routes_bp.route('/dashboard', methods=['GET'])
+@limiter.limit("30 per minute")
 def dashboard():
     if 'usuario' not in session:
         return redirect(url_for('routes_bp.login'))
@@ -7489,7 +7592,7 @@ def dashboard():
         )
         
     except Exception as e:
-        flash(f'Erro ao carregar dashboard: {str(e)}', 'error')
+        _flash_erro_seguro('Erro ao carregar dashboard.', e, app.logger)
         app.logger.error(f'Erro no dashboard: {str(e)}', exc_info=True)
         
         # Função auxiliar de fallback
@@ -7698,7 +7801,7 @@ def financeiro():
             }
         )
     except Exception as e:
-        flash(f'Erro ao carregar página financeiro: {str(e)}', 'error')
+        _flash_erro_seguro('Erro ao carregar página financeiro.', e, app.logger)
         return render_template(
             'financeiro.html',
             pedidos=[],
@@ -7726,18 +7829,20 @@ def confirmar_pagamento(pedido_id):
 
     if comprovante and allowed_file(comprovante.filename):
         try:
+            # Validar tamanho ANTES de salvar no disco
+            comprovante.seek(0, 2)  # seek to end
+            file_size = comprovante.tell()
+            comprovante.seek(0)     # reset
+            if file_size > 5 * 1024 * 1024:
+                return jsonify({'success': False, 'error': 'O arquivo PDF deve ter no máximo 5MB'}), 400
+
             filename = secure_filename(comprovante.filename)
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
             unique_filename = f"{timestamp}_{filename}"
             comprovante_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
-            
-            # Save file and check size
             comprovante.save(comprovante_path)
-            if os.path.getsize(comprovante_path) > 5 * 1024 * 1024:
-                os.remove(comprovante_path)
-                return jsonify({'success': False, 'error': 'O arquivo PDF deve ter no máximo 5MB'}), 400
 
-            pedido.comprovante_pagamento = comprovante_path
+            pedido.comprovante_pagamento = unique_filename  # armazena path relativo
             pedido.status = 'AgEntrega'
             db.session.commit()
             return jsonify({'success': True, 'message': 'Pagamento confirmado com sucesso'})
@@ -7836,7 +7941,7 @@ def definir_quantidade(cod):
     
     except Exception as e:
         db.session.rollback()
-        flash(f'Erro ao atualizar quantidade: {str(e)}', 'error')
+        _flash_erro_seguro('Erro ao atualizar quantidade.', e, app.logger)
     
     return redirect(url_for('routes_bp.listar_materiais'))
 
@@ -7883,36 +7988,62 @@ def relatorio_estoque():
 @routes_bp.route('/api/solicitacoes/<int:solicitacao_id>/status', methods=['POST'])
 def atualizar_status_solicitacao(solicitacao_id):
     if 'usuario' not in session:
-        app.logger.error("Unauthorized access attempt to update status")
         return jsonify({'success': False, 'error': 'Usuário não autenticado'}), 401
-    
+
+    # Verificar role: apenas aprovação e master podem alterar status
+    usuario_completo = session.get('usuario_completo', session['usuario'])
+    senhas = ler_senhas()
+    role = senhas.get(usuario_completo, {}).get('pagina', '')
+    if not any(r in role for r in ('menu_aprovacao', 'menu_master', 'menu_supervisor')):
+        logging.warning(
+            'AUTHZ_FAILURE | usuario=%s | role=%s | ip=%s | endpoint=atualizar_status_solicitacao | recurso=solicitacao_%s',
+            usuario_completo, role, request.remote_addr, solicitacao_id
+        )
+        registrar_log(usuario_completo, 'acesso_negado', f'Tentativa de alterar status solicitação ID {solicitacao_id} sem permissão', request.remote_addr)
+        return jsonify({'success': False, 'error': 'Sem permissão para aprovar/reprovar'}), 403
+
     try:
         data = request.get_json()
-        app.logger.debug(f"Received data: {data}")
         status = data.get('status')
-        
+
         if not status:
-            app.logger.error("No status provided in request")
             return jsonify({'success': False, 'error': 'Nenhum status fornecido'}), 400
-        
+
         if status not in ['Aprovado', 'Reprovado']:
-            app.logger.error(f"Invalid status received: {status}")
-            return jsonify({'success': False, 'error': f'Status inválido: {status}'}), 400
-        
-        solicitacao = SolicitacoesCompra.query.get_or_404(solicitacao_id)
-        app.logger.debug(f"Updating status for solicitacao {solicitacao_id} to {status}")
+            return jsonify({'success': False, 'error': 'Status inválido'}), 400
+
+        # Transição atômica com validação de estado anterior (Dirty Write prevention)
+        # Regra: só é possível transitar de um estado "pendente" para Aprovado/Reprovado.
+        _TRANSICOES_PERMITIDAS = {
+            'Aprovado':  {None, '', 'Pendente'},
+            'Reprovado': {None, '', 'Pendente', 'Aprovado'},
+        }
+        solicitacao = SolicitacoesCompra.query.with_for_update().get_or_404(solicitacao_id)
+        estado_atual = solicitacao.status_aprovacao or ''
+        if estado_atual not in _TRANSICOES_PERMITIDAS[status]:
+            return jsonify({
+                'success': False,
+                'error': f'Transição inválida: {estado_atual or "Pendente"} → {status}'
+            }), 409
+
         solicitacao.status_aprovacao = status
+        registrar_log(
+            usuario_completo,
+            f'status_{status.lower()}',
+            f'Solicitação ID {solicitacao_id}: {estado_atual or "Pendente"} → {status}',
+            request.remote_addr
+        )
         db.session.commit()
-        app.logger.info(f"Status updated successfully for solicitacao {solicitacao_id}: {status}")
-        
+        invalidar_cache_filtros()
+
         return jsonify({
-            'success': True, 
+            'success': True,
             'message': f'Solicitação {status.lower()} com sucesso!'
         })
         
     except Exception as e:
         db.session.rollback()
-        app.logger.error(f"Error updating status for solicitacao {solicitacao_id}: {str(e)}", exc_info=True)
+        app.logger.error(f"Error updating status for solicitacao {solicitacao_id}: {type(e).__name__}")
         return jsonify({'success': False, 'error': 'Erro interno. Tente novamente.'}), 500
     
 def migrate_solicitacoes_compra_status():
@@ -7981,6 +8112,13 @@ def atualizar_valores_cotacao():
         
         # Buscar o preenchimento
         preenchimento = SolicitacoesPreenchidas.query.get_or_404(preenchimento_id)
+
+        # Verificar propriedade: apenas o próprio usuário ou master pode editar
+        usuario_completo = session.get('usuario_completo', session['usuario'])
+        senhas_dict = ler_senhas()
+        role = senhas_dict.get(usuario_completo, {}).get('pagina', '')
+        if preenchimento.usuario != session['usuario'] and 'menu_master' not in role:
+            return jsonify({'success': False, 'message': 'Sem permissão para editar este preenchimento'}), 403
         
         # Salvar valores anteriores
         valor_unitario_anterior = preenchimento.valor_unitario or 0
@@ -8117,7 +8255,7 @@ def listar_historico_descontos():
         )
     
     except Exception as e:
-        flash(f'Erro ao carregar histórico de descontos: {str(e)}', 'error')
+        _flash_erro_seguro('Erro ao carregar histórico de descontos.', e, app.logger)
         app.logger.error(f'Erro em listar_historico_descontos: {str(e)}', exc_info=True)
         return render_template(
             'historico_descontos.html',
@@ -8199,6 +8337,11 @@ def migrate_solicitacoes_preenchidas_status():
 
 @routes_bp.route('/teste_data_hora')
 def teste_data_hora():
+    import os as _os
+    if _os.getenv("FLASK_ENV", "production").lower() not in ("development", "dev"):
+        abort(404)
+    if 'usuario' not in session:
+        return redirect(url_for('routes_bp.login'))
     from datetime import datetime
     return f"""
     <h3>Teste de Data/Hora</h3>
@@ -8327,6 +8470,13 @@ add_comprador_atribuido_column()
 def atribuir_comprador(solicitacao_id):
     if 'usuario' not in session:
         return jsonify({'success': False, 'error': 'Usuário não autenticado'}), 401
+
+    # RBAC: apenas master e supervisor podem reatribuir compradores
+    _uc_atrib = session.get('usuario_completo', session['usuario'])
+    _role_atrib = ler_senhas().get(_uc_atrib, {}).get('pagina', '')
+    if not any(r in _role_atrib for r in ('menu_master', 'menu_supervisor', 'menu_aprovacao')):
+        registrar_log(_uc_atrib, 'acesso_negado', f'Tentativa de atribuir comprador em solicitação ID {solicitacao_id}', request.remote_addr)
+        return jsonify({'success': False, 'error': 'Sem permissão para atribuir compradores'}), 403
     try:
         data = request.get_json()
         comprador = data.get('comprador')
@@ -8362,18 +8512,36 @@ def listar_solicitacoes_finalizadas():
         return redirect(url_for('routes_bp.login'))
     
     try:
-        solicitacoes = SolicitacoesCompra.query.join(Materiais).all()
-        empresas = db.session.query(SolicitacoesCompra.empresa).distinct().order_by(SolicitacoesCompra.empresa).all()
-        empresas = [e[0] for e in empresas if e[0]]
-        usuarios = db.session.query(SolicitacoesCompra.usuario).distinct().order_by(SolicitacoesCompra.usuario).all()
-        usuarios = [u[0] for u in usuarios if u[0]]
-        aplicacoes = db.session.query(SolicitacoesCompra.aplicacao).distinct().order_by(SolicitacoesCompra.aplicacao).all()
-        aplicacoes = [a[0] for a in aplicacoes if a[0]]
-        
+        # Filtros básicos para evitar carregar todo o banco em memória
+        empresa_f   = request.args.get('empresa', '').strip()
+        usuario_f   = request.args.get('usuario', '').strip()
+        aplicacao_f = request.args.get('aplicacao', '').strip()
+        comprador_f = request.args.get('comprador', '').strip()
+        page        = request.args.get('page', 1, type=int)
+        per_page    = 50
+
+        query = SolicitacoesCompra.query.join(Materiais)
+        if empresa_f:
+            query = query.filter(SolicitacoesCompra.empresa == empresa_f)
+        if usuario_f:
+            query = query.filter(SolicitacoesCompra.usuario == usuario_f)
+        if aplicacao_f:
+            query = query.filter(SolicitacoesCompra.aplicacao == aplicacao_f)
+        if comprador_f:
+            query = query.filter(SolicitacoesCompra.comprador_atribuido == comprador_f)
+
+        paginacao   = query.order_by(SolicitacoesCompra.data_solicitacao.desc()).paginate(
+            page=page, per_page=per_page, error_out=False
+        )
+        solicitacoes = paginacao.items
+
+        # Listas de filtros via helper cacheado
+        _filtros = get_filtros_listagem(apenas_aprovadas=False)
+        empresas   = _filtros['empresas']
+        usuarios   = _filtros['usuarios']
+        aplicacoes = _filtros['aplicacoes']
         compradores = get_compradores()
-        print(f"Compradores enviados ao template: {compradores}")  # Depuração
-        logging.info(f"Compradores enviados ao template: {compradores}")
-        
+
         if not compradores:
             flash('Nenhum comprador encontrado no arquivo senhas.txt. Verifique o arquivo ou a função get_compradores.', 'error')
         
@@ -8383,11 +8551,12 @@ def listar_solicitacoes_finalizadas():
             empresas=empresas,
             usuarios=usuarios,
             aplicacoes=aplicacoes,
-            compradores=compradores  # Garante que compradores seja sempre passado
+            compradores=compradores,
+            paginacao=paginacao,
         )
     
     except Exception as e:
-        flash(f'Erro ao carregar solicitações: {str(e)}', 'error')
+        _flash_erro_seguro('Erro ao carregar solicitações.', e, app.logger)
         logging.error(f"Erro em listar_solicitacoes_finalizadas: {str(e)}")
         print(f"ERRO: Erro em listar_solicitacoes_finalizadas: {str(e)}")
         return render_template(
@@ -8408,11 +8577,40 @@ def get_fornecedor_details(fornecedor_id):
         result = cursor.fetchone()
         conn.close()
         if result:
-            return result[0], result[1]  # nome_fantasia, cnpj
+            return result[0], result[1]
         return None, None
     except sqlite3.Error as e:
-        logging.error(f"Erro ao buscar fornecedor {fornecedor_id}: {str(e)}")
+        logging.error('get_fornecedor_details – erro: %s', type(e).__name__)
         return None, None
+
+
+def get_fornecedores_bulk(fornecedor_ids: set) -> dict:
+    """
+    Busca fornecedores em lote com UMA única query e UMA conexão.
+    Retorna {id: {'nome_fantasia': ..., 'cnpj': ...}}.
+    Substitui o anti-pattern de abrir conn/cursor por linha no loop.
+    Usa context manager para garantir fechamento mesmo em exceção.
+    """
+    if not fornecedor_ids:
+        return {}
+    result = {}
+    try:
+        with sqlite3.connect(DB_PATH_FORNECEDORES) as conn:
+            placeholders = ','.join('?' * len(fornecedor_ids))
+            rows = conn.execute(
+                f'SELECT id, nome_fantasia, cnpj FROM fornecedores WHERE id IN ({placeholders})',
+                list(fornecedor_ids)
+            ).fetchall()
+            for row_id, nome, cnpj in rows:
+                result[row_id] = {
+                    'nome_fantasia': nome or 'Fornecedor não encontrado',
+                    'cnpj': format_cnpj(cnpj) if cnpj else 'N/A',
+                }
+    except sqlite3.Error as e:
+        logging.error('get_fornecedores_bulk – erro de banco: %s', type(e).__name__, exc_info=True)
+    except Exception as e:
+        logging.error('get_fornecedores_bulk – erro inesperado: %s', type(e).__name__, exc_info=True)
+    return result
 
 @routes_bp.route('/api/fornecedores', methods=['GET'])
 def api_fornecedores():
@@ -8756,7 +8954,7 @@ def editar_fornecedor(fornecedor_id):
     except Exception as e:
         if conn:
             conn.rollback()
-        flash(f'Erro ao editar fornecedor: {str(e)}', 'error')
+        _flash_erro_seguro('Erro ao editar fornecedor.', e, app.logger)
         return redirect(url_for('routes_bp.lista_fornecedores'))
     finally:
         if conn:
@@ -8808,7 +9006,7 @@ def excluir_fornecedor(fornecedor_id):
         
     except Exception as e:
         print(f"ERRO CRÍTICO ao excluir: {str(e)}")
-        flash(f'❌ Erro ao excluir fornecedor: {str(e)}', 'error')
+        _flash_erro_seguro('❌ Erro ao excluir fornecedor.', e, app.logger)
     
     return redirect(url_for('routes_bp.lista_fornecedores'))
 
@@ -8946,6 +9144,13 @@ def duplicar_grupo_aplicacao():
 def reprovar_solicitacao_individual(id):
     if 'usuario' not in session:
         return jsonify({'success': False, 'message': 'Usuário não autenticado'}), 401
+
+    # RBAC: apenas aprovação, supervisor e master podem reprovar
+    _uc_repr = session.get('usuario_completo', session['usuario'])
+    _role_repr = ler_senhas().get(_uc_repr, {}).get('pagina', '')
+    if not any(r in _role_repr for r in ('menu_aprovacao', 'menu_master', 'menu_supervisor')):
+        registrar_log(_uc_repr, 'acesso_negado', f'Tentativa de reprovar solicitação ID {id} sem permissão', request.remote_addr)
+        return jsonify({'success': False, 'message': 'Sem permissão para reprovar solicitações'}), 403
     
     try:
         # Buscar a solicitação
@@ -9227,7 +9432,7 @@ def relatorio_pedidos():
         )
         
     except Exception as e:
-        flash(f'Erro ao gerar relatório: {str(e)}', 'error')
+        _flash_erro_seguro('Erro ao gerar relatório.', e, app.logger)
         app.logger.error(f'Erro em relatorio_pedidos: {str(e)}', exc_info=True)
         return render_template('relatorio_pedidos.html', relatorio=[], empresas=[], status_list=[], filtros={})
 
@@ -9480,12 +9685,13 @@ def exportar_relatorio_pedidos_excel():
         
         response = make_response(output.getvalue())
         response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        response.headers['Content-Disposition'] = f'attachment; filename={filename}'
+        from urllib.parse import quote as _url_quote
+        response.headers['Content-Disposition'] = f"attachment; filename*=UTF-8''{_url_quote(filename)}"
         
         return response
         
     except Exception as e:
-        flash(f'Erro ao exportar relatório: {str(e)}', 'error')
+        _flash_erro_seguro('Erro ao exportar relatório.', e, app.logger)
         app.logger.error(f'Erro em exportar_relatorio_pedidos_excel: {str(e)}', exc_info=True)
         return redirect(url_for('routes_bp.relatorio_pedidos'))
     
