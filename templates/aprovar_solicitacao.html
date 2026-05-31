@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>Listar Solicitações Pendentes</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -21,47 +21,157 @@
             --status-pendente: #ffc107;
         }
 
+        * {
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
             margin: 0;
-            padding: 20px;
+            padding: 16px;
             background-color: var(--secondary-color);
             color: var(--text-color);
         }
 
         .container {
-            max-width: 1800px;
+            max-width: 1600px;
             margin: 0 auto;
             padding: 20px;
             background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
         }
 
         h1 {
             text-align: center;
             color: var(--primary-color);
-            margin-bottom: 30px;
-            padding-bottom: 15px;
+            margin-bottom: 24px;
+            padding-bottom: 12px;
             border-bottom: 2px solid var(--light-gray);
             font-weight: 600;
+            font-size: 1.8rem;
         }
 
+        h1 i {
+            margin-right: 10px;
+        }
+
+        /* Filtros compactos */
+        .search-filter-container {
+            background-color: #f8fafc;
+            padding: 18px 20px;
+            border-radius: 12px;
+            margin-bottom: 28px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .filter-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .filter-group {
+            flex: 1 1 180px;
+            min-width: 150px;
+        }
+
+        .filter-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #2c3e50;
+        }
+
+        .filter-group select,
+        .filter-group input {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 13px;
+            background-color: white;
+            transition: 0.2s;
+        }
+
+        .filter-group select:focus,
+        .filter-group input:focus {
+            border-color: var(--primary-color);
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(2, 40, 85, 0.1);
+        }
+
+        .date-range-picker {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .date-range-picker input {
+            flex: 1;
+            min-width: 110px;
+        }
+
+        .filter-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .btn-filter,
+        .btn-clear {
+            padding: 8px 18px;
+            border-radius: 30px;
+            font-size: 13px;
+            font-weight: 500;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-filter {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .btn-filter:hover {
+            background-color: var(--hover-color);
+            transform: translateY(-1px);
+        }
+
+        .btn-clear {
+            background-color: #e9ecef;
+            color: #495057;
+        }
+
+        .btn-clear:hover {
+            background-color: #dee2e6;
+        }
+
+        /* Tabela responsiva */
         .table-responsive {
             overflow-x: auto;
-            margin-top: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            background-color: white;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+            font-size: 0.85rem;
+            min-width: 900px;
         }
 
         th,
         td {
-            padding: 15px;
+            padding: 12px 10px;
             text-align: left;
             border-bottom: 1px solid var(--border-color);
             vertical-align: middle;
@@ -70,66 +180,79 @@
         th {
             background-color: var(--primary-color);
             color: white;
-            font-weight: 500;
-            position: sticky;
-            top: 0;
+            font-weight: 600;
+            font-size: 0.85rem;
+            white-space: nowrap;
         }
 
-        tr:hover {
-            background-color: rgba(0, 0, 0, 0.02);
+        tr:hover td {
+            background-color: #fafcff;
         }
 
-        .btn {
-            padding: 8px 16px;
-            text-decoration: none;
-            color: white;
-            border-radius: 4px;
-            display: inline-flex;
+        /* Colunas com texto longo */
+        td:nth-child(2),
+        td:nth-child(3) {
+            max-width: 280px;
+            white-space: normal;
+            word-break: break-word;
+            line-height: 1.4;
+        }
+
+        td:nth-child(3) {
+            max-width: 300px;
+        }
+
+        /* Colunas compactas */
+        td:nth-child(1),
+        td:nth-child(4),
+        td:nth-child(5),
+        td:nth-child(6),
+        td:nth-child(8),
+        td:nth-child(10) {
+            white-space: nowrap;
+        }
+
+        /* Estilo para células com texto copiável */
+        .copyable-cell {
+            position: relative;
+            display: flex;
             align-items: center;
-            justify-content: center;
+            justify-content: space-between;
             gap: 8px;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            border: none;
+        }
+
+        .copyable-text {
+            flex: 1;
+            word-break: break-word;
+        }
+
+        .copy-icon {
             cursor: pointer;
+            color: #6c757d;
+            font-size: 0.8rem;
+            opacity: 0;
+            transition: opacity 0.2s, color 0.2s;
+            flex-shrink: 0;
         }
 
-        .btn-preencher {
-            background-color: var(--accent-color);
+        tr:hover .copy-icon {
+            opacity: 0.7;
         }
 
-        .btn-preencher:hover {
-            background-color: var(--hover-color);
-            transform: translateY(-1px);
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        .copy-icon:hover {
+            opacity: 1 !important;
+            color: var(--primary-color);
         }
 
-        .btn-preencher:disabled {
-            background-color: #6c757d;
-            cursor: not-allowed;
-            opacity: 0.6;
-        }
-
-        .btn-aprovar {
-            background-color: var(--status-aprovado);
-            padding: 6px 12px;
-            font-size: 12px;
-        }
-
-        .btn-reprovar {
-            background-color: var(--status-reprovado);
-            padding: 6px 12px;
-            font-size: 12px;
-        }
-
+        /* Badges */
         .status-badge {
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 12px;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 0.75rem;
             font-weight: 600;
             display: inline-block;
             text-align: center;
-            min-width: 80px;
+            min-width: 85px;
         }
 
         .status-aprovado {
@@ -144,16 +267,15 @@
 
         .status-pendente {
             background-color: #fff3cd;
-            color: var(--status-pendente);
+            color: #856404;
         }
 
         .ativo-badge {
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 11px;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.7rem;
             font-weight: 600;
             display: inline-block;
-            text-align: center;
         }
 
         .ativo-sim {
@@ -170,15 +292,20 @@
             background-color: #e7f3ff;
             color: #022855;
             padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 11px;
+            border-radius: 12px;
+            font-size: 0.7rem;
             font-weight: 500;
+            display: inline-block;
+            max-width: 180px;
+            white-space: normal;
+            word-break: break-word;
         }
 
         .quantidade-unidade {
             display: flex;
-            align-items: center;
-            gap: 5px;
+            align-items: baseline;
+            gap: 6px;
+            flex-wrap: wrap;
         }
 
         .quantidade-valor {
@@ -188,158 +315,178 @@
         .quantidade-unidade-texto {
             background-color: #e9ecef;
             padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 12px;
+            border-radius: 20px;
+            font-size: 0.7rem;
             color: #495057;
         }
 
-        .anexo-thumbnail {
-            height: 60px;
-            max-width: 100px;
-            object-fit: contain;
-            border-radius: 6px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-            transition: transform 0.2s;
+        /* Botões ação */
+        .status-actions {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
         }
 
-        .anexo-thumbnail:hover {
-            transform: scale(1.05);
+        .btn-aprovar,
+        .btn-reprovar {
+            border: none;
+            padding: 5px 12px;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
         }
 
-        .anexo-link {
-            font-size: 12px;
-            color: #022855;
+        .btn-aprovar {
+            background-color: var(--status-aprovado);
+            color: white;
         }
 
-        .anexo-link:hover {
+        .btn-aprovar:hover {
+            background-color: #218838;
+            transform: scale(1.02);
+        }
+
+        .btn-reprovar {
+            background-color: var(--status-reprovado);
+            color: white;
+        }
+
+        .btn-reprovar:hover {
+            background-color: #c82333;
+        }
+
+        /* Anexo */
+        .anexo-link-clean {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.75rem;
+            max-width: 160px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: var(--primary-color);
+            text-decoration: none;
+            background: #f0f4fa;
+            padding: 4px 10px;
+            border-radius: 30px;
+            transition: 0.2s;
+        }
+
+        .anexo-link-clean:hover {
+            background-color: #e2e8f2;
             text-decoration: underline;
         }
 
+        .anexo-link-clean i {
+            font-size: 0.9rem;
+        }
+
+        /* Alertas */
         .alert {
-            padding: 12px 20px;
-            margin-bottom: 25px;
-            border-radius: 6px;
+            padding: 10px 16px;
+            border-radius: 12px;
+            margin-bottom: 20px;
             font-weight: 500;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
+            font-size: 0.85rem;
         }
 
         .alert-error {
             background-color: #f8d7da;
             color: #721c24;
-            border-left: 4px solid #f5c6cb;
+            border-left: 5px solid #f5c6cb;
         }
 
         .alert-success {
             background-color: #d4edda;
             color: #155724;
-            border-left: 4px solid #c3e6cb;
+            border-left: 5px solid #c3e6cb;
         }
 
+        /* Estado vazio */
         .empty-state {
             text-align: center;
-            padding: 40px;
+            padding: 48px 20px;
             color: #6c757d;
         }
 
         .empty-state i {
-            font-size: 50px;
-            margin-bottom: 20px;
-            color: #dee2e6;
+            font-size: 48px;
+            margin-bottom: 16px;
+            color: #cbd5e0;
         }
 
-        .search-filter-container {
-            background-color: #f8fafc;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 25px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-        }
-
-        .filter-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
-            margin-bottom: 15px;
-        }
-
-        .filter-group {
-            flex: 1;
-            min-width: 200px;
-        }
-
-        .filter-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-size: 14px;
-            color: #555;
-        }
-
-        .filter-group select,
-        .filter-group input {
-            width: 100%;
-            padding: 8px 12px;
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            font-size: 14px;
-        }
-
-        .date-range-picker {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .filter-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-            margin-top: 10px;
-        }
-
-        .btn-filter {
-            background-color: var(--primary-color);
+        /* Toast de cópia */
+        .copy-toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #022855;
             color: white;
-            padding: 8px 16px;
-            border-radius: 4px;
-            border: none;
-            cursor: pointer;
-        }
-
-        .btn-clear {
-            background-color: #6c757d;
-            color: white;
-            padding: 8px 16px;
-            border-radius: 4px;
-            border: none;
-            cursor: pointer;
-        }
-
-        .status-actions {
-            display: flex;
-            gap: 5px;
-            flex-wrap: wrap;
+            padding: 6px 12px;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            z-index: 9999;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            white-space: nowrap;
         }
 
         @media (max-width: 768px) {
-            .filter-row {
-                flex-direction: column;
+            body {
+                padding: 8px;
             }
 
-            .anexo-thumbnail {
-                height: 50px;
-                max-width: 80px;
+            .container {
+                padding: 12px;
+            }
+
+            th,
+            td {
+                padding: 8px 6px;
+            }
+
+            .filter-group {
+                min-width: 100%;
             }
 
             .status-actions {
                 flex-direction: column;
             }
-            
-            .quantidade-unidade {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 2px;
+
+            .btn-aprovar,
+            .btn-reprovar {
+                justify-content: center;
+            }
+
+            td:nth-child(2),
+            td:nth-child(3) {
+                max-width: 200px;
+            }
+
+            .copy-icon {
+                opacity: 0.5;
+            }
+        }
+
+        @media (max-width: 480px) {
+            table {
+                font-size: 0.75rem;
+            }
+
+            .anexo-link-clean {
+                max-width: 120px;
+                font-size: 0.7rem;
             }
         }
     </style>
@@ -365,7 +512,7 @@
         <div class="search-filter-container">
             <div class="filter-row">
                 <div class="filter-group">
-                    <label for="empresaFilter">Empresa</label>
+                    <label for="empresaFilter"><i class="fas fa-building"></i> Empresa</label>
                     <select id="empresaFilter" class="form-select">
                         <option value="">Todas empresas</option>
                         {% for empresa in empresas %}
@@ -375,7 +522,7 @@
                 </div>
 
                 <div class="filter-group">
-                    <label for="usuarioFilter">Usuário</label>
+                    <label for="usuarioFilter"><i class="fas fa-user"></i> Usuário</label>
                     <select id="usuarioFilter" class="form-select">
                         <option value="">Todos usuários</option>
                         {% for usuario in usuarios %}
@@ -385,14 +532,14 @@
                 </div>
 
                 <div class="filter-group">
-                    <label for="aplicacaoFilter">Aplicação</label>
+                    <label for="aplicacaoFilter"><i class="fas fa-tags"></i> Aplicação</label>
                     <select id="aplicacaoFilter" class="form-select">
                         <option value="">Todas aplicações</option>
                     </select>
                 </div>
 
                 <div class="filter-group">
-                    <label for="ativoFilter">Material Ativo</label>
+                    <label for="ativoFilter"><i class="fas fa-power-off"></i> Material Ativo</label>
                     <select id="ativoFilter" class="form-select">
                         <option value="">Todos</option>
                         <option value="Sim">Sim</option>
@@ -401,20 +548,18 @@
                 </div>
 
                 <div class="filter-group">
-                    <label for="statusFilter">Status</label>
-                    <select id="statusFilter" class="form-select" disabled style="background-color: #f8f9fa;">
+                    <label for="statusFilter"><i class="fas fa-info-circle"></i> Status</label>
+                    <select id="statusFilter" class="form-select" disabled style="background-color: #eef2f5;">
                         <option value="Pendente" selected>Pendente</option>
                     </select>
-                    <small class="text-muted" style="font-size: 12px; display: block; margin-top: 5px;">
-                        Apenas solicitações pendentes são exibidas
-                    </small>
+                    <small class="text-muted" style="font-size: 11px;">Apenas pendentes</small>
                 </div>
 
                 <div class="filter-group">
-                    <label>Data de Solicitação</label>
+                    <label><i class="fas fa-calendar-alt"></i> Data Solicitação</label>
                     <div class="date-range-picker">
                         <input type="date" id="dataInicio" class="form-control">
-                        <span>até</span>
+                        <span>—</span>
                         <input type="date" id="dataFim" class="form-control">
                     </div>
                 </div>
@@ -422,10 +567,10 @@
 
             <div class="filter-actions">
                 <button class="btn-clear" id="clearFilters">
-                    <i class="fas fa-times"></i> Limpar Filtros
+                    <i class="fas fa-eraser"></i> Limpar
                 </button>
                 <button class="btn-filter" id="applyFilters">
-                    <i class="fas fa-filter"></i> Aplicar Filtros
+                    <i class="fas fa-sliders-h"></i> Aplicar Filtros
                 </button>
             </div>
         </div>
@@ -452,109 +597,134 @@
                 </thead>
                 <tbody>
                     {% for solicitacao in solicitacoes %}
+                    {% set material_texto = solicitacao.material.DescricaoMaterial if solicitacao.material else 'Material não encontrado' %}
+                    {% set especificacao_texto = solicitacao.especificacao or 'Sem especificação' %}
+                    {% set aplicacao_texto = solicitacao.aplicacao or solicitacao.aplicacao_geral or (solicitacao.material.Aplicacao if solicitacao.material else None) or '-' %}
+                    {% set nome_ativo_texto = solicitacao.nome_ativo if solicitacao.ativo == 'Sim' and solicitacao.nome_ativo else '-' %}
+
                     <tr data-id="{{ solicitacao.id }}">
+                        <!-- ID -->
                         <td>{{ solicitacao.id }}</td>
+
+                        <!-- MATERIAL (copiável) -->
                         <td>
-                            {% if solicitacao.material %}
-                            {{ solicitacao.material.DescricaoMaterial }}
-                            {% else %}
-                            Material não encontrado (Cód: {{ solicitacao.cod_material }})
-                            {% endif %}
+                            <div class="copyable-cell" data-texto-completo="{{ material_texto }}">
+                                <span class="copyable-text" title="{{ material_texto }}">
+                                    {{ material_texto|truncate(70, True) }}
+                                </span>
+                                <i class="fas fa-copy copy-icon" title="Copiar descrição completa"></i>
+                            </div>
                         </td>
-                        <td>{{ solicitacao.especificacao or '-' }}</td>
+
+                        <!-- ESPECIFICAÇÃO (copiável - CORRIGIDA) -->
                         <td>
-                            {% if solicitacao.aplicacao %}
-                            <span class="aplicacao-badge" title="Aplicação específica">{{ solicitacao.aplicacao
-                                }}</span>
-                            {% elif solicitacao.aplicacao_geral %}
-                            <span class="aplicacao-badge" title="Aplicação geral">{{ solicitacao.aplicacao_geral
-                                }}</span>
-                            {% elif solicitacao.material and solicitacao.material.Aplicacao %}
-                            <span class="aplicacao-badge" title="Aplicação do material">{{
-                                solicitacao.material.Aplicacao }}</span>
-                            {% else %}
-                            <span class="text-muted">-</span>
-                            {% endif %}
+                            <div class="copyable-cell" data-texto-completo="{{ especificacao_texto }}">
+                                <span class="copyable-text" title="{{ especificacao_texto }}">
+                                    {{ especificacao_texto|truncate(120, True) }}
+                                </span>
+                                <i class="fas fa-copy copy-icon" title="Copiar especificação completa"></i>
+                            </div>
                         </td>
+
+                        <!-- APLICAÇÃO (copiável) -->
+                        <td>
+                            <div class="copyable-cell" data-texto-completo="{{ aplicacao_texto }}">
+                                <span class="copyable-text" title="{{ aplicacao_texto }}">
+                                    {% if aplicacao_texto != '-' %}
+                                        <span class="aplicacao-badge">{{ aplicacao_texto|truncate(60, True) }}</span>
+                                    {% else %}
+                                        <span class="text-muted">—</span>
+                                    {% endif %}
+                                </span>
+                                <i class="fas fa-copy copy-icon" title="Copiar aplicação completa"></i>
+                            </div>
+                        </td>
+
+                        <!-- Quantidade -->
                         <td>
                             <div class="quantidade-unidade">
                                 <span class="quantidade-valor">{{ solicitacao.quantidade }}</span>
                                 <span class="quantidade-unidade-texto">{{ solicitacao.unidade_medida or 'Un' }}</span>
                             </div>
                         </td>
+
+                        <!-- Empresa -->
                         <td>{{ solicitacao.empresa }}</td>
+
+                        <!-- Data -->
                         <td data-order="{{ solicitacao.data_solicitacao.strftime('%Y-%m-%d') }}">
                             {{ solicitacao.data_solicitacao.strftime('%d/%m/%Y %H:%M') }}
                         </td>
+
+                        <!-- Usuário -->
                         <td>{{ solicitacao.usuario }}</td>
+
+                        <!-- Material Ativo -->
                         <td>
                             <span class="ativo-badge ativo-{{ 'sim' if solicitacao.ativo == 'Sim' else 'nao' }}">
                                 {{ solicitacao.ativo }}
                             </span>
                         </td>
+
+                        <!-- Nome do Ativo (copiável) -->
                         <td>
-                            {% if solicitacao.ativo == 'Sim' and solicitacao.nome_ativo %}
-                            {{ solicitacao.nome_ativo }}
-                            {% else %}
-                            -
-                            {% endif %}
-                        </td>
-
-                        <!-- COLUNA ANEXO - VERSÃO DISCRETA (SÓ ÍCONE + NOME DO ARQUIVO) -->
-                        <td style="text-align: center; min-width: 140px; font-size: 0.9em;">
-                            {% if solicitacao.foto_path %}
-                            {% set filename = solicitacao.foto_path | basename %}
-                            {% set extension = filename.rsplit('.', 1)[1].lower() if '.' in filename else '' %}
-
-                            <a href="{{ url_for('routes_bp.uploads', filename=filename) }}" target="_blank"
-                                class="text-primary d-flex align-items-center justify-content-center gap-1 text-decoration-none"
-                                title="Abrir {{ 'PDF' if extension == 'pdf' else 'imagem' }} em nova aba">
-
-                                {% if extension == 'pdf' %}
-                                <i class="fas fa-file-pdf text-danger"></i>
-                                {% elif extension in ['jpg', 'jpeg', 'png', 'webp', 'gif'] %}
-                                <i class="fas fa-image text-success"></i>
-                                {% else %}
-                                <i class="fas fa-paperclip text-secondary"></i>
-                                {% endif %}
-
-                                <span
-                                    style="max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block;">
-                                    {{ filename }}
+                            <div class="copyable-cell" data-texto-completo="{{ nome_ativo_texto }}">
+                                <span class="copyable-text" title="{{ nome_ativo_texto }}">
+                                    {% if solicitacao.ativo == 'Sim' and solicitacao.nome_ativo %}
+                                        {{ nome_ativo_texto|truncate(35, True) }}
+                                    {% else %}
+                                        —
+                                    {% endif %}
                                 </span>
-                                <i class="fas fa-external-link-alt ms-1" style="font-size: 0.8em;"></i>
-                            </a>
+                                <i class="fas fa-copy copy-icon" title="Copiar nome do ativo"></i>
+                            </div>
+                        </td>
 
+                        <!-- Anexo -->
+                        <td>
+                            {% if solicitacao.foto_path %}
+                                {% set filename = solicitacao.foto_path | basename %}
+                                {% set extension = filename.rsplit('.', 1)[1].lower() if '.' in filename else '' %}
+                                <a href="{{ url_for('routes_bp.uploads', filename=filename) }}" target="_blank"
+                                   class="anexo-link-clean" title="Abrir arquivo">
+                                    {% if extension == 'pdf' %}
+                                        <i class="fas fa-file-pdf text-danger"></i>
+                                    {% elif extension in ['jpg', 'jpeg', 'png', 'webp', 'gif'] %}
+                                        <i class="fas fa-image text-success"></i>
+                                    {% else %}
+                                        <i class="fas fa-paperclip"></i>
+                                    {% endif %}
+                                    <span>{{ filename|truncate(18, True) }}</span>
+                                    <i class="fas fa-external-link-alt" style="font-size: 0.65rem;"></i>
+                                </a>
                             {% else %}
-                            <span class="text-muted">—</span>
+                                <span class="text-muted">—</span>
                             {% endif %}
                         </td>
-                        <!-- FIM DA COLUNA ANEXO -->
 
+                        <!-- Status -->
                         <td>
                             {% if solicitacao.status_aprovacao %}
-                            <span class="status-badge status-{{ solicitacao.status_aprovacao|lower }}">
-                                {{ solicitacao.status_aprovacao }}
-                            </span>
+                                <span class="status-badge status-{{ solicitacao.status_aprovacao|lower }}">
+                                    {{ solicitacao.status_aprovacao }}
+                                </span>
                             {% else %}
-                            <span class="status-badge status-pendente">
-                                Pendente
-                            </span>
+                                <span class="status-badge status-pendente">Pendente</span>
                             {% endif %}
                         </td>
+
+                        <!-- Ações -->
                         <td>
                             <div class="status-actions">
                                 {% if not solicitacao.status_aprovacao or solicitacao.status_aprovacao == 'Pendente' %}
-                                <button class="btn btn-aprovar"
-                                    onclick="atualizarStatus({{ solicitacao.id }}, 'Aprovado')">
-                                    <i class="fas fa-check"></i> Aprovar
-                                </button>
-                                <button class="btn btn-reprovar"
-                                    onclick="atualizarStatus({{ solicitacao.id }}, 'Reprovado')">
-                                    <i class="fas fa-times"></i> Reprovar
-                                </button>
+                                    <button class="btn-aprovar" onclick="atualizarStatus({{ solicitacao.id }}, 'Aprovado')">
+                                        <i class="fas fa-check-circle"></i> Aprovar
+                                    </button>
+                                    <button class="btn-reprovar" onclick="atualizarStatus({{ solicitacao.id }}, 'Reprovado')">
+                                        <i class="fas fa-times-circle"></i> Reprovar
+                                    </button>
                                 {% else %}
-                                <span class="text-muted">Ação concluída</span>
+                                    <span class="text-muted" style="font-size: 0.7rem;">Finalizado</span>
                                 {% endif %}
                             </div>
                         </td>
@@ -566,19 +736,73 @@
         {% else %}
         <div class="empty-state">
             <i class="far fa-clock"></i>
-            <h3>Nenhuma solicitação pendente encontrada</h3>
+            <h3>Nenhuma solicitação pendente</h3>
             <p>Não há solicitações de compra pendentes no momento.</p>
         </div>
         {% endif %}
     </div>
 
+    <div id="copyToast" class="copy-toast">📋 Copiado!</div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // ==================== FUNÇÃO DE COPIAR GENÉRICA (usando data-texto-completo) ====================
+        function copiarTexto(texto) {
+            if (!texto || texto === '-') {
+                mostrarToast("⚠️ Nada para copiar");
+                return;
+            }
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(texto).then(() => {
+                    mostrarToast("📋 Copiado: " + (texto.length > 40 ? texto.substring(0, 40) + "…" : texto));
+                }).catch(() => fallbackCopy(texto));
+            } else {
+                fallbackCopy(texto);
+            }
+        }
+
+        function fallbackCopy(text) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            mostrarToast("📋 Copiado (fallback)");
+        }
+
+        function mostrarToast(mensagem) {
+            let toast = document.getElementById('copyToast');
+            toast.textContent = mensagem;
+            toast.style.opacity = '1';
+            setTimeout(() => { toast.style.opacity = '0'; }, 1500);
+        }
+
+        // Delegação de eventos: todos os ícones de cópia usam o atributo data-texto-completo do pai .copyable-cell
+        document.addEventListener('click', function (e) {
+            const icon = e.target.closest('.copy-icon');
+            if (!icon) return;
+            const cell = icon.closest('.copyable-cell');
+            if (!cell) return;
+            const textoCompleto = cell.getAttribute('data-texto-completo');
+            if (textoCompleto !== null && textoCompleto !== undefined) {
+                copiarTexto(textoCompleto);
+            } else {
+                // fallback: tenta pegar o texto do span .copyable-text
+                const span = cell.querySelector('.copyable-text');
+                const texto = span ? span.textContent.trim() : '';
+                copiarTexto(texto);
+            }
+        });
+
+        // ==================== FILTROS E STATUS (mantidos originais) ====================
         document.addEventListener('DOMContentLoaded', function () {
             const thirtyDaysAgo = new Date();
             thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-            document.getElementById('dataInicio').valueAsDate = thirtyDaysAgo;
-            document.getElementById('dataFim').valueAsDate = new Date();
+            const dataInicio = document.getElementById('dataInicio');
+            const dataFim = document.getElementById('dataFim');
+            if (dataInicio) dataInicio.valueAsDate = thirtyDaysAgo;
+            if (dataFim) dataFim.valueAsDate = new Date();
             applyFilters();
 
             document.getElementById('applyFilters').addEventListener('click', applyFilters);
@@ -591,21 +815,29 @@
             const aplicacoes = new Set();
 
             rows.forEach(row => {
-                const aplicacao = row.cells[3].textContent.trim();
-                const status = row.cells[11].textContent.trim();
-                if (aplicacao !== '-' && row.style.display !== 'none' && status === 'Pendente') {
-                    aplicacoes.add(aplicacao);
+                if (row.style.display !== 'none') {
+                    const aplicacaoCell = row.cells[3];
+                    const aplicacaoSpan = aplicacaoCell.querySelector('.aplicacao-badge');
+                    let aplicacaoTexto = '';
+                    if (aplicacaoSpan) {
+                        aplicacaoTexto = aplicacaoSpan.textContent.trim();
+                    } else {
+                        aplicacaoTexto = aplicacaoCell.textContent.trim();
+                    }
+                    if (aplicacaoTexto !== '-' && aplicacaoTexto !== '') {
+                        aplicacoes.add(aplicacaoTexto);
+                    }
                 }
             });
 
-            const currentValue = selectedValue || aplicacaoSelect.value;
+            const currentValue = selectedValue !== undefined ? selectedValue : aplicacaoSelect.value;
             aplicacaoSelect.innerHTML = '<option value="">Todas aplicações</option>';
-
-            [...aplicacoes].sort().forEach(aplicacao => {
+            [...aplicacoes].sort().forEach(aplic => {
                 const option = document.createElement('option');
-                option.value = aplicacao;
-                option.textContent = aplicacao;
-                if (aplicacao === currentValue) option.selected = true;
+                option.value = aplic;
+                option.textContent = aplic.length > 50 ? aplic.slice(0, 50) + '…' : aplic;
+                option.title = aplic;
+                if (aplic === currentValue) option.selected = true;
                 aplicacaoSelect.appendChild(option);
             });
         }
@@ -620,21 +852,19 @@
 
             const rows = document.querySelectorAll('#solicitacoesTable tbody tr');
             let visibleCount = 0;
-            let emptyState = document.querySelector('.empty-state');
-
-            if (emptyState) emptyState.remove();
 
             rows.forEach(row => {
                 const empresa = row.cells[5].textContent.trim();
                 const usuario = row.cells[7].textContent.trim();
-                const aplicacao = row.cells[3].textContent.trim();
+                const aplicacaoElem = row.cells[3].querySelector('.aplicacao-badge');
+                const aplicacao = aplicacaoElem ? aplicacaoElem.textContent.trim() : row.cells[3].textContent.trim();
                 const ativo = row.cells[8].textContent.trim();
                 const dataSolicitacao = row.cells[6].getAttribute('data-order');
                 const status = row.cells[11].textContent.trim();
 
                 const empresaMatch = !empresaFilter || empresa === empresaFilter;
                 const usuarioMatch = !usuarioFilter || usuario === usuarioFilter;
-                const aplicacaoMatch = !aplicacaoFilter || aplicacao === aplicacaoFilter || (aplicacao === '-' && aplicacaoFilter === '');
+                const aplicacaoMatch = !aplicacaoFilter || aplicacao === aplicacaoFilter;
                 const ativoMatch = !ativoFilter || ativo === ativoFilter;
                 const dataMatch = (!dataInicio || dataSolicitacao >= dataInicio) && (!dataFim || dataSolicitacao <= dataFim);
                 const statusMatch = status === 'Pendente';
@@ -649,16 +879,22 @@
 
             updateAplicacaoFilter(aplicacaoFilter);
 
-            if (visibleCount === 0 && rows.length > 0) {
-                const table = document.querySelector('#solicitacoesTable');
-                const newEmptyState = document.createElement('div');
-                newEmptyState.className = 'empty-state';
-                newEmptyState.innerHTML = `
+            const table = document.querySelector('#solicitacoesTable');
+            const parent = table?.parentNode;
+            let existingEmpty = parent?.querySelector('.empty-state-message');
+            if (existingEmpty) existingEmpty.remove();
+
+            if (visibleCount === 0 && rows.length > 0 && parent) {
+                const newEmpty = document.createElement('div');
+                newEmpty.className = 'empty-state empty-state-message';
+                newEmpty.innerHTML = `
                     <i class="far fa-folder-open"></i>
                     <h3>Nenhum resultado encontrado</h3>
                     <p>Nenhuma solicitação pendente corresponde aos filtros aplicados.</p>
                 `;
-                table.parentNode.insertBefore(newEmptyState, table.nextSibling);
+                parent.insertBefore(newEmpty, table.nextSibling);
+            } else if (visibleCount > 0 && parent?.querySelector('.empty-state-message')) {
+                parent.querySelector('.empty-state-message').remove();
             }
         }
 
@@ -672,14 +908,11 @@
             thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
             document.getElementById('dataInicio').valueAsDate = thirtyDaysAgo;
             document.getElementById('dataFim').valueAsDate = new Date();
-
             applyFilters();
         }
 
         function atualizarStatus(solicitacaoId, status) {
             if (!confirm(`Tem certeza que deseja ${status.toLowerCase()} esta solicitação?`)) return;
-
-            const aplicacaoFilter = document.getElementById('aplicacaoFilter').value;
 
             fetch(`/api/solicitacoes/${solicitacaoId}/status`, {
                 method: 'POST',
@@ -692,25 +925,25 @@
                         const row = document.querySelector(`#solicitacoesTable tbody tr[data-id="${solicitacaoId}"]`);
                         if (row) {
                             row.cells[11].innerHTML = `<span class="status-badge status-${status.toLowerCase()}">${status}</span>`;
-                            row.cells[12].innerHTML = '<span class="text-muted">Ação concluída</span>';
+                            row.cells[12].innerHTML = '<span class="text-muted" style="font-size:0.7rem;">Ação concluída</span>';
                             applyFilters();
 
-                            const alert = document.createElement('div');
-                            alert.className = 'alert alert-success';
-                            alert.innerHTML = `<i class="fas fa-check-circle"></i> ${data.message}`;
-                            document.querySelector('.container').insertBefore(alert, document.querySelector('.container').firstChild);
-                            setTimeout(() => alert.remove(), 3000);
+                            const alertDiv = document.createElement('div');
+                            alertDiv.className = 'alert alert-success';
+                            alertDiv.innerHTML = `<i class="fas fa-check-circle"></i> ${data.message}`;
+                            document.querySelector('.container').insertBefore(alertDiv, document.querySelector('.search-filter-container'));
+                            setTimeout(() => alertDiv.remove(), 3000);
                         }
                     } else {
                         throw new Error(data.error);
                     }
                 })
                 .catch(err => {
-                    const alert = document.createElement('div');
-                    alert.className = 'alert alert-error';
-                    alert.innerHTML = `<i class="fas fa-exclamation-circle"></i> Erro: ${err.message || 'Falha na comunicação'}`;
-                    document.querySelector('.container').insertBefore(alert, document.querySelector('.container').firstChild);
-                    setTimeout(() => alert.remove(), 3000);
+                    const alertDiv = document.createElement('div');
+                    alertDiv.className = 'alert alert-error';
+                    alertDiv.innerHTML = `<i class="fas fa-exclamation-circle"></i> Erro: ${err.message || 'Falha na comunicação'}`;
+                    document.querySelector('.container').insertBefore(alertDiv, document.querySelector('.search-filter-container'));
+                    setTimeout(() => alertDiv.remove(), 3000);
                 });
         }
     </script>

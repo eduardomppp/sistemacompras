@@ -3,10 +3,11 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>Auditoria de Sistema</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <style>
         :root {
             --primary: #022855;
@@ -24,453 +25,598 @@
             min-height: 100vh;
         }
 
-        .container { max-width: 1600px; margin: 0 auto; padding: 2rem; }
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
 
         .card {
             background: white;
             border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-            border: 1px solid rgba(0,0,0,0.05);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(0, 0, 0, 0.05);
             overflow: hidden;
             margin-bottom: 1.5rem;
+            transition: box-shadow 0.2s;
         }
-        .card:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.12); }
-        .card-header { background: var(--primary); color: white; padding: 1.25rem; }
+
+        .card:hover {
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .card-header {
+            background: var(--primary);
+            color: white;
+            padding: 1.25rem 1.5rem;
+        }
 
         .btn {
-            padding: 10px 20px; border-radius: 8px; font-weight: 600;
-            transition: all 0.2s ease; display: inline-flex; align-items: center;
-            gap: 6px; cursor: pointer; border: none; text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            border: none;
+            text-decoration: none;
+            font-size: 0.85rem;
         }
-        .btn-sm { padding: 6px 12px; font-size: 0.85rem; }
-        .btn-primary { background: var(--primary); color: white; }
-        .btn-primary:hover { background: var(--primary-dark); transform: translateY(-1px); }
-        .btn-secondary { background: #6c757d; color: white; }
-        .btn-secondary:hover { background: #5a6268; }
+
+        .btn-sm {
+            padding: 0.25rem 0.75rem;
+            font-size: 0.75rem;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+            transform: translateY(-1px);
+        }
 
         .modal {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5); display: none;
-            align-items: center; justify-content: center; z-index: 1000;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
         }
-        .modal.show { display: flex; }
+
+        .modal.show {
+            display: flex;
+        }
+
         .modal-content {
-            background: white; border-radius: 12px; max-width: 90%;
-            max-height: 90vh; overflow-y: auto; padding: 2rem;
+            background: white;
+            border-radius: 16px;
+            max-width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 1.5rem;
         }
 
-        table { width: 100%; border-collapse: collapse; background: white; }
-        th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #e9ecef; }
-        th { background: #f8f9fa; font-weight: 600; color: var(--dark); position: sticky; top: 0; }
-        tr:hover { background: #f8f9fa; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
 
-        .filter-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; align-items: end; }
-        .filter-group { display: flex; flex-direction: column; gap: 4px; }
-        .filter-label { font-size: 0.8rem; font-weight: 500; color: #495057; }
-        .filter-input { padding: 8px 12px; border: 1px solid #ced4da; border-radius: 6px; font-size: 0.85rem; }
-        .filter-input:focus { border-color: var(--primary); outline: none; }
-        .filter-actions { grid-column: 1 / -1; display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.5rem; }
+        th,
+        td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid #e9ecef;
+            vertical-align: top;
+        }
 
-        .status-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
-        .status-aberta      { background: #fff3cd; color: #856404; }
-        .status-aprovado    { background: #d4edda; color: #155724; }
-        .status-reprovado   { background: #f8d7da; color: #721c24; }
-        .status-processamento { background: #cce5ff; color: #004085; }
-        .status-entregue    { background: #d1ecf1; color: #0c5460; }
-        .status-aguardando  { background: #e2e3e5; color: #383d41; }
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: var(--dark);
+            position: sticky;
+            top: 0;
+            font-size: 0.85rem;
+        }
 
-        .badge { display: inline-flex; align-items: center; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; }
-        .badge-primary  { background: rgba(2,40,85,0.1);   color: var(--primary); }
-        .badge-success  { background: rgba(40,167,69,0.1); color: #28a745; }
-        .badge-warning  { background: rgba(255,193,7,0.1); color: #856404; }
-        .badge-danger   { background: rgba(220,53,69,0.1); color: #dc3545; }
+        tr:hover td {
+            background: #fafcff;
+        }
 
-        .timeline { position: relative; padding-left: 20px; }
-        .timeline:before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 2px; background: var(--primary); }
-        .timeline-item { position: relative; padding-bottom: 1rem; }
-        .timeline-item:before { content: ''; position: absolute; left: -20px; top: 6px; width: 8px; height: 8px; border-radius: 50%; background: var(--primary); }
+        /* Coluna Material – truncamento elegante */
+        .material-cell {
+            max-width: 280px;
+            word-break: break-word;
+        }
 
-        .grid { display: grid; gap: 1.5rem; }
-        .grid-cols-1 { grid-template-columns: 1fr; }
-        .grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
-        .icon { width: 18px; height: 18px; }
+        .material-text {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            justify-content: space-between;
+        }
 
-        /* Paginação */
-        .pagination { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+        .material-name {
+            flex: 1;
+            font-weight: 500;
+            line-height: 1.4;
+        }
+
+        .material-spec {
+            font-size: 0.75rem;
+            color: #6c757d;
+            margin-top: 4px;
+            display: block;
+        }
+
+        .copy-icon {
+            cursor: pointer;
+            color: #8c9aaf;
+            font-size: 0.75rem;
+            opacity: 0;
+            transition: all 0.2s;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        tr:hover .copy-icon {
+            opacity: 0.6;
+        }
+
+        .copy-icon:hover {
+            opacity: 1 !important;
+            color: var(--primary);
+        }
+
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+            align-items: end;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .filter-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #495057;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .filter-input {
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #ced4da;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            background: white;
+            transition: 0.2s;
+        }
+
+        .filter-input:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(2, 40, 85, 0.1);
+        }
+
+        .filter-actions {
+            grid-column: 1 / -1;
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .status-aberta {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-aprovado {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-reprovado {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .status-processamento {
+            background: #cce5ff;
+            color: #004085;
+        }
+
+        .status-entregue {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .status-aguardando {
+            background: #e2e3e5;
+            color: #383d41;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.2rem 0.6rem;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        .badge-success {
+            background: rgba(40, 167, 69, 0.1);
+            color: #28a745;
+        }
+
+        .badge-danger {
+            background: rgba(220, 53, 69, 0.1);
+            color: #dc3545;
+        }
+
+        .badge-warning {
+            background: rgba(255, 193, 7, 0.1);
+            color: #856404;
+        }
+
+        .badge-primary {
+            background: rgba(2, 40, 85, 0.1);
+            color: var(--primary);
+        }
+
+        .timeline {
+            position: relative;
+            padding-left: 1.5rem;
+        }
+
+        .timeline:before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: var(--primary);
+        }
+
+        .timeline-item {
+            position: relative;
+            padding-bottom: 1rem;
+        }
+
+        .timeline-item:before {
+            content: '';
+            position: absolute;
+            left: -1.5rem;
+            top: 0.3rem;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--primary);
+        }
+
+        .grid {
+            display: grid;
+            gap: 1.5rem;
+        }
+
+        .grid-cols-1 {
+            grid-template-columns: 1fr;
+        }
+
+        .grid-cols-2 {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .pagination {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            flex-wrap: wrap;
+        }
+
         .page-btn {
-            padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; font-weight: 500;
-            border: 1px solid #ced4da; background: white; color: var(--dark);
-            text-decoration: none; transition: all 0.15s ease; cursor: pointer;
+            padding: 0.25rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            border: 1px solid #ced4da;
+            background: white;
+            color: var(--dark);
+            text-decoration: none;
+            transition: 0.15s;
+            cursor: pointer;
         }
-        .page-btn:hover  { background: #f0f4ff; border-color: var(--primary); color: var(--primary); }
-        .page-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
-        .page-btn.disabled { opacity: 0.4; pointer-events: none; }
+
+        .page-btn:hover {
+            background: #f0f4ff;
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .page-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .page-btn.disabled {
+            opacity: 0.4;
+            pointer-events: none;
+        }
+
+        .copy-toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--primary);
+            color: white;
+            padding: 6px 14px;
+            border-radius: 40px;
+            font-size: 0.8rem;
+            z-index: 9999;
+            opacity: 0;
+            transition: opacity 0.2s;
+            pointer-events: none;
+            white-space: nowrap;
+            font-weight: 500;
+        }
 
         @media (max-width: 768px) {
-            .container { padding: 1rem; }
-            .modal-content { width: 95%; padding: 1.5rem; }
-            .grid-cols-2 { grid-template-columns: 1fr; }
-            .filter-grid { grid-template-columns: 1fr; }
-            table { display: block; overflow-x: auto; }
-        }
+            .container {
+                padding: 1rem;
+            }
 
-        /* helpers */
-        .text-4xl  { font-size: 2.25rem; } .text-xl { font-size: 1.25rem; }
-        .text-lg   { font-size: 1.125rem; } .text-sm { font-size: 0.875rem; }
-        .font-bold { font-weight: 700; } .font-semibold { font-weight: 600; }
-        .font-medium { font-weight: 500; }
-        .mb-8 { margin-bottom: 2rem; } .mb-6 { margin-bottom: 1.5rem; } .mb-3 { margin-bottom: 0.75rem; }
-        .p-8 { padding: 2rem; } .p-4 { padding: 1rem; } .p-10 { padding: 2.5rem; }
-        .flex { display: flex; } .items-center { align-items: center; }
-        .justify-end { justify-content: flex-end; } .justify-between { justify-content: space-between; }
-        .gap-3 { gap: 0.75rem; } .gap-2 { gap: 0.5rem; }
-        .w-full { width: 100%; } .h-10 { height: 2.5rem; } .w-10 { width: 2.5rem; }
-        .text-white { color: white; } .text-gray-900 { color: #1a202c; }
-        .text-gray-500 { color: #6b7280; } .text-primary { color: var(--primary); }
-        .overflow-x-auto { overflow-x: auto; } .min-w-full { min-width: 100%; }
-        .font-mono { font-family: monospace; }
-        .fixed { position: fixed; } .inset-0 { top:0;right:0;bottom:0;left:0; }
-        .relative { position: relative; } .mx-auto { margin-left:auto;margin-right:auto; }
-        .my-12 { margin-top:3rem;margin-bottom:3rem; }
+            .modal-content {
+                width: 95%;
+                padding: 1rem;
+            }
+
+            .grid-cols-2 {
+                grid-template-columns: 1fr;
+            }
+
+            .filter-grid {
+                grid-template-columns: 1fr;
+            }
+
+            table {
+                display: block;
+                overflow-x: auto;
+            }
+
+            .material-cell {
+                max-width: 200px;
+            }
+        }
     </style>
 </head>
 
 <body>
-<div class="container">
-    <h1 class="text-4xl font-bold text-gray-900 mb-8 flex items-center gap-3">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
-        </svg>
-        <span>Auditoria de Sistema</span>
-    </h1>
+    <div class="container">
+        <h1 class="text-4xl font-bold text-gray-900 mb-8 flex items-center gap-3">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-primary" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+            <span>Auditoria de Sistema</span>
+        </h1>
 
-    <!-- Notificação flash (erros/avisos apenas) -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-    <div class="notification" style="background:rgba(2,40,85,0.05);border-left:4px solid var(--primary);padding:1rem;margin-bottom:1.5rem;border-radius:6px;" role="alert">
-        <strong class="font-semibold">Notificação</strong>
-        <span class="block">{{ messages[0][1] }}</span>
-    </div>
-    {% endif %}
-    {% endwith %}
-
-    <!-- Filtros -->
-    <div class="card mb-6">
-        <div class="card-header"><h2 class="text-lg font-semibold text-white">Filtros</h2></div>
-        <div class="p-4">
-            <form method="GET" action="{{ url_for('routes_bp.tela_auditoria') }}" class="filter-grid">
-                <div class="filter-group">
-                    <label for="empresa" class="filter-label">Empresa</label>
-                    <select name="empresa" id="empresa" class="filter-input">
-                        <option value="">Todas</option>
-                        {% for emp in empresas %}
-                        <option value="{{ emp }}" {% if filtros.empresa == emp %}selected{% endif %}>{{ emp }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label for="usuario" class="filter-label">Usuário</label>
-                    <select name="usuario" id="usuario" class="filter-input">
-                        <option value="">Todos</option>
-                        {% for usr in usuarios %}
-                        <option value="{{ usr }}" {% if filtros.usuario == usr %}selected{% endif %}>{{ usr }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label for="ativo" class="filter-label">Ativo?</label>
-                    <select name="ativo" id="ativo" class="filter-input">
-                        <option value="">Todos</option>
-                        <option value="Sim" {% if filtros.ativo == 'Sim' %}selected{% endif %}>Sim</option>
-                        <option value="Não" {% if filtros.ativo == 'Não' %}selected{% endif %}>Não</option>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label for="nome_ativo" class="filter-label">Nome Ativo</label>
-                    <select name="nome_ativo" id="nome_ativo" class="filter-input">
-                        <option value="">Todos</option>
-                        {% for nome in nomes_ativos %}
-                        <option value="{{ nome }}" {% if filtros.nome_ativo == nome %}selected{% endif %}>{{ nome }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label for="status" class="filter-label">Status</label>
-                    <select name="status" id="status" class="filter-input">
-                        <option value="">Todos</option>
-                        <option value="Aberta"              {% if filtros.status == 'Aberta' %}selected{% endif %}>Aberta</option>
-                        <option value="Aguardando Aprovação" {% if filtros.status == 'Aguardando Aprovação' %}selected{% endif %}>Aguardando</option>
-                        <option value="Aprovado"            {% if filtros.status == 'Aprovado' %}selected{% endif %}>Aprovado</option>
-                        <option value="Reprovado"           {% if filtros.status == 'Reprovado' %}selected{% endif %}>Reprovado</option>
-                        <option value="Em Processamento"    {% if filtros.status == 'Em Processamento' %}selected{% endif %}>Processando</option>
-                        <option value="Entregue"            {% if filtros.status == 'Entregue' %}selected{% endif %}>Entregue</option>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label for="data_inicio" class="filter-label">Data Início</label>
-                    <input type="date" name="data_inicio" id="data_inicio" value="{{ filtros.data_inicio or '' }}" class="filter-input">
-                </div>
-                <div class="filter-group">
-                    <label for="data_fim" class="filter-label">Data Fim</label>
-                    <input type="date" name="data_fim" id="data_fim" value="{{ filtros.data_fim or '' }}" class="filter-input">
-                </div>
-                <div class="filter-actions">
-                    <button type="submit" class="btn btn-primary btn-sm">
-                        <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                        </svg>
-                        Filtrar
-                    </button>
-                    <a href="{{ url_for('routes_bp.tela_auditoria') }}" class="btn btn-secondary btn-sm">
-                        <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                        </svg>
-                        Limpar
-                    </a>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Tabela de resultados -->
-    <div class="card">
-        <div class="card-header flex items-center justify-between">
-            <h2 class="text-xl font-semibold text-white">
-                Resultados da Auditoria
-                {% if paginacao %}
-                — {{ paginacao.total }} registro{{ 's' if paginacao.total != 1 else '' }}
-                {% endif %}
-            </h2>
-            {% if paginacao and paginacao.pages > 1 %}
-            <span class="text-white text-sm" style="opacity:0.8;">
-                Página {{ page }} de {{ paginacao.pages }}
-            </span>
-            {% endif %}
-        </div>
-        <div class="p-8">
-            {% if not auditoria %}
-            <p class="text-gray-500 text-lg text-center py-8">Nenhum resultado encontrado com os filtros aplicados.</p>
-            {% else %}
-            <div class="overflow-x-auto">
-                <table class="min-w-full">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Material</th>
-                            <th>Solicitante</th>
-                            <th>Empresa</th>
-                            <th>Ativo</th>
-                            <th>Quantidade</th>
-                            <th>Data</th>
-                            <th>Status</th>
-                            <th>Auditoria</th>
-                            <th>Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for item in auditoria %}
-                        <tr>
-                            <td class="font-mono font-semibold text-primary">{{ item.solicitacao.id }}</td>
-                            <td>
-                                {{ item.material.DescricaoMaterial if item.material else 'Material não encontrado' }}
-                                <br><span class="text-sm text-gray-500">{{ item.solicitacao.especificacao }}</span>
-                            </td>
-                            <td>{{ item.solicitacao.usuario }}</td>
-                            <td>{{ item.solicitacao.empresa }}</td>
-                            <td>
-                                {% if item.solicitacao.ativo == 'Sim' %}
-                                <span class="badge badge-success">Sim — {{ item.solicitacao.nome_ativo }}</span>
-                                {% else %}
-                                <span class="badge" style="background:#e9ecef;color:#495057">Não</span>
-                                {% endif %}
-                            </td>
-                            <td>{{ item.solicitacao.quantidade }} {{ item.solicitacao.unidade_medida }}</td>
-                            <td>{{ item.solicitacao.data_solicitacao.strftime('%d/%m/%Y') }}</td>
-                            <td>
-                                {% if not item.preenchimento %}
-                                <span class="status-badge status-aberta">Aberta</span>
-                                {% elif item.preenchimento.status == 'Aprovado' %}
-                                <span class="status-badge status-aprovado">{{ item.preenchimento.status }}</span>
-                                {% elif item.preenchimento.status == 'Reprovado' %}
-                                <span class="status-badge status-reprovado">{{ item.preenchimento.status }}</span>
-                                {% elif item.preenchimento.status == 'Em Processamento' %}
-                                <span class="status-badge status-processamento">{{ item.preenchimento.status }}</span>
-                                {% elif item.preenchimento.status == 'Entregue' %}
-                                <span class="status-badge status-entregue">{{ item.preenchimento.status }}</span>
-                                {% else %}
-                                <span class="status-badge status-aguardando">{{ item.preenchimento.status }}</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if item.auditorias %}
-                                {% set ult = item.auditorias[0] %}
-                                {% if ult.status == 'Conforme' %}
-                                <span class="badge badge-success">{{ ult.status }}</span>
-                                {% else %}
-                                <span class="badge badge-danger">{{ ult.status }}</span>
-                                {% endif %}
-                                {% else %}
-                                <span class="badge badge-warning">—</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                <button class="btn btn-primary btn-sm" onclick="openModal('modal-{{ item.solicitacao.id }}')">
-                                    <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                                    </svg>
-                                    Detalhes
-                                </button>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="card mb-6" style="border-left: 4px solid var(--primary); background: #f8fafc;">
+            <div class="p-4">
+                <strong class="font-semibold">Notificação</strong>
+                <span class="block text-sm">{{ messages[0][1] }}</span>
             </div>
-
-            <!-- Paginação -->
-            {% if paginacao and paginacao.pages > 1 %}
-            <div class="flex items-center justify-between" style="margin-top:1.5rem;">
-                <span class="text-sm text-gray-500">
-                    Mostrando {{ ((page-1)*20)+1 }}–{{ [page*20, paginacao.total]|min }} de {{ paginacao.total }}
-                </span>
-                <nav class="pagination">
-                    <a href="{{ url_for('routes_bp.tela_auditoria', page=paginacao.prev_num, **filtros) }}"
-                       class="page-btn {% if not paginacao.has_prev %}disabled{% endif %}">← Anterior</a>
-
-                    {% for p in paginacao.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
-                        {% if p %}
-                        <a href="{{ url_for('routes_bp.tela_auditoria', page=p, **filtros) }}"
-                           class="page-btn {% if p == page %}active{% endif %}">{{ p }}</a>
-                        {% else %}
-                        <span class="page-btn disabled">…</span>
-                        {% endif %}
-                    {% endfor %}
-
-                    <a href="{{ url_for('routes_bp.tela_auditoria', page=paginacao.next_num, **filtros) }}"
-                       class="page-btn {% if not paginacao.has_next %}disabled{% endif %}">Próxima →</a>
-                </nav>
-            </div>
-            {% endif %}
-            {% endif %}
         </div>
-    </div>
+        {% endif %}
+        {% endwith %}
 
-    <!-- Modais de Detalhes -->
-    {% for item in auditoria %}
-    <div id="modal-{{ item.solicitacao.id }}" class="modal fixed inset-0">
-        <div class="modal-content bg-white rounded-2xl w-11/12 md:w-3/4 lg:w-2/3 mx-auto my-12 p-10 relative">
-            <h3 class="text-3xl font-bold text-gray-900 mb-8 flex items-center gap-3">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
-                </svg>
-                <span>Detalhes da Solicitação #{{ item.solicitacao.id }}</span>
-            </h3>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                <!-- Material -->
-                <div class="card">
-                    <div class="card-header"><h4 class="text-lg font-semibold text-white">Informações do Material</h4></div>
-                    <div class="p-4">
-                        <div class="mb-3">
-                            <h6 class="font-medium">{{ item.material.DescricaoMaterial if item.material else 'Material não encontrado' }}</h6>
-                            <p class="text-sm text-gray-500 mb-1">Código</p>
-                            <p class="font-mono font-medium">{{ item.material.CodMaterial if item.material else 'N/A' }}</p>
-                        </div>
-                        <div class="mb-3">
-                            <p class="text-sm text-gray-500 mb-1">Aplicação</p>
-                            <p class="font-medium">{{ item.material.Aplicacao if item.material else 'N/A' }}</p>
-                        </div>
-                        <div class="mb-3">
-                            <p class="text-sm text-gray-500 mb-1">Estoque Atual</p>
-                            <p class="font-medium">{{ item.material.QuantidadeEstoque if item.material else 'N/A' }}</p>
-                        </div>
-                        <hr class="my-3">
-                        <div class="mb-3">
-                            <p class="text-sm text-gray-500 mb-1">Especificação</p>
-                            <p class="font-medium">{{ item.solicitacao.especificacao }}</p>
-                        </div>
-                        <div class="mb-3">
-                            <p class="text-sm text-gray-500 mb-1">Marca</p>
-                            <p class="font-medium">{{ item.solicitacao.marca or 'Não especificada' }}</p>
-                        </div>
-                        <div class="mb-3">
-                            <p class="text-sm text-gray-500 mb-1">Quantidade</p>
-                            <p class="font-medium">{{ item.solicitacao.quantidade }} {{ item.solicitacao.unidade_medida }}</p>
-                        </div>
-                        <div>
-                            <p class="text-sm text-gray-500 mb-1">Prioridade</p>
-                            <p class="font-medium">{{ item.solicitacao.prioridade }}</p>
-                        </div>
+        <!-- Filtros -->
+        <div class="card mb-6">
+            <div class="card-header">
+                <h2 class="text-lg font-semibold text-white">Filtros</h2>
+            </div>
+            <div class="p-5">
+                <form method="GET" action="{{ url_for('routes_bp.tela_auditoria') }}" class="filter-grid" id="filterForm">
+                    <div class="filter-group">
+                        <label for="empresa" class="filter-label">Empresa</label>
+                        <select name="empresa" id="empresa" class="filter-input">
+                            <option value="">Todas</option>
+                            {% for emp in empresas %}
+                            <option value="{{ emp }}" {% if filtros.empresa == emp %}selected{% endif %}>{{ emp }}
+                            </option>
+                            {% endfor %}
+                        </select>
                     </div>
-                </div>
+                    <div class="filter-group">
+                        <label for="usuario" class="filter-label">Usuário</label>
+                        <select name="usuario" id="usuario" class="filter-input">
+                            <option value="">Todos</option>
+                            {% for usr in usuarios %}
+                            <option value="{{ usr }}" {% if filtros.usuario == usr %}selected{% endif %}>{{ usr }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="ativo" class="filter-label">Ativo?</label>
+                        <select name="ativo" id="ativo" class="filter-input">
+                            <option value="">Todos</option>
+                            <option value="Sim" {% if filtros.ativo == 'Sim' %}selected{% endif %}>Sim</option>
+                            <option value="Não" {% if filtros.ativo == 'Não' %}selected{% endif %}>Não</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="nome_ativo" class="filter-label">Nome Ativo</label>
+                        <select name="nome_ativo" id="nome_ativo" class="filter-input">
+                            <option value="">Todos</option>
+                            {% for nome in nomes_ativos %}
+                            <option value="{{ nome }}" {% if filtros.nome_ativo == nome %}selected{% endif %}>{{ nome }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="status" class="filter-label">Status</label>
+                        <select name="status" id="status" class="filter-input">
+                            <option value="">Todos</option>
+                            <option value="Aberta" {% if filtros.status == 'Aberta' %}selected{% endif %}>Aberta</option>
+                            <option value="Aguardando Aprovação" {% if filtros.status == 'Aguardando Aprovação' %}selected{% endif %}>Aguardando</option>
+                            <option value="Aprovado" {% if filtros.status == 'Aprovado' %}selected{% endif %}>Aprovado</option>
+                            <option value="Reprovado" {% if filtros.status == 'Reprovado' %}selected{% endif %}>Reprovado</option>
+                            <option value="Em Processamento" {% if filtros.status == 'Em Processamento' %}selected{% endif %}>Processando</option>
+                            <option value="Entregue" {% if filtros.status == 'Entregue' %}selected{% endif %}>Entregue</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="data_inicio" class="filter-label">Data Início</label>
+                        <input type="date" name="data_inicio" id="data_inicio" value="{{ filtros.data_inicio or '' }}"
+                            class="filter-input">
+                    </div>
+                    <div class="filter-group">
+                        <label for="data_fim" class="filter-label">Data Fim</label>
+                        <input type="date" name="data_fim" id="data_fim" value="{{ filtros.data_fim or '' }}"
+                            class="filter-input">
+                    </div>
+                    <div class="filter-actions">
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            <svg class="icon w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                            Filtrar
+                        </button>
+                        <a href="{{ url_for('routes_bp.tela_auditoria') }}" class="btn btn-secondary btn-sm">
+                            <svg class="icon w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                            Limpar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
 
-                <!-- Solicitação -->
-                <div class="card">
-                    <div class="card-header"><h4 class="text-lg font-semibold text-white">Informações da Solicitação</h4></div>
-                    <div class="p-4">
-                        <div class="mb-3">
-                            <p class="text-sm text-gray-500 mb-1">Solicitante</p>
-                            <p class="font-medium">{{ item.solicitacao.usuario }}</p>
-                        </div>
-                        <div class="mb-3">
-                            <p class="text-sm text-gray-500 mb-1">Empresa</p>
-                            <p class="font-medium">{{ item.solicitacao.empresa }}</p>
-                        </div>
-                        <div class="mb-3">
-                            <p class="text-sm text-gray-500 mb-1">Data</p>
-                            <p class="font-medium">{{ item.solicitacao.data_solicitacao.strftime('%d/%m/%Y %H:%M') }}</p>
-                        </div>
-                        <div class="mb-3">
-                            <p class="text-sm text-gray-500 mb-1">Ativo</p>
-                            <p class="font-medium">
-                                {% if item.solicitacao.ativo == 'Sim' %}
-                                <span class="badge badge-success">Sim — {{ item.solicitacao.nome_ativo }}</span>
-                                {% else %}
-                                <span class="badge" style="background:#e9ecef;color:#495057">Não</span>
-                                {% endif %}
-                            </p>
-                        </div>
-                        <hr class="my-3">
-                        <h6 class="font-medium mb-3">Fluxo da Solicitação</h6>
-                        <div class="timeline">
-                            <div class="timeline-item">
-                                <p class="font-medium">Solicitação Criada</p>
-                                <p class="text-sm text-gray-500">{{ item.solicitacao.data_solicitacao.strftime('%d/%m/%Y %H:%M') }}</p>
-                            </div>
-                            {% if item.preenchimento %}
-                            <div class="timeline-item">
-                                <p class="font-medium">Cotação Preenchida</p>
-                                <p class="text-sm text-gray-500">{{ item.preenchimento.data_preenchimento.strftime('%d/%m/%Y %H:%M') }} (Por: {{ item.preenchimento.usuario }})</p>
-                            </div>
-                            {% if item.preenchimento.status in ['Aprovado', 'Reprovado'] %}
-                            <div class="timeline-item">
-                                <p class="font-medium">{{ item.preenchimento.status }}</p>
-                                <p class="text-sm text-gray-500">Valor: R$ {{ "%.2f"|format(item.preenchimento.valor_total) }}</p>
-                            </div>
-                            {% endif %}
-                            {% endif %}
-                            {% if item.pedido %}
-                            <div class="timeline-item">
-                                <p class="font-medium">Pedido Gerado</p>
-                                <p class="text-sm text-gray-500">{{ item.pedido.numero_pedido }} (Status: {{ item.pedido.status }})</p>
-                            </div>
-                            {% endif %}
-                            {% if item.estoque %}
-                            <div class="timeline-item">
-                                <p class="font-medium">Entrada no Estoque</p>
-                                <p class="text-sm text-gray-500">{{ item.estoque.data_entrada.strftime('%d/%m/%Y %H:%M') }} (NF: {{ item.estoque.numero_nf }})</p>
-                            </div>
-                            {% endif %}
-                            {% if item.requisicoes %}
-                            <div class="timeline-item">
-                                <p class="font-medium">Requisições</p>
-                                <p class="text-sm text-gray-500">Total: {{ item.requisicoes|length }}</p>
-                            </div>
-                            {% endif %}
-                            <div class="timeline-item">
-                                <p class="font-medium">Status Atual</p>
-                                <p class="text-sm">
+        <!-- Tabela de resultados -->
+        <div class="card">
+            <div class="card-header flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <h2 class="text-xl font-semibold text-white">
+                        Resultados da Auditoria
+                        {% if paginacao %} — {{ paginacao.total }} registro{{ 's' if paginacao.total != 1 else '' }}{% endif %}
+                    </h2>
+                    <!-- Botão de Exportar Excel (todos os registros, via backend) -->
+                    <button onclick="exportarExcelCompleto()" class="btn btn-success btn-sm" title="Exportar todos os registros (filtros aplicados) para Excel">
+                        <svg class="icon w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        Exportar Excel (todos)
+                    </button>
+                </div>
+                {% if paginacao and paginacao.pages > 1 %}
+                <span class="text-white text-sm opacity-75">Página {{ page }} de {{ paginacao.pages }}</span>
+                {% endif %}
+            </div>
+            <div class="p-6">
+                {% if not auditoria %}
+                <p class="text-gray-500 text-lg text-center py-8">Nenhum resultado encontrado com os filtros aplicados.
+                </p>
+                {% else %}
+                <div class="overflow-x-auto">
+                    <table id="auditTable" class="min-w-full">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Material</th>
+                                <th>Solicitante</th>
+                                <th>Empresa</th>
+                                <th>Ativo</th>
+                                <th>Quantidade</th>
+                                <th>Data</th>
+                                <th>Status da Solicitação</th>
+                                <th>Última Auditoria</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in auditoria %}
+                            {% set material_desc = item.material.DescricaoMaterial if item.material else 'Material não encontrado' %}
+                            {% set especificacao = item.solicitacao.especificacao or '' %}
+                            {% set ultima_auditoria = item.auditorias[0].status if item.auditorias else '—' %}
+                            <tr>
+                                <td class="font-mono font-semibold text-primary">{{ item.solicitacao.id }}</td>
+                                <td class="material-cell">
+                                    <div class="material-text" data-texto-completo="{{ material_desc }}">
+                                        <div class="material-name" title="{{ material_desc }}">
+                                            {{ material_desc|truncate(70, True) }}
+                                            {% if especificacao %}
+                                            <span class="material-spec" title="{{ especificacao }}">{{ especificacao|truncate(60, True) }}</span>
+                                            {% endif %}
+                                        </div>
+                                        <i class="fas fa-copy copy-icon" title="Copiar nome do material"></i>
+                                    </div>
+                                </td>
+                                <td>{{ item.solicitacao.usuario }}</td>
+                                <td>{{ item.solicitacao.empresa }}</td>
+                                <td>
+                                    {% if item.solicitacao.ativo == 'Sim' %}
+                                    <span class="badge badge-success">Sim — {{ item.solicitacao.nome_ativo }}</span>
+                                    {% else %}
+                                    <span class="badge" style="background:#e9ecef;color:#495057">Não</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ item.solicitacao.quantidade }} {{ item.solicitacao.unidade_medida }}</td>
+                                <td>{{ item.solicitacao.data_solicitacao.strftime('%d/%m/%Y') }}</td>
+                                <td>
                                     {% if not item.preenchimento %}
                                     <span class="status-badge status-aberta">Aberta</span>
                                     {% elif item.preenchimento.status == 'Aprovado' %}
@@ -484,233 +630,541 @@
                                     {% else %}
                                     <span class="status-badge status-aguardando">{{ item.preenchimento.status }}</span>
                                     {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge {{ 'badge-success' if ultima_auditoria == 'Conforme' else 'badge-danger' if ultima_auditoria == 'Não Conforme' else 'badge-warning' }}">
+                                        {{ ultima_auditoria }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <button class="btn btn-primary btn-sm" onclick="openModal('modal-{{ item.solicitacao.id }}')">
+                                        <svg class="icon w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                        </svg>
+                                        Detalhes
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Paginação -->
+                {% if paginacao and paginacao.pages > 1 %}
+                <div class="flex items-center justify-between mt-6">
+                    <span class="text-sm text-gray-500">
+                        Mostrando {{ ((page-1)*20)+1 }}–{{ [page*20, paginacao.total]|min }} de {{ paginacao.total }}
+                    </span>
+                    <nav class="pagination">
+                        <a href="{{ url_for('routes_bp.tela_auditoria', page=paginacao.prev_num, **filtros) }}"
+                            class="page-btn {% if not paginacao.has_prev %}disabled{% endif %}">← Anterior</a>
+                        {% for p in paginacao.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                        {% if p %}
+                        <a href="{{ url_for('routes_bp.tela_auditoria', page=p, **filtros) }}"
+                            class="page-btn {% if p == page %}active{% endif %}">{{ p }}</a>
+                        {% else %}
+                        <span class="page-btn disabled">…</span>
+                        {% endif %}
+                        {% endfor %}
+                        <a href="{{ url_for('routes_bp.tela_auditoria', page=paginacao.next_num, **filtros) }}"
+                            class="page-btn {% if not paginacao.has_next %}disabled{% endif %}">Próxima →</a>
+                    </nav>
+                </div>
+                {% endif %}
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Modais de Detalhes (com todas as seções completas) -->
+        {% for item in auditoria %}
+        <div id="modal-{{ item.solicitacao.id }}" class="modal fixed inset-0">
+            <div class="modal-content bg-white rounded-2xl w-11/12 md:w-3/4 lg:w-2/3 mx-auto my-12 p-8 relative max-h-[90vh] overflow-y-auto">
+                <h3 class="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
+                    <span>Detalhes da Solicitação #{{ item.solicitacao.id }}</span>
+                </h3>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    <!-- Material -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h4 class="text-lg font-semibold text-white">Informações do Material</h4>
+                        </div>
+                        <div class="p-4">
+                            <div class="mb-3">
+                                <p class="text-sm text-gray-500 mb-1">Descrição</p>
+                                <p class="font-medium" title="{{ item.material.DescricaoMaterial if item.material else 'N/A' }}">
+                                    {{ item.material.DescricaoMaterial|truncate(120, True) if item.material else 'Material não encontrado' }}
                                 </p>
+                            </div>
+                            <div class="mb-3">
+                                <p class="text-sm text-gray-500 mb-1">Código</p>
+                                <p class="font-mono">{{ item.material.CodMaterial if item.material else 'N/A' }}</p>
+                            </div>
+                            <div class="mb-3">
+                                <p class="text-sm text-gray-500 mb-1">Aplicação</p>
+                                <p class="font-medium">{{ item.material.Aplicacao if item.material else 'N/A' }}</p>
+                            </div>
+                            <div class="mb-3">
+                                <p class="text-sm text-gray-500 mb-1">Estoque Atual</p>
+                                <p class="font-medium">{{ item.material.QuantidadeEstoque if item.material else 'N/A' }}</p>
+                            </div>
+                            <hr class="my-3">
+                            <div class="mb-3">
+                                <p class="text-sm text-gray-500 mb-1">Especificação</p>
+                                <p class="font-medium">{{ item.solicitacao.especificacao or '-' }}</p>
+                            </div>
+                            <div class="mb-3">
+                                <p class="text-sm text-gray-500 mb-1">Marca</p>
+                                <p class="font-medium">{{ item.solicitacao.marca or 'Não especificada' }}</p>
+                            </div>
+                            <div class="mb-3">
+                                <p class="text-sm text-gray-500 mb-1">Quantidade Solicitada</p>
+                                <p class="font-medium">{{ item.solicitacao.quantidade }} {{ item.solicitacao.unidade_medida }}</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500 mb-1">Prioridade</p>
+                                <p class="font-medium">{{ item.solicitacao.prioridade }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Solicitação -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h4 class="text-lg font-semibold text-white">Informações da Solicitação</h4>
+                        </div>
+                        <div class="p-4">
+                            <div class="mb-3">
+                                <p class="text-sm text-gray-500 mb-1">Solicitante</p>
+                                <p class="font-medium">{{ item.solicitacao.usuario }}</p>
+                            </div>
+                            <div class="mb-3">
+                                <p class="text-sm text-gray-500 mb-1">Empresa</p>
+                                <p class="font-medium">{{ item.solicitacao.empresa }}</p>
+                            </div>
+                            <div class="mb-3">
+                                <p class="text-sm text-gray-500 mb-1">Data</p>
+                                <p class="font-medium">{{ item.solicitacao.data_solicitacao.strftime('%d/%m/%Y %H:%M') }}</p>
+                            </div>
+                            <div class="mb-3">
+                                <p class="text-sm text-gray-500 mb-1">Ativo</p>
+                                <p class="font-medium">
+                                    {% if item.solicitacao.ativo == 'Sim' %}
+                                    <span class="badge badge-success">Sim — {{ item.solicitacao.nome_ativo }}</span>
+                                    {% else %}
+                                    <span class="badge" style="background:#e9ecef;">Não</span>
+                                    {% endif %}
+                                </p>
+                            </div>
+                            <hr class="my-3">
+                            <h6 class="font-medium mb-3">Fluxo da Solicitação</h6>
+                            <div class="timeline">
+                                <div class="timeline-item">
+                                    <p class="font-medium">Solicitação Criada</p>
+                                    <p class="text-sm text-gray-500">{{ item.solicitacao.data_solicitacao.strftime('%d/%m/%Y %H:%M') }}</p>
+                                </div>
+                                {% if item.preenchimento %}
+                                <div class="timeline-item">
+                                    <p class="font-medium">Cotação Preenchida</p>
+                                    <p class="text-sm text-gray-500">{{ item.preenchimento.data_preenchimento.strftime('%d/%m/%Y %H:%M') }} (Por: {{ item.preenchimento.usuario }})</p>
+                                </div>
+                                {% if item.preenchimento.status in ['Aprovado', 'Reprovado'] %}
+                                <div class="timeline-item">
+                                    <p class="font-medium">{{ item.preenchimento.status }}</p>
+                                    <p class="text-sm text-gray-500">Valor: R$ {{ "%.2f"|format(item.preenchimento.valor_total) }}</p>
+                                </div>
+                                {% endif %}
+                                {% endif %}
+                                {% if item.pedido %}
+                                <div class="timeline-item">
+                                    <p class="font-medium">Pedido Gerado</p>
+                                    <p class="text-sm text-gray-500">{{ item.pedido.numero_pedido }} (Status: {{ item.pedido.status }})</p>
+                                </div>
+                                {% endif %}
+                                {% if item.estoque %}
+                                <div class="timeline-item">
+                                    <p class="font-medium">Entrada no Estoque</p>
+                                    <p class="text-sm text-gray-500">{{ item.estoque.data_entrada.strftime('%d/%m/%Y %H:%M') }} (NF: {{ item.estoque.numero_nf }})</p>
+                                </div>
+                                {% endif %}
+                                {% if item.requisicoes %}
+                                <div class="timeline-item">
+                                    <p class="font-medium">Requisições</p>
+                                    <p class="text-sm text-gray-500">Total: {{ item.requisicoes|length }}</p>
+                                </div>
+                                {% endif %}
+                                <div class="timeline-item">
+                                    <p class="font-medium">Status Atual</p>
+                                    <p class="text-sm">
+                                        {% if not item.preenchimento %}
+                                        <span class="status-badge status-aberta">Aberta</span>
+                                        {% elif item.preenchimento.status == 'Aprovado' %}
+                                        <span class="status-badge status-aprovado">{{ item.preenchimento.status }}</span>
+                                        {% elif item.preenchimento.status == 'Reprovado' %}
+                                        <span class="status-badge status-reprovado">{{ item.preenchimento.status }}</span>
+                                        {% elif item.preenchimento.status == 'Em Processamento' %}
+                                        <span class="status-badge status-processamento">{{ item.preenchimento.status }}</span>
+                                        {% elif item.preenchimento.status == 'Entregue' %}
+                                        <span class="status-badge status-entregue">{{ item.preenchimento.status }}</span>
+                                        {% else %}
+                                        <span class="status-badge status-aguardando">{{ item.preenchimento.status }}</span>
+                                        {% endif %}
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Cotação -->
-            {% if item.preenchimento %}
-            <div class="card mb-8">
-                <div class="card-header"><h4 class="text-lg font-semibold text-white">Detalhes da Cotação</h4></div>
-                <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <p class="text-sm text-gray-500 mb-1">Fornecedor</p>
-                        <p class="font-medium">{{ item.fornecedor.nome_fantasia if item.fornecedor else 'Não informado' }}</p>
+                <!-- Cotação -->
+                {% if item.preenchimento %}
+                <div class="card mb-8">
+                    <div class="card-header">
+                        <h4 class="text-lg font-semibold text-white">Detalhes da Cotação</h4>
                     </div>
-                    <div>
-                        <p class="text-sm text-gray-500 mb-1">CNPJ</p>
-                        <p class="font-mono font-medium">{{ item.fornecedor.cnpj if item.fornecedor else 'N/A' }}</p>
-                    </div>
-                    <div>
-                        <p class="text-sm text-gray-500 mb-1">Valor Unitário</p>
-                        <p class="font-medium">R$ {{ "%.2f"|format(item.preenchimento.valor_unitario) }}</p>
-                    </div>
-                    <div>
-                        <p class="text-sm text-gray-500 mb-1">Valor Total</p>
-                        <p class="font-medium">R$ {{ "%.2f"|format(item.preenchimento.valor_total) }}</p>
-                    </div>
-                    <div>
-                        <p class="text-sm text-gray-500 mb-1">Prazo de Entrega</p>
-                        <p class="font-medium">{{ item.preenchimento.prazo_entrega }}</p>
-                    </div>
-                    <div>
-                        <p class="text-sm text-gray-500 mb-1">Condição de Pagamento</p>
-                        <p class="font-medium">{{ item.preenchimento.condicao_pagamento }}</p>
-                    </div>
-                    <div>
-                        <p class="text-sm text-gray-500 mb-1">Data de Preenchimento</p>
-                        <p class="font-medium">{{ item.preenchimento.data_preenchimento.strftime('%d/%m/%Y %H:%M') }}</p>
-                    </div>
-                    <div>
-                        <p class="text-sm text-gray-500 mb-1">Usuário Responsável</p>
-                        <p class="font-medium">{{ item.preenchimento.usuario or 'N/A' }}</p>
-                    </div>
-                    <div class="md:col-span-2">
-                        <p class="text-sm text-gray-500 mb-1">Observações</p>
-                        <p class="font-medium">{{ item.preenchimento.observacoes or 'Nenhuma observação' }}</p>
-                    </div>
-                    {% if item.preenchimento.pdf_path %}
-                    <div class="md:col-span-2 flex justify-end">
-                        <a href="{{ url_for('routes_bp.download_pdf', preenchimento_id=item.preenchimento.id) }}" class="btn btn-primary btn-sm">
-                            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                            </svg>
-                            Baixar Cotação
-                        </a>
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-            {% endif %}
-
-            <!-- Pedido -->
-            {% if item.pedido %}
-            <div class="card mb-8">
-                <div class="card-header"><h4 class="text-lg font-semibold text-white">Detalhes do Pedido</h4></div>
-                <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div><p class="text-sm text-gray-500 mb-1">Número do Pedido</p><p class="font-medium">{{ item.pedido.numero_pedido }}</p></div>
-                    <div><p class="text-sm text-gray-500 mb-1">Data</p><p class="font-medium">{{ item.pedido.data_criacao.strftime('%d/%m/%Y %H:%M') }}</p></div>
-                    <div><p class="text-sm text-gray-500 mb-1">Valor Total</p><p class="font-medium">R$ {{ "%.2f"|format(item.pedido.valor_total) }}</p></div>
-                    <div>
-                        <p class="text-sm text-gray-500 mb-1">Status</p>
-                        <p class="font-medium">
-                            {% if item.pedido.status == 'Gerado' %}<span class="badge" style="background:#e9ecef;color:#495057">Gerado</span>
-                            {% elif item.pedido.status == 'Aprovado' %}<span class="badge badge-success">Aprovado</span>
-                            {% elif item.pedido.status == 'AgPagamento' %}<span class="badge badge-warning">Aguardando Pagamento</span>
-                            {% elif item.pedido.status == 'AgEntrega' %}<span class="badge badge-primary">Aguardando Entrega</span>
-                            {% elif item.pedido.status == 'Entregue' %}<span class="badge badge-success">Entregue</span>
-                            {% elif item.pedido.status == 'Reprovado' %}<span class="badge badge-danger">Reprovado</span>
-                            {% else %}<span class="badge">{{ item.pedido.status }}</span>{% endif %}
-                        </p>
-                    </div>
-                    <div><p class="text-sm text-gray-500 mb-1">Forma de Pagamento</p><p class="font-medium">{{ item.pedido.forma_pagamento or '—' }}</p></div>
-                    {% if item.pedido.pdf_path %}
-                    <div class="md:col-span-2 flex justify-end">
-                        <a href="{{ url_for('routes_bp.download_pedido_pdf', pedido_id=item.pedido.id) }}" class="btn btn-primary btn-sm">
-                            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                            </svg>
-                            Baixar Pedido
-                        </a>
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-            {% endif %}
-
-            <!-- Estoque -->
-            {% if item.estoque %}
-            <div class="card mb-8">
-                <div class="card-header"><h4 class="text-lg font-semibold text-white">Entrada no Estoque</h4></div>
-                <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div><p class="text-sm text-gray-500 mb-1">Quantidade</p><p class="font-medium">{{ item.estoque.quantidade }}</p></div>
-                    <div><p class="text-sm text-gray-500 mb-1">Fornecedor</p><p class="font-medium">{{ item.estoque.fornecedor }}</p></div>
-                    <div><p class="text-sm text-gray-500 mb-1">Número da NF</p><p class="font-medium">{{ item.estoque.numero_nf }}</p></div>
-                    <div><p class="text-sm text-gray-500 mb-1">Data de Entrada</p><p class="font-medium">{{ item.estoque.data_entrada.strftime('%d/%m/%Y %H:%M') }}</p></div>
-                </div>
-            </div>
-            {% endif %}
-
-            <!-- Requisições -->
-            {% if item.requisicoes %}
-            <div class="card mb-8">
-                <div class="card-header"><h4 class="text-lg font-semibold text-white">Requisições</h4></div>
-                <div class="p-4 overflow-x-auto">
-                    <table class="min-w-full">
-                        <thead><tr><th>Ticket</th><th>Quantidade</th><th>Data</th><th>Usuário</th></tr></thead>
-                        <tbody>
-                            {% for req in item.requisicoes %}
-                            <tr>
-                                <td>{{ req.ticket }}</td>
-                                <td>{{ req.quantidade }}</td>
-                                <td>{{ req.data_requisicao.strftime('%d/%m/%Y %H:%M') }}</td>
-                                <td>{{ req.usuario }}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            {% endif %}
-
-            <!-- Histórico de Auditoria -->
-            <div class="card mb-8">
-                <div class="card-header"><h4 class="text-lg font-semibold text-white">Histórico de auditoria</h4></div>
-                <div class="p-4 overflow-x-auto">
-                    <table class="min-w-full">
-                        <thead><tr><th>Data</th><th>Auditor</th><th>Status</th><th>Observação</th><th>Ações</th></tr></thead>
-                        <tbody>
-                            {% for aud in item.auditorias %}
-                            <tr>
-                                <td>{{ aud.data_validacao.strftime('%d/%m/%Y %H:%M') }}</td>
-                                <td>{{ aud.colaborador_1 }}</td>
-                                <td>
-                                    {% if aud.status == 'Conforme' %}
-                                    <span class="badge badge-success">{{ aud.status }}</span>
-                                    {% else %}
-                                    <span class="badge badge-danger">{{ aud.status }}</span>
-                                    {% endif %}
-                                </td>
-                                <td>{{ aud.observacao or 'Nenhuma' }}</td>
-                                <td>
-                                    <form method="POST" action="{{ url_for('routes_bp.excluir_auditoria', id=aud.id) }}"
-                                          onsubmit="return confirm('Tem certeza que deseja excluir este registro?');">
-                                        <button type="submit" style="color:#dc3545;background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:4px;">
-                                            <svg style="width:16px;height:16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                                            </svg>
-                                            Excluir
-                                        </button>
-                                    </form>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Registrar Nova Auditoria -->
-            <div class="card mb-8">
-                <div class="card-header"><h4 class="text-lg font-semibold text-white">Registrar Nova Auditoria</h4></div>
-                <div class="p-4">
-                    <form method="POST" action="{{ url_for('routes_bp.tela_auditoria') }}" class="grid grid-cols-1 gap-6">
-                        <input type="hidden" name="solicitacao_id" value="{{ item.solicitacao.id }}">
+                    <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <label class="filter-label">Auditor</label>
-                            <select name="colaborador_1" class="filter-input w-full" required>
-                                <option value="">Selecione</option>
-                                {% for usr in usuarios_disponiveis %}
-                                <option value="{{ usr }}">{{ usr }}</option>
-                                {% endfor %}
-                            </select>
+                            <p class="text-sm text-gray-500 mb-1">Fornecedor</p>
+                            <p class="font-medium">{{ item.fornecedor.nome_fantasia if item.fornecedor else 'Não informado' }}</p>
                         </div>
                         <div>
-                            <label class="filter-label">Status</label>
-                            <select name="status" class="filter-input w-full" required>
-                                <option value="">Selecione</option>
-                                <option value="Conforme">Conforme</option>
-                                <option value="Não Conforme">Não Conforme</option>
-                            </select>
+                            <p class="text-sm text-gray-500 mb-1">CNPJ</p>
+                            <p class="font-mono font-medium">{{ item.fornecedor.cnpj if item.fornecedor else 'N/A' }}</p>
                         </div>
                         <div>
-                            <label class="filter-label">Observação</label>
-                            <textarea name="observacao" class="filter-input w-full" rows="4" style="resize:vertical;"></textarea>
+                            <p class="text-sm text-gray-500 mb-1">Valor Unitário</p>
+                            <p class="font-medium">R$ {{ "%.2f"|format(item.preenchimento.valor_unitario) }}</p>
                         </div>
-                        <div class="flex justify-end">
-                            <button type="submit" class="btn btn-primary">
-                                <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        <div>
+                            <p class="text-sm text-gray-500 mb-1">Valor Total</p>
+                            <p class="font-medium">R$ {{ "%.2f"|format(item.preenchimento.valor_total) }}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500 mb-1">Prazo de Entrega</p>
+                            <p class="font-medium">{{ item.preenchimento.prazo_entrega }}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500 mb-1">Condição de Pagamento</p>
+                            <p class="font-medium">{{ item.preenchimento.condicao_pagamento }}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500 mb-1">Data de Preenchimento</p>
+                            <p class="font-medium">{{ item.preenchimento.data_preenchimento.strftime('%d/%m/%Y %H:%M') }}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500 mb-1">Usuário Responsável</p>
+                            <p class="font-medium">{{ item.preenchimento.usuario or 'N/A' }}</p>
+                        </div>
+                        <div class="md:col-span-2">
+                            <p class="text-sm text-gray-500 mb-1">Observações</p>
+                            <p class="font-medium">{{ item.preenchimento.observacoes or 'Nenhuma observação' }}</p>
+                        </div>
+                        {% if item.preenchimento.pdf_path %}
+                        <div class="md:col-span-2 flex justify-end">
+                            <a href="{{ url_for('routes_bp.download_pdf', preenchimento_id=item.preenchimento.id) }}"
+                                class="btn btn-primary btn-sm">
+                                <svg class="icon w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                 </svg>
-                                Registrar Auditoria
-                            </button>
+                                Baixar Cotação
+                            </a>
                         </div>
-                    </form>
+                        {% endif %}
+                    </div>
                 </div>
-            </div>
+                {% endif %}
 
-            <div class="flex justify-end">
-                <button class="btn btn-secondary" onclick="closeModal('modal-{{ item.solicitacao.id }}')">
-                    <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                    </svg>
-                    Fechar
-                </button>
+                <!-- Pedido -->
+                {% if item.pedido %}
+                <div class="card mb-8">
+                    <div class="card-header">
+                        <h4 class="text-lg font-semibold text-white">Detalhes do Pedido</h4>
+                    </div>
+                    <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <p class="text-sm text-gray-500 mb-1">Número do Pedido</p>
+                            <p class="font-medium">{{ item.pedido.numero_pedido }}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500 mb-1">Data</p>
+                            <p class="font-medium">{{ item.pedido.data_criacao.strftime('%d/%m/%Y %H:%M') }}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500 mb-1">Valor Total</p>
+                            <p class="font-medium">R$ {{ "%.2f"|format(item.pedido.valor_total) }}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500 mb-1">Status</p>
+                            <p class="font-medium">
+                                {% if item.pedido.status == 'Gerado' %}<span class="badge" style="background:#e9ecef;">Gerado</span>
+                                {% elif item.pedido.status == 'Aprovado' %}<span class="badge badge-success">Aprovado</span>
+                                {% elif item.pedido.status == 'AgPagamento' %}<span class="badge badge-warning">Aguardando Pagamento</span>
+                                {% elif item.pedido.status == 'AgEntrega' %}<span class="badge badge-primary">Aguardando Entrega</span>
+                                {% elif item.pedido.status == 'Entregue' %}<span class="badge badge-success">Entregue</span>
+                                {% elif item.pedido.status == 'Reprovado' %}<span class="badge badge-danger">Reprovado</span>
+                                {% else %}<span class="badge">{{ item.pedido.status }}</span>{% endif %}
+                            </p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500 mb-1">Forma de Pagamento</p>
+                            <p class="font-medium">{{ item.pedido.forma_pagamento or '—' }}</p>
+                        </div>
+                        {% if item.pedido.pdf_path %}
+                        <div class="md:col-span-2 flex justify-end">
+                            <a href="{{ url_for('routes_bp.download_pedido_pdf', pedido_id=item.pedido.id) }}"
+                                class="btn btn-primary btn-sm">
+                                <svg class="icon w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                Baixar Pedido
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Estoque -->
+                {% if item.estoque %}
+                <div class="card mb-8">
+                    <div class="card-header">
+                        <h4 class="text-lg font-semibold text-white">Entrada no Estoque</h4>
+                    </div>
+                    <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <p class="text-sm text-gray-500 mb-1">Quantidade</p>
+                            <p class="font-medium">{{ item.estoque.quantidade }}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500 mb-1">Fornecedor</p>
+                            <p class="font-medium">{{ item.estoque.fornecedor }}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500 mb-1">Número da NF</p>
+                            <p class="font-medium">{{ item.estoque.numero_nf }}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500 mb-1">Data de Entrada</p>
+                            <p class="font-medium">{{ item.estoque.data_entrada.strftime('%d/%m/%Y %H:%M') }}</p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Requisições -->
+                {% if item.requisicoes %}
+                <div class="card mb-8">
+                    <div class="card-header">
+                        <h4 class="text-lg font-semibold text-white">Requisições</h4>
+                    </div>
+                    <div class="p-4 overflow-x-auto">
+                        <table class="min-w-full">
+                            <thead>
+                                <tr><th>Ticket</th><th>Quantidade</th><th>Data</th><th>Usuário</th></tr>
+                            </thead>
+                            <tbody>
+                                {% for req in item.requisicoes %}
+                                <tr>
+                                    <td>{{ req.ticket }}</td>
+                                    <td>{{ req.quantidade }}</td>
+                                    <td>{{ req.data_requisicao.strftime('%d/%m/%Y %H:%M') }}</td>
+                                    <td>{{ req.usuario }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Histórico de Auditoria -->
+                <div class="card mb-8">
+                    <div class="card-header">
+                        <h4 class="text-lg font-semibold text-white">Histórico de auditoria</h4>
+                    </div>
+                    <div class="p-4 overflow-x-auto">
+                        <table class="min-w-full">
+                            <thead>
+                                <tr><th>Data</th><th>Auditor</th><th>Status</th><th>Observação</th><th>Ações</th></tr>
+                            </thead>
+                            <tbody>
+                                {% for aud in item.auditorias %}
+                                <tr>
+                                    <td>{{ aud.data_validacao.strftime('%d/%m/%Y %H:%M') }}</td>
+                                    <td>{{ aud.colaborador_1 }}</td>
+                                    <td>
+                                        {% if aud.status == 'Conforme' %}
+                                        <span class="badge badge-success">{{ aud.status }}</span>
+                                        {% else %}
+                                        <span class="badge badge-danger">{{ aud.status }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ aud.observacao or 'Nenhuma' }}</td>
+                                    <td>
+                                        <form method="POST" action="{{ url_for('routes_bp.excluir_auditoria', id=aud.id) }}"
+                                            onsubmit="return confirm('Tem certeza que deseja excluir este registro?');">
+                                            <button type="submit"
+                                                style="color:#dc3545;background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:4px;">
+                                                <svg style="width:16px;height:16px;" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
+                                                Excluir
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Registrar Nova Auditoria -->
+                <div class="card mb-8">
+                    <div class="card-header">
+                        <h4 class="text-lg font-semibold text-white">Registrar Nova Auditoria</h4>
+                    </div>
+                    <div class="p-4">
+                        <form method="POST" action="{{ url_for('routes_bp.tela_auditoria') }}" class="grid grid-cols-1 gap-6">
+                            <input type="hidden" name="solicitacao_id" value="{{ item.solicitacao.id }}">
+                            <div>
+                                <label class="filter-label">Auditor</label>
+                                <select name="colaborador_1" class="filter-input w-full" required>
+                                    <option value="">Selecione</option>
+                                    {% for usr in usuarios_disponiveis %}
+                                    <option value="{{ usr }}">{{ usr }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div>
+                                <label class="filter-label">Status</label>
+                                <select name="status" class="filter-input w-full" required>
+                                    <option value="">Selecione</option>
+                                    <option value="Conforme">Conforme</option>
+                                    <option value="Não Conforme">Não Conforme</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="filter-label">Observação</label>
+                                <textarea name="observacao" class="filter-input w-full" rows="4" style="resize:vertical;"></textarea>
+                            </div>
+                            <div class="flex justify-end">
+                                <button type="submit" class="btn btn-primary">
+                                    <svg class="icon w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M5 13l4 4L19 7" />
+                                    </svg>
+                                    Registrar Auditoria
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="flex justify-end">
+                    <button class="btn btn-secondary" onclick="closeModal('modal-{{ item.solicitacao.id }}')">
+                        <svg class="icon w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                        Fechar
+                    </button>
+                </div>
             </div>
         </div>
+        {% endfor %}
     </div>
-    {% endfor %}
-</div>
 
-<script>
-    function openModal(id) { document.getElementById(id).classList.add('show'); }
-    function closeModal(id) { document.getElementById(id).classList.remove('show'); }
-    document.querySelectorAll('.modal').forEach(m => {
-        m.addEventListener('click', e => { if (e.target === m) m.classList.remove('show'); });
-    });
-</script>
+    <div id="copyToast" class="copy-toast">📋 Copiado!</div>
+
+    <script>
+        // Função para exportar TODOS os registros (respeitando filtros) via backend
+        function exportarExcelCompleto() {
+            // Coletar os valores dos filtros atuais (mesmos campos do formulário)
+            const empresa = document.getElementById('empresa').value || '';
+            const usuario = document.getElementById('usuario').value || '';
+            const ativo = document.getElementById('ativo').value || '';
+            const nomeAtivo = document.getElementById('nome_ativo').value || '';
+            const status = document.getElementById('status').value || '';
+            const prioridade = document.getElementById('prioridade') ? document.getElementById('prioridade').value : '';
+            const dataInicio = document.getElementById('data_inicio').value || '';
+            const dataFim = document.getElementById('data_fim').value || '';
+
+            // Construir URL com parâmetros
+            let url = "{{ url_for('routes_bp.exportar_auditoria_xlsx') }}?";
+            const params = new URLSearchParams();
+            if (empresa) params.append('empresa', empresa);
+            if (usuario) params.append('usuario', usuario);
+            if (ativo) params.append('ativo', ativo);
+            if (nomeAtivo) params.append('nome_ativo', nomeAtivo);
+            if (status) params.append('status', status);
+            if (prioridade) params.append('prioridade', prioridade);
+            if (dataInicio) params.append('data_inicio', dataInicio);
+            if (dataFim) params.append('data_fim', dataFim);
+
+            // Redirecionar para o download (o backend gera o arquivo e envia)
+            window.location.href = url + params.toString();
+        }
+
+        // Função de cópia com fallback
+        function copiarTexto(texto) {
+            if (!texto || texto === '-') {
+                mostrarToast("⚠️ Nada para copiar");
+                return;
+            }
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(texto).then(() => {
+                    mostrarToast("📋 Copiado: " + (texto.length > 40 ? texto.substring(0, 40) + "…" : texto));
+                }).catch(() => fallbackCopy(texto));
+            } else {
+                fallbackCopy(texto);
+            }
+        }
+
+        function fallbackCopy(text) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            mostrarToast("📋 Copiado");
+        }
+
+        function mostrarToast(msg) {
+            let toast = document.getElementById('copyToast');
+            toast.textContent = msg;
+            toast.style.opacity = '1';
+            setTimeout(() => { toast.style.opacity = '0'; }, 1500);
+        }
+
+        // Delegação de eventos para cópia
+        document.addEventListener('click', function (e) {
+            const icon = e.target.closest('.copy-icon');
+            if (!icon) return;
+            const cell = icon.closest('.material-text');
+            if (cell) {
+                const textoCompleto = cell.getAttribute('data-texto-completo');
+                if (textoCompleto) copiarTexto(textoCompleto);
+            }
+        });
+
+        // Funções de modal
+        function openModal(id) { document.getElementById(id).classList.add('show'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+        document.querySelectorAll('.modal').forEach(m => {
+            m.addEventListener('click', e => { if (e.target === m) m.classList.remove('show'); });
+        });
+    </script>
 </body>
+
 </html>

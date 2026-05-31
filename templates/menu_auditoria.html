@@ -2,662 +2,515 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Gerenciamento de Compras</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#022855">
+    <title>Sistema de Gestão de Compras - Auditoria</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
         :root {
-            --primary-color: #022855;
-            --secondary-color: #00aaf8;
-            --background-color: #f7f9fc;
-            --menu-bg: #022855;
-            --menu-hover-bg: rgba(20, 116, 243, 0.87);
-            --button-bg: #ff4d4d;
-            --button-hover-bg: #ff1a1a;
-            --text-color: #ffffff;
-            --hover-effect: all 0.3s ease;
-            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            --mobile-header-height: 60px;
+            --bg:           #fdfdfd;
+            --sidebar-bg:   #022855;
+            --sidebar-top:  #011d3f;
+            --accent:       #00aaf8;
+            --accent-dim:   rgba(0,170,248,0.15);
+            --accent-glow:  rgba(0,170,248,0.25);
+            --surface:      rgba(255,255,255,0.05);
+            --surface-hov:  rgba(255,255,255,0.09);
+            --border:       rgba(255,255,255,0.08);
+            --border-acc:   rgba(0,170,248,0.38);
+            --txt-1:        #eef4ff;
+            --txt-2:        rgba(190,215,245,0.70);
+            --txt-3:        rgba(150,185,230,0.42);
+            --red:          #f04040;
+            --sidebar-w:    268px;
+            --sidebar-c:    68px;
+            --r-sm:  8px;
+            --r-md:  12px;
+            --r-lg:  16px;
+            --r-xl:  22px;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
+        html, body { height: 100%; overflow: hidden; }
+        body { font-family: 'DM Sans', system-ui, sans-serif; background: var(--bg); color: var(--txt-1); }
+
+        body::before {
+            content: '';
+            position: fixed; inset: 0; pointer-events: none; z-index: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+            opacity: 0.5;
         }
 
-        html,
-        body {
-            width: 100%;
+        .app { display: flex; height: 100vh; width: 100%; overflow: hidden; position: relative; z-index: 1; }
+
+        /* Sidebar */
+        .sidebar {
+            width: var(--sidebar-w);
+            background: linear-gradient(160deg, var(--sidebar-top) 0%, var(--sidebar-bg) 100%);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            z-index: 30;
+            overflow: visible;
+            transition: width 0.32s cubic-bezier(0.4,0,0.2,1);
+            position: relative;
+        }
+
+        .sidebar::after {
+            content: '';
+            position: absolute; top: 0; right: -1px; bottom: 0; width: 1px;
+            background: linear-gradient(180deg, transparent 0%, var(--accent) 25%, var(--accent) 75%, transparent 100%);
+            opacity: 0.12; pointer-events: none;
+        }
+
+        .sidebar.collapsed { width: var(--sidebar-c); }
+
+        .sidebar-inner {
+            display: flex;
+            flex-direction: column;
             height: 100%;
-            font-family: 'Roboto', sans-serif;
-            background-color: var(--background-color);
-            overflow-x: hidden;
-        }
-
-        .menu-container {
-            display: flex;
-            width: 100%;
-            min-height: 100vh;
-            background-color: var(--background-color);
-            position: relative;
-        }
-
-        /* Menu Desktop */
-        .menu {
-            width: 220px;
-            border-right: 1px solid #e0e0e0;
-            padding: 15px 10px;
-            background-color: var(--menu-bg);
-            color: var(--text-color);
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            overflow-x: hidden;
-            overflow-y: auto;
-            max-height: 100vh;
-            transition: all 0.3s ease;
-            z-index: 100;
-            box-shadow: var(--shadow);
-        }
-
-        .menu.collapsed {
-            width: 60px;
-            padding: 15px 5px;
-        }
-
-        .toggle-menu-btn {
-            position: fixed;
-            left: 10px;
-            top: 10px;
-            z-index: 1000;
-            background-color: var(--menu-bg);
-            color: white;
-            border: none;
-            border-radius: 4px;
-            padding: 8px 10px;
-            cursor: pointer;
-            font-size: 1.2rem;
-            transition: var(--hover-effect);
-            box-shadow: var(--shadow);
-        }
-
-        .toggle-menu-btn:hover {
-            background-color: var(--menu-hover-bg);
-            transform: scale(1.05);
-        }
-
-        .menu.collapsed+.content .toggle-menu-btn {
-            left: 10px;
-        }
-
-        .logo-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin-bottom: 20px;
-            transition: all 0.3s ease;
             overflow: hidden;
-            min-height: 120px;
-        }
-
-        .logo {
-            width: 140px;
-            height: auto;
-            max-height: 80px;
-            margin-bottom: 10px;
-            transition: all 0.3s ease;
-            object-fit: contain;
-        }
-
-        .menu.collapsed .logo-container {
-            margin-bottom: 15px;
-            min-height: auto;
-        }
-
-        .menu.collapsed .logo {
-            width: 40px;
-            opacity: 1;
-            margin-bottom: 0;
-        }
-
-        /* Título do menu - Agora com h3 */
-        .menu h3 {
-            text-align: center;
-            color: var(--text-color);
-            font-size: 1rem;
-            margin: 8px 0 12px;
-            padding: 0 5px 6px;
-            border-bottom: 2px solid var(--secondary-color);
-            transition: all 0.3s ease;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            line-height: 1.2;
-            font-weight: 500;
-        }
-
-        .menu.collapsed h3 {
-            opacity: 0;
-            height: 0;
-            margin: 0;
-            padding: 0;
-            border: none;
-        }
-
-        .menu ul {
-            list-style-type: none;
-            padding: 0;
             width: 100%;
-            margin: 0;
-            flex-grow: 1;
-            overflow-y: auto;
         }
 
-        .menu li {
-            margin: 5px 0;
-            overflow: hidden;
-        }
-
-        .menu a {
-            text-decoration: none;
-            color: var(--text-color);
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            padding: 8px 10px;
-            border-radius: 6px;
-            background-color: rgba(255, 255, 255, 0.1);
-            transition: var(--hover-effect);
-            font-size: 0.85rem;
-            white-space: nowrap;
-        }
-
-        .menu.collapsed a {
-            justify-content: center;
-            padding: 8px 5px;
-        }
-
-        .menu a i {
-            margin-right: 8px;
-            min-width: 18px;
-            text-align: center;
-            font-size: 0.95rem;
-        }
-
-        .menu.collapsed a i {
-            margin-right: 0;
-            font-size: 1rem;
-        }
-
-        .menu a span {
-            transition: opacity 0.3s ease, width 0.3s ease;
-        }
-
-        .menu.collapsed a span {
-            opacity: 0;
-            width: 0;
-            display: none;
-        }
-
-        .menu a:hover {
-            background-color: var(--menu-hover-bg);
-            transform: translateX(3px);
-            padding-left: 12px;
-        }
-
-        .menu.collapsed a:hover {
-            transform: none;
-            padding-left: 5px;
-        }
-
-        .menu a.active {
-            background-color: var(--secondary-color);
-            color: var(--text-color);
-            font-weight: 600;
-        }
-
-        .logout-container {
-            margin-top: 15px;
-            padding-top: 12px;
-            border-top: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .logout-btn {
-            background-color: var(--button-bg);
-            color: var(--text-color);
-            font-size: 0.85rem;
-            border: none;
-            border-radius: 6px;
-            padding: 8px 12px;
-            cursor: pointer;
-            transition: var(--hover-effect);
-            font-weight: 500;
-            width: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .logout-btn i {
-            margin-right: 6px;
-        }
-
-        .menu.collapsed .logout-btn {
-            padding: 8px;
-            width: 36px;
-            height: 36px;
+        .collapse-btn {
+            position: absolute;
+            top: 26px;
+            right: -14px;
+            width: 28px; height: 28px;
+            background: var(--sidebar-bg);
+            border: 1px solid var(--border-acc);
             border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            color: var(--accent);
+            font-size: 0.6rem;
+            z-index: 40;
+            transition: background 0.2s, box-shadow 0.2s, transform 0.2s;
+            box-shadow: 0 0 10px var(--accent-dim);
+            flex-shrink: 0;
+        }
+        .collapse-btn:hover { background: var(--accent); color: #fff; box-shadow: 0 0 18px var(--accent-glow); }
+        .collapse-btn i { transition: transform 0.32s cubic-bezier(0.4,0,0.2,1); }
+        .sidebar.collapsed .collapse-btn i { transform: rotate(180deg); }
+
+        .sidebar-header {
+            padding: 24px 16px 20px;
             display: flex;
             align-items: center;
-            justify-content: center;
+            gap: 12px;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+            min-width: 0;
         }
 
-        .menu.collapsed .logout-btn i {
-            margin-right: 0;
+        .brand-logo {
+            width: 36px; height: 36px;
+            flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: var(--r-sm);
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.13);
+            overflow: hidden;
+            padding: 5px;
         }
-
-        .menu.collapsed .logout-btn span {
-            display: none;
-        }
-
-        .logout-btn:hover {
-            background-color: var(--button-hover-bg);
-            transform: translateY(-2px);
-        }
-
-        .content {
-            padding: 12px;
-            flex-grow: 1;
-            background-color: #ffffff;
-            border-radius: 8px;
-            margin-left: 5px;
-            min-height: 100vh;
-            overflow-y: auto;
-            transition: margin-left 0.3s ease;
-            position: relative;
-            box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.05);
-        }
-
-        .menu.collapsed+.content {
-            margin-left: 0;
-        }
-
-        iframe {
-            width: 100%;
-            height: calc(100vh - 25px);
-            border: none;
-            border-radius: 6px;
-            background-color: #fff;
-            min-height: 500px;
-        }
-
-        /* Scrollbar personalizada */
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 3px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: rgba(0, 0, 0, 0.3);
-        }
-
-        /* Menu Mobile */
-        .mobile-header {
-            display: none;
-            background-color: var(--menu-bg);
-            color: var(--text-color);
-            padding: 0 12px;
-            align-items: center;
-            justify-content: space-between;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 999;
-            box-shadow: var(--shadow);
-            height: var(--mobile-header-height);
-        }
-
-        .mobile-header .logo-mobile {
-            height: 36px;
-            max-width: 140px;
+        .brand-logo img {
+            width: 100%; height: 100%;
             object-fit: contain;
+            filter: brightness(10) saturate(0);
+            opacity: 0.75;
+            display: block;
         }
 
-        .mobile-menu-btn {
-            background: none;
-            border: none;
-            color: var(--text-color);
-            font-size: 1.4rem;
-            cursor: pointer;
-            padding: 8px;
-        }
-
-        .mobile-menu-overlay {
-            position: fixed;
-            top: var(--mobile-header-height);
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(0, 0, 0, 0.5);
-            z-index: 998;
-            opacity: 0;
-            visibility: hidden;
-            transition: var(--hover-effect);
-        }
-
-        .mobile-menu-overlay.active {
+        .brand-text {
+            overflow: hidden;
+            white-space: nowrap;
+            min-width: 0;
             opacity: 1;
-            visibility: visible;
+            transition: opacity 0.2s, max-width 0.32s cubic-bezier(0.4,0,0.2,1);
+            max-width: 180px;
+        }
+        .sidebar.collapsed .brand-text { opacity: 0; max-width: 0; }
+
+        .brand-name { font-size: 0.84rem; font-weight: 600; color: var(--txt-1); line-height: 1.2; }
+        .brand-sub  { font-size: 0.65rem; letter-spacing: 0.11em; font-weight: 500; text-transform: uppercase; color: var(--accent); opacity: 0.75; margin-top: 2px; }
+
+        .nav-scroll {
+            flex: 1; overflow-y: auto; overflow-x: hidden;
+            padding: 14px 10px;
+            scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.08) transparent;
+        }
+        .nav-scroll::-webkit-scrollbar { width: 3px; }
+        .nav-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+        .nav-group { margin-bottom: 4px; }
+
+        .nav-label {
+            font-size: 0.6rem; letter-spacing: 0.13em; font-weight: 600;
+            text-transform: uppercase; color: var(--txt-3);
+            padding: 4px 10px 6px; display: block;
+            white-space: nowrap; overflow: hidden;
+            opacity: 1; max-height: 30px;
+            transition: opacity 0.2s, max-height 0.25s, padding 0.25s;
+        }
+        .sidebar.collapsed .nav-label { opacity: 0; max-height: 0; padding-top: 0; padding-bottom: 0; }
+
+        .nav-link {
+            display: flex; align-items: center; gap: 10px;
+            padding: 8px 10px;
+            border-radius: var(--r-md);
+            color: var(--txt-2);
+            text-decoration: none;
+            font-size: 0.82rem; font-weight: 450;
+            transition: background 0.18s, color 0.18s, border-color 0.18s;
+            cursor: pointer;
+            position: relative;
+            border: 1px solid transparent;
+            min-width: 0;
+            overflow: hidden;
         }
 
-        /* Ajustes específicos para notebooks (1366x768) */
-        @media (min-width: 993px) and (max-width: 1366px) {
-            .menu {
-                width: 190px;
-                padding: 12px 8px;
-            }
-            
-            .menu h3 {
-                font-size: 0.9rem;
-                margin: 6px 0 10px;
-                padding-bottom: 5px;
-            }
-            
-            .logo {
-                width: 110px;
-                margin-bottom: 6px;
-            }
-            
-            .menu a {
-                padding: 7px 8px;
-                font-size: 0.8rem;
-            }
-            
-            .content {
-                padding: 10px;
-            }
+        .nav-icon {
+            width: 30px; height: 30px;
+            border-radius: var(--r-sm);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.82rem;
+            flex-shrink: 0;
+            background: var(--surface);
+            color: var(--txt-2);
+            transition: background 0.18s, color 0.18s, box-shadow 0.18s;
         }
 
-        /* Ajustes extras para telas menores */
-        @media (min-width: 993px) and (max-width: 1200px) and (max-height: 768px) {
-            .menu {
-                width: 180px;
-            }
-            
-            .menu h3 {
-                font-size: 0.85rem;
-                line-height: 1.1;
-            }
-            
-            .logo {
-                width: 90px;
-            }
+        .nav-txt {
+            flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
+            opacity: 1; max-width: 160px;
+            transition: opacity 0.2s, max-width 0.32s cubic-bezier(0.4,0,0.2,1);
         }
+        .sidebar.collapsed .nav-txt { opacity: 0; max-width: 0; }
 
-        /* Responsividade para tablets e celulares */
-        @media (max-width: 992px) {
-            .menu {
-                position: fixed;
-                left: 0;
-                top: var(--mobile-header-height);
-                bottom: 0;
-                transform: translateX(-100%);
-                transition: transform 0.3s ease;
-                z-index: 999;
-                height: calc(100vh - var(--mobile-header-height));
-                box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
-                width: 260px;
-                padding-top: 15px;
-            }
+        .sidebar.collapsed .nav-link { justify-content: center; padding: 8px; gap: 0; }
 
-            .menu.open {
-                transform: translateX(0);
-            }
+        .nav-link:hover { background: var(--surface-hov); color: var(--txt-1); border-color: var(--border); }
+        .nav-link:hover .nav-icon { background: var(--accent-dim); color: var(--accent); }
 
-            .menu.collapsed {
-                transform: translateX(-100%);
-            }
+        .nav-link.active { background: var(--accent-dim); color: #7dd6ff; border-color: var(--border-acc); }
+        .nav-link.active .nav-icon { background: rgba(0,170,248,0.22); color: var(--accent); box-shadow: 0 0 10px var(--accent-dim); }
 
-            .menu.collapsed.open {
-                transform: translateX(0);
-                width: 260px;
-                padding: 15px 8px;
-            }
-
-            .menu.collapsed.open .logo {
-                width: 120px;
-                margin-bottom: 8px;
-            }
-
-            .menu.collapsed.open h3 {
-                font-size: 0.95rem;
-                margin: 8px 0 12px;
-                padding-bottom: 6px;
-            }
-
-            .mobile-header {
-                display: flex;
-            }
-
-            .content {
-                margin-left: 0;
-                margin-top: var(--mobile-header-height);
-                min-height: calc(100vh - var(--mobile-header-height));
-                padding: 10px;
-            }
-
-            iframe {
-                height: calc(100vh - var(--mobile-header-height) - 20px);
-            }
-        }
-
-        @media (max-width: 576px) {
-            .menu {
-                width: 240px;
-            }
-            
-            .mobile-header .logo-mobile {
-                height: 32px;
-                max-width: 120px;
-            }
-        }
-
-        @media (max-width: 400px) {
-            .menu {
-                width: 220px;
-            }
-            
-            .menu h3 {
-                font-size: 0.9rem;
-            }
-        }
-
-        /* Efeitos interativos */
-        button:active, .menu a:active {
-            transform: scale(0.98);
-        }
-
-        /* Tooltip para menu recolhido */
-        .menu.collapsed a::after {
+        .sidebar.collapsed .nav-link:hover::after {
             content: attr(data-tooltip);
             position: absolute;
-            left: 100%;
-            top: 50%;
-            transform: translateY(-50%);
-            background-color: var(--menu-bg);
-            color: var(--text-color);
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 0.75rem;
-            white-space: nowrap;
-            opacity: 0;
-            visibility: hidden;
-            transition: var(--hover-effect);
+            left: calc(100% + 10px); top: 50%; transform: translateY(-50%);
+            background: #0a2040;
+            border: 1px solid var(--border-acc);
+            color: var(--txt-1);
+            padding: 5px 12px; border-radius: var(--r-sm);
+            font-size: 0.74rem; font-weight: 500;
+            white-space: nowrap; z-index: 200;
             pointer-events: none;
-            margin-left: 8px;
-            box-shadow: var(--shadow);
-            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.6);
         }
 
-        .menu.collapsed a:hover::after {
-            opacity: 1;
-            visibility: visible;
-            margin-left: 12px;
+        .sidebar-footer {
+            padding: 12px 10px 18px;
+            border-top: 1px solid var(--border);
+            flex-shrink: 0;
         }
+
+        .user-card {
+            display: flex; align-items: center; gap: 10px;
+            padding: 8px 10px; border-radius: var(--r-md);
+            background: var(--surface); border: 1px solid var(--border);
+            margin-bottom: 8px; overflow: hidden;
+            transition: opacity 0.2s, max-height 0.25s;
+            max-height: 60px;
+        }
+        .sidebar.collapsed .user-card { opacity: 0; max-height: 0; padding: 0; margin: 0; border: none; }
+
+        .user-avatar {
+            width: 30px; height: 30px; border-radius: 50%;
+            background: linear-gradient(135deg, #1a4a8a, var(--accent));
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.7rem; font-weight: 600; color: #fff; flex-shrink: 0;
+        }
+        .user-name  { font-size: 0.78rem; font-weight: 500; color: var(--txt-1); white-space: nowrap; }
+        .user-role  { font-size: 0.66rem; color: var(--txt-3); white-space: nowrap; }
+
+        .logout-btn {
+            width: 100%;
+            background: rgba(240,64,64,0.07);
+            border: 1px solid rgba(240,64,64,0.18);
+            border-radius: var(--r-md);
+            padding: 9px 12px;
+            color: #f87171;
+            font-family: inherit; font-size: 0.81rem; font-weight: 500;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            cursor: pointer; transition: all 0.2s;
+        }
+        .logout-btn:hover { background: rgba(240,64,64,0.15); border-color: rgba(240,64,64,0.38); color: #fca5a5; }
+        .sidebar.collapsed .logout-btn .logout-txt { display: none; }
+        .sidebar.collapsed .logout-btn { width: 44px; height: 44px; margin: 0 auto; border-radius: 50%; padding: 0; }
+
+        .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+        .mobile-header {
+            display: none;
+            background: var(--sidebar-bg);
+            border-bottom: 1px solid var(--border);
+            padding: 13px 18px;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+        .mobile-menu-btn {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: var(--r-sm); width: 36px; height: 36px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; color: var(--txt-2); font-size: 1rem; transition: all 0.2s;
+        }
+        .mobile-menu-btn:hover { background: var(--surface-hov); color: var(--txt-1); }
+        .mobile-brand { font-size: 0.84rem; font-weight: 600; color: var(--txt-1); }
+
+        .content-area {
+            flex: 1; padding: 16px;
+            overflow: hidden; display: flex; flex-direction: column;
+        }
+
+        .iframe-card {
+            flex: 1;
+            background: #fff;
+            border-radius: var(--r-xl);
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 0 0 1px rgba(0,170,248,0.07), 0 20px 60px rgba(0,0,0,0.55);
+        }
+        .iframe-card::before {
+            content: ''; position: absolute; top: 0; left: 8%; right: 8%; height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+            opacity: 0.25; z-index: 2; pointer-events: none;
+        }
+
+        iframe { width: 100%; height: 100%; border: none; background: #fff; display: block; }
+
+        .iframe-loader {
+            position: absolute; inset: 0;
+            background: rgba(1,15,32,0.55); backdrop-filter: blur(4px);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 5; opacity: 0; transition: opacity 0.3s; pointer-events: none;
+            border-radius: var(--r-xl);
+        }
+        .loader-ring {
+            width: 34px; height: 34px;
+            border: 2px solid rgba(0,170,248,0.15);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .mobile-overlay {
+            position: fixed; inset: 0;
+            background: rgba(1,9,20,0.75); backdrop-filter: blur(4px);
+            z-index: 25; opacity: 0; visibility: hidden; transition: all 0.25s;
+        }
+        .mobile-overlay.active { opacity: 1; visibility: visible; }
+
+        @media (max-width: 992px) {
+            .sidebar {
+                position: fixed; left: 0; top: 0; height: 100%;
+                transform: translateX(-100%);
+                transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+                width: var(--sidebar-w) !important;
+            }
+            .sidebar.mobile-open { transform: translateX(0); }
+            .mobile-header { display: flex; }
+            .content-area { padding: 12px; }
+            .collapse-btn { display: none; }
+        }
+        @media (max-width: 480px) {
+            .content-area { padding: 8px; }
+            .iframe-card { border-radius: var(--r-lg); }
+        }
+
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
     </style>
 </head>
 <body>
-    <!-- Cabeçalho Mobile -->
-    <div class="mobile-header">
-        <img src="https://images.crunchbase.com/image/upload/c_pad,f_auto,q_auto:eco,dpr_1/xsire5bsc2uce2mekekd"
-            alt="Logotipo" class="logo-mobile">
-        <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
-    </div>
+<div class="app">
 
-    <!-- Overlay para menu mobile -->
-    <div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+        <button class="collapse-btn" id="collapseBtn" title="Recolher menu">
+            <i class="fas fa-chevron-left" id="collapseIcon"></i>
+        </button>
 
-    <div class="menu-container">
-        <div class="menu" id="menu">
-            <div class="logo-container">
-                <img src="https://images.crunchbase.com/image/upload/c_pad,f_auto,q_auto:eco,dpr_1/xsire5bsc2uce2mekekd"
-                    alt="Logotipo" class="logo">
-                <h3>Auditoria de Sistema</h3>
+        <div class="sidebar-inner">
+            <div class="sidebar-header">
+                <div class="brand-logo">
+                    <img src="https://images.crunchbase.com/image/upload/c_pad,f_auto,q_auto:eco,dpr_1/xsire5bsc2uce2mekekd" alt="Logo">
+                </div>
+                <div class="brand-text">
+                    <div class="brand-name">ComprasSystem</div>
+                    <div class="brand-sub">Auditoria de Sistema</div>
+                </div>
             </div>
-            
-            <ul>
-                <li><a href="{{ url_for('routes_bp.tela_auditoria') }}" target="content-frame" data-tooltip="Auditoria de Compra"><i
-                            class="fas fa-search"></i><span>Auditoria</span></a></li>
-                <li><a href="{{ url_for('routes_bp.logs') }}" target="content-frame" data-tooltip="Registro de Acessos"><i
-                            class="fas fa-history"></i><span>Registro de Acessos</span></a></li>
-                <li><a href="{{ url_for('routes_bp.listar_requisicoes') }}" target="content-frame" data-tooltip="Requisições"><i
-                            class="fas fa-clipboard-list"></i><span>Requisições</span></a></li>
-                <li><a href="{{ url_for('routes_bp.relatorio_estoque') }}" target="content-frame" data-tooltip="Histórico de Estoque">
-                            <i class="fas fa-history"></i><span>EstoqLog</span></a></li>
-                <li><a href="{{ url_for('routes_bp.listar_estoque_auditor') }}" target="content-frame" data-tooltip="Estoque de Materiais"><i
-                            class="fas fa-warehouse"></i><span>Estoque de Materiais</span></a></li>
-                <li><a href="{{ url_for('routes_bp.listar_materiais') }}" target="content-frame" data-tooltip="Cadastro Materiais"><i
-                            class="fas fa-list-ul"></i><span>Corrigir Estoque</span></a></li>
 
-                            
-            </ul>
-            
-            <div class="logout-container">
-                <button class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i><span>Sair</span></button>
+            <div class="nav-scroll">
+                <!-- Grupo Auditoria -->
+                <div class="nav-group">
+                    <span class="nav-label">Auditoria</span>
+                    <a href="{{ url_for('routes_bp.tela_auditoria') }}" target="frame" class="nav-link active" data-tooltip="Auditoria">
+                        <span class="nav-icon"><i class="fas fa-search"></i></span>
+                        <span class="nav-txt">Auditoria</span>
+                    </a>
+                    <a href="{{ url_for('routes_bp.logs') }}" target="frame" class="nav-link" data-tooltip="Registro de Acessos">
+                        <span class="nav-icon"><i class="fas fa-clock-rotate-left"></i></span>
+                        <span class="nav-txt">Registro de Acessos</span>
+                    </a>
+                </div>
+
+                <!-- Grupo Estoque e Requisições -->
+                <div class="nav-group">
+                    <span class="nav-label">Estoque e Requisições</span>
+                    <a href="{{ url_for('routes_bp.listar_requisicoes') }}" target="frame" class="nav-link" data-tooltip="Requisições">
+                        <span class="nav-icon"><i class="fas fa-clipboard-list"></i></span>
+                        <span class="nav-txt">Requisições</span>
+                    </a>
+                    <a href="{{ url_for('routes_bp.relatorio_estoque') }}" target="frame" class="nav-link" data-tooltip="Histórico de Estoque">
+                        <span class="nav-icon"><i class="fas fa-history"></i></span>
+                        <span class="nav-txt">EstoqLog</span>
+                    </a>
+                    <a href="{{ url_for('routes_bp.listar_estoque_auditor') }}" target="frame" class="nav-link" data-tooltip="Estoque de Materiais">
+                        <span class="nav-icon"><i class="fas fa-boxes-stacked"></i></span>
+                        <span class="nav-txt">Estoque de Materiais</span>
+                    </a>
+                </div>
+
+                <!-- Grupo Correção de Cadastro -->
+                <div class="nav-group">
+                    <span class="nav-label">Correção</span>
+                    <a href="{{ url_for('routes_bp.listar_materiais') }}" target="frame" class="nav-link" data-tooltip="Corrigir Estoque">
+                        <span class="nav-icon"><i class="fas fa-pen"></i></span>
+                        <span class="nav-txt">Corrigir Estoque</span>
+                    </a>
+                </div>
+            </div>
+
+            <div class="sidebar-footer">
+                <!-- Bloco do usuário (dinâmico) -->
+                {% set usuario_nome = session.get('usuario', 'Usuário') %}
+                {% set usuario_completo = session.get('usuario_completo', usuario_nome) %}
+                {% set senhas_dict = ler_senhas() %}
+                {% set role_file = senhas_dict.get(usuario_completo, {}).get('pagina', '') %}
+
+                {% if 'master' in role_file %}
+                    {% set role_nome = 'Administrador Master' %}
+                {% elif 'comprador' in role_file %}
+                    {% set role_nome = 'Comprador' %}
+                {% elif 'aprovacao' in role_file %}
+                    {% set role_nome = 'Aprovador' %}
+                {% elif 'supervisor' in role_file %}
+                    {% set role_nome = 'Supervisor' %}
+                {% elif 'estoquista' in role_file %}
+                    {% set role_nome = 'Estoquista' %}
+                {% elif 'solicitante' in role_file %}
+                    {% set role_nome = 'Solicitante' %}
+                {% elif 'financeiro' in role_file %}
+                    {% set role_nome = 'Financeiro' %}
+                {% elif 'cadastro' in role_file %}
+                    {% set role_nome = 'Cadastro' %}
+                {% else %}
+                    {% set role_nome = 'Usuário' %}
+                {% endif %}
+
+                <div class="user-card">
+                    <div class="user-avatar">{{ usuario_nome[0]|upper if usuario_nome else 'U' }}</div>
+                    <div>
+                        <div class="user-name">{{ usuario_nome }}</div>
+                        <div class="user-role">{{ role_nome }}</div>
+                    </div>
+                </div>
+                <button class="logout-btn" onclick="logout()">
+                    <i class="fas fa-arrow-right-from-bracket"></i>
+                    <span class="logout-txt">Sair do sistema</span>
+                </button>
             </div>
         </div>
-        
-        <div class="content">
-            <button class="toggle-menu-btn" id="toggleMenuBtn">☰</button>
-            <iframe name="content-frame" src="{{ url_for('routes_bp.tela_auditoria') }}" id="contentFrame"></iframe>
+    </aside>
+
+    <div class="mobile-overlay" id="mobileOverlay"></div>
+
+    <main class="main">
+        <div class="mobile-header">
+            <button class="mobile-menu-btn" id="mobileMenuBtn"><i class="fas fa-bars"></i></button>
+            <span class="mobile-brand">Auditoria de Sistema</span>
+            <div style="width:36px"></div>
         </div>
-    </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const menu = document.getElementById('menu');
-            const toggleMenuBtn = document.getElementById('toggleMenuBtn');
-            const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-            const mobileMenuOverlay = document.getElementById('mobileMenuOverlay');
-            const contentFrame = document.getElementById('contentFrame');
-            
-            // Carrega o iframe inicial
-            contentFrame.src = "{{ url_for('routes_bp.tela_auditoria') }}";
+        <div class="content-area">
+            <div class="iframe-card">
+                <div class="iframe-loader" id="loader"><div class="loader-ring"></div></div>
+                <iframe name="frame" id="contentFrame"
+                        src="{{ url_for('routes_bp.tela_auditoria') }}"
+                        title="Conteúdo do sistema"></iframe>
+            </div>
+        </div>
+    </main>
+</div>
 
-            // Verifica o estado do menu no localStorage
-            const menuState = localStorage.getItem('menuCollapsed');
-            if (menuState === 'true') {
-                menu.classList.add('collapsed');
-                toggleMenuBtn.textContent = '☰';
-            }
+<script>
+(function () {
+    const sidebar       = document.getElementById('sidebar');
+    const collapseBtn   = document.getElementById('collapseBtn');
+    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+    const mobileOverlay = document.getElementById('mobileOverlay');
+    const iframe        = document.getElementById('contentFrame');
+    const loader        = document.getElementById('loader');
 
-            // Atualiza a altura do iframe
-            function updateIframeHeight() {
-                const headerHeight = document.querySelector('.mobile-header') ? 
-                    document.querySelector('.mobile-header').offsetHeight : 0;
-                const contentPadding = 25;
-                const newHeight = `calc(100vh - ${headerHeight + contentPadding}px)`;
-                contentFrame.style.height = newHeight;
-            }
+    let collapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+    if (collapsed) sidebar.classList.add('collapsed');
 
-            // Evento para redimensionamento da janela
-            window.addEventListener('resize', function() {
-                updateIframeHeight();
-                // Fechar menu se a tela for redimensionada para desktop
-                if (window.innerWidth > 992) {
-                    menu.classList.remove('open');
-                    mobileMenuOverlay.classList.remove('active');
-                    document.body.style.overflow = '';
-                }
-            });
+    collapseBtn.addEventListener('click', () => {
+        collapsed = !collapsed;
+        sidebar.classList.toggle('collapsed', collapsed);
+        localStorage.setItem('sidebarCollapsed', collapsed);
+    });
 
-            // Atualizar altura inicial
-            updateIframeHeight();
+    function openMobile()  { sidebar.classList.add('mobile-open'); mobileOverlay.classList.add('active'); document.body.style.overflow = 'hidden'; }
+    function closeMobile() { sidebar.classList.remove('mobile-open'); mobileOverlay.classList.remove('active'); document.body.style.overflow = ''; }
+    mobileMenuBtn.addEventListener('click', openMobile);
+    mobileOverlay.addEventListener('click', closeMobile);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMobile(); });
 
-            // Logout
-            window.logout = function() {
-                const confirmation = confirm("Você tem certeza que deseja sair?");
-                if (confirmation) {
-                    window.location.href = "{{ url_for('routes_bp.logout') }}";
-                }
-            };
-
-            // Toggle menu desktop
-            toggleMenuBtn.addEventListener('click', function() {
-                menu.classList.toggle('collapsed');
-                localStorage.setItem('menuCollapsed', menu.classList.contains('collapsed'));
-                this.textContent = menu.classList.contains('collapsed') ? '☰' : '✕';
-            });
-
-            // Toggle menu mobile
-            mobileMenuBtn.addEventListener('click', function() {
-                menu.classList.add('open');
-                mobileMenuOverlay.classList.add('active');
-                document.body.style.overflow = 'hidden';
-            });
-
-            // Fechar menu mobile ao clicar no overlay
-            mobileMenuOverlay.addEventListener('click', function() {
-                menu.classList.remove('open');
-                this.classList.remove('active');
-                document.body.style.overflow = '';
-            });
-
-            // Fechar menu mobile ao clicar em um link
-            document.querySelectorAll('.menu a').forEach(link => {
-                link.addEventListener('click', function() {
-                    if (window.innerWidth <= 992) {
-                        menu.classList.remove('open');
-                        mobileMenuOverlay.classList.remove('active');
-                        document.body.style.overflow = '';
-                    }
-                    
-                    // Adiciona classe active ao link clicado
-                    document.querySelectorAll('.menu a').forEach(item => {
-                        item.classList.remove('active');
-                    });
-                    this.classList.add('active');
-                });
-            });
-
-            // Fechar menu ao pressionar Esc
-            document.addEventListener('keydown', function(event) {
-                if (event.key === 'Escape') {
-                    menu.classList.remove('open');
-                    mobileMenuOverlay.classList.remove('active');
-                    document.body.style.overflow = '';
-                }
-            });
+    // Sem submenu neste menu, mas mantemos a função para compatibilidade
+    document.querySelectorAll('.submenu-toggle').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const wrap = btn.nextElementSibling;
+            const open = wrap.classList.toggle('open');
+            btn.classList.toggle('open', open);
         });
-    </script>
-</body>
+    });
 
+    document.querySelectorAll('.nav-link[target="frame"]').forEach(link => {
+        link.addEventListener('click', function () {
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+            this.classList.add('active');
+            if (window.innerWidth <= 992) closeMobile();
+        });
+    });
+
+    loader.style.opacity = '0';
+    iframe.addEventListener('loadstart', () => loader.style.opacity = '1');
+    iframe.addEventListener('load',      () => setTimeout(() => loader.style.opacity = '0', 150));
+
+    window.logout = function () {
+        if (confirm('Tem certeza que deseja sair do sistema?'))
+            window.location.href = "{{ url_for('routes_bp.logout') }}";
+    };
+})();
+</script>
+</body>
 </html>
