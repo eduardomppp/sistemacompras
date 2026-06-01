@@ -3,2561 +3,1520 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard de Compras e Produtividade | Sistema de Gestão</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title>Central de Compras | Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     <style>
         :root {
-            --primary-color: #022855;
-            --primary-light: #1a3d8c;
-            --secondary-color: #10b981;
-            --warning-color: #f59e0b;
-            --danger-color: #ef4444;
-            --info-color: #3b82f6;
-            --gray-50: #f8fafc;
-            --gray-100: #f1f5f9;
-            --gray-200: #e2e8f0;
-            --gray-300: #cbd5e1;
-            --gray-400: #94a3b8;
-            --gray-500: #64748b;
-            --gray-600: #475569;
-            --gray-700: #334155;
-            --gray-800: #1e293b;
-            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
-            --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1);
-            --border-radius: 12px;
-            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --ink: #0f1117;
+            --ink-2: #1e2230;
+            --ink-3: #2d3348;
+            --surface: #f0f2f7;
+            --surface-2: #ffffff;
+            --border: #e4e6ec;
+            --border-2: #cdd0db;
+            --muted: #7c8099;
+            --accent: #2563eb;
+            --accent-light: #dbeafe;
+            --accent-hover: #1d4ed8;
+            --green: #16a34a;
+            --green-light: #dcfce7;
+            --amber: #d97706;
+            --amber-light: #fef3c7;
+            --red: #dc2626;
+            --red-light: #fee2e2;
+            --violet: #7c3aed;
+            --violet-light: #ede9fe;
+            --radius: 12px;
+            --radius-sm: 8px;
+            --shadow: 0 1px 2px rgba(0,0,0,.05), 0 4px 16px rgba(0,0,0,.06);
+            --shadow-lg: 0 8px 40px rgba(0,0,0,.10);
+            --shadow-sm: 0 1px 3px rgba(0,0,0,.07);
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            font-family: 'Inter', sans-serif;
-            margin: 0;
-            padding: 30px;
-            background: linear-gradient(135deg, #f8f9fc 0%, #eef2ff 100%);
-            color: var(--gray-800);
-            line-height: 1.6;
+            font-family: 'DM Sans', sans-serif;
+            background: var(--surface);
+            color: var(--ink);
             min-height: 100vh;
         }
 
-        .container {
-            max-width: 1920px;
-            margin: 0 auto;
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 40px;
-            padding: 0 20px;
-        }
-
-        .header h1 {
-            color: var(--primary-color);
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 15px;
-        }
-
-        .header .subtitle {
-            color: var(--gray-500);
-            font-size: 1.1rem;
-            font-weight: 400;
-        }
-
-        .header-actions {
-            display: flex;
-            justify-content: flex-end;
-            margin-top: 20px;
-            gap: 15px;
-        }
-
-        .print-controls {
-            background-color: white;
-            padding: 15px;
-            border-radius: var(--border-radius);
-            box-shadow: var(--shadow-md);
-            border: 1px solid var(--gray-200);
-            margin-bottom: 20px;
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .print-selector {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .chart-checkbox {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 12px;
-            background: var(--gray-50);
-            border-radius: 6px;
-            border: 1px solid var(--gray-200);
-            cursor: pointer;
-            transition: var(--transition);
-        }
-
-        .chart-checkbox:hover {
-            background: var(--gray-100);
-            transform: translateY(-1px);
-        }
-
-        .chart-checkbox.selected {
-            background: var(--primary-color);
-            color: white;
-            border-color: var(--primary-color);
-        }
-
-        .chart-checkbox input[type="checkbox"] {
-            margin: 0;
-            cursor: pointer;
-        }
-
-        .chart-checkbox label {
-            cursor: pointer;
-            font-size: 0.9rem;
-            font-weight: 500;
-            white-space: nowrap;
-        }
-
-        .print-preview-modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.8);
-            z-index: 10001;
-            padding: 20px;
-            overflow-y: auto;
-            backdrop-filter: blur(5px);
-        }
-
-        .print-preview-modal.active {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .print-preview-container {
-            background: white;
-            border-radius: var(--border-radius);
-            width: 100%;
-            max-width: 210mm; /* Largura A4 */
-            min-height: 297mm; /* Altura A4 */
-            padding: 20mm; /* Margens A4 padrão */
-            position: relative;
-            box-shadow: var(--shadow-xl);
-            overflow: hidden;
-        }
-
-        .print-preview-header {
-            text-align: center;
-            margin-bottom: 20px;
-            padding-bottom: 20px;
-            border-bottom: 2px solid var(--gray-200);
-        }
-
-        .print-preview-header h2 {
-            color: var(--primary-color);
-            margin-bottom: 10px;
-            font-size: 1.8rem;
-        }
-
-        .print-preview-header .date {
-            color: var(--gray-500);
-            font-size: 0.9rem;
-        }
-
-        .print-preview-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-
-        .print-chart-section {
-            background: white;
-            border: 1px solid var(--gray-200);
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 20px;
-            break-inside: avoid;
-            page-break-inside: avoid;
-            page-break-before: auto;
-        }
-
-        .print-chart-section h4 {
-            margin: 0 0 15px 0;
-            color: var(--primary-color);
-            font-size: 1.1rem;
-            text-align: center;
-            padding-bottom: 10px;
-            border-bottom: 1px solid var(--gray-200);
-        }
-
-        .print-chart-canvas {
-            width: 100% !important;
-            height: 180px !important;
-            margin-bottom: 15px;
-        }
-
-        .print-table-container {
-            margin-top: 15px;
-            overflow: hidden;
-        }
-
-        .print-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 9px;
-            margin-top: 10px;
-        }
-
-        .print-table thead {
-            background-color: var(--gray-50);
-        }
-
-        .print-table th {
-            padding: 6px 4px;
-            text-align: left;
-            font-weight: 600;
-            color: var(--gray-700);
-            border-bottom: 2px solid var(--gray-200);
-            border-right: 1px solid var(--gray-200);
-        }
-
-        .print-table th:last-child {
-            border-right: none;
-        }
-
-        .print-table td {
-            padding: 5px 4px;
-            border-bottom: 1px solid var(--gray-200);
-            border-right: 1px solid var(--gray-200);
-        }
-
-        .print-table td:last-child {
-            border-right: none;
-        }
-
-        .print-table tr:last-child td {
-            border-bottom: none;
-        }
-
-        .print-table .badge {
-            padding: 2px 6px;
-            border-radius: 10px;
-            font-size: 8px;
-            font-weight: 500;
-        }
-
-        .print-table .badge-success {
-            background-color: rgba(16, 185, 129, 0.1);
-            color: var(--secondary-color);
-        }
-
-        .print-table .badge-warning {
-            background-color: rgba(245, 158, 11, 0.1);
-            color: var(--warning-color);
-        }
-
-        .print-table .badge-priority {
-            background-color: rgba(239, 68, 68, 0.1);
-            color: var(--danger-color);
-        }
-
-        .print-table .badge-info {
-            background-color: rgba(59, 130, 246, 0.1);
-            color: var(--info-color);
-        }
-
-        .print-table .progress-bar {
-            width: 100%;
-            height: 6px;
-            background-color: var(--gray-200);
-            border-radius: 3px;
-            overflow: hidden;
-            margin: 4px 0;
-        }
-
-        .print-table .progress-fill {
-            height: 100%;
-            border-radius: 3px;
-        }
-
-        .print-table .progress-fill.success {
-            background-color: var(--secondary-color);
-        }
-
-        .print-actions {
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
-            display: flex;
-            gap: 10px;
-            z-index: 10002;
-        }
-
-        .print-actions button {
-            padding: 12px 24px;
-            border-radius: 8px;
-            border: none;
-            font-weight: 500;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: var(--transition);
-        }
-
-        .print-actions .btn-print {
-            background: var(--primary-color);
-            color: white;
-        }
-
-        .print-actions .btn-close {
-            background: var(--gray-200);
-            color: var(--gray-700);
-        }
-
-        .print-actions button:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-md);
-        }
-
-       @media print {
-            body * {
-                visibility: hidden;
-            }
-            
-            /* Inclua o modal inteiro e tudo dentro dele */
-            .print-preview-modal,
-            .print-preview-modal *,
-            .print-preview-container,
-            .print-preview-container * {
-                visibility: visible !important;
-            }
-            
-            /* Força o modal a ocupar a página toda na impressão */
-            .print-preview-modal {
-                position: absolute !important;
-                top: 0 !important;
-                left: 0 !important;
-                width: 100% !important;
-                height: 100% !important;
-                background: white !important;
-                padding: 0 !important;
-                margin: 0 !important;
-                overflow: visible !important;
-            }
-
-            .print-preview-container {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 210mm;
-                min-height: 297mm;
-                padding: 15mm;
-                margin: 0 auto;
-                box-shadow: none;
-                border-radius: 0;
-                background: white;
-            }
-
-            /* Esconde os botões de ação e outros elementos da tela */
-            .print-actions,
-            .print-controls,
-            .header-actions,
-            .filters-panel,
-            .container > *:not(.print-preview-modal) {
-                display: none !important;
-            }
-
-            /* Remove o fundo escuro do modal */
-            .print-preview-modal::before {
-                background: none !important;
-            }
-        }
-        /* Quando os filtros estão fixos, adiciona margem ao container */
-        body.filters-fixed-active .container {
-            margin-top: calc(var(--filters-height, 200px) + 60px);
-            transition: margin-top 0.3s ease;
-        }
-
-        .filters-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 25px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid var(--gray-100);
-        }
-
-        .filters-title {
-            font-size: 1.2rem;
-            font-weight: 600;
-            color: var(--primary-color);
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            flex-wrap: wrap;
-        }
-
-        .filters-title i {
-            color: var(--info-color);
-        }
-
-        .filters-controls {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-            margin-left: auto;
-        }
-
-        .control-btn {
-            padding: 6px 12px;
-            border-radius: 6px;
-            border: 1px solid var(--gray-300);
-            background: var(--gray-50);
-            color: var(--gray-700);
-            cursor: pointer;
-            transition: var(--transition);
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 0.85rem;
-            font-weight: 500;
-        }
-
-        .control-btn:hover {
-            background: var(--gray-100);
-            transform: translateY(-1px);
-        }
-
-        .control-btn.active {
-            background: var(--primary-color);
-            color: white;
-            border-color: var(--primary-color);
-        }
-
-        .control-btn.warning {
-            background: #fef3c7;
-            color: #92400e;
-            border-color: #f59e0b;
-        }
-
-        .control-btn.warning.active {
-            background: #f59e0b;
-            color: white;
-            border-color: #f59e0b;
-        }
-
-        /* Estilo para filtros travados/desabilitados */
-        .filters-disabled .filter-select,
-        .filters-disabled .filter-search input {
-            background-color: var(--gray-100) !important;
-            cursor: not-allowed !important;
-            opacity: 0.7 !important;
-            border-color: var(--gray-300) !important;
-            box-shadow: none !important;
-            pointer-events: none !important;
-        }
-
-        .filters-collapsed {
-            padding: 20px !important;
-            transition: all 0.3s ease;
-        }
-
-        .filters-collapsed .filters-grid,
-        .filters-collapsed .filters-actions {
-            display: none !important;
-        }
-
-        .collapsible-icon {
-            transition: transform 0.3s ease;
-        }
-
-        .collapsed .collapsible-icon {
-            transform: rotate(180deg);
-        }
-
-        .filters-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-
-        .filter-group {
+        /* ── MAIN ── */
+        .main {
+            flex: 1;
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            min-height: 100vh;
         }
 
-        .filter-group label {
-            color: var(--gray-700);
-            font-weight: 500;
-            font-size: 0.9rem;
+        /* ── TOPBAR ── */
+        .topbar {
+            background: var(--surface-2);
+            border-bottom: 1px solid var(--border);
+            padding: 0 32px;
+            height: 58px;
             display: flex;
             align-items: center;
-            gap: 8px;
-        }
-
-        .filter-group label i {
-            color: var(--gray-500);
-            font-size: 0.8rem;
-        }
-
-        .filter-select {
-            padding: 12px 16px;
-            border-radius: 8px;
-            border: 1px solid var(--gray-300);
-            background: #fff;
-            color: var(--gray-800);
-            font-size: 0.95rem;
-            cursor: pointer;
-            transition: var(--transition);
-            appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 16px center;
-            padding-right: 40px;
-        }
-
-        .filter-select:hover {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(2, 40, 85, 0.1);
-        }
-
-        .filter-select:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(2, 40, 85, 0.2);
-        }
-
-        .filters-actions {
-            display: flex;
-            gap: 15px;
-            justify-content: flex-end;
-            padding-top: 20px;
-            border-top: 2px solid var(--gray-100);
-        }
-
-        .btn {
-            padding: 12px 28px;
-            border-radius: 8px;
-            border: none;
-            font-weight: 500;
-            cursor: pointer;
-            transition: var(--transition);
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            font-size: 0.95rem;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
-            color: white;
-            box-shadow: 0 4px 12px rgba(2, 40, 85, 0.25);
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(2, 40, 85, 0.3);
-        }
-
-        .btn-secondary {
-            background: var(--gray-100);
-            color: var(--gray-700);
-            border: 1px solid var(--gray-300);
-        }
-
-        .btn-secondary:hover {
-            background: var(--gray-200);
-            transform: translateY(-1px);
-        }
-
-        .btn-icon {
-            width: 36px;
-            height: 36px;
-            padding: 0;
-            border-radius: 50%;
-        }
-
-        .metrics-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 25px;
-            margin-bottom: 50px;
-        }
-
-        .metric-card {
-            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-            padding: 30px;
-            border-radius: var(--border-radius);
-            box-shadow: var(--shadow-lg);
-            border: 1px solid var(--gray-200);
-            transition: var(--transition);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .metric-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, var(--primary-color) 0%, var(--info-color) 100%);
-        }
-
-        .metric-card:hover {
-            transform: translateY(-5px);
-            box-shadow: var(--shadow-xl);
-        }
-
-        .metric-icon {
-            width: 56px;
-            height: 56px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 20px;
-            font-size: 1.5rem;
-            color: white;
-        }
-
-        .metric-icon.primary {
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
-        }
-
-        .metric-icon.success {
-            background: linear-gradient(135deg, var(--secondary-color) 0%, #34d399 100%);
-        }
-
-        .metric-icon.warning {
-            background: linear-gradient(135deg, var(--warning-color) 0%, #fbbf24 100%);
-        }
-
-        .metric-icon.danger {
-            background: linear-gradient(135deg, var(--danger-color) 0%, #f87171 100%);
-        }
-
-        .metric-card h4 {
-            margin: 0 0 15px;
-            color: var(--gray-600);
-            font-size: 0.95rem;
-            font-weight: 500;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .metric-value {
-            font-size: 2.8rem;
-            font-weight: 700;
-            color: var(--primary-color);
-            margin: 10px 0;
-            line-height: 1.2;
-        }
-
-        .metric-subvalue {
-            font-size: 1rem;
-            color: var(--gray-500);
-            margin-bottom: 15px;
-        }
-
-        .metric-trend {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 500;
-            margin-top: 10px;
-        }
-
-        .trend-up {
-            background-color: rgba(16, 185, 129, 0.1);
-            color: var(--secondary-color);
-        }
-
-        .trend-down {
-            background-color: rgba(239, 68, 68, 0.1);
-            color: var(--danger-color);
-        }
-
-        .trend-neutral {
-            background-color: var(--gray-100);
-            color: var(--gray-600);
-        }
-
-        .charts-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
-            gap: 30px;
-            margin-bottom: 50px;
-        }
-
-        .chart-card {
-            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-            padding: 30px;
-            border-radius: var(--border-radius);
-            box-shadow: var(--shadow-lg);
-            border: 1px solid var(--gray-200);
-            transition: var(--transition);
-        }
-
-        .chart-card:hover {
-            box-shadow: var(--shadow-xl);
-        }
-
-        .chart-header {
-            display: flex;
             justify-content: space-between;
-            align-items: center;
-            margin-bottom: 25px;
-            padding-bottom: 20px;
-            border-bottom: 2px solid var(--gray-100);
+            position: sticky;
+            top: 0;
+            z-index: 90;
+            box-shadow: 0 1px 0 var(--border), 0 2px 12px rgba(0,0,0,.04);
         }
 
-        .chart-title {
-            font-size: 1.3rem;
-            font-weight: 600;
-            color: var(--primary-color);
+        .topbar-brand {
             display: flex;
             align-items: center;
             gap: 12px;
         }
 
-        .chart-badge {
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .badge-priority {
-            background-color: rgba(239, 68, 68, 0.1);
-            color: var(--danger-color);
-        }
-
-        .badge-success {
-            background-color: rgba(16, 185, 129, 0.1);
-            color: var(--secondary-color);
-        }
-
-        .badge-warning {
-            background-color: rgba(245, 158, 11, 0.1);
-            color: var(--warning-color);
-        }
-
-        .badge-info {
-            background-color: rgba(59, 130, 246, 0.1);
-            color: var(--info-color);
-        }
-
-        .chart-container {
-            position: relative;
-            height: 300px;
-            margin: 20px 0 30px;
-        }
-
-        .chart-table {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
-            margin-top: 25px;
-            font-size: 0.9rem;
+        .topbar-logo {
+            width: 32px; height: 32px;
+            background: var(--accent);
             border-radius: 8px;
-            overflow: hidden;
-            border: 1px solid var(--gray-200);
+            display: flex; align-items: center; justify-content: center;
+            color: #fff;
+            font-size: .85rem;
         }
 
-        .chart-table thead {
-            background: linear-gradient(135deg, var(--gray-50) 0%, var(--gray-100) 100%);
+        .topbar-left h1 {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--ink);
+            letter-spacing: -.01em;
         }
 
-        .chart-table th {
-            padding: 16px;
-            text-align: left;
-            color: var(--gray-700);
-            font-weight: 600;
-            border-bottom: 2px solid var(--gray-200);
-        }
-
-        .chart-table td {
-            padding: 14px 16px;
-            border-bottom: 1px solid var(--gray-200);
-            transition: var(--transition);
-        }
-
-        .chart-table tbody tr:hover {
-            background-color: var(--gray-50);
-            transform: translateX(4px);
-        }
-
-        .chart-table tbody tr:last-child td {
-            border-bottom: none;
-        }
-
-        .progress-bar {
-            width: 100%;
-            height: 8px;
-            background-color: var(--gray-200);
-            border-radius: 4px;
-            overflow: hidden;
-            margin: 8px 0;
-        }
-
-        .progress-fill {
-            height: 100%;
-            border-radius: 4px;
-            transition: width 1s ease-in-out;
-        }
-
-        .progress-fill.success {
-            background: linear-gradient(90deg, var(--secondary-color) 0%, #34d399 100%);
-        }
-
-        .progress-fill.warning {
-            background: linear-gradient(90deg, var(--warning-color) 0%, #fbbf24 100%);
-        }
-
-        .progress-fill.danger {
-            background: linear-gradient(90deg, var(--danger-color) 0%, #f87171 100%);
-        }
-
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(255, 255, 255, 0.9);
+        .topbar-left .breadcrumb {
+            font-size: .75rem;
+            color: var(--muted);
+            margin-top: 1px;
             display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .breadcrumb-dot {
+            width: 3px; height: 3px;
+            border-radius: 50%;
+            background: var(--border-2);
+        }
+
+        .topbar-right { display: flex; align-items: center; gap: 8px; }
+
+        /* ── BUTTONS ── */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 14px;
+            border-radius: var(--radius-sm);
+            border: none;
+            font-family: inherit;
+            font-size: .82rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all .15s ease;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: #fff;
+            box-shadow: 0 1px 3px rgba(37,99,235,.3);
+        }
+        .btn-primary:hover {
+            background: var(--accent-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(37,99,235,.35);
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--muted);
+            border: 1px solid var(--border);
+        }
+        .btn-ghost:hover {
+            background: var(--surface);
+            color: var(--ink);
+            border-color: var(--border-2);
+        }
+
+        .btn-icon {
+            width: 34px; height: 34px;
+            padding: 0;
+            justify-content: center;
+            border-radius: var(--radius-sm);
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--muted);
+            font-size: .85rem;
+        }
+        .btn-icon:hover { background: var(--surface); color: var(--ink); }
+
+        .btn-danger { background: var(--red); color: #fff; }
+        .btn-danger:hover { opacity: .88; }
+
+        /* ── CONTENT ── */
+        .content { padding: 24px 32px; flex: 1; }
+
+        /* ── FILTERS CARD ── */
+        .filters-card {
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 18px 22px;
+            margin-bottom: 22px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .filters-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .filters-card-header h3 {
+            font-size: .82rem;
+            font-weight: 700;
+            color: var(--ink-2);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+        }
+
+        .filters-card-header h3 i { color: var(--accent); font-size: .8rem; }
+
+        .filters-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+            gap: 12px;
+            align-items: end;
+        }
+
+        .filter-group label {
+            display: block;
+            font-size: .72rem;
+            font-weight: 700;
+            color: var(--muted);
+            margin-bottom: 5px;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+        }
+
+        .filter-select, .filter-input {
+            width: 100%;
+            padding: 8px 11px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: var(--surface);
+            color: var(--ink);
+            font-family: inherit;
+            font-size: .85rem;
+            font-weight: 500;
+            transition: all .15s;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%237c8099' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 11px center;
+            padding-right: 30px;
+        }
+
+        .filter-input { background-image: none; padding-right: 11px; }
+
+        .filter-select:focus, .filter-input:focus {
+            outline: none;
+            border-color: var(--accent);
+            background-color: var(--surface-2);
+            box-shadow: 0 0 0 3px rgba(37,99,235,.12);
+        }
+
+        .filters-actions-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 14px;
+            padding-top: 14px;
+            border-top: 1px solid var(--border);
+        }
+
+        /* ── METRICS GRID ── */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 22px;
+        }
+
+        .metric-card {
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            box-shadow: var(--shadow-sm);
+            position: relative;
+            overflow: hidden;
+            transition: box-shadow .2s, transform .2s;
+        }
+
+        .metric-card:hover {
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-1px);
+        }
+
+        .metric-card .card-accent {
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            border-radius: var(--radius) var(--radius) 0 0;
+        }
+
+        /* Subtle background glow on metric cards */
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 3px; right: -20px;
+            width: 80px; height: 80px;
+            border-radius: 50%;
+            opacity: .06;
+            pointer-events: none;
+        }
+
+        .metric-card:nth-child(1)::before { background: var(--accent); }
+        .metric-card:nth-child(2)::before { background: var(--green); }
+        .metric-card:nth-child(3)::before { background: var(--amber); }
+        .metric-card:nth-child(4)::before { background: var(--violet); }
+
+        .accent-blue { background: var(--accent); }
+        .accent-green { background: var(--green); }
+        .accent-amber { background: var(--amber); }
+        .accent-violet { background: var(--violet); }
+
+        .metric-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .metric-label {
+            font-size: .72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            color: var(--muted);
+        }
+
+        .metric-icon {
+            width: 32px; height: 32px;
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: .85rem;
+            flex-shrink: 0;
+        }
+
+        .icon-blue { background: var(--accent-light); color: var(--accent); }
+        .icon-green { background: var(--green-light); color: var(--green); }
+        .icon-amber { background: var(--amber-light); color: var(--amber); }
+        .icon-violet { background: var(--violet-light); color: var(--violet); }
+
+        .metric-value {
+            font-size: 1.85rem;
+            font-weight: 700;
+            color: var(--ink);
+            line-height: 1.1;
+            font-variant-numeric: tabular-nums;
+            margin-bottom: 3px;
+            letter-spacing: -.02em;
+        }
+
+        .metric-sub {
+            font-size: .77rem;
+            color: var(--muted);
+            margin-bottom: 10px;
+        }
+
+        .metric-bar {
+            height: 3px;
+            background: var(--border);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .metric-bar-fill {
+            height: 100%;
+            border-radius: 2px;
+            transition: width 1s ease;
+        }
+
+        .fill-blue { background: var(--accent); }
+        .fill-green { background: var(--green); }
+        .fill-amber { background: var(--amber); }
+        .fill-red { background: var(--red); }
+
+        .metric-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: .72rem;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 20px;
+        }
+
+        .tag-up { background: var(--green-light); color: var(--green); }
+        .tag-down { background: var(--red-light); color: var(--red); }
+        .tag-neutral { background: var(--surface); color: var(--muted); border: 1px solid var(--border); }
+        .tag-warn { background: var(--amber-light); color: var(--amber); }
+
+        /* ── CHARTS GRID ── */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        .chart-card {
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 22px;
+            box-shadow: var(--shadow-sm);
+            transition: box-shadow .2s;
+        }
+
+        .chart-card:hover { box-shadow: var(--shadow); }
+
+        .chart-card.full-width { grid-column: 1 / -1; }
+
+        .chart-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 18px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .chart-title-wrap { display: flex; align-items: center; gap: 10px; }
+
+        .chart-title {
+            font-size: .88rem;
+            font-weight: 700;
+            color: var(--ink);
+            letter-spacing: -.01em;
+        }
+
+        .chart-sub {
+            font-size: .74rem;
+            color: var(--muted);
+            margin-top: 1px;
+        }
+
+        .chart-icon {
+            width: 30px; height: 30px;
+            border-radius: 7px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: .78rem;
+            flex-shrink: 0;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 3px 9px;
+            border-radius: 20px;
+            font-size: .7rem;
+            font-weight: 700;
+            letter-spacing: .03em;
+        }
+
+        .badge-blue { background: var(--accent-light); color: var(--accent); }
+        .badge-green { background: var(--green-light); color: var(--green); }
+        .badge-amber { background: var(--amber-light); color: var(--amber); }
+        .badge-red { background: var(--red-light); color: var(--red); }
+        .badge-violet { background: var(--violet-light); color: var(--violet); }
+
+        .chart-canvas-wrap { position: relative; height: 250px; margin-bottom: 20px; }
+
+        /* ── DATA TABLE ── */
+        .table-wrap { overflow-x: auto; border-radius: var(--radius-sm); border: 1px solid var(--border); }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: .82rem;
+        }
+
+        .data-table thead tr {
+            background: var(--surface);
+        }
+
+        .data-table th {
+            padding: 9px 14px;
+            text-align: left;
+            font-size: .68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            color: var(--muted);
+            border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+        }
+
+        .data-table td {
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--border);
+            color: var(--ink-2);
+            vertical-align: middle;
+        }
+
+        .data-table tbody tr { transition: background .1s; }
+        .data-table tbody tr:hover { background: var(--surface); }
+        .data-table tbody tr:last-child td { border-bottom: none; }
+
+        .mini-bar { display: flex; align-items: center; gap: 8px; }
+
+        .mini-bar-track {
+            flex: 1; height: 4px;
+            background: var(--border);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .mini-bar-fill {
+            height: 100%; border-radius: 3px;
+            background: var(--green);
+            transition: width .8s ease;
+        }
+
+        .mini-bar-pct {
+            font-family: 'DM Mono', monospace;
+            font-size: .74rem;
+            color: var(--muted);
+            min-width: 36px;
+            text-align: right;
+        }
+
+        a.link-id {
+            font-family: 'DM Mono', monospace;
+            font-size: .78rem;
+            font-weight: 500;
+            color: var(--accent);
+            text-decoration: none;
+            background: var(--accent-light);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        a.link-id:hover { background: var(--accent); color: #fff; }
+
+        /* ── SECTION DIVIDER ── */
+        .section-label {
+            font-size: .7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .1em;
+            color: var(--muted);
+            margin: 24px 0 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-label::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
+        /* ── LOADING OVERLAY ── */
+        .loading-overlay {
+            position: fixed; inset: 0;
+            background: rgba(245,246,248,.9);
+            backdrop-filter: blur(6px);
+            display: none;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             z-index: 9999;
-            backdrop-filter: blur(5px);
         }
 
         .spinner {
-            width: 60px;
-            height: 60px;
-            border: 4px solid var(--gray-200);
-            border-top-color: var(--primary-color);
+            width: 36px; height: 36px;
+            border: 2.5px solid var(--border);
+            border-top-color: var(--accent);
             border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-bottom: 20px;
+            animation: spin .7s linear infinite;
+            margin-bottom: 12px;
         }
 
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
-        .notification {
+        /* ── TOAST ── */
+        .toast {
             position: fixed;
-            top: 30px;
-            right: 30px;
-            padding: 20px;
-            background: white;
-            border-radius: var(--border-radius);
-            box-shadow: var(--shadow-xl);
-            border-left: 4px solid var(--secondary-color);
-            transform: translateX(400px);
-            transition: transform 0.3s ease-out;
-            z-index: 10000;
-            max-width: 400px;
-        }
-
-        .notification.show {
-            transform: translateX(0);
-        }
-
-        .notification.success {
-            border-left-color: var(--secondary-color);
-        }
-
-        .notification.error {
-            border-left-color: var(--danger-color);
-        }
-
-        .notification.warning {
-            border-left-color: var(--warning-color);
-        }
-
-        .notification.info {
-            border-left-color: var(--info-color);
-        }
-
-        .notification-content {
+            bottom: 24px; right: 24px;
+            background: var(--ink);
+            color: #fff;
+            padding: 11px 16px;
+            border-radius: var(--radius-sm);
+            font-size: .82rem;
+            font-weight: 500;
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 9px;
+            box-shadow: var(--shadow-lg);
+            transform: translateY(80px);
+            opacity: 0;
+            transition: all .26s cubic-bezier(.34,1.56,.64,1);
+            z-index: 9999;
+            max-width: 300px;
         }
 
-        .notification-icon {
-            font-size: 1.5rem;
+        .toast.show { transform: translateY(0); opacity: 1; }
+        .toast i { font-size: .95rem; }
+        .toast.t-success i { color: #4ade80; }
+        .toast.t-error i { color: #f87171; }
+        .toast.t-warning i { color: #fbbf24; }
+        .toast.t-info i { color: #60a5fa; }
+
+        /* ── PRINT MODAL ── */
+        .modal-backdrop {
+            display: none;
+            position: fixed; inset: 0;
+            background: rgba(15,17,23,.5);
+            backdrop-filter: blur(6px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
         }
 
-        .notification.success .notification-icon {
-            color: var(--secondary-color);
+        .modal-backdrop.open { display: flex; }
+
+        .modal {
+            background: var(--surface-2);
+            border-radius: 16px;
+            width: 90%;
+            max-width: 500px;
+            padding: 26px;
+            box-shadow: 0 24px 80px rgba(0,0,0,.18);
+            border: 1px solid var(--border);
         }
 
-        .notification.error .notification-icon {
-            color: var(--danger-color);
-        }
-
-        .notification.warning .notification-icon {
-            color: var(--warning-color);
-        }
-
-        .notification.info .notification-icon {
-            color: var(--info-color);
-        }
-
-        .notification-message h4 {
-            margin: 0 0 5px;
-            color: var(--gray-800);
-            font-size: 1rem;
-        }
-
-        .notification-message p {
-            margin: 0;
-            color: var(--gray-600);
-            font-size: 0.9rem;
-        }
-
-        .filter-search {
-            position: relative;
-        }
-
-        .filter-search input {
-            width: 100%;
-            padding: 12px 40px 12px 16px;
-            border-radius: 8px;
-            border: 1px solid var(--gray-300);
-            background: white;
-            color: var(--gray-800);
-            font-size: 0.95rem;
-            transition: var(--transition);
-        }
-
-        .filter-search input:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(2, 40, 85, 0.1);
-        }
-
-        .filter-search i {
-            position: absolute;
-            right: 16px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--gray-400);
-        }
-
-        .chart-tabs {
+        .modal-header {
             display: flex;
-            gap: 10px;
+            align-items: center;
+            justify-content: space-between;
             margin-bottom: 20px;
-            border-bottom: 2px solid var(--gray-100);
-            padding-bottom: 15px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
         }
 
-        .chart-tab {
-            padding: 8px 16px;
+        .modal-header h3 {
+            font-size: .95rem;
+            font-weight: 700;
+            letter-spacing: -.01em;
+        }
+
+        .modal-close {
+            width: 28px; height: 28px;
             border-radius: 6px;
-            background: var(--gray-100);
-            color: var(--gray-600);
+            border: none;
+            background: var(--surface);
+            color: var(--muted);
             cursor: pointer;
-            transition: var(--transition);
-            font-size: 0.9rem;
+            display: flex; align-items: center; justify-content: center;
+            font-size: .85rem;
+            transition: all .15s;
+        }
+
+        .modal-close:hover { background: var(--border); color: var(--ink); }
+
+        .checkboxes-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            margin-bottom: 20px;
+        }
+
+        .check-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 11px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: .82rem;
             font-weight: 500;
+            transition: all .12s;
+            user-select: none;
         }
 
-        .chart-tab:hover {
-            background: var(--gray-200);
+        .check-item:hover { border-color: var(--accent); background: var(--accent-light); }
+
+        .check-item.checked {
+            border-color: var(--accent);
+            background: var(--accent-light);
+            color: var(--accent);
         }
 
-        .chart-tab.active {
-            background: var(--primary-color);
-            color: white;
+        .check-item input { display: none; }
+
+        .check-dot {
+            width: 15px; height: 15px;
+            border-radius: 4px;
+            border: 1.5px solid var(--border-2);
+            background: #fff;
+            flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            transition: all .12s;
         }
 
-        /* Otimizações para mobile */
-        @media (max-width: 1400px) {
-            .charts-container {
-                grid-template-columns: 1fr;
-            }
+        .check-item.checked .check-dot {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .check-item.checked .check-dot::after {
+            content: '';
+            width: 6px; height: 4px;
+            border-left: 1.5px solid #fff;
+            border-bottom: 1.5px solid #fff;
+            transform: rotate(-45deg) translateY(-1px);
+            display: block;
+        }
+
+        /* ── PRINT STYLES ── */
+        @media print {
+            .topbar, .filters-card, .modal-backdrop, .toast,
+            .loading-overlay, .btn, .topbar-right { display: none !important; }
+            .main { margin-left: 0; }
+            .content { padding: 12px; }
+            .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+            .charts-grid { grid-template-columns: 1fr; }
+            .chart-card { break-inside: avoid; margin-bottom: 14px; box-shadow: none; border: 1px solid #ddd; }
+        }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 1200px) {
+            .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+            .charts-grid { grid-template-columns: 1fr; }
+            .chart-card.full-width { grid-column: auto; }
         }
 
         @media (max-width: 768px) {
-            body {
-                padding: 20px 15px;
-            }
-
-            .header h1 {
-                font-size: 2rem;
-                flex-direction: column;
-                gap: 10px;
-            }
-
-            .filters-title {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 10px;
-            }
-
-            .filters-controls {
-                margin-left: 0;
-                width: 100%;
-                justify-content: center;
-            }
-
-            .filters-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .filters-actions {
-                flex-direction: column;
-            }
-
-            .metrics-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .chart-card {
-                padding: 20px;
-            }
-
-            .chart-header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 15px;
-            }
-
-            .chart-container {
-                height: 250px;
-            }
-
-            .chart-table {
-                display: block;
-                overflow-x: auto;
-                white-space: nowrap;
-            }
-
-            /* Para mobile, filtros fixos ocupam toda largura */
-            .filters-panel.filters-fixed {
-                left: 15px;
-                right: 15px;
-                max-height: 60vh;
-            }
-
-            /* Otimizações para mobile */
-            .metric-card,
-            .btn,
-            .chart-card,
-            .filters-panel {
-                transition: none !important;
-                transform: none !important;
-            }
-
-            .chart-table tbody tr:hover {
-                transform: none;
-            }
-
-            .metric-card,
-            .chart-card,
-            .filters-panel {
-                box-shadow: var(--shadow-md) !important;
-            }
-
-            .print-selector {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-
-            .print-actions {
-                bottom: 15px;
-                right: 15px;
-                flex-direction: column;
-            }
+            .content { padding: 14px; }
+            .topbar { padding: 0 16px; }
+            .metrics-grid { grid-template-columns: 1fr 1fr; }
+            .filters-row { grid-template-columns: 1fr; }
         }
 
         @media (max-width: 480px) {
-            .header h1 {
-                font-size: 1.8rem;
-            }
-
-            .metric-value {
-                font-size: 2.2rem;
-            }
-
-            .chart-container {
-                height: 200px;
-            }
-
-            .control-btn span {
-                display: none;
-            }
-
-            .control-btn {
-                padding: 8px;
-            }
+            .metrics-grid { grid-template-columns: 1fr; }
         }
 
-        /* Otimizações de performance */
         @media (prefers-reduced-motion: reduce) {
-            *,
-            *::before,
-            *::after {
-                animation-duration: 0.01ms !important;
-                animation-iteration-count: 1 !important;
-                transition-duration: 0.01ms !important;
-            }
+            * { animation-duration: .01ms !important; transition-duration: .01ms !important; }
         }
+
     </style>
 </head>
 <body>
 
-    <div class="container">
-        
-        <!-- Header -->
-        <div class="header">
-            <h1>
-                <i class="fas fa-chart-line"></i>
-                Dashboard de Compras e Produtividade
-            </h1>
-            
-            <div class="header-actions">
-                <button class="btn btn-primary" onclick="openPrintPreview()">
-                    <i class="fas fa-print"></i> Selecionar Gráficos para Impressão
+    <!-- ── MAIN ── -->
+    <div class="main">
+
+        <!-- TOPBAR -->
+        <header class="topbar">
+            <div class="topbar-brand">
+                <div class="topbar-logo"><i class="fas fa-cart-shopping"></i></div>
+                <div class="topbar-left">
+                    <h1>Central de Compras</h1>
+                    <div class="breadcrumb">
+                        Dashboard
+                        <span class="breadcrumb-dot"></span>
+                        {{ periodo_selecionado }}
+                        <span class="breadcrumb-dot"></span>
+                        Atualizado agora
+                    </div>
+                </div>
+            </div>
+            <div class="topbar-right">
+                <button class="btn btn-ghost" onclick="document.getElementById('printModal').classList.add('open')">
+                    <i class="fas fa-print"></i> Imprimir
+                </button>
+                <button class="btn btn-icon" onclick="refreshDashboard()" title="Atualizar dados">
+                    <i class="fas fa-arrows-rotate"></i>
                 </button>
             </div>
-        </div>
+        </header>
 
-        <!-- Controles de Impressão -->
-        <div class="print-controls">
-            <div class="print-selector">
-                <strong>Selecione os gráficos para impressão:</strong>
-                
-                <div class="chart-checkbox" onclick="toggleChartSelection('compradores')">
-                    <input type="checkbox" id="printCompradores" checked>
-                    <label for="printCompradores">Produtividade Compradores</label>
-                </div>
-                
-                <div class="chart-checkbox" onclick="toggleChartSelection('produtosPendentes')">
-                    <input type="checkbox" id="printProdutosPendentes" checked>
-                    <label for="printProdutosPendentes">Produtos Pendentes</label>
-                </div>
-                
-                <div class="chart-checkbox" onclick="toggleChartSelection('volumeEmpresa')">
-                    <input type="checkbox" id="printVolumeEmpresa" checked>
-                    <label for="printVolumeEmpresa">Volume por Empresa</label>
-                </div>
-                
-                <div class="chart-checkbox" onclick="toggleChartSelection('pendenciasEmpresa')">
-                    <input type="checkbox" id="printPendenciasEmpresa" checked>
-                    <label for="printPendenciasEmpresa">Pendências por Empresa</label>
-                </div>
-                
-                <div class="chart-checkbox" onclick="toggleChartSelection('gastosVeiculo')">
-                    <input type="checkbox" id="printGastosVeiculo" checked>
-                    <label for="printGastosVeiculo">Gastos por Veículo</label>
-                </div>
-                
-                <div class="chart-checkbox" onclick="toggleChartSelection('tempoAberto')">
-                    <input type="checkbox" id="printTempoAberto" checked>
-                    <label for="printTempoAberto">Tempo em Aberto</label>
-                </div>
-                
-                <div class="chart-checkbox" onclick="toggleChartSelection('evolucaoCompras')">
-                    <input type="checkbox" id="printEvolucaoCompras" checked>
-                    <label for="printEvolucaoCompras">Evolução de Compras</label>
-                </div>
-                
-                <div class="chart-checkbox" onclick="toggleChartSelection('produtividadeEmpresa')">
-                    <input type="checkbox" id="printProdutividadeEmpresa" checked>
-                    <label for="printProdutividadeEmpresa">Produtividade por Empresa</label>
-                </div>
-                
-                <button class="btn btn-secondary" onclick="selectAllCharts()">
-                    <i class="fas fa-check-square"></i> Selecionar Todos
-                </button>
-                
-                <button class="btn btn-secondary" onclick="deselectAllCharts()">
-                    <i class="fas fa-square"></i> Desmarcar Todos
-                </button>
-            </div>
-        </div>
+        <!-- CONTENT -->
+        <main class="content">
 
-        <!-- Filtros -->
-        <div class="filters-panel" id="filtersPanel">
-            <div class="filters-header">
-                <div class="filters-title">
-                    <i class="fas fa-filter"></i>
-                    Filtros do Dashboard
-                    <div class="filters-controls">
-                        <button class="control-btn" id="toggleFilters" onclick="toggleFilters()" title="Mostrar/ocultar filtros">
-                            <i class="fas fa-chevron-down collapsible-icon"></i>
-                            <span>Ocultar</span>
+            <!-- FILTERS -->
+            <div class="filters-card" id="filtersCard">
+                <div class="filters-card-header">
+                    <h3><i class="fas fa-sliders"></i> Filtros</h3>
+                    <button class="btn btn-ghost" style="padding:5px 10px;font-size:.78rem;" onclick="toggleFilters()">
+                        <i class="fas fa-chevron-up" id="filterToggleIcon"></i>
+                    </button>
+                </div>
+                <div id="filtersBody">
+                    <div class="filters-row">
+                        <div class="filter-group">
+                            <label>Empresa</label>
+                            <select id="empresa" class="filter-select">
+                                <option value="Todas" {% if empresa_selecionada == 'Todas' %}selected{% endif %}>Todas as Empresas</option>
+                                {% for empresa in empresas_filtro %}
+                                    {% if empresa != 'Todas' %}
+                                    <option value="{{ empresa }}" {% if empresa_selecionada == empresa %}selected{% endif %}>{{ empresa }}</option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Período</label>
+                            <select id="periodo" class="filter-select">
+                                <option value="Últimos 30 dias" {% if periodo_selecionado == 'Últimos 30 dias' %}selected{% endif %}>Últimos 30 dias</option>
+                                <option value="Últimos 6 meses" {% if periodo_selecionado == 'Últimos 6 meses' %}selected{% endif %}>Últimos 6 meses</option>
+                                <option value="2025" {% if periodo_selecionado == '2025' %}selected{% endif %}>2025</option>
+                                <option value="2024" {% if periodo_selecionado == '2024' %}selected{% endif %}>2024</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Status</label>
+                            <select id="status" class="filter-select">
+                                <option value="Todos" {% if status_selecionado == 'Todos' %}selected{% endif %}>Todos os Status</option>
+                                <option value="Pendente" {% if status_selecionado == 'Pendente' %}selected{% endif %}>Pendente</option>
+                                <option value="Aprovado" {% if status_selecionado == 'Aprovado' %}selected{% endif %}>Aprovado</option>
+                                <option value="Reprovado" {% if status_selecionado == 'Reprovado' %}selected{% endif %}>Reprovado</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Comprador</label>
+                            <select id="comprador" class="filter-select">
+                                <option value="Todos" {% if comprador_selecionado == 'Todos' %}selected{% endif %}>Todos</option>
+                                {% for comprador in compradores_filtro %}
+                                    {% if comprador != 'Todos' %}
+                                    <option value="{{ comprador }}" {% if comprador_selecionado == comprador %}selected{% endif %}>{{ comprador }}</option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Buscar</label>
+                            <input type="text" id="busca" class="filter-input" placeholder="Material, empresa…" onkeyup="filtrarTabelas()">
+                        </div>
+                    </div>
+                    <div class="filters-actions-row">
+                        <button class="btn btn-primary" onclick="aplicarFiltros()">
+                            <i class="fas fa-check"></i> Aplicar
                         </button>
-                        <button class="control-btn warning" id="lockFilters" onclick="toggleFixedFilters()" title="Fixar/desfixar filtros na tela">
-                            <i class="fas fa-thumbtack"></i>
-                            <span>Fixar</span>
+                        <button class="btn btn-ghost" onclick="resetarFiltros()">
+                            <i class="fas fa-undo"></i> Limpar
                         </button>
                     </div>
                 </div>
-                <div class="filters-count">
-                    <span class="badge badge-info">{{ total_solicitacoes }} solicitações</span>
-                </div>
             </div>
-            
-            <div class="filters-grid" id="filtersGrid">
-                <div class="filter-group">
-                    <label for="empresa"><i class="fas fa-building"></i> Empresa</label>
-                    <select id="empresa" class="filter-select">
-                        <option value="Todas" {% if empresa_selecionada == 'Todas' %}selected{% endif %}>Todas as Empresas</option>
-                        {% for empresa in empresas_filtro %}
-                            {% if empresa != 'Todas' %}
-                            <option value="{{ empresa }}" {% if empresa_selecionada == empresa %}selected{% endif %}>{{ empresa }}</option>
-                            {% endif %}
-                        {% endfor %}
-                    </select>
-                </div>
-                
-                <div class="filter-group">
-                    <label for="periodo"><i class="fas fa-calendar-alt"></i> Período</label>
-                    <select id="periodo" class="filter-select">
-                        <option value="Últimos 30 dias" {% if periodo_selecionado == 'Últimos 30 dias' %}selected{% endif %}>Últimos 30 dias</option>
-                        <option value="Últimos 6 meses" {% if periodo_selecionado == 'Últimos 6 meses' %}selected{% endif %}>Últimos 6 meses</option>
-                        <option value="2025" {% if periodo_selecionado == '2025' %}selected{% endif %}>2025</option>
-                        <option value="2024" {% if periodo_selecionado == '2024' %}selected{% endif %}>2024</option>
-                    </select>
-                </div>
-                
-                <div class="filter-group">
-                    <label for="status"><i class="fas fa-tasks"></i> Status</label>
-                    <select id="status" class="filter-select">
-                        <option value="Todos" {% if status_selecionado == 'Todos' %}selected{% endif %}>Todos os Status</option>
-                        <option value="Pendente" {% if status_selecionado == 'Pendente' %}selected{% endif %}>Pendente</option>
-                        <option value="Aprovado" {% if status_selecionado == 'Aprovado' %}selected{% endif %}>Aprovado</option>
-                        <option value="Reprovado" {% if status_selecionado == 'Reprovado' %}selected{% endif %}>Reprovado</option>
-                    </select>
-                </div>
-                
-                <div class="filter-group">
-                    <label for="comprador"><i class="fas fa-user-tie"></i> Comprador</label>
-                    <select id="comprador" class="filter-select">
-                        <option value="Todos" {% if comprador_selecionado == 'Todos' %}selected{% endif %}>Todos os Compradores</option>
-                        {% for comprador in compradores_filtro %}
-                            {% if comprador != 'Todos' %}
-                            <option value="{{ comprador }}" {% if comprador_selecionado == comprador %}selected{% endif %}>{{ comprador }}</option>
-                            {% endif %}
-                        {% endfor %}
-                    </select>
-                </div>
-                
-                <div class="filter-group filter-search">
-                    <label for="busca"><i class="fas fa-search"></i> Buscar</label>
-                    <input type="text" id="busca" placeholder="Pesquisar solicitações..." onkeyup="filtrarTabelas()">
-                    <i class="fas fa-search"></i>
-                </div>
-            </div>
-            
-            <div class="filters-actions" id="filtersActions">
-                <button class="btn btn-secondary" onclick="resetarFiltros()">
-                    <i class="fas fa-undo"></i> Limpar Filtros
-                </button>
-                <button class="btn btn-primary" onclick="aplicarFiltros()">
-                    <i class="fas fa-check-circle"></i> Aplicar Filtros
-                </button>
-                <button class="btn btn-secondary btn-icon" onclick="refreshDashboard()" title="Atualizar">
-                    <i class="fas fa-sync-alt"></i>
-                </button>
-            </div>
-        </div>
 
-        <!-- Métricas Principais -->
-        <div class="metrics-grid">
-            <div class="metric-card">
-                <div class="metric-icon primary">
-                    <i class="fas fa-file-alt"></i>
+            <!-- ── KPI CARDS ── -->
+            <div class="section-label">Indicadores do período</div>
+            <div class="metrics-grid">
+
+                <div class="metric-card">
+                    <div class="card-accent accent-blue"></div>
+                    <div class="metric-header">
+                        <span class="metric-label">Total de Solicitações</span>
+                        <span class="metric-icon icon-blue"><i class="fas fa-file-lines"></i></span>
+                    </div>
+                    <div class="metric-value">{{ total_solicitacoes }}</div>
+                    <div class="metric-sub">{{ periodo_selecionado }}</div>
+                    <div class="metric-bar">
+                        <div class="metric-bar-fill fill-blue" style="width: {% if total_solicitacoes > 0 %}{{ [((aprovadas / total_solicitacoes) * 100)|round(0)|int, 100]|min }}{% else %}0{% endif %}%"></div>
+                    </div>
+                    <span class="metric-tag tag-neutral"><i class="fas fa-circle-info"></i> {{ aprovadas }} aprovadas</span>
                 </div>
-                <h4>Total de Solicitações</h4>
-                <div class="metric-value">{{ total_solicitacoes }}</div>
-                <div class="metric-subvalue">Período: {{ periodo_selecionado }}</div>
-                <div class="progress-bar">
-                    <div class="progress-fill success" style="width: {% if total_solicitacoes > 0 %}{{ (aprovadas / total_solicitacoes * 100) }}{% else %}0{% endif %}%"></div>
-                </div>
-                <div class="metric-trend trend-up">
-                    <i class="fas fa-arrow-up"></i>
-                    <span>12% vs período anterior</span>
-                </div>
-            </div>
-            
-            <div class="metric-card">
-                <div class="metric-icon success">
-                    <i class="fas fa-check-circle"></i>
-                </div>
-                <h4>Taxa de Aprovação</h4>
-                <div class="metric-value">
+
+                <div class="metric-card">
+                    <div class="card-accent accent-green"></div>
+                    <div class="metric-header">
+                        <span class="metric-label">Taxa de Aprovação</span>
+                        <span class="metric-icon icon-green"><i class="fas fa-circle-check"></i></span>
+                    </div>
+                    <div class="metric-value">
+                        {% if total_solicitacoes > 0 %}{{ ((aprovadas / total_solicitacoes) * 100)|round(1) }}%{% else %}0%{% endif %}
+                    </div>
+                    <div class="metric-sub">{{ aprovadas }} de {{ total_solicitacoes }} solicitações</div>
+                    <div class="metric-bar">
+                        <div class="metric-bar-fill fill-green" style="width: {% if total_solicitacoes > 0 %}{{ [((aprovadas / total_solicitacoes) * 100)|round(0)|int, 100]|min }}{% else %}0{% endif %}%"></div>
+                    </div>
                     {% if total_solicitacoes > 0 %}
-                        {{ ((aprovadas / total_solicitacoes) * 100)|round(1) }}%
-                    {% else %}
-                        0%
+                        {% set taxa = ((aprovadas / total_solicitacoes) * 100)|round(1) %}
+                        <span class="metric-tag {% if taxa >= 75 %}tag-up{% elif taxa >= 50 %}tag-warn{% else %}tag-down{% endif %}">
+                            <i class="fas fa-{% if taxa >= 75 %}arrow-trend-up{% elif taxa >= 50 %}minus{% else %}arrow-trend-down{% endif %}"></i>
+                            {% if taxa >= 75 %}Bom desempenho{% elif taxa >= 50 %}Atenção{% else %}Abaixo da meta{% endif %}
+                        </span>
                     {% endif %}
                 </div>
-                <div class="metric-subvalue">{{ aprovadas }} aprovadas de {{ total_solicitacoes }}</div>
-                <div class="progress-bar">
-                    <div class="progress-fill success" style="width: {% if total_solicitacoes > 0 %}{{ (aprovadas / total_solicitacoes * 100) }}{% else %}0{% endif %}%"></div>
-                </div>
-            </div>
-            
-            <div class="metric-card">
-                <div class="metric-icon warning">
-                    <i class="fas fa-clock"></i>
-                </div>
-                <h4>Pendentes Críticos</h4>
-                <div class="metric-value">{{ pendentes }}</div>
-                <div class="metric-subvalue">{{ tempo_medio_aprovacao }} dias (média aprovação)</div>
-                <div class="progress-bar">
-                    <div class="progress-fill warning" style="width: {% if total_solicitacoes > 0 %}{{ (pendentes / total_solicitacoes * 100) }}{% else %}0{% endif %}%"></div>
-                </div>
-                <div class="metric-trend trend-down">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    <span>Necessita atenção</span>
-                </div>
-            </div>
-            
-            <div class="metric-card">
-                <div class="metric-icon danger">
-                    <i class="fas fa-money-bill-wave"></i>
-                </div>
-                <h4>Valor Total</h4>
-                <div class="metric-value">{{ valor_total }}</div>
-                <div class="metric-subvalue">Média: {{ valor_medio_por_solicitacao }}</div>
-                <div class="progress-bar">
-                    <div class="progress-fill danger" style="width: 85%"></div>
-                </div>
-                <div class="metric-trend trend-up">
-                    <i class="fas fa-arrow-up"></i>
-                    <span>R$ 45.2K vs mês anterior</span>
-                </div>
-            </div>
-        </div>
 
-        <!-- Gráficos -->
-        <div class="charts-container">
-            
-            <!-- 1. Produtividade dos Compradores -->
-            <div class="chart-card" id="chartCardCompradores">
-                <div class="chart-header">
-                    <div class="chart-title">
-                        <i class="fas fa-users"></i>
-                        Produtividade dos Compradores
+                <div class="metric-card">
+                    <div class="card-accent accent-amber"></div>
+                    <div class="metric-header">
+                        <span class="metric-label">Pendentes</span>
+                        <span class="metric-icon icon-amber"><i class="fas fa-clock"></i></span>
                     </div>
-                    <div class="chart-tabs">
-                        <div class="chart-tab active" onclick="trocarVisualizacao(this, 'compradores')">Barras</div>
-                        <div class="chart-tab" onclick="trocarVisualizacao(this, 'compradores')">Linhas</div>
-                        <div class="chart-tab" onclick="trocarVisualizacao(this, 'compradores')">Tabela</div>
+                    <div class="metric-value">{{ pendentes }}</div>
+                    <div class="metric-sub">Tempo médio: {{ tempo_medio_aprovacao }} dias</div>
+                    <div class="metric-bar">
+                        <div class="metric-bar-fill fill-amber" style="width: {% if total_solicitacoes > 0 %}{{ [((pendentes / total_solicitacoes) * 100)|round(0)|int, 100]|min }}{% else %}0{% endif %}%"></div>
+                    </div>
+                    {% if pendentes > 0 %}
+                    <span class="metric-tag tag-warn"><i class="fas fa-triangle-exclamation"></i> Requer atenção</span>
+                    {% else %}
+                    <span class="metric-tag tag-up"><i class="fas fa-check"></i> Em dia</span>
+                    {% endif %}
+                </div>
+
+                <div class="metric-card">
+                    <div class="card-accent accent-violet"></div>
+                    <div class="metric-header">
+                        <span class="metric-label">Valor Total</span>
+                        <span class="metric-icon icon-violet"><i class="fas fa-circle-dollar-to-slot"></i></span>
+                    </div>
+                    <div class="metric-value" style="font-size:1.5rem;">{{ valor_total }}</div>
+                    <div class="metric-sub">Média por solicitação: {{ valor_medio_por_solicitacao }}</div>
+                    <div class="metric-bar">
+                        <div class="metric-bar-fill" style="width:82%;background:var(--violet)"></div>
+                    </div>
+                    <span class="metric-tag tag-neutral"><i class="fas fa-building"></i> {{ empresa_selecionada }}</span>
+                </div>
+            </div>
+
+            <!-- ── CHARTS ── -->
+            <div class="section-label">Análises e Gráficos</div>
+            <div class="charts-grid">
+
+                <!-- 1. Produtividade dos Compradores -->
+                <div class="chart-card" id="chartCardCompradores">
+                    <div class="chart-card-header">
+                        <div class="chart-title-wrap">
+                            <div class="chart-icon icon-blue"><i class="fas fa-users"></i></div>
+                            <div>
+                                <div class="chart-title">Produtividade dos Compradores</div>
+                                <div class="chart-sub">Aprovadas × Pendentes × Tempo médio</div>
+                            </div>
+                        </div>
+                        <span class="badge badge-blue">{{ compradores_produtividade|length }} compradores</span>
+                    </div>
+                    <div class="chart-canvas-wrap"><canvas id="chartCompradores"></canvas></div>
+                    <div class="table-wrap">
+                        <table class="data-table" id="tableCompradores">
+                            <thead><tr><th>Comprador</th><th>Pendentes</th><th>Aprovadas</th><th>Taxa</th><th>Valor</th><th>Tempo</th></tr></thead>
+                            <tbody>
+                                {% for c in compradores_produtividade %}
+                                <tr>
+                                    <td><strong>{{ c.nome }}</strong></td>
+                                    <td><span class="badge badge-amber">{{ c.pendentes }}</span></td>
+                                    <td><span class="badge badge-green">{{ c.aprovadas }}</span></td>
+                                    <td>
+                                        <div class="mini-bar">
+                                            <div class="mini-bar-track"><div class="mini-bar-fill" style="width:{{ c.taxa_aprovacao }}%"></div></div>
+                                            <span class="mini-bar-pct">{{ c.taxa_aprovacao }}%</span>
+                                        </div>
+                                    </td>
+                                    <td>{{ formatar_valor(c.valor_total) }}</td>
+                                    <td>{{ c.tempo_medio_dias }}d</span></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
-                <div class="chart-container">
-                    <canvas id="chartCompradores"></canvas>
-                </div>
-                <div class="chart-legend" id="legendCompradores"></div>
-                <table class="chart-table" id="tableCompradores">
-                    <thead>
-                        <tr>
-                            <th>Comprador</th>
-                            <th>Pendentes</th>
-                            <th>Aprovadas</th>
-                            <th>Taxa</th>
-                            <th>Valor</th>
-                            <th>Tempo Médio</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for comprador in compradores_produtividade %}
-                        <tr>
-                            <td><strong>{{ comprador.nome }}</strong></td>
-                            <td><span class="badge badge-warning">{{ comprador.pendentes }}</span></td>
-                            <td><span class="badge badge-success">{{ comprador.aprovadas }}</span></td>
-                            <td>
-                                <div class="progress-bar">
-                                    <div class="progress-fill success" style="width: {{ comprador.taxa_aprovacao }}%"></div>
-                                </div>
-                                {{ comprador.taxa_aprovacao }}%
-                            </td>
-                            <td>{{ formatar_valor(comprador.valor_total) }}</td>
-                            <td>{{ comprador.tempo_medio_dias }} dias</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
 
-            <!-- 2. Produtos Pendentes -->
-            <div class="chart-card" id="chartCardProdutosPendentes">
-                <div class="chart-header">
-                    <div class="chart-title">
-                        <i class="fas fa-box-open"></i>
-                        Produtos Pendentes
+                <!-- 2. Produtos Pendentes -->
+                <div class="chart-card" id="chartCardProdutosPendentes">
+                    <div class="chart-card-header">
+                        <div class="chart-title-wrap">
+                            <div class="chart-icon" style="background:var(--red-light);color:var(--red)"><i class="fas fa-box-open"></i></div>
+                            <div>
+                                <div class="chart-title">Produtos Pendentes</div>
+                                <div class="chart-sub">Itens aguardando cotação/aprovação</div>
+                            </div>
+                        </div>
+                        <span class="badge badge-red">Prioridade</span>
                     </div>
-                    <span class="chart-badge badge-priority">Prioridade Crítica</span>
-                </div>
-                <div class="chart-container">
-                    <canvas id="chartProdutosPendentes"></canvas>
-                </div>
-                <table class="chart-table" id="tableProdutosPendentes">
-                    <thead>
-                        <tr>
-                            <th>Produto</th>
-                            <th>Quantidade</th>
-                            <th>Valor Est.</th>
-                            <th>Empresa</th>
-                            <th>Dias Pend.</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for produto in produtos_pendentes %}
-                        <tr>
-                            <td>{{ produto.produto }}</td>
-                            <td>{{ produto.quantidade }}</td>
-                            <td>{{ formatar_valor(produto.valor_total) }}</td>
-                            <td>{{ produto.empresa }}</td>
-                            <td>
-                                <span class="badge badge-priority">{{ produto.dias_pendente }} dias</span>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- 3. Volume de Compras por Empresa -->
-            <div class="chart-card" id="chartCardVolumeEmpresa">
-                <div class="chart-header">
-                    <div class="chart-title">
-                        <i class="fas fa-shopping-cart"></i>
-                        Volume de Compras por Empresa
+                    <div class="chart-canvas-wrap"><canvas id="chartProdutosPendentes"></canvas></div>
+                    <div class="table-wrap">
+                        <table class="data-table" id="tableProdutosPendentes">
+                            <thead><tr><th>Produto</th><th>Qtd</th><th>Valor Est.</th><th>Empresa</th><th>Dias</th></tr></thead>
+                            <tbody>
+                                {% for p in produtos_pendentes %}
+                                <tr>
+                                    <td>{{ p.produto }}</td>
+                                    <td>{{ p.quantidade }}</td>
+                                    <td>{{ formatar_valor(p.valor_total) }}</td>
+                                    <td>{{ p.empresa }}</td>
+                                    <td><span class="badge badge-red">{{ p.dias_pendente }}d</span></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
                     </div>
-                    <span class="chart-badge badge-info">Crescimento</span>
                 </div>
-                <div class="chart-container">
-                    <canvas id="chartVolumeEmpresa"></canvas>
-                </div>
-                <table class="chart-table" id="tableVolumeEmpresa">
-                    <thead>
-                        <tr>
-                            <th>Empresa</th>
-                            <th>Volume</th>
-                            <th>Valor Total</th>
-                            <th>Crescimento</th>
-                            <th>%</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for empresa in volume_empresa %}
-                        <tr>
-                            <td>{{ empresa.empresa }}</td>
-                            <td>{{ empresa.volume }}</td>
-                            <td>{{ formatar_valor(empresa.valor_total) }}</td>
-                            <td>
-                                <span class="metric-trend {% if empresa.crescimento > 0 %}trend-up{% elif empresa.crescimento < 0 %}trend-down{% else %}trend-neutral{% endif %}">
-                                    {% if empresa.crescimento > 0 %}<i class="fas fa-arrow-up"></i>{% elif empresa.crescimento < 0 %}<i class="fas fa-arrow-down"></i>{% else %}<i class="fas fa-minus"></i>{% endif %}
-                                    {{ empresa.crescimento }}%
-                                </span>
-                            </td>
-                            <td>{{ empresa.porcentagem }}%</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
 
-            <!-- 4. Pendências por Empresa -->
-            <div class="chart-card" id="chartCardPendenciasEmpresa">
-                <div class="chart-header">
-                    <div class="chart-title">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        Pendências por Empresa
+                <!-- 3. Volume por Empresa -->
+                <div class="chart-card" id="chartCardVolumeEmpresa">
+                    <div class="chart-card-header">
+                        <div class="chart-title-wrap">
+                            <div class="chart-icon icon-violet"><i class="fas fa-chart-pie"></i></div>
+                            <div>
+                                <div class="chart-title">Volume de Compras por Empresa</div>
+                                <div class="chart-sub">Participação e crescimento</div>
+                            </div>
+                        </div>
+                        <span class="badge badge-violet">{{ volume_empresa|length }} empresas</span>
                     </div>
-                    <span class="chart-badge badge-warning">Atenção Necessária</span>
-                </div>
-                <div class="chart-container">
-                    <canvas id="chartPendenciasEmpresa"></canvas>
-                </div>
-                <table class="chart-table" id="tablePendenciasEmpresa">
-                    <thead>
-                        <tr>
-                            <th>Empresa</th>
-                            <th>Pendências</th>
-                            <th>Tempo Médio</th>
-                            <th>Valor Pendente</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for empresa in pendencias_empresa %}
-                        <tr>
-                            <td>{{ empresa.empresa }}</td>
-                            <td>
-                                <span class="badge badge-warning">{{ empresa.pendencias }}</span>
-                            </td>
-                            <td>{{ empresa.tempo_medio_dias }} dias</td>
-                            <td>{{ formatar_valor(empresa.valor_pendente) }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- 5. Gastos por Veículo -->
-            <div class="chart-card" id="chartCardGastosVeiculo">
-                <div class="chart-header">
-                    <div class="chart-title">
-                        <i class="fas fa-money-bill-wave"></i>
-                        Maior Volume de Gastos por Veículo
+                    <div class="chart-canvas-wrap"><canvas id="chartVolumeEmpresa"></canvas></div>
+                    <div class="table-wrap">
+                        <table class="data-table" id="tableVolumeEmpresa">
+                            <thead><tr><th>Empresa</th><th>Volume</th><th>Valor Total</th><th>Crescimento</th><th>%</th></tr></thead>
+                            <tbody>
+                                {% for e in volume_empresa %}
+                                <tr>
+                                    <td>{{ e.empresa }}</td>
+                                    <td>{{ e.volume }}</td>
+                                    <td>{{ formatar_valor(e.valor_total) }}</td>
+                                    <td>
+                                        <span class="metric-tag {% if e.crescimento > 0 %}tag-up{% elif e.crescimento < 0 %}tag-down{% else %}tag-neutral{% endif %}">
+                                            {% if e.crescimento > 0 %}<i class="fas fa-arrow-up"></i>{% elif e.crescimento < 0 %}<i class="fas fa-arrow-down"></i>{% else %}<i class="fas fa-minus"></i>{% endif %}
+                                            {{ e.crescimento }}%
+                                        </span>
+                                    </td>
+                                    <td>{{ e.porcentagem }}%</span></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
                     </div>
-                    <span class="chart-badge badge-info">Top {{ gastos_veiculo|length }}</span>
                 </div>
-                <div class="chart-container">
-                    <canvas id="chartGastosVeiculo"></canvas>
-                </div>
-                <table class="chart-table" id="tableGastosVeiculo">
-                    <thead>
-                        <tr>
-                            <th>Veículo</th>
-                            <th>Valor Total</th>
-                            <th>Solicitações</th>
-                            <th>Itens</th>
-                            <th>Média/Item</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for veiculo in gastos_veiculo %}
-                        <tr>
-                            <td>{{ veiculo.veiculo }}</td>
-                            <td>{{ formatar_valor(veiculo.valor_total) }}</td>
-                            <td>{{ veiculo.solicitacoes }}</td>
-                            <td>{{ veiculo.itens_total }}</td>
-                            <td>{{ formatar_valor(veiculo.valor_medio_por_item) }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
 
-            <!-- 6. Solicitações com Maior Tempo em Aberto -->
-            <div class="chart-card" id="chartCardTempoAberto">
-                <div class="chart-header">
-                    <div class="chart-title">
-                        <i class="fas fa-clock"></i>
-                        Solicitações com Maior Tempo em Aberto
+                <!-- 4. Pendências por Empresa -->
+                <div class="chart-card" id="chartCardPendenciasEmpresa">
+                    <div class="chart-card-header">
+                        <div class="chart-title-wrap">
+                            <div class="chart-icon" style="background:var(--amber-light);color:var(--amber)"><i class="fas fa-triangle-exclamation"></i></div>
+                            <div>
+                                <div class="chart-title">Pendências por Empresa</div>
+                                <div class="chart-sub">Solicitações em aberto</div>
+                            </div>
+                        </div>
+                        <span class="badge badge-amber">Atenção</span>
                     </div>
-                    <span class="chart-badge badge-priority">Urgente</span>
-                </div>
-                <div class="chart-container">
-                    <canvas id="chartTempoAberto"></canvas>
-                </div>
-                <table class="chart-table" id="tableTempoAberto">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Material</th>
-                            <th>Dias</th>
-                            <th>Prioridade</th>
-                            <th>Empresa</th>
-                            <th>Comprador</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for solicitacao in tempo_aberto %}
-                        <tr>
-                            <td>
-                                <a href="/preencher_solicitacao/{{ solicitacao.id }}" target="_blank" class="badge badge-info">
-                                    #{{ solicitacao.id }}
-                                </a>
-                            </td>
-                            <td>{{ solicitacao.material }}</td>
-                            <td>
-                                <span class="badge badge-priority">{{ solicitacao.dias_aberto }} dias</span>
-                            </td>
-                            <td>{{ solicitacao.prioridade }}</td>
-                            <td>{{ solicitacao.empresa }}</td>
-                            <td>{{ solicitacao.comprador }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- 7. Evolução de Compras nos Últimos Meses -->
-            <div class="chart-card" id="chartCardEvolucaoCompras">
-                <div class="chart-header">
-                    <div class="chart-title">
-                        <i class="fas fa-chart-line"></i>
-                        Evolução de Compras
+                    <div class="chart-canvas-wrap"><canvas id="chartPendenciasEmpresa"></canvas></div>
+                    <div class="table-wrap">
+                        <table class="data-table" id="tablePendenciasEmpresa">
+                            <thead><tr><th>Empresa</th><th>Pendências</th><th>Tempo Médio</th><th>Valor Pendente</th></tr></thead>
+                            <tbody>
+                                {% for e in pendencias_empresa %}
+                                <tr>
+                                    <td>{{ e.empresa }}</td>
+                                    <td><span class="badge badge-amber">{{ e.pendencias }}</span></td>
+                                    <td>{{ e.tempo_medio_dias }}d</span></td>
+                                    <td>{{ formatar_valor(e.valor_pendente) }}</span></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
                     </div>
-                    <span class="chart-badge badge-info">Últimos {{ evolucao_meses_labels|length }} meses</span>
                 </div>
-                <div class="chart-container">
-                    <canvas id="chartEvolucaoCompras"></canvas>
-                </div>
-                <table class="chart-table" id="tableEvolucaoCompras">
-                    <thead>
-                        <tr>
-                            <th>Empresa</th>
-                            {% for mes in evolucao_meses_labels %}
-                            <th>{{ mes }}</th>
-                            {% endfor %}
-                            <th>Tendência</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for empresa, dados in evolucao_compras.items() %}
-                        <tr>
-                            <td><strong>{{ empresa }}</strong></td>
-                            {% for valor in dados %}
-                            <td>{{ valor }}</td>
-                            {% endfor %}
-                            <td>
-                                {% if dados and dados|length > 1 %}
-                                    {% set ultimo = dados|last %}
-                                    {% set penultimo = dados[-2] %}
-                                    {% if penultimo > 0 %}
-                                        {% set variacao = ((ultimo - penultimo) / penultimo * 100) %}
-                                    {% else %}
-                                        {% set variacao = 100 %}
-                                    {% endif %}
-                                {% else %}
-                                    {% set variacao = 0 %}
-                                {% endif %}
-                                <span class="metric-trend {% if variacao > 0 %}trend-up{% elif variacao < 0 %}trend-down{% else %}trend-neutral{% endif %}">
-                                    {% if variacao > 0 %}<i class="fas fa-arrow-up"></i>{% elif variacao < 0 %}<i class="fas fa-arrow-down"></i>{% else %}<i class="fas fa-minus"></i>{% endif %}
-                                    {{ variacao|round(1) }}%
-                                </span>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
 
-            <!-- 8. Produtividade Geral por Empresa -->
-            <div class="chart-card" id="chartCardProdutividadeEmpresa">
-                <div class="chart-header">
-                    <div class="chart-title">
-                        <i class="fas fa-trophy"></i>
-                        Produtividade Geral por Empresa
+                <!-- 5. Gastos por Veículo -->
+                <div class="chart-card" id="chartCardGastosVeiculo">
+                    <div class="chart-card-header">
+                        <div class="chart-title-wrap">
+                            <div class="chart-icon" style="background:#ede9fe;color:#7c3aed"><i class="fas fa-truck"></i></div>
+                            <div>
+                                <div class="chart-title">Maior Volume de Gastos por Veículo</div>
+                                <div class="chart-sub">Top {{ gastos_veiculo|length }} aplicações</div>
+                            </div>
+                        </div>
+                        <span class="badge badge-violet">Top {{ gastos_veiculo|length }}</span>
                     </div>
-                    <span class="chart-badge badge-success">Desempenho</span>
+                    <div class="chart-canvas-wrap"><canvas id="chartGastosVeiculo"></canvas></div>
+                    <div class="table-wrap">
+                        <table class="data-table" id="tableGastosVeiculo">
+                            <thead><tr><th>Veículo</th><th>Valor Total</th><th>Solicitações</th><th>Itens</th><th>Média/Item</th></tr></thead>
+                            <tbody>
+                                {% for v in gastos_veiculo %}
+                                <tr>
+                                    <td>{{ v.veiculo }}</span></td>
+                                    <td>{{ formatar_valor(v.valor_total) }}</span></td>
+                                    <td>{{ v.solicitacoes }}</span></td>
+                                    <td>{{ v.itens_total }}</span></td>
+                                    <td>{{ formatar_valor(v.valor_medio_por_item) }}</span></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-                <div class="chart-container">
-                    <canvas id="chartProdutividadeEmpresa"></canvas>
+
+                <!-- 6. Tempo em Aberto -->
+                <div class="chart-card" id="chartCardTempoAberto">
+                    <div class="chart-card-header">
+                        <div class="chart-title-wrap">
+                            <div class="chart-icon" style="background:var(--red-light);color:var(--red)"><i class="fas fa-hourglass-half"></i></div>
+                            <div>
+                                <div class="chart-title">Maior Tempo em Aberto</div>
+                                <div class="chart-sub">Solicitações críticas sem resposta</div>
+                            </div>
+                        </div>
+                        <span class="badge badge-red">Urgente</span>
+                    </div>
+                    <div class="chart-canvas-wrap"><canvas id="chartTempoAberto"></canvas></div>
+                    <div class="table-wrap">
+                        <table class="data-table" id="tableTempoAberto">
+                            <thead><tr><th>ID</th><th>Material</th><th>Dias</th><th>Prioridade</th><th>Empresa</th><th>Comprador</th></tr></thead>
+                            <tbody>
+                                {% for s in tempo_aberto %}
+                                <tr>
+                                    <td><a href="/preencher_solicitacao/{{ s.id }}" target="_blank" class="link-id">#{{ s.id }}</a></span></td>
+                                    <td>{{ s.material }}</td>
+                                    <td><span class="badge badge-red">{{ s.dias_aberto }}d</td>
+                                    <td>{{ s.prioridade }}</td>
+                                    <td>{{ s.empresa }}</td>
+                                    <td>{{ s.comprador }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-                <table class="chart-table" id="tableProdutividadeEmpresa">
-                    <thead>
-                        <tr>
-                            <th>Empresa</th>
-                            <th>Compradores</th>
-                            <th>Solicitações</th>
-                            <th>Aprovadas</th>
-                            <th>Taxa</th>
-                            <th>Tempo Médio</th>
-                            <th>Valor Total</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for empresa in produtividade_geral %}
-                        <tr>
-                            <td><strong>{{ empresa.empresa }}</strong></td>
-                            <td>{{ empresa.compradores }}</td>
-                            <td>{{ empresa.solicitacoes }}</td>
-                            <td><span class="badge badge-success">{{ empresa.aprovadas }}</span></td>
-                            <td>
-                                <div class="progress-bar">
-                                    <div class="progress-fill success" style="width: {{ empresa.taxa_aprovacao }}%"></div>
-                                </div>
-                                {{ empresa.taxa_aprovacao }}%
-                            </td>
-                            <td>{{ empresa.tempo_medio_dias }} dias</td>
-                            <td>{{ formatar_valor(empresa.valor_total) }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
 
-    </div>
+                <!-- 7. Evolução de Compras — Full Width -->
+                <div class="chart-card full-width" id="chartCardEvolucaoCompras">
+                    <div class="chart-card-header">
+                        <div class="chart-title-wrap">
+                            <div class="chart-icon icon-blue"><i class="fas fa-chart-line"></i></div>
+                            <div>
+                                <div class="chart-title">Evolução de Compras</div>
+                                <div class="chart-sub">Últimos {{ evolucao_meses_labels|length }} meses por empresa</div>
+                            </div>
+                        </div>
+                        <span class="badge badge-blue">{{ evolucao_meses_labels|length }} meses</span>
+                    </div>
+                    <div class="chart-canvas-wrap" style="height:300px"><canvas id="chartEvolucaoCompras"></canvas></div>
+                    <div class="table-wrap">
+                        <table class="data-table" id="tableEvolucaoCompras">
+                            <thead>
+                                <tr>
+                                    <th>Empresa</th>
+                                    {% for mes in evolucao_meses_labels %}<th>{{ mes }}</th>{% endfor %}
+                                    <th>Tendência</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for empresa, dados in evolucao_compras.items() %}
+                                <tr>
+                                    <td><strong>{{ empresa }}</strong></td>
+                                    {% for valor in dados %}<td>{{ valor }}</span>{% endfor %}
+                                    <td>
+                                        {% if dados and dados|length > 1 %}
+                                            {% set ultimo = dados|last %}
+                                            {% set penultimo = dados[-2] %}
+                                            {% set variacao = ((ultimo - penultimo) / penultimo * 100)|round(1) if penultimo > 0 else 100 %}
+                                        {% else %}
+                                            {% set variacao = 0 %}
+                                        {% endif %}
+                                        <span class="metric-tag {% if variacao > 0 %}tag-up{% elif variacao < 0 %}tag-down{% else %}tag-neutral{% endif %}">
+                                            {% if variacao > 0 %}<i class="fas fa-arrow-up"></i>{% elif variacao < 0 %}<i class="fas fa-arrow-down"></i>{% else %}<i class="fas fa-minus"></i>{% endif %}
+                                            {{ variacao }}%
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
 
-    <!-- Modal de Preview de Impressão -->
-    <div class="print-preview-modal" id="printPreviewModal">
-        <div class="print-preview-container" id="printPreviewContainer">
-            <div class="print-preview-header">
-                <h2>Dashboard de Compras e Produtividade</h2>
-                <p class="date">Período: {{ periodo_selecionado }} | Data: <span id="currentDate"></span></p>
-                <p>Geração: {{ total_solicitacoes }} solicitações | Valor Total: {{ valor_total }}</p>
+                <!-- 8. Produtividade Geral por Empresa -->
+                <div class="chart-card full-width" id="chartCardProdutividadeEmpresa">
+                    <div class="chart-card-header">
+                        <div class="chart-title-wrap">
+                            <div class="chart-icon icon-green"><i class="fas fa-trophy"></i></div>
+                            <div>
+                                <div class="chart-title">Produtividade Geral por Empresa</div>
+                                <div class="chart-sub">Taxa de aprovação, volume e tempo médio</div>
+                            </div>
+                        </div>
+                        <span class="badge badge-green">Desempenho</span>
+                    </div>
+                    <div style="display:grid;grid-template-columns:280px 1fr;gap:20px;align-items:start">
+                        <div class="chart-canvas-wrap" style="height:240px"><canvas id="chartProdutividadeEmpresa"></canvas></div>
+                        <div class="table-wrap">
+                            <table class="data-table" id="tableProdutividadeEmpresa">
+                                <thead><tr><th>Empresa</th><th>Compradores</th><th>Solicitações</th><th>Aprovadas</th><th>Taxa</th><th>Tempo Médio</th><th>Valor Total</th></tr></thead>
+                                <tbody>
+                                    {% for e in produtividade_geral %}
+                                    <tr>
+                                        <td><strong>{{ e.empresa }}</strong></td>
+                                        <td>{{ e.compradores }}</span></td>
+                                        <td>{{ e.solicitacoes }}</span></td>
+                                        <td><span class="badge badge-green">{{ e.aprovadas }}</td>
+                                        <td>
+                                            <div class="mini-bar">
+                                                <div class="mini-bar-track"><div class="mini-bar-fill" style="width:{{ e.taxa_aprovacao }}%"></div></div>
+                                                <span class="mini-bar-pct">{{ e.taxa_aprovacao }}%</span>
+                                            </div>
+                                        </td>
+                                        <td>{{ e.tempo_medio_dias }}d</span></td>
+                                        <td>{{ formatar_valor(e.valor_total) }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div><!-- /charts-grid -->
+        </main><!-- /content -->
+    </div><!-- /main -->
+
+    <!-- ── PRINT MODAL ── -->
+    <div class="modal-backdrop" id="printModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3><i class="fas fa-print" style="color:var(--accent);margin-right:8px"></i> Selecionar para Impressão</h3>
+                <button class="modal-close" onclick="document.getElementById('printModal').classList.remove('open')">
+                    <i class="fas fa-xmark"></i>
+                </button>
             </div>
-            
-            <div class="print-preview-grid" id="printPreviewGrid">
-                <!-- Gráficos e tabelas serão inseridos aqui dinamicamente -->
+            <div class="checkboxes-grid" id="printCheckboxes">
+                <label class="check-item checked" data-chart="compradores">
+                    <div class="check-dot"></div> Produtividade Compradores
+                </label>
+                <label class="check-item checked" data-chart="produtosPendentes">
+                    <div class="check-dot"></div> Produtos Pendentes
+                </label>
+                <label class="check-item checked" data-chart="volumeEmpresa">
+                    <div class="check-dot"></div> Volume por Empresa
+                </label>
+                <label class="check-item checked" data-chart="pendenciasEmpresa">
+                    <div class="check-dot"></div> Pendências por Empresa
+                </label>
+                <label class="check-item checked" data-chart="gastosVeiculo">
+                    <div class="check-dot"></div> Gastos por Veículo
+                </label>
+                <label class="check-item checked" data-chart="tempoAberto">
+                    <div class="check-dot"></div> Tempo em Aberto
+                </label>
+                <label class="check-item checked" data-chart="evolucaoCompras">
+                    <div class="check-dot"></div> Evolução de Compras
+                </label>
+                <label class="check-item checked" data-chart="produtividadeEmpresa">
+                    <div class="check-dot"></div> Produtividade Empresas
+                </label>
+            </div>
+            <div style="display:flex;gap:10px;justify-content:flex-end">
+                <button class="btn btn-ghost" onclick="document.getElementById('printModal').classList.remove('open')">Cancelar</button>
+                <button class="btn btn-primary" onclick="executarImpressao()">
+                    <i class="fas fa-print"></i> Imprimir Selecionados
+                </button>
             </div>
         </div>
     </div>
 
-    <!-- Botões de Ação para Impressão -->
-    <div class="print-actions" id="printActions" style="display: none;">
-        <button class="btn-print" onclick="printSelectedCharts()">
-            <i class="fas fa-print"></i> Imprimir
-        </button>
-        <button class="btn-close" onclick="closePrintPreview()">
-            <i class="fas fa-times"></i> Fechar
-        </button>
-    </div>
-
-    <!-- Loading Overlay -->
-    <div class="loading-overlay" id="loadingOverlay" style="display: none;">
+    <!-- LOADING -->
+    <div class="loading-overlay" id="loadingOverlay">
         <div class="spinner"></div>
-        <h3 style="color: var(--primary-color); margin-bottom: 10px;">Atualizando Dashboard</h3>
-        <p style="color: var(--gray-500);">Aguarde enquanto carregamos os dados mais recentes...</p>
+        <p style="color:var(--muted);font-size:.88rem;font-weight:500">Carregando dados…</p>
     </div>
 
-    <!-- Notification -->
-    <div class="notification" id="notification">
-        <div class="notification-content">
-            <div class="notification-icon">
-                <i class="fas fa-check-circle"></i>
-            </div>
-            <div class="notification-message">
-                <h4 id="notificationTitle">Sucesso!</h4>
-                <p id="notificationMessage">Ação realizada com sucesso.</p>
-            </div>
-        </div>
+    <!-- TOAST -->
+    <div class="toast" id="toast">
+        <i class="fas fa-circle-check"></i>
+        <span id="toastMsg">Ação realizada.</span>
     </div>
 
     <script>
-        // Registrar plugin de labels
         Chart.register(ChartDataLabels);
 
-        // Variáveis globais
         let charts = {};
-        let printCharts = {};
-        let isLoading = false;
-        let filtersFixed = false;
         let filtersCollapsed = false;
-        let originalFiltersHeight = 0;
-        
-        // Configuração de gráficos para impressão
-        const chartConfigs = {
-            'compradores': {
-                id: 'chartCompradores',
-                tableId: 'tableCompradores',
-                title: 'Produtividade dos Compradores',
-                type: 'bar',
-                canvasId: 'printChartCompradores'
+
+        /* ── PALETTE ── */
+        const palette = ['#2563eb','#16a34a','#d97706','#dc2626','#7c3aed','#0891b2','#be185d','#065f46'];
+
+        const baseOpts = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                datalabels: { display: false },
+                tooltip: {
+                    backgroundColor: '#0f1117',
+                    titleFont: { family: 'DM Sans', size: 12, weight: '600' },
+                    bodyFont: { family: 'DM Sans', size: 12 },
+                    padding: 10,
+                    cornerRadius: 6
+                }
             },
-            'produtosPendentes': {
-                id: 'chartProdutosPendentes',
-                tableId: 'tableProdutosPendentes',
-                title: 'Produtos Pendentes',
-                type: 'bar',
-                canvasId: 'printChartProdutosPendentes'
-            },
-            'volumeEmpresa': {
-                id: 'chartVolumeEmpresa',
-                tableId: 'tableVolumeEmpresa',
-                title: 'Volume de Compras por Empresa',
-                type: 'doughnut',
-                canvasId: 'printChartVolumeEmpresa'
-            },
-            'pendenciasEmpresa': {
-                id: 'chartPendenciasEmpresa',
-                tableId: 'tablePendenciasEmpresa',
-                title: 'Pendências por Empresa',
-                type: 'bar',
-                canvasId: 'printChartPendenciasEmpresa'
-            },
-            'gastosVeiculo': {
-                id: 'chartGastosVeiculo',
-                tableId: 'tableGastosVeiculo',
-                title: 'Maior Volume de Gastos por Veículo',
-                type: 'bar',
-                canvasId: 'printChartGastosVeiculo'
-            },
-            'tempoAberto': {
-                id: 'chartTempoAberto',
-                tableId: 'tableTempoAberto',
-                title: 'Solicitações com Maior Tempo em Aberto',
-                type: 'bar',
-                canvasId: 'printChartTempoAberto'
-            },
-            'evolucaoCompras': {
-                id: 'chartEvolucaoCompras',
-                tableId: 'tableEvolucaoCompras',
-                title: 'Evolução de Compras',
-                type: 'line',
-                canvasId: 'printChartEvolucaoCompras'
-            },
-            'produtividadeEmpresa': {
-                id: 'chartProdutividadeEmpresa',
-                tableId: 'tableProdutividadeEmpresa',
-                title: 'Produtividade Geral por Empresa',
-                type: 'doughnut',
-                canvasId: 'printChartProdutividadeEmpresa'
+            scales: {
+                x: {
+                    grid: { color: 'rgba(0,0,0,.04)' },
+                    ticks: { font: { family: 'DM Sans', size: 11 }, color: '#7c8099' }
+                },
+                y: {
+                    grid: { color: 'rgba(0,0,0,.04)' },
+                    ticks: { font: { family: 'DM Sans', size: 11 }, color: '#7c8099' }
+                }
             }
         };
 
-        // Função para mostrar notificação
-        function showNotification(title, message, type = 'success') {
-            const notification = document.getElementById('notification');
-            const titleEl = document.getElementById('notificationTitle');
-            const messageEl = document.getElementById('notificationMessage');
-            const icon = notification.querySelector('.notification-icon i');
-            
-            titleEl.textContent = title;
-            messageEl.textContent = message;
-            
-            notification.className = `notification ${type} show`;
-            
-            // Ícone baseado no tipo
-            const icons = {
-                'success': 'fa-check-circle',
-                'error': 'fa-exclamation-circle',
-                'warning': 'fa-exclamation-triangle',
-                'info': 'fa-info-circle'
-            };
-            
-            icon.className = `fas ${icons[type] || icons.success}`;
-            
-            setTimeout(() => {
-                notification.classList.remove('show');
-            }, 3000);
-        }
-
-        // Função para mostrar loading
-        function showLoading() {
-            if (isLoading) return;
-            
-            isLoading = true;
-            const overlay = document.getElementById('loadingOverlay');
-            overlay.style.display = 'flex';
-            
-            setTimeout(() => {
-                overlay.style.display = 'none';
-                isLoading = false;
-            }, 800);
-        }
-
-        // Controle de filtros - Ocultar/Mostrar
-        function toggleFilters() {
-            const panel = document.getElementById('filtersPanel');
-            const btn = document.getElementById('toggleFilters');
-            const icon = btn.querySelector('i');
-            const text = btn.querySelector('span');
-            
-            filtersCollapsed = !filtersCollapsed;
-            
-            if (filtersCollapsed) {
-                panel.classList.add('filters-collapsed');
-                text.textContent = 'Mostrar';
-                icon.classList.add('collapsed');
-                showNotification('Filtros Ocultos', 'Os filtros foram minimizados', 'info');
-            } else {
-                panel.classList.remove('filters-collapsed');
-                text.textContent = 'Ocultar';
-                icon.classList.remove('collapsed');
-                showNotification('Filtros Mostrados', 'Os filtros estão visíveis', 'info');
+        const doughnutOpts = {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '65%',
+            plugins: {
+                legend: { position: 'right', labels: { font: { family: 'DM Sans', size: 11 }, color: '#1e2230', padding: 12 } },
+                datalabels: { display: false },
+                tooltip: { ...baseOpts.plugins.tooltip }
             }
-            
-            // Salvar preferência
-            localStorage.setItem('dashboardFiltersCollapsed', filtersCollapsed);
-            
-            // Atualizar altura se os filtros estiverem fixos
-            if (filtersFixed) {
-                updateFixedFiltersPosition();
-            }
-        }
+        };
 
-        // Fixar/Desfixar filtros na tela (PARA MONITORES PEQUENOS)
-        function toggleFixedFilters() {
-            const panel = document.getElementById('filtersPanel');
-            const btn = document.getElementById('lockFilters');
-            const icon = btn.querySelector('i');
-            const text = btn.querySelector('span');
-            const body = document.body;
-            
-            filtersFixed = !filtersFixed;
-            
-            if (filtersFixed) {
-                // Salvar altura original antes de fixar
-                originalFiltersHeight = panel.offsetHeight;
-                
-                // Fixar os filtros
-                panel.classList.add('filters-fixed');
-                body.classList.add('filters-fixed-active');
-                
-                // Atualizar variável CSS com a altura
-                document.documentElement.style.setProperty('--filters-height', originalFiltersHeight + 'px');
-                
-                // Atualizar botão
-                btn.classList.add('active');
-                text.textContent = 'Desfixar';
-                icon.className = 'fas fa-thumbtack';
-                
-                showNotification('Filtros Fixados', 'Os filtros estão fixos na tela', 'warning');
-                
-                // Desabilitar edição dos filtros quando fixados
-                disableFilters(true);
-            } else {
-                // Remover fixação
-                panel.classList.remove('filters-fixed');
-                body.classList.remove('filters-fixed-active');
-                
-                // Atualizar botão
-                btn.classList.remove('active');
-                text.textContent = 'Fixar';
-                icon.className = 'fas fa-thumbtack';
-                
-                showNotification('Filtros Desfixados', 'Os filtros voltaram à posição original', 'success');
-                
-                // Habilitar edição dos filtros
-                disableFilters(false);
-            }
-            
-            // Salvar preferência
-            localStorage.setItem('dashboardFiltersFixed', filtersFixed);
-            
-            // Redimensionar gráficos
-            setTimeout(() => {
-                Object.values(charts).forEach(chart => {
-                    if (chart) chart.resize();
-                });
-            }, 300);
-        }
-
-        // Habilitar/Desabilitar filtros
-        function disableFilters(disabled) {
-            const panel = document.getElementById('filtersPanel');
-            
-            if (disabled) {
-                panel.classList.add('filters-disabled');
-            } else {
-                panel.classList.remove('filters-disabled');
-            }
-        }
-
-        // Atualizar posição dos filtros fixos
-        function updateFixedFiltersPosition() {
-            if (!filtersFixed) return;
-            
-            const panel = document.getElementById('filtersPanel');
-            originalFiltersHeight = panel.offsetHeight;
-            document.documentElement.style.setProperty('--filters-height', originalFiltersHeight + 'px');
-        }
-
-        // Restaurar estado dos filtros
-        function restoreFilterState() {
-            const collapsed = localStorage.getItem('dashboardFiltersCollapsed') === 'true';
-            const fixed = localStorage.getItem('dashboardFiltersFixed') === 'true';
-            
-            if (collapsed) {
-                filtersCollapsed = true;
-                const panel = document.getElementById('filtersPanel');
-                const btn = document.getElementById('toggleFilters');
-                panel.classList.add('filters-collapsed');
-                btn.querySelector('span').textContent = 'Mostrar';
-                btn.querySelector('i').classList.add('collapsed');
-            }
-            
-            if (fixed) {
-                // Esperar um pouco para garantir que o DOM esteja carregado
-                setTimeout(() => {
-                    toggleFixedFilters();
-                }, 100);
-            }
-        }
-
-        // Função para filtrar tabelas
-        function filtrarTabelas() {
-            const searchTerm = document.getElementById('busca').value.toLowerCase();
-            const tables = document.querySelectorAll('.chart-table tbody');
-            
-            tables.forEach(table => {
-                const rows = table.querySelectorAll('tr');
-                let hasVisibleRows = false;
-                
-                rows.forEach(row => {
-                    const text = row.textContent.toLowerCase();
-                    if (text.includes(searchTerm)) {
-                        row.style.display = '';
-                        hasVisibleRows = true;
-                    } else {
-                        row.style.display = 'none';
-                    }
-                });
-                
-                // Mostrar mensagem se nenhum resultado for encontrado
-                const noResults = table.parentElement.querySelector('.no-results');
-                if (!hasVisibleRows && !noResults) {
-                    const tr = document.createElement('tr');
-                    tr.className = 'no-results';
-                    tr.innerHTML = `<td colspan="100%" style="text-align: center; padding: 20px; color: var(--gray-500);"><i class="fas fa-search"></i> Nenhum resultado encontrado</td>`;
-                    table.appendChild(tr);
-                } else if (hasVisibleRows && noResults) {
-                    noResults.remove();
-                }
-            });
-        }
-
-        // Função para trocar visualização dos gráficos
-        function trocarVisualizacao(element, chartId) {
-            const tabs = element.parentElement.querySelectorAll('.chart-tab');
-            tabs.forEach(tab => tab.classList.remove('active'));
-            element.classList.add('active');
-            showNotification('Visualização Alterada', 'A visualização do gráfico foi alterada', 'info');
-        }
-
-        // Funções de seleção de gráficos para impressão
-        function toggleChartSelection(chartId) {
-            const checkbox = document.getElementById(`print${chartId.charAt(0).toUpperCase() + chartId.slice(1)}`);
-            const checkboxContainer = checkbox.parentElement;
-            
-            checkbox.checked = !checkbox.checked;
-            
-            if (checkbox.checked) {
-                checkboxContainer.classList.add('selected');
-            } else {
-                checkboxContainer.classList.remove('selected');
-            }
-            
-            // Verificar se pelo menos um gráfico está selecionado
-            updatePrintButtonState();
-        }
-
-        function selectAllCharts() {
-            Object.keys(chartConfigs).forEach(chartId => {
-                const checkbox = document.getElementById(`print${chartId.charAt(0).toUpperCase() + chartId.slice(1)}`);
-                const checkboxContainer = checkbox.parentElement;
-                checkbox.checked = true;
-                checkboxContainer.classList.add('selected');
-            });
-            updatePrintButtonState();
-            showNotification('Todos Selecionados', 'Todos os gráficos foram selecionados para impressão', 'info');
-        }
-
-        function deselectAllCharts() {
-            Object.keys(chartConfigs).forEach(chartId => {
-                const checkbox = document.getElementById(`print${chartId.charAt(0).toUpperCase() + chartId.slice(1)}`);
-                const checkboxContainer = checkbox.parentElement;
-                checkbox.checked = false;
-                checkboxContainer.classList.remove('selected');
-            });
-            updatePrintButtonState();
-            showNotification('Nenhum Selecionado', 'Todos os gráficos foram desmarcados', 'info');
-        }
-
-        function updatePrintButtonState() {
-            const printButton = document.querySelector('.header-actions .btn');
-            const anySelected = Object.keys(chartConfigs).some(chartId => {
-                const checkbox = document.getElementById(`print${chartId.charAt(0).toUpperCase() + chartId.slice(1)}`);
-                return checkbox.checked;
-            });
-            
-            if (anySelected) {
-                printButton.disabled = false;
-                printButton.style.opacity = '1';
-            } else {
-                printButton.disabled = true;
-                printButton.style.opacity = '0.5';
-            }
-        }
-
-        // Criar cópia da tabela para impressão
-        function createPrintTable(tableElement) {
-            if (!tableElement) return null;
-            
-            // Clonar a tabela original
-            const tableClone = tableElement.cloneNode(true);
-            
-            // Ajustar estilos para impressão
-            tableClone.className = 'print-table';
-            
-            // Remover estilos inline que podem interferir
-            const rows = tableClone.querySelectorAll('tr');
-            rows.forEach(row => {
-                row.style.transform = '';
-                row.style.transition = '';
-                row.style.backgroundColor = '';
-            });
-            
-            // Ajustar badges
-            const badges = tableClone.querySelectorAll('.badge');
-            badges.forEach(badge => {
-                badge.style.padding = '2px 6px';
-                badge.style.fontSize = '8px';
-                badge.style.borderRadius = '10px';
-                badge.style.display = 'inline-block';
-            });
-            
-            // Ajustar barras de progresso
-            const progressBars = tableClone.querySelectorAll('.progress-bar');
-            progressBars.forEach(bar => {
-                bar.style.width = '100%';
-                bar.style.height = '6px';
-                bar.style.margin = '4px 0';
-            });
-            
-            return tableClone;
-        }
-
-        // Abrir preview de impressão
-        function openPrintPreview() {
-            // Verificar se pelo menos um gráfico está selecionado
-            const selectedCharts = Object.keys(chartConfigs).filter(chartId => {
-                const checkbox = document.getElementById(`print${chartId.charAt(0).toUpperCase() + chartId.slice(1)}`);
-                return checkbox.checked;
-            });
-            
-            if (selectedCharts.length === 0) {
-                showNotification('Nenhum Gráfico Selecionado', 'Selecione pelo menos um gráfico para imprimir', 'warning');
-                return;
-            }
-            
-            // Atualizar data atual
-            const currentDate = new Date().toLocaleDateString('pt-BR');
-            document.getElementById('currentDate').textContent = currentDate;
-            
-            // Limpar preview anterior
-            const previewGrid = document.getElementById('printPreviewGrid');
-            previewGrid.innerHTML = '';
-            
-            // Destruir gráficos de impressão anteriores
-            Object.values(printCharts).forEach(chart => {
-                if (chart) chart.destroy();
-            });
-            printCharts = {};
-            
-            // Adicionar gráficos e tabelas selecionados ao preview
-            selectedCharts.forEach((chartId, index) => {
-                const config = chartConfigs[chartId];
-                const originalChart = charts[chartId];
-                const originalTable = document.getElementById(config.tableId);
-                
-                if (!originalChart && !originalTable) return;
-                
-                // Criar container para o gráfico e tabela
-                const sectionContainer = document.createElement('div');
-                sectionContainer.className = 'print-chart-section';
-                sectionContainer.id = `printSection${chartId.charAt(0).toUpperCase() + chartId.slice(1)}`;
-                
-                // Adicionar título
-                const title = document.createElement('h4');
-                title.textContent = config.title;
-                sectionContainer.appendChild(title);
-                
-                // Adicionar canvas se o gráfico existir
-                if (originalChart) {
-                    const canvas = document.createElement('canvas');
-                    canvas.id = config.canvasId;
-                    canvas.className = 'print-chart-canvas';
-                    sectionContainer.appendChild(canvas);
-                    
-                    // Criar cópia do gráfico para impressão
-                    setTimeout(() => {
-                        const ctx = canvas.getContext('2d');
-                        const printOptions = {
-                            ...originalChart.options,
-                            plugins: {
-                                ...originalChart.options.plugins,
-                                legend: {
-                                    ...originalChart.options.plugins?.legend,
-                                    display: true,
-                                    position: 'bottom',
-                                    labels: {
-                                        ...originalChart.options.plugins?.legend?.labels,
-                                        font: {
-                                            size: 9
-                                        }
-                                    }
-                                }
-                            },
-                            responsive: false,
-                            maintainAspectRatio: false
-                        };
-                        
-                        printCharts[chartId] = new Chart(ctx, {
-                            type: originalChart.config.type,
-                            data: JSON.parse(JSON.stringify(originalChart.data)),
-                            options: printOptions
-                        });
-                    }, 100);
-                }
-                
-                // Adicionar tabela se existir
-                if (originalTable) {
-                    const tableContainer = document.createElement('div');
-                    tableContainer.className = 'print-table-container';
-                    
-                    const tableClone = createPrintTable(originalTable);
-                    if (tableClone) {
-                        tableContainer.appendChild(tableClone);
-                        sectionContainer.appendChild(tableContainer);
-                    }
-                }
-                
-                previewGrid.appendChild(sectionContainer);
-            });
-            
-            // Mostrar modal e botões de ação
-            document.getElementById('printPreviewModal').classList.add('active');
-            document.getElementById('printActions').style.display = 'flex';
-            
-            // Desabilitar scroll no body
-            document.body.style.overflow = 'hidden';
-            
-            showNotification('Preview de Impressão', 'Visualize os gráficos e tabelas antes de imprimir', 'info');
-        }
-
-        // Fechar preview de impressão
-        function closePrintPreview() {
-            document.getElementById('printPreviewModal').classList.remove('active');
-            document.getElementById('printActions').style.display = 'none';
-            document.body.style.overflow = 'auto';
-            
-            // Destruir gráficos de impressão
-            Object.values(printCharts).forEach(chart => {
-                if (chart) chart.destroy();
-            });
-            printCharts = {};
-        }
-
-        // Imprimir gráficos selecionados
-        function printSelectedCharts() {
-            window.print();
-        }
-
-        // Inicializar gráficos
         function initCharts() {
-            // Paleta de cores
-            const colorPalette = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'];
-            
-            // Configurações comuns
-            const commonOptions = {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'top',
-                    }
-                }
-            };
-            
-            // 1. Gráfico de Produtividade dos Compradores
-            const compradoresCtx = document.getElementById('chartCompradores')?.getContext('2d');
-            if (compradoresCtx) {
-                charts.compradores = new Chart(compradoresCtx, {
+            /* 1. Compradores */
+            const ctx1 = document.getElementById('chartCompradores')?.getContext('2d');
+            if (ctx1) {
+                charts.compradores = new Chart(ctx1, {
                     type: 'bar',
                     data: {
                         labels: {{ compradores_produtividade|map(attribute='nome')|list|tojson }},
                         datasets: [
-                            {
-                                label: 'Aprovadas',
-                                data: {{ compradores_produtividade|map(attribute='aprovadas')|list|tojson }},
-                                backgroundColor: '#10b981',
-                                borderRadius: 6,
-                            },
-                            {
-                                label: 'Pendentes',
-                                data: {{ compradores_produtividade|map(attribute='pendentes')|list|tojson }},
-                                backgroundColor: '#f59e0b',
-                                borderRadius: 6,
-                            }
+                            { label: 'Aprovadas', data: {{ compradores_produtividade|map(attribute='aprovadas')|list|tojson }}, backgroundColor: '#16a34a', borderRadius: 5 },
+                            { label: 'Pendentes', data: {{ compradores_produtividade|map(attribute='pendentes')|list|tojson }}, backgroundColor: '#d97706', borderRadius: 5 }
                         ]
                     },
-                    options: commonOptions
+                    options: { ...baseOpts, plugins: { ...baseOpts.plugins, legend: { display: true, labels: { font: { family: 'DM Sans', size: 11 }, color: '#1e2230' } } } }
                 });
             }
-            
-            // 2. Gráfico de Produtos Pendentes
-            const produtosCtx = document.getElementById('chartProdutosPendentes')?.getContext('2d');
-            if (produtosCtx) {
-                charts.produtosPendentes = new Chart(produtosCtx, {
+
+            /* 2. Produtos Pendentes */
+            const ctx2 = document.getElementById('chartProdutosPendentes')?.getContext('2d');
+            if (ctx2) {
+                charts.produtosPendentes = new Chart(ctx2, {
                     type: 'bar',
                     data: {
                         labels: {{ produtos_pendentes|map(attribute='produto')|list|tojson }},
-                        datasets: [{
-                            label: 'Dias Pendente',
-                            data: {{ produtos_pendentes|map(attribute='dias_pendente')|list|tojson }},
-                            backgroundColor: colorPalette,
-                            borderRadius: 6
-                        }]
+                        datasets: [{ label: 'Dias Pendente', data: {{ produtos_pendentes|map(attribute='dias_pendente')|list|tojson }}, backgroundColor: '#dc2626', borderRadius: 5 }]
                     },
-                    options: commonOptions
+                    options: baseOpts
                 });
             }
-            
-            // 3. Gráfico de Volume por Empresa
-            const volumeCtx = document.getElementById('chartVolumeEmpresa')?.getContext('2d');
-            if (volumeCtx) {
-                charts.volumeEmpresa = new Chart(volumeCtx, {
+
+            /* 3. Volume Empresa */
+            const ctx3 = document.getElementById('chartVolumeEmpresa')?.getContext('2d');
+            if (ctx3) {
+                charts.volumeEmpresa = new Chart(ctx3, {
                     type: 'doughnut',
                     data: {
                         labels: {{ volume_empresa|map(attribute='empresa')|list|tojson }},
-                        datasets: [{
-                            data: {{ volume_empresa|map(attribute='volume')|list|tojson }},
-                            backgroundColor: colorPalette,
-                            borderWidth: 2
-                        }]
+                        datasets: [{ data: {{ volume_empresa|map(attribute='volume')|list|tojson }}, backgroundColor: palette, borderWidth: 2, borderColor: '#fff' }]
                     },
-                    options: {
-                        ...commonOptions,
-                        cutout: '60%'
-                    }
+                    options: doughnutOpts
                 });
             }
-            
-            // 4. Gráfico de Pendências por Empresa
-            const pendenciasCtx = document.getElementById('chartPendenciasEmpresa')?.getContext('2d');
-            if (pendenciasCtx) {
-                charts.pendenciasEmpresa = new Chart(pendenciasCtx, {
+
+            /* 4. Pendências Empresa */
+            const ctx4 = document.getElementById('chartPendenciasEmpresa')?.getContext('2d');
+            if (ctx4) {
+                charts.pendenciasEmpresa = new Chart(ctx4, {
                     type: 'bar',
                     data: {
                         labels: {{ pendencias_empresa|map(attribute='empresa')|list|tojson }},
-                        datasets: [{
-                            label: 'Pendências',
-                            data: {{ pendencias_empresa|map(attribute='pendencias')|list|tojson }},
-                            backgroundColor: '#f59e0b',
-                            borderRadius: 6
-                        }]
+                        datasets: [{ label: 'Pendências', data: {{ pendencias_empresa|map(attribute='pendencias')|list|tojson }}, backgroundColor: '#d97706', borderRadius: 5 }]
                     },
-                    options: commonOptions
+                    options: baseOpts
                 });
             }
-            
-            // 5. Gráfico de Gastos por Veículo
-            const gastosCtx = document.getElementById('chartGastosVeiculo')?.getContext('2d');
-            if (gastosCtx) {
-                charts.gastosVeiculo = new Chart(gastosCtx, {
+
+            /* 5. Gastos Veículo */
+            const ctx5 = document.getElementById('chartGastosVeiculo')?.getContext('2d');
+            if (ctx5) {
+                charts.gastosVeiculo = new Chart(ctx5, {
                     type: 'bar',
                     data: {
                         labels: {{ gastos_veiculo|map(attribute='veiculo')|list|tojson }},
-                        datasets: [{
-                            label: 'Valor Total (R$)',
-                            data: {{ gastos_veiculo|map(attribute='valor_total')|list|tojson }},
-                            backgroundColor: '#8b5cf6',
-                            borderRadius: 6
-                        }]
+                        datasets: [{ label: 'Valor Total (R$)', data: {{ gastos_veiculo|map(attribute='valor_total')|list|tojson }}, backgroundColor: '#7c3aed', borderRadius: 5 }]
                     },
-                    options: commonOptions
+                    options: baseOpts
                 });
             }
-            
-            // 6. Gráfico de Tempo em Aberto
-            const tempoCtx = document.getElementById('chartTempoAberto')?.getContext('2d');
-            if (tempoCtx) {
-                charts.tempoAberto = new Chart(tempoCtx, {
+
+            /* 6. Tempo Aberto */
+            const ctx6 = document.getElementById('chartTempoAberto')?.getContext('2d');
+            if (ctx6) {
+                charts.tempoAberto = new Chart(ctx6, {
                     type: 'bar',
                     data: {
                         labels: {{ tempo_aberto|map(attribute='id')|list|tojson }}.map(id => `#${id}`),
-                        datasets: [{
-                            label: 'Dias em Aberto',
-                            data: {{ tempo_aberto|map(attribute='dias_aberto')|list|tojson }},
-                            backgroundColor: '#ef4444',
-                            borderRadius: 6
-                        }]
+                        datasets: [{ label: 'Dias em Aberto', data: {{ tempo_aberto|map(attribute='dias_aberto')|list|tojson }}, backgroundColor: '#dc2626', borderRadius: 5 }]
                     },
-                    options: commonOptions
+                    options: baseOpts
                 });
             }
-            
-            // 7. Gráfico de Evolução de Compras
+
+            /* 7. Evolução Compras */
             {% if evolucao_compras %}
-            const evolucaoCtx = document.getElementById('chartEvolucaoCompras')?.getContext('2d');
-            if (evolucaoCtx) {
+            const ctx7 = document.getElementById('chartEvolucaoCompras')?.getContext('2d');
+            if (ctx7) {
                 const evolucaoData = {{ evolucao_compras|tojson }};
                 const evolucaoMeses = {{ evolucao_meses_labels|tojson }};
-                const empresasCores = {};
-                const datasetsEvolucao = [];
-                
-                Object.entries(evolucaoData).forEach(([empresa, dados], index) => {
-                    empresasCores[empresa] = colorPalette[index % colorPalette.length];
-                    datasetsEvolucao.push({
-                        label: empresa,
-                        data: dados,
-                        borderColor: empresasCores[empresa],
-                        backgroundColor: empresasCores[empresa] + '20',
-                        borderWidth: 2,
-                        tension: 0.3
-                    });
-                });
-                
-                charts.evolucaoCompras = new Chart(evolucaoCtx, {
+                const dsEvolucao = Object.entries(evolucaoData).map(([empresa, dados], i) => ({
+                    label: empresa,
+                    data: dados,
+                    borderColor: palette[i % palette.length],
+                    backgroundColor: palette[i % palette.length] + '18',
+                    borderWidth: 2,
+                    tension: .35,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    fill: true
+                }));
+                charts.evolucaoCompras = new Chart(ctx7, {
                     type: 'line',
-                    data: {
-                        labels: evolucaoMeses,
-                        datasets: datasetsEvolucao
-                    },
-                    options: commonOptions
+                    data: { labels: evolucaoMeses, datasets: dsEvolucao },
+                    options: { ...baseOpts, plugins: { ...baseOpts.plugins, legend: { display: true, labels: { font: { family: 'DM Sans', size: 11 }, color: '#1e2230' } } } }
                 });
             }
             {% endif %}
-            
-            // 8. Gráfico de Produtividade por Empresa
-            const produtividadeCtx = document.getElementById('chartProdutividadeEmpresa')?.getContext('2d');
-            if (produtividadeCtx) {
-                charts.produtividadeEmpresa = new Chart(produtividadeCtx, {
+
+            /* 8. Produtividade Empresa */
+            const ctx8 = document.getElementById('chartProdutividadeEmpresa')?.getContext('2d');
+            if (ctx8) {
+                charts.produtividadeEmpresa = new Chart(ctx8, {
                     type: 'doughnut',
                     data: {
                         labels: {{ produtividade_geral|map(attribute='empresa')|list|tojson }},
-                        datasets: [{
-                            data: {{ produtividade_geral|map(attribute='taxa_aprovacao')|list|tojson }},
-                            backgroundColor: colorPalette,
-                            borderWidth: 2
-                        }]
+                        datasets: [{ data: {{ produtividade_geral|map(attribute='taxa_aprovacao')|list|tojson }}, backgroundColor: palette, borderWidth: 2, borderColor: '#fff' }]
                     },
-                    options: {
-                        ...commonOptions,
-                        cutout: '65%'
-                    }
+                    options: doughnutOpts
                 });
             }
         }
 
-        // Funções de controle
+        /* ── FILTERS ── */
+        function toggleFilters() {
+            filtersCollapsed = !filtersCollapsed;
+            const body = document.getElementById('filtersBody');
+            const icon = document.getElementById('filterToggleIcon');
+            body.style.display = filtersCollapsed ? 'none' : '';
+            icon.className = filtersCollapsed ? 'fas fa-chevron-down' : 'fas fa-chevron-up';
+        }
+
         function aplicarFiltros() {
-            if (filtersFixed) {
-                showNotification('Filtros Fixados', 'Desfixe os filtros para aplicar alterações', 'warning');
-                return;
-            }
-            
             showLoading();
-            
             const empresa = document.getElementById('empresa').value;
             const periodo = document.getElementById('periodo').value;
             const status = document.getElementById('status').value;
             const comprador = document.getElementById('comprador').value;
-            
-            let url = '/dashboard?';
             const params = [];
-            
             if (empresa !== 'Todas') params.push(`empresa=${encodeURIComponent(empresa)}`);
             if (periodo !== 'Últimos 30 dias') params.push(`periodo=${encodeURIComponent(periodo)}`);
             if (status !== 'Todos') params.push(`status=${encodeURIComponent(status)}`);
             if (comprador !== 'Todos') params.push(`comprador=${encodeURIComponent(comprador)}`);
-            
-            if (params.length > 0) {
-                url += params.join('&');
-            }
-            
-            setTimeout(() => {
-                window.location.href = url;
-            }, 800);
-            
-            showNotification('Filtros Aplicados', 'Os filtros foram aplicados com sucesso', 'success');
+            setTimeout(() => { window.location.href = '/dashboard' + (params.length ? '?' + params.join('&') : ''); }, 600);
         }
 
         function resetarFiltros() {
-            if (filtersFixed) {
-                showNotification('Filtros Fixados', 'Desfixe os filtros para resetar', 'warning');
-                return;
-            }
-            
             showLoading();
-            
-            document.getElementById('empresa').value = 'Todas';
-            document.getElementById('periodo').value = 'Últimos 30 dias';
-            document.getElementById('status').value = 'Todos';
-            document.getElementById('comprador').value = 'Todos';
-            document.getElementById('busca').value = '';
-            
-            setTimeout(() => {
-                window.location.href = '/dashboard';
-            }, 800);
-            
-            showNotification('Filtros Resetados', 'Todos os filtros foram limpos', 'info');
+            setTimeout(() => { window.location.href = '/dashboard'; }, 600);
         }
 
         function refreshDashboard() {
             showLoading();
-            aplicarFiltros();
+            setTimeout(() => { window.location.reload(); }, 400);
         }
 
-        // Inicialização
-        document.addEventListener('DOMContentLoaded', function() {
-            // Restaurar estado dos filtros
-            restoreFilterState();
-            
-            // Inicializar gráficos
-            initCharts();
-            
-            // Inicializar estado dos botões de impressão
-            updatePrintButtonState();
-            
-            // Atualizar posição dos filtros fixos ao redimensionar
-            window.addEventListener('resize', function() {
-                if (filtersFixed) {
-                    updateFixedFiltersPosition();
-                }
-                
-                // Redimensionar gráficos
-                Object.values(charts).forEach(chart => {
-                    if (chart) chart.resize();
-                });
-                
-                // Redimensionar gráficos de impressão
-                Object.values(printCharts).forEach(chart => {
-                    if (chart) chart.resize();
-                });
+        /* ── SEARCH ── */
+        function filtrarTabelas() {
+            const q = document.getElementById('busca').value.toLowerCase();
+            document.querySelectorAll('.data-table tbody tr').forEach(tr => {
+                tr.style.display = tr.textContent.toLowerCase().includes(q) ? '' : 'none';
             });
-            
-            // Mostrar notificação de boas-vindas
-            setTimeout(() => {
-                showNotification(
-                    'Dashboard Carregado',
-                    'Todos os dados foram carregados com sucesso',
-                    'success'
-                );
-            }, 1000);
+        }
+
+        /* ── LOADING ── */
+        function showLoading() {
+            document.getElementById('loadingOverlay').style.display = 'flex';
+        }
+
+        /* ── TOAST ── */
+        function showToast(msg, type = 'success') {
+            const t = document.getElementById('toast');
+            const icons = { success: 'fa-circle-check', error: 'fa-circle-xmark', warning: 'fa-triangle-exclamation', info: 'fa-circle-info' };
+            t.className = `toast t-${type}`;
+            t.querySelector('i').className = `fas ${icons[type]}`;
+            document.getElementById('toastMsg').textContent = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 3200);
+        }
+
+        /* ── PRINT ── */
+        document.querySelectorAll('#printCheckboxes .check-item').forEach(item => {
+            item.addEventListener('click', () => item.classList.toggle('checked'));
         });
 
-        // Redimensionar gráficos
-        window.addEventListener('resize', function() {
-            Object.values(charts).forEach(chart => {
-                if (chart) chart.resize();
+        function executarImpressao() {
+            const selecionados = [...document.querySelectorAll('#printCheckboxes .check-item.checked')]
+                .map(el => el.dataset.chart);
+            const chartCardMap = {
+                compradores: 'chartCardCompradores',
+                produtosPendentes: 'chartCardProdutosPendentes',
+                volumeEmpresa: 'chartCardVolumeEmpresa',
+                pendenciasEmpresa: 'chartCardPendenciasEmpresa',
+                gastosVeiculo: 'chartCardGastosVeiculo',
+                tempoAberto: 'chartCardTempoAberto',
+                evolucaoCompras: 'chartCardEvolucaoCompras',
+                produtividadeEmpresa: 'chartCardProdutividadeEmpresa'
+            };
+            // Show/hide cards for print
+            Object.entries(chartCardMap).forEach(([key, cardId]) => {
+                const el = document.getElementById(cardId);
+                if (el) el.style.display = selecionados.includes(key) ? '' : 'none';
             });
+            document.getElementById('printModal').classList.remove('open');
+            setTimeout(() => {
+                window.print();
+                // Restore all
+                Object.values(chartCardMap).forEach(cardId => {
+                    const el = document.getElementById(cardId);
+                    if (el) el.style.display = '';
+                });
+            }, 200);
+        }
+
+        /* ── RESIZE ── */
+        window.addEventListener('resize', () => {
+            Object.values(charts).forEach(c => c?.resize());
+        });
+
+        /* ── INIT ── */
+        document.addEventListener('DOMContentLoaded', () => {
+            initCharts();
+            showToast('Dashboard carregado com sucesso', 'success');
         });
     </script>
 
