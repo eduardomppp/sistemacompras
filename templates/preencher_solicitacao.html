@@ -154,7 +154,12 @@
             flex-shrink: 0;
             position: relative;
             transition: transform 0.2s, box-shadow 0.2s;
+            /* FIX: permite que o dropdown do Select2 apareça acima dos outros elementos */
+            overflow: visible;
         }
+        /* FIX: garante que o Select2 renderizado dentro do card fique acima de tudo */
+        .cotacao-card .select2-container--open { z-index: 9999; }
+        .cotacao-card .select2-dropdown { z-index: 9999; }
 
         .cotacao-card:hover {
             transform: translateY(-2px);
@@ -1052,11 +1057,16 @@
                 select.select2('destroy');
             }
 
+            // FIX: dropdownParent garante que o dropdown seja renderizado dentro do card,
+            // evitando que ele suma por causa do overflow do container pai.
+            const cardElement = document.getElementById('cotacao-' + id);
+
             select.select2({
                 placeholder: 'Digite nome ou CNPJ do fornecedor',
                 allowClear: true,
                 minimumInputLength: 2,
                 width: '100%',
+                dropdownParent: cardElement ? $(cardElement) : $('body'),
                 ajax: {
                     url: '{{ url_for("routes_bp.search_fornecedores") }}',
                     dataType: 'json',
@@ -1099,20 +1109,28 @@
                 document.getElementById(`materiais-container-${id}`).style.display = 'block';
                 document.querySelector(`.botoes-materiais[data-cotacao="${id}"]`).style.display = 'block';
                 adicionarTodosMateriais(id);
-            }).on('select2:clear', function() {
-                document.querySelector(`.fornecedor-id-input[data-cotacao="${id}"]`).value = '';
-                document.getElementById(`materiais-container-${id}`).style.display = 'none';
-                document.querySelector(`.botoes-materiais[data-cotacao="${id}"]`).style.display = 'none';
-                const tbody = document.querySelector(`#materiais-container-${id} .materiais-body`);
-                if (tbody) {
-                    while (tbody.firstChild) tbody.removeChild(tbody.firstChild);
-                }
-                recalcularTotaisCotacao(id);
-                document.querySelector(`.fornecedor-nome-display[data-cotacao="${id}"]`).innerText = '';
-                document.querySelector(`.fornecedor-cnpj-display[data-cotacao="${id}"]`).innerText = '';
-                document.querySelector(`.fornecedor-telefone-display[data-cotacao="${id}"]`).innerText = '';
-                document.querySelector(`.fornecedor-endereco-display[data-cotacao="${id}"]`).innerText = '';
-                verificarCamposVazios();
+            }).on('select2:unselect select2:clear', function() {
+                // FIX: usar 'select2:unselect' em vez de (ou além de) 'select2:clear'
+                // para garantir que o evento seja capturado corretamente em todas as versões.
+                // Usar setTimeout para deixar o Select2 terminar seu ciclo interno antes de reagir.
+                setTimeout(function() {
+                    const currentVal = select.val();
+                    if (!currentVal) {
+                        document.querySelector(`.fornecedor-id-input[data-cotacao="${id}"]`).value = '';
+                        document.getElementById(`materiais-container-${id}`).style.display = 'none';
+                        document.querySelector(`.botoes-materiais[data-cotacao="${id}"]`).style.display = 'none';
+                        const tbody = document.querySelector(`#materiais-container-${id} .materiais-body`);
+                        if (tbody) {
+                            while (tbody.firstChild) tbody.removeChild(tbody.firstChild);
+                        }
+                        recalcularTotaisCotacao(id);
+                        document.querySelector(`.fornecedor-nome-display[data-cotacao="${id}"]`).innerText = '';
+                        document.querySelector(`.fornecedor-cnpj-display[data-cotacao="${id}"]`).innerText = '';
+                        document.querySelector(`.fornecedor-telefone-display[data-cotacao="${id}"]`).innerText = '';
+                        document.querySelector(`.fornecedor-endereco-display[data-cotacao="${id}"]`).innerText = '';
+                        verificarCamposVazios();
+                    }
+                }, 0);
             });
         }
 
