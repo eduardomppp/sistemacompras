@@ -120,12 +120,14 @@
             min-width: 0;
         }
 
+        /* ========== FIX: evitar corte do dropdown do Select2 ========== */
         .cotacoes-dinamicas {
             display: flex;
             flex-wrap: nowrap;
             gap: 15px;
             padding: 5px 0 15px;
             overflow-x: auto;
+            overflow-y: visible; /* <-- FIX: explicita que não queremos corte vertical (embora o browser force auto, a mudança principal está no JS) */
             scroll-behavior: smooth;
         }
 
@@ -154,12 +156,8 @@
             flex-shrink: 0;
             position: relative;
             transition: transform 0.2s, box-shadow 0.2s;
-            /* FIX: permite que o dropdown do Select2 apareça acima dos outros elementos */
-            overflow: visible;
+            overflow: visible; /* mantido */
         }
-        /* FIX: garante que o Select2 renderizado dentro do card fique acima de tudo */
-        .cotacao-card .select2-container--open { z-index: 9999; }
-        .cotacao-card .select2-dropdown { z-index: 9999; }
 
         .cotacao-card:hover {
             transform: translateY(-2px);
@@ -1057,16 +1055,14 @@
                 select.select2('destroy');
             }
 
-            // FIX: dropdownParent garante que o dropdown seja renderizado dentro do card,
-            // evitando que ele suma por causa do overflow do container pai.
-            const cardElement = document.getElementById('cotacao-' + id);
-
+            // FIX: dropdownParent agora é o body, para evitar que o dropdown seja cortado
+            // por qualquer container com overflow (como .cotacoes-dinamicas)
             select.select2({
                 placeholder: 'Digite nome ou CNPJ do fornecedor',
                 allowClear: true,
                 minimumInputLength: 2,
                 width: '100%',
-                dropdownParent: cardElement ? $(cardElement) : $('body'),
+                dropdownParent: $('body'), // <-- MUDANÇA AQUI
                 ajax: {
                     url: '{{ url_for("routes_bp.search_fornecedores") }}',
                     dataType: 'json',
@@ -1110,9 +1106,6 @@
                 document.querySelector(`.botoes-materiais[data-cotacao="${id}"]`).style.display = 'block';
                 adicionarTodosMateriais(id);
             }).on('select2:unselect select2:clear', function() {
-                // FIX: usar 'select2:unselect' em vez de (ou além de) 'select2:clear'
-                // para garantir que o evento seja capturado corretamente em todas as versões.
-                // Usar setTimeout para deixar o Select2 terminar seu ciclo interno antes de reagir.
                 setTimeout(function() {
                     const currentVal = select.val();
                     if (!currentVal) {
@@ -1173,7 +1166,6 @@
                     const unitarioInput = linha.querySelector('.material-unitario');
                     const marcaInput = linha.querySelector('.material-marca');
                     
-                    // 🔴 CORREÇÃO: Garantir que valores vazios virem 0
                     let valorUnitario = 0;
                     if (unitarioInput && unitarioInput.value && unitarioInput.value !== '') {
                         const valorLimpo = unitarioInput.value.toString().replace(',', '.').replace(/[^\d.-]/g, '');
@@ -1222,7 +1214,6 @@
         document.getElementById('cotacoes-form')?.addEventListener('submit', function(e) {
             e.preventDefault();
             const clickedButton = e.submitter || _lastClickedBtn || document.activeElement;
-            // Usar sempre o VALUE do botão (que é "salvar_rascunho" ou "salvar_finalizar")
             let finalAction = (clickedButton && clickedButton.value) ? clickedButton.value : null;
             if (!finalAction || (finalAction !== 'salvar_rascunho' && finalAction !== 'salvar_finalizar')) {
                 alert('Erro: não foi possível identificar a ação. Tente clicar novamente no botão.');
