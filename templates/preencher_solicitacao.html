@@ -1313,59 +1313,92 @@
             this.submit();
         });
 
+        // ============================================
+        // RESTAURAÇÃO DE COTAÇÕES SALVAS (BLINDADA)
+        // ============================================
+        // Se qualquer coisa falhar ao tentar restaurar um fornecedor salvo,
+        // o erro é capturado e apenas aquele card fica sem pré-seleção —
+        // o Select2 já está inicializado e funcional, então o usuário
+        // consegue selecionar manualmente sem a página travar.
         function preencherCotacaoSalva(cotacaoId, dados) {
-            if (!dados.fornecedor_id) return;
-            
-            const nomeFornecedor = dados.fornecedor_nome_fantasia || 'Fornecedor não encontrado';
-            const cnpjFormatado = dados.fornecedor_cnpj ? formatCNPJ(dados.fornecedor_cnpj) : '';
-            const optionText = nomeFornecedor + (cnpjFormatado ? ' - CNPJ: ' + cnpjFormatado : '');
-            const option = new Option(optionText, dados.fornecedor_id, true, true);
-            const select = $('#fornecedor_' + cotacaoId);
-            select.append(option).trigger('change');
-            
-            document.querySelector(`.fornecedor-id-input[data-cotacao="${cotacaoId}"]`).value = dados.fornecedor_id;
-            document.querySelector(`.fornecedor-nome-display[data-cotacao="${cotacaoId}"]`).innerText = nomeFornecedor;
-            document.querySelector(`.fornecedor-cnpj-display[data-cotacao="${cotacaoId}"]`).innerText = cnpjFormatado;
-            document.querySelector(`.fornecedor-telefone-display[data-cotacao="${cotacaoId}"]`).innerText = dados.fornecedor_telefone || 'Não informado';
-            document.querySelector(`.fornecedor-endereco-display[data-cotacao="${cotacaoId}"]`).innerText = dados.fornecedor_endereco || 'Não informado';
-            document.getElementById(`materiais-container-${cotacaoId}`).style.display = 'block';
-            document.querySelector(`.botoes-materiais[data-cotacao="${cotacaoId}"]`).style.display = 'block';
-            
-            setTimeout(() => {
-                if (dados.materiais && dados.materiais.length > 0) {
-                    adicionarMateriaisComValores(cotacaoId, dados.materiais);
-                } else {
-                    adicionarTodosMateriais(cotacaoId);
+            try {
+                if (!dados || !dados.fornecedor_id) return;
+
+                const nomeFornecedor = dados.fornecedor_nome_fantasia || 'Fornecedor não encontrado';
+                const cnpjFormatado = dados.fornecedor_cnpj ? formatCNPJ(dados.fornecedor_cnpj) : '';
+                const optionText = nomeFornecedor + (cnpjFormatado ? ' - CNPJ: ' + cnpjFormatado : '');
+                const option = new Option(optionText, dados.fornecedor_id, true, true);
+                const select = $('#fornecedor_' + cotacaoId);
+
+                if (!select.length) {
+                    console.warn(`Select da cotação ${cotacaoId} não encontrado — pulando restauração automática.`);
+                    return;
                 }
-                if (dados.valor_frete && dados.valor_frete > 0) {
-                    const freteInput = document.getElementById(`valor_frete_${cotacaoId}`);
-                    if (freteInput) freteInput.value = formatarNumero(dados.valor_frete, 2);
-                }
-                
-                let valorDesconto = 0;
-                if (dados.desconto && dados.desconto > 0) {
-                    valorDesconto = dados.desconto;
-                } else if (dados.condicao_pagamento) {
-                    const match = dados.condicao_pagamento.match(/DESCONTO:\s*R?\$?\s*(\d+(?:[.,]\d+)?)/i);
-                    if (match) valorDesconto = parseFloat(match[1].replace(',', '.'));
-                }
-                
-                if (valorDesconto > 0) {
-                    const descontoInput = document.getElementById(`desconto_${cotacaoId}`);
-                    if (descontoInput) descontoInput.value = formatarNumero(valorDesconto, 2);
-                }
-                
-                if (dados.prazo_entrega) {
-                    const prazoInput = document.getElementById(`prazo_entrega_${cotacaoId}`);
-                    if (prazoInput) prazoInput.value = dados.prazo_entrega;
-                }
-                if (dados.observacoes) {
-                    const obsInput = document.getElementById(`observacao_${cotacaoId}`);
-                    if (obsInput) obsInput.value = dados.observacoes;
-                }
-                recalcularTotaisCotacao(cotacaoId);
-                verificarCamposVazios();
-            }, 200);
+
+                select.append(option).trigger('change');
+
+                const nomeEl = document.querySelector(`.fornecedor-nome-display[data-cotacao="${cotacaoId}"]`);
+                const cnpjEl = document.querySelector(`.fornecedor-cnpj-display[data-cotacao="${cotacaoId}"]`);
+                const telEl = document.querySelector(`.fornecedor-telefone-display[data-cotacao="${cotacaoId}"]`);
+                const endEl = document.querySelector(`.fornecedor-endereco-display[data-cotacao="${cotacaoId}"]`);
+                const idInput = document.querySelector(`.fornecedor-id-input[data-cotacao="${cotacaoId}"]`);
+                const materiaisContainer = document.getElementById(`materiais-container-${cotacaoId}`);
+                const botoesMateriais = document.querySelector(`.botoes-materiais[data-cotacao="${cotacaoId}"]`);
+
+                if (idInput) idInput.value = dados.fornecedor_id;
+                if (nomeEl) nomeEl.innerText = nomeFornecedor;
+                if (cnpjEl) cnpjEl.innerText = cnpjFormatado;
+                if (telEl) telEl.innerText = dados.fornecedor_telefone || 'Não informado';
+                if (endEl) endEl.innerText = dados.fornecedor_endereco || 'Não informado';
+                if (materiaisContainer) materiaisContainer.style.display = 'block';
+                if (botoesMateriais) botoesMateriais.style.display = 'block';
+
+                setTimeout(() => {
+                    try {
+                        if (dados.materiais && dados.materiais.length > 0) {
+                            adicionarMateriaisComValores(cotacaoId, dados.materiais);
+                        } else {
+                            adicionarTodosMateriais(cotacaoId);
+                        }
+
+                        if (dados.valor_frete && dados.valor_frete > 0) {
+                            const freteInput = document.getElementById(`valor_frete_${cotacaoId}`);
+                            if (freteInput) freteInput.value = formatarNumero(dados.valor_frete, 2);
+                        }
+
+                        let valorDesconto = 0;
+                        if (dados.desconto && dados.desconto > 0) {
+                            valorDesconto = dados.desconto;
+                        } else if (dados.condicao_pagamento) {
+                            const match = dados.condicao_pagamento.match(/DESCONTO:\s*R?\$?\s*(\d+(?:[.,]\d+)?)/i);
+                            if (match) valorDesconto = parseFloat(match[1].replace(',', '.'));
+                        }
+                        if (valorDesconto > 0) {
+                            const descontoInput = document.getElementById(`desconto_${cotacaoId}`);
+                            if (descontoInput) descontoInput.value = formatarNumero(valorDesconto, 2);
+                        }
+
+                        if (dados.prazo_entrega) {
+                            const prazoInput = document.getElementById(`prazo_entrega_${cotacaoId}`);
+                            if (prazoInput) prazoInput.value = dados.prazo_entrega;
+                        }
+                        if (dados.observacoes) {
+                            const obsInput = document.getElementById(`observacao_${cotacaoId}`);
+                            if (obsInput) obsInput.value = dados.observacoes;
+                        }
+
+                        recalcularTotaisCotacao(cotacaoId);
+                        verificarCamposVazios();
+                    } catch (errInterno) {
+                        console.error(`Erro ao preencher detalhes da cotação ${cotacaoId} (fornecedor foi selecionado, mas alguns detalhes podem estar incompletos):`, errInterno);
+                    }
+                }, 200);
+
+            } catch (err) {
+                console.error(`Não foi possível restaurar automaticamente o fornecedor da cotação ${cotacaoId}. O campo continua disponível para seleção manual.`, err);
+                // Não faz nada além de logar — o Select2 já foi inicializado antes desta
+                // função ser chamada, então o usuário consegue selecionar normalmente.
+            }
         }
 
         function adicionarMateriaisComValores(cotacaoId, materiaisSalvos) {
@@ -1407,43 +1440,34 @@
         // INICIALIZAÇÃO
         // ============================================
         $(document).ready(function() {
-            const cotacoesSalvasData = [
-                {% for cotacao in cotacoes_salvas %}
-                {
-                    fornecedor_id: {{ cotacao.fornecedor_id if cotacao.fornecedor_id else 'null' }},
-                    fornecedor_nome_fantasia: '{{ cotacao.fornecedor_nome_fantasia | replace("'", "\\'") if cotacao.fornecedor_nome_fantasia else '' }}',
-                    fornecedor_cnpj: '{{ cotacao.fornecedor_cnpj if cotacao.fornecedor_cnpj else "" }}',
-                    fornecedor_telefone: '{{ cotacao.fornecedor_telefone or "" }}',
-                    fornecedor_endereco: '{{ cotacao.fornecedor_endereco or "" }}',
-                    valor_frete: {{ cotacao.valor_frete if cotacao.valor_frete else 0 }},
-                    desconto: {{ cotacao.desconto if cotacao.desconto else 0 }},
-                    condicao_pagamento: '{{ cotacao.condicao_pagamento or "" | replace("'", "\\'") }}',
-                    prazo_entrega: '{{ cotacao.prazo_entrega or "" }}',
-                    observacoes: '{{ cotacao.observacoes or "" }}',
-                    materiais: [
-                        {% for material in cotacao.materiais %}
-                        {
-                            preenchimento_id: {{ material.preenchimento_id if material.preenchimento_id else 'null' }},
-                            solicitacao_id: {{ material.solicitacao_id }},
-                            valor_unitario: {{ material.valor_unitario }},
-                            valor_total: {{ material.valor_total }},
-                            marca: '{{ material.marca or "" }}'
-                        }{% if not loop.last %},{% endif %}
-                        {% endfor %}
-                    ]
-                }{% if not loop.last %},{% endif %}
-                {% endfor %}
-            ];
+            // FIX: usamos tojson para serializar os dados salvos direto do Python,
+            // eliminando o risco de aspas/apóstrofos em campos como observações,
+            // condição de pagamento ou marca quebrarem este bloco de script inteiro.
+            let cotacoesSalvasData = [];
+            try {
+                cotacoesSalvasData = {{ cotacoes_salvas | tojson | safe if cotacoes_salvas else '[]' }};
+                if (!Array.isArray(cotacoesSalvasData)) cotacoesSalvasData = [];
+            } catch (e) {
+                console.error('Erro ao carregar dados salvos das cotações. Todas as cotações iniciarão em branco, prontas para seleção manual.', e);
+                cotacoesSalvasData = [];
+            }
 
             const totalCotacoes = {{ cotacoes_salvas|length if cotacoes_salvas else 1 }};
+
             for (let i = 1; i <= totalCotacoes; i++) {
-                initSelect2ForCotacao(i);
-                configurarEventosCotacao(i);
+                try {
+                    initSelect2ForCotacao(i);
+                    configurarEventosCotacao(i);
+                } catch (e) {
+                    console.error(`Erro ao inicializar a cotação ${i}:`, e);
+                }
+
                 const cotacaoIndex = i - 1;
                 if (cotacoesSalvasData[cotacaoIndex] && cotacoesSalvasData[cotacaoIndex].fornecedor_id) {
                     setTimeout(() => preencherCotacaoSalva(i, cotacoesSalvasData[cotacaoIndex]), i * 200);
                 }
             }
+
             contadorCotacoes = totalCotacoes;
             setTimeout(verificarCamposVazios, 500);
         });
