@@ -71,8 +71,21 @@
             min-width: 0;
         }
 
+        .solicitacao-destacado {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 3px 10px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            flex: 0 0 auto;
+            min-width: 0;
+        }
+
         .empresa-destacado label,
-        .comprador-destacado label {
+        .comprador-destacado label,
+        .solicitacao-destacado label {
             font-weight: 600;
             font-size: 12px;
             text-transform: uppercase;
@@ -103,12 +116,24 @@
             color: #0B2E59;
         }
 
+        .solicitacao-destacado input {
+            background: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 15px;
+            font-size: 13px;
+            font-weight: 700;
+            width: 100%;
+            color: #0B2E59;
+            text-align: center;
+        }
+
         .empresa-destacado input::placeholder {
             color: #94a3b8;
             font-size: 12px;
             font-weight: 400;
         }
-        
+
         .comprador-destacado input::placeholder {
             color: #94a3b8;
             font-size: 12px;
@@ -302,17 +327,9 @@
             background: #fff !important;
         }
 
-        .material-id {
-            font-size: 9px;
-            color: #64748b;
-            font-style: italic;
-            margin-top: 2px;
-            word-break: break-word;
-        }
-
         .info-bottom {
             display: grid;
-            grid-template-columns: 32% 66%;
+            grid-template-columns: 32fr 66fr;
             gap: 1%;
             margin-top: 6px;
             width: 100%;
@@ -327,7 +344,7 @@
 
         .ultimo-preco,
         .fluxo-pagamento,
-        .status-entrega {
+        .ativo-associado {
             border: 1px solid #e2e8f0;
             border-radius: 4px;
             padding: 6px;
@@ -358,36 +375,39 @@
             width: 100%;
         }
 
-        .status-entrega .campo-status,
-        .status-entrega .campo-previsao {
+        .ativo-associado {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+
+        .ativo-associado .campo-ativo {
             width: 100%;
+            flex: 1;
             padding: 8px 10px;
             border: 1px solid #cbd5e1;
             border-radius: 3px;
             font-size: 12px;
-            margin-bottom: 8px;
+            font-family: inherit;
             background: white;
             transition: border-color 0.2s;
+            overflow-wrap: break-word;
+            word-break: break-word;
         }
-        
-        .status-entrega .campo-status:focus,
-        .status-entrega .campo-previsao:focus {
+
+        .ativo-associado .campo-ativo:empty::before {
+            content: attr(data-placeholder);
+            color: #94a3b8;
+        }
+
+        .ativo-associado .campo-ativo:focus {
             outline: none;
             border-color: #0B2E59;
             box-shadow: 0 0 0 2px rgba(11, 46, 89, 0.1);
         }
-        
-        .status-entrega h4 {
-            margin-bottom: 8px;
-        }
-        
-        .status-entrega h4:last-of-type {
-            margin-top: 12px;
-            margin-bottom: 8px;
-        }
 
-        .fluxo-pagamento .campo-observacao {
-            padding: 8px 10px;
+        .ativo-associado h4 {
+            margin-bottom: 8px;
         }
 
         .observacao-comprador,
@@ -414,8 +434,7 @@
         }
 
         .ultimo-preco h4,
-        .fluxo-pagamento h4,
-        .status-entrega h4,
+        .ativo-associado h4,
         .observacao-comprador h4,
         .totais-inferiores h4,
         .info-geral h3 {
@@ -423,32 +442,30 @@
             padding: 4px 8px;
         }
 
-        .fluxo-pagamento {
-            padding: 0;
+        .fluxo-pagamento .pagamento-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
 
-        .fluxo-pagamento h4 {
-            margin: 0;
-            padding: 4px 8px;
-            border-radius: 4px 4px 0 0;
+        .fluxo-pagamento .pagamento-label {
+            font-size: 12px;
+            font-weight: 700;
+            color: #0B2E59;
+            text-transform: uppercase;
+            white-space: nowrap;
+            flex: 0 0 auto;
         }
 
-        .fluxo-pagamento .campo-observacao {
+        .fluxo-pagamento .campo-pagamento-inline {
+            flex: 1;
+            min-width: 0;
             margin: 0;
-            padding: 8px 10px;
+            padding: 4px 6px;
             border: 1px solid #cbd5e1;
-            border-top: none;
-            border-radius: 0 0 3px 3px;
-            width: 100%;
-            min-height: 70px;
-            resize: vertical;
-        }
-
-        .fluxo-pagamento {
-            border: 1px solid #e2e8f0;
-            border-radius: 4px;
-            background: white;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+            border-radius: 3px;
+            font-size: 12px;
+            resize: none;
         }
 
         .preco-info {
@@ -634,7 +651,7 @@
 
         .info-grid {
             display: grid;
-            grid-template-columns: repeat(5, 1fr);
+            grid-template-columns: repeat(6, 1fr);
             gap: 5px;
         }
 
@@ -683,6 +700,8 @@
         }
 
         .linha-assinatura {
+            position: relative;
+            top: 8px;
             border-top: 1px solid #64748b;
             margin: 0 auto 3px;
             width: 60%;
@@ -955,13 +974,25 @@
                 gap: 5px !important;
             }
 
+            .solicitacao-destacado {
+                background: white !important;
+                border: 1px solid black !important;
+                padding: 2px 5px !important;
+                flex: 0 0 auto !important;
+                display: flex !important;
+                flex-direction: row !important;
+                align-items: center !important;
+                gap: 5px !important;
+            }
+
             .empresa-destacado label,
-            .comprador-destacado label {
+            .comprador-destacado label,
+            .solicitacao-destacado label {
                 color: black !important;
                 font-size: 10pt !important;
                 white-space: nowrap !important;
             }
-            
+
             .empresa-destacado input {
                 color: black !important;
                 border: 1px solid black !important;
@@ -972,7 +1003,7 @@
                 text-transform: uppercase;
                 width: 100% !important;
             }
-            
+
             .comprador-destacado input {
                 color: black !important;
                 border: 1px solid black !important;
@@ -982,9 +1013,20 @@
                 width: 100% !important;
             }
 
+            .solicitacao-destacado input {
+                color: black !important;
+                border: 1px solid black !important;
+                background: white !important;
+                font-size: 10pt !important;
+                font-weight: 700 !important;
+                padding: 2px 5px !important;
+                width: 100% !important;
+                text-align: center;
+            }
+
             .info-bottom {
                 display: grid !important;
-                grid-template-columns: 32% 66% !important;
+                grid-template-columns: 32fr 66fr !important;
                 gap: 0.8%;
                 margin-top: 3pt;
             }
@@ -1092,7 +1134,7 @@
 
             .ultimo-preco,
             .fluxo-pagamento,
-            .status-entrega,
+            .ativo-associado,
             .observacao-comprador,
             .totais-inferiores,
             .info-geral,
@@ -1112,9 +1154,7 @@
                 font-size: 11pt !important;
             }
 
-            input, textarea, .campo-data, .campo-observacao, .info-value-editable,
-            .status-entrega .campo-status,
-            .status-entrega .campo-previsao {
+            input, textarea, .campo-data, .campo-observacao, .campo-ativo, .info-value-editable {
                 border: 1px solid black !important;
                 background: white !important;
                 color: black !important;
@@ -1159,7 +1199,7 @@
             }
 
             .info-grid {
-                grid-template-columns: repeat(5, 1fr);
+                grid-template-columns: repeat(6, 1fr);
                 gap: 2pt;
             }
 
@@ -1189,11 +1229,6 @@
 
             .linha-assinatura {
                 border-top: 1px solid black !important;
-            }
-
-            .material-id {
-                color: black !important;
-                font-size: 8pt !important;
             }
 
             body, .container, .info-bottom, .table-container {
@@ -1228,7 +1263,8 @@
                 flex-wrap: wrap;
             }
             .empresa-destacado,
-            .comprador-destacado {
+            .comprador-destacado,
+            .solicitacao-destacado {
                 flex: 1 1 100%;
             }
         }
@@ -1263,6 +1299,10 @@
         </div>
 
         <div class="top-header">
+            <div class="solicitacao-destacado">
+                <label for="solicitacao_top">SOLICITAÇÃO:</label>
+                <input type="text" id="solicitacao_top" value="#{{ solicitacao.id }}" readonly>
+            </div>
             <div class="empresa-destacado">
                 <label for="empresa_top">EMPRESA:</label>
                 <input type="text" id="empresa_top" placeholder="Digite o nome da empresa" value="MATRIZ">
@@ -1315,7 +1355,6 @@
                         <tr class="material-row">
                             <td class="col-material">
                                 <strong style="display: block; word-break: break-word; white-space: normal;">{{ solicitacao.material.DescricaoMaterial }}</strong>
-                                <div class="material-id">#{{ solicitacao.id }}</div>
                             </td>
                             <td class="col-quantidade">{{ solicitacao.quantidade }}</td>
                             <td class="col-unidade">{{ solicitacao.unidade_medida | default('UN') }}</td>
@@ -1345,7 +1384,6 @@
                         <tr class="material-row">
                             <td class="col-material">
                                 <strong style="display: block; word-break: break-word; white-space: normal;">{{ solicitacao.material.DescricaoMaterial }}</strong>
-                                <div class="material-id">#{{ solicitacao.id }}</div>
                             </td>
                             <td class="col-quantidade">{{ solicitacao.quantidade }}</td>
                             <td class="col-unidade">{{ solicitacao.unidade_medida | default('UN') }}</td>
@@ -1385,16 +1423,16 @@
                 </div>
 
                 <div class="fluxo-pagamento">
-                    <h4><span class="required-label">PAGAMENTO</span></h4>
-                    <textarea rows="2" class="campo-observacao required" id="formaPagamento" placeholder="FORMA DE PAGAMENTO (OBRIGATÓRIO)"></textarea>
+                    <div class="pagamento-row">
+                        <span class="required-label pagamento-label">PAGAMENTO:</span>
+                        <input type="text" class="campo-pagamento-inline required" id="formaPagamento" maxlength="100" placeholder="Forma de pagamento (obrigatório)">
+                    </div>
                     <div class="error-message" id="errorMessage">Campo obrigatório</div>
                 </div>
 
-                <div class="status-entrega">
-                    <h4>ENTREGA</h4>
-                    <input type="text" class="campo-status" id="statusEntrega" placeholder="Digite o status atual da entrega...">
-                    <h4 style="margin-top: 8px;">PREVISÃO</h4>
-                    <input type="text" class="campo-previsao" id="previsaoEntrega" placeholder="DD/MM/AAAA ou descrição da previsão...">
+                <div class="ativo-associado">
+                    <h4>ATIVO</h4>
+                    <div class="campo-ativo" id="ativoAssociado" contenteditable="true" data-placeholder="Nenhum ativo associado">{{ solicitacao.nome_ativo or '' }}</div>
                 </div>
             </div>
 
@@ -1491,12 +1529,16 @@
                     <div class="info-label">SOLICITANTE</div>
                     <input type="text" class="info-value-editable" placeholder="Nome">
                 </div>
+                <div class="info-item">
+                    <div class="info-label">PREVISÃO DE ENTREGA</div>
+                    <input type="text" class="info-value-editable" placeholder="DD/MM/AAAA">
+                </div>
             </div>
         </div>
 
         <div class="observacao-comprador" style="margin-top: 6px;">
             <h4>OBSERVAÇÃO</h4>
-            <textarea class="campo-observacao" rows="2" placeholder="Observações..."></textarea>
+            <textarea class="campo-observacao" rows="6" placeholder="Observações..."></textarea>
         </div>
 
         <div class="footer">
@@ -1597,15 +1639,15 @@ function capturarDadosCompletos() {
         },
         
         forma_pagamento: document.getElementById('formaPagamento')?.value || '',
-        status_entrega: document.getElementById('statusEntrega')?.value || '',
-        previsao_entrega: document.getElementById('previsaoEntrega')?.value || '',
+        ativo_associado: document.getElementById('ativoAssociado')?.textContent?.trim() || '',
         
         info_gerais: {
             setor: document.querySelector('.info-grid .info-item:nth-child(1) input')?.value || '',
             aplicacao: document.querySelector('.info-grid .info-item:nth-child(2) input')?.value || '',
             prioridade: document.querySelector('.info-grid .info-item:nth-child(3) input')?.value || '',
             data_solic: document.querySelector('.info-grid .info-item:nth-child(4) input')?.value || '',
-            solicitante: document.querySelector('.info-grid .info-item:nth-child(5) input')?.value || ''
+            solicitante: document.querySelector('.info-grid .info-item:nth-child(5) input')?.value || '',
+            previsao_entrega: document.querySelector('.info-grid .info-item:nth-child(6) input')?.value || ''
         },
         
         observacao: document.querySelector('.observacao-comprador .campo-observacao')?.value || '',
@@ -1640,19 +1682,18 @@ function restaurarDadosCompletos(dados) {
     
     if (document.getElementById('formaPagamento'))
         document.getElementById('formaPagamento').value = dados.forma_pagamento || '';
-    if (document.getElementById('statusEntrega'))
-        document.getElementById('statusEntrega').value = dados.status_entrega || '';
-    if (document.getElementById('previsaoEntrega'))
-        document.getElementById('previsaoEntrega').value = dados.previsao_entrega || '';
+    if (document.getElementById('ativoAssociado') && dados.ativo_associado)
+        document.getElementById('ativoAssociado').textContent = dados.ativo_associado;
     
     if (dados.info_gerais) {
         const infoInputs = document.querySelectorAll('.info-grid .info-item input');
-        if (infoInputs.length >= 5) {
+        if (infoInputs.length >= 6) {
             infoInputs[0].value = dados.info_gerais.setor || '';
             infoInputs[1].value = dados.info_gerais.aplicacao || '';
             infoInputs[2].value = dados.info_gerais.prioridade || '';
             infoInputs[3].value = dados.info_gerais.data_solic || '';
             infoInputs[4].value = dados.info_gerais.solicitante || '';
+            infoInputs[5].value = dados.info_gerais.previsao_entrega || '';
         }
     }
     
@@ -1674,12 +1715,8 @@ function limparDados() {
         document.getElementById('empresa_top').value = 'MATRIZ';
     if (document.getElementById('comprador_top')) 
         document.getElementById('comprador_top').value = '';
-    if (document.getElementById('formaPagamento')) 
+    if (document.getElementById('formaPagamento'))
         document.getElementById('formaPagamento').value = '';
-    if (document.getElementById('statusEntrega')) 
-        document.getElementById('statusEntrega').value = '';
-    if (document.getElementById('previsaoEntrega')) 
-        document.getElementById('previsaoEntrega').value = '';
     
     // Limpa último preço
     const ultimoPrecoInputs = document.querySelectorAll('.ultimo-preco .campo-data');
@@ -1847,8 +1884,7 @@ function configurarAutoSaveCampos() {
         '#empresa_top',
         '#comprador_top',
         '#formaPagamento',
-        '#statusEntrega',
-        '#previsaoEntrega',
+        '#ativoAssociado',
         '.ultimo-preco .campo-data',
         '.info-grid .info-item input',
         '.observacao-comprador .campo-observacao'
@@ -1862,7 +1898,7 @@ function configurarAutoSaveCampos() {
             salvarNoServidor();
         });
         
-        if (campo.tagName === 'INPUT' || campo.tagName === 'TEXTAREA') {
+        if (campo.tagName === 'INPUT' || campo.tagName === 'TEXTAREA' || campo.isContentEditable) {
             campo.addEventListener('input', () => {
                 clearTimeout(campo.saveTimeout);
                 campo.saveTimeout = setTimeout(() => {
